@@ -1,0 +1,982 @@
+{
+  "PipelineResult": {
+    "$defs": {
+      "Citation": {
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Locator"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quote"
+          }
+        },
+        "required": [
+          "source_id"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "ControlBehavior": {
+        "additionalProperties": false,
+        "description": "Control logic: how the machine is commanded and how it responds.",
+        "properties": {
+          "behavior_id": {
+            "title": "Behavior Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "state_machine",
+              "command_set",
+              "lookup_table",
+              "program_interpreter",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "drives_joints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Drives Joints",
+            "type": "array"
+          },
+          "spec": {
+            "additionalProperties": true,
+            "title": "Spec",
+            "type": "object"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "behavior_id",
+          "name",
+          "kind",
+          "description",
+          "confidence",
+          "citations"
+        ],
+        "title": "ControlBehavior",
+        "type": "object"
+      },
+      "Fact": {
+        "additionalProperties": false,
+        "description": "One specification value, always with where it came from.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "title": "Value"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Unit"
+          },
+          "original": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Original"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "confidence",
+          "citations"
+        ],
+        "title": "Fact",
+        "type": "object"
+      },
+      "Generator": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Generator",
+        "type": "object"
+      },
+      "InputType": {
+        "description": "The eight input types from the Oct 1, 2026 meeting.",
+        "enum": [
+          "walkthrough_video",
+          "machine_photo",
+          "nameplate_photo",
+          "brochure_datasheet",
+          "layout_drawing",
+          "schematic",
+          "pdf_catalog",
+          "online_resource"
+        ],
+        "title": "InputType",
+        "type": "string"
+      },
+      "Issue": {
+        "additionalProperties": false,
+        "properties": {
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "error"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ref"
+          }
+        },
+        "required": [
+          "severity",
+          "message"
+        ],
+        "title": "Issue",
+        "type": "object"
+      },
+      "Joint": {
+        "additionalProperties": false,
+        "description": "A moving connection between two parts (parent = body0, child = body1).",
+        "properties": {
+          "joint_id": {
+            "title": "Joint Id",
+            "type": "string"
+          },
+          "joint_type": {
+            "enum": [
+              "revolute",
+              "prismatic",
+              "fixed"
+            ],
+            "title": "Joint Type",
+            "type": "string"
+          },
+          "parent_part": {
+            "title": "Parent Part",
+            "type": "string"
+          },
+          "child_part": {
+            "title": "Child Part",
+            "type": "string"
+          },
+          "axis": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Axis",
+            "type": "array"
+          },
+          "origin_m": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Origin M",
+            "type": "array"
+          },
+          "lower_limit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lower Limit"
+          },
+          "upper_limit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Upper Limit"
+          },
+          "max_velocity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Velocity"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "joint_id",
+          "joint_type",
+          "parent_part",
+          "child_part",
+          "axis",
+          "origin_m",
+          "confidence",
+          "citations"
+        ],
+        "title": "Joint",
+        "type": "object"
+      },
+      "MachineIdentity": {
+        "additionalProperties": false,
+        "properties": {
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Manufacturer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Model"
+          },
+          "serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Serial Number"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Category"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "confidence",
+          "citations"
+        ],
+        "title": "MachineIdentity",
+        "type": "object"
+      },
+      "Part": {
+        "additionalProperties": false,
+        "description": "A rigid piece of the machine. Joints connect parts.",
+        "properties": {
+          "part_id": {
+            "title": "Part Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "geometry_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Geometry File"
+          },
+          "geometry_format": {
+            "enum": [
+              "glb",
+              "obj",
+              "usd",
+              "usda",
+              "usdc",
+              "primitive"
+            ],
+            "title": "Geometry Format",
+            "type": "string"
+          },
+          "primitive": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Primitive"
+          },
+          "generator": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Generator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "bbox_min_m": {
+            "anyOf": [
+              {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Bbox Min M"
+          },
+          "bbox_max_m": {
+            "anyOf": [
+              {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Bbox Max M"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "part_id",
+          "name",
+          "geometry_format"
+        ],
+        "title": "Part",
+        "type": "object"
+      },
+      "PipelineId": {
+        "enum": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "title": "PipelineId",
+        "type": "string"
+      },
+      "ScaleCalibration": {
+        "additionalProperties": false,
+        "description": "How model units were tied to real-world size (C10: scale-calibration input).",
+        "properties": {
+          "method": {
+            "enum": [
+              "known_dimension",
+              "reference_object",
+              "none"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reference"
+          },
+          "known_value_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Known Value M"
+          },
+          "measured_model_units": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Measured Model Units"
+          },
+          "scale_factor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scale Factor"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "method"
+        ],
+        "title": "ScaleCalibration",
+        "type": "object"
+      },
+      "Source": {
+        "additionalProperties": false,
+        "description": "Anything information came from: a file, a URL, or something the user typed.",
+        "properties": {
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "file",
+              "url",
+              "user_input"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "input_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/InputType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sha256"
+          },
+          "retrieved_at": {
+            "format": "date-time",
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "license_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "License Note"
+          }
+        },
+        "required": [
+          "source_id",
+          "kind",
+          "uri",
+          "retrieved_at"
+        ],
+        "title": "Source",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "schema_version": {
+        "const": "0.1.0",
+        "default": "0.1.0",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "result_id": {
+        "title": "Result Id",
+        "type": "string"
+      },
+      "job_id": {
+        "title": "Job Id",
+        "type": "string"
+      },
+      "pipeline": {
+        "$ref": "#/$defs/PipelineId"
+      },
+      "input_types": {
+        "items": {
+          "$ref": "#/$defs/InputType"
+        },
+        "minItems": 1,
+        "title": "Input Types",
+        "type": "array"
+      },
+      "produced_at": {
+        "format": "date-time",
+        "title": "Produced At",
+        "type": "string"
+      },
+      "produced_by": {
+        "title": "Produced By",
+        "type": "string"
+      },
+      "sources": {
+        "items": {
+          "$ref": "#/$defs/Source"
+        },
+        "minItems": 1,
+        "title": "Sources",
+        "type": "array"
+      },
+      "identity": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/MachineIdentity"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "facts": {
+        "items": {
+          "$ref": "#/$defs/Fact"
+        },
+        "title": "Facts",
+        "type": "array"
+      },
+      "parts": {
+        "items": {
+          "$ref": "#/$defs/Part"
+        },
+        "title": "Parts",
+        "type": "array"
+      },
+      "scale": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ScaleCalibration"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "joints": {
+        "items": {
+          "$ref": "#/$defs/Joint"
+        },
+        "title": "Joints",
+        "type": "array"
+      },
+      "control": {
+        "items": {
+          "$ref": "#/$defs/ControlBehavior"
+        },
+        "title": "Control",
+        "type": "array"
+      },
+      "issues": {
+        "items": {
+          "$ref": "#/$defs/Issue"
+        },
+        "title": "Issues",
+        "type": "array"
+      },
+      "needs_human_review": {
+        "default": true,
+        "title": "Needs Human Review",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "result_id",
+      "job_id",
+      "pipeline",
+      "input_types",
+      "produced_at",
+      "produced_by",
+      "sources"
+    ],
+    "title": "PipelineResult",
+    "type": "object"
+  },
+  "JobResult": {
+    "$defs": {
+      "TwinRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "twin_id": {
+            "title": "Twin Id",
+            "type": "string"
+          },
+          "machine_key": {
+            "title": "Machine Key",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "needs_review",
+              "approved"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "usd_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Usd Path"
+          },
+          "built_from": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Built From",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "twin_id",
+          "machine_key",
+          "version",
+          "status",
+          "created_at"
+        ],
+        "title": "TwinRecord",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Returned to the user/agent when a job finishes.",
+    "properties": {
+      "job_id": {
+        "title": "Job Id",
+        "type": "string"
+      },
+      "twin": {
+        "$ref": "#/$defs/TwinRecord"
+      },
+      "reused_existing": {
+        "title": "Reused Existing",
+        "type": "boolean"
+      },
+      "message": {
+        "title": "Message",
+        "type": "string"
+      }
+    },
+    "required": [
+      "job_id",
+      "twin",
+      "reused_existing",
+      "message"
+    ],
+    "title": "JobResult",
+    "type": "object"
+  }
+}
