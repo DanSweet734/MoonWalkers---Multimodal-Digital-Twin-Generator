@@ -18,11 +18,13 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       and decision record 0007)
 
 ## Phase 1 - Knowledge base and orchestrator core
-- [ ] `KnowledgeBase` interface + JSON (or SQLite) implementation: save/load `TwinRecord`, look up by
-      `machine_key`, versioning on user request
-- [ ] Orchestrator turns `PipelineResult`(s) into a `TwinRecord`; `JobResult.reused_existing` works
-- [ ] Stubs for Pipelines A, C, D returning fixture `PipelineResult`s
-- [ ] Tests for reuse and re-versioning; worklog; decision record for the store choice; PR
+- [x] `KnowledgeBase` interface + JSON (or SQLite) implementation: save/load `TwinRecord`, look up by
+      `machine_key`, versioning on user request (JSON files, decision 0008)
+- [x] Orchestrator turns `PipelineResult`(s) into a `TwinRecord`; `JobResult.reused_existing` works
+      (reuse and versioning rules: decision 0009)
+- [x] Stubs for Pipelines A, C, D returning fixture `PipelineResult`s
+- [x] Tests for reuse and re-versioning; worklog; decision record for the store choice; PR
+      (Oct 16, 2026: branch `feat/phase-1-kb-orchestrator`)
 
 ## Phase 2 - USD export
 - [ ] Exporter writes a `.usda` with correct units (`metersPerUnit`), parts as meshes, and a

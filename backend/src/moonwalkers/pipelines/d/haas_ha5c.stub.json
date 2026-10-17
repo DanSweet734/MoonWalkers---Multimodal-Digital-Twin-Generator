@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "result_id": "stub-d",
+  "job_id": "stub",
+  "pipeline": "D",
+  "input_types": ["online_resource"],
+  "produced_at": "2026-10-16T18:55:00-07:00",
+  "produced_by": "pipeline-d stub 0.1.0 (fixture data)",
+  "sources": [
+    {
+      "source_id": "src-haas-uk-product-page",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://haas.co.uk/?p=2253",
+      "title": "HA5C - Haas Automation UK",
+      "retrieved_at": "2026-10-16T18:55:00-07:00"
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "HA5C",
+    "category": "rotary indexer (5C collet)",
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-uk-product-page",
+        "quote": "5C Collet Servo Rotary Head with Manual Collet Closer."
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "max_spindle_speed",
+      "value": 7.156,
+      "unit": "rad/s",
+      "original": "0.001 to 410 °/sec",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-haas-uk-product-page",
+          "locator": "specifications table, max speed",
+          "quote": "0.001 to 410 °/sec"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Max speed differs across Haas sources (410 deg/s on the Haas UK product page vs. 330 or 320 deg/s in the 2006 operator's manual, per decision 0002); using the product page.",
+      "ref": "max_spindle_speed"
+    }
+  ],
+  "needs_human_review": true
+}
