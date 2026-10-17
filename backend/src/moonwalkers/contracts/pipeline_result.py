@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -61,28 +61,28 @@ class Source(_Strict):
 
     source_id: str
     kind: Literal["file", "url", "user_input"]
-    input_type: Optional[InputType] = None  # None for user_input
+    input_type: InputType | None = None  # None for user_input
     uri: str  # relative path under data/, a URL, or "user"
-    title: Optional[str] = None
-    sha256: Optional[str] = None  # for files, so a re-run can detect changes
+    title: str | None = None
+    sha256: str | None = None  # for files, so a re-run can detect changes
     retrieved_at: datetime
-    license_note: Optional[str] = None
+    license_note: str | None = None
 
 
 class Citation(_Strict):
     source_id: str
-    locator: Optional[str] = None  # e.g. "p. 12", "Specifications table"
-    quote: Optional[str] = None  # short verbatim excerpt when available
+    locator: str | None = None  # e.g. "p. 12", "Specifications table"
+    quote: str | None = None  # short verbatim excerpt when available
 
 
 # --------------------------------------------------------------------------
 # What the pipeline learned
 # --------------------------------------------------------------------------
 class MachineIdentity(_Strict):
-    manufacturer: Optional[str] = None
-    model: Optional[str] = None
-    serial_number: Optional[str] = None
-    category: Optional[str] = None  # e.g. "rotary indexer"
+    manufacturer: str | None = None
+    model: str | None = None
+    serial_number: str | None = None
+    category: str | None = None  # e.g. "rotary indexer"
     aliases: list[str] = Field(default_factory=list)
     confidence: float = Field(ge=0.0, le=1.0)
     citations: list[Citation] = Field(min_length=1)
@@ -92,16 +92,16 @@ class Fact(_Strict):
     """One specification value, always with where it came from."""
 
     key: str  # snake_case, e.g. "center_height"
-    value: Union[float, int, str, bool]
-    unit: Optional[str] = None  # SI where numeric ("m", "rad/s", "kg")
-    original: Optional[str] = None  # value as written in the source, e.g. '4.000"'
+    value: float | int | str | bool
+    unit: str | None = None  # SI where numeric ("m", "rad/s", "kg")
+    original: str | None = None  # value as written in the source, e.g. '4.000"'
     confidence: float = Field(ge=0.0, le=1.0)
     citations: list[Citation] = Field(min_length=1)
 
 
 class Generator(_Strict):
     name: str  # e.g. "stable-fast-3d"
-    version: Optional[str] = None
+    version: str | None = None
     params: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -110,12 +110,12 @@ class Part(_Strict):
 
     part_id: str
     name: str
-    geometry_file: Optional[str] = None  # relative path; None if primitive
+    geometry_file: str | None = None  # relative path; None if primitive
     geometry_format: Literal["glb", "obj", "usd", "usda", "usdc", "primitive"]
-    primitive: Optional[dict[str, Any]] = None  # e.g. {"shape": "cylinder", "radius_m": 0.03}
-    generator: Optional[Generator] = None
-    bbox_min_m: Optional[Vec3] = None
-    bbox_max_m: Optional[Vec3] = None
+    primitive: dict[str, Any] | None = None  # e.g. {"shape": "cylinder", "radius_m": 0.03}
+    generator: Generator | None = None
+    bbox_min_m: Vec3 | None = None
+    bbox_max_m: Vec3 | None = None
     citations: list[Citation] = Field(default_factory=list)
 
 
@@ -123,10 +123,10 @@ class ScaleCalibration(_Strict):
     """How model units were tied to real-world size (C10: scale-calibration input)."""
 
     method: Literal["known_dimension", "reference_object", "none"]
-    reference: Optional[str] = None  # Fact key or object name used
-    known_value_m: Optional[float] = None
-    measured_model_units: Optional[float] = None
-    scale_factor: Optional[float] = None
+    reference: str | None = None  # Fact key or object name used
+    known_value_m: float | None = None
+    measured_model_units: float | None = None
+    scale_factor: float | None = None
     citations: list[Citation] = Field(default_factory=list)
 
 
@@ -139,9 +139,9 @@ class Joint(_Strict):
     child_part: str
     axis: Vec3
     origin_m: Vec3
-    lower_limit: Optional[float] = None  # rad (revolute) or m (prismatic); None = unlimited
-    upper_limit: Optional[float] = None
-    max_velocity: Optional[float] = None  # rad/s or m/s
+    lower_limit: float | None = None  # rad (revolute) or m (prismatic); None = unlimited
+    upper_limit: float | None = None
+    max_velocity: float | None = None  # rad/s or m/s
     confidence: float = Field(ge=0.0, le=1.0)
     citations: list[Citation] = Field(min_length=1)
 
@@ -162,7 +162,7 @@ class ControlBehavior(_Strict):
 class Issue(_Strict):
     severity: Literal["info", "warning", "error"]
     message: str
-    ref: Optional[str] = None  # id of the part/joint/fact concerned
+    ref: str | None = None  # id of the part/joint/fact concerned
 
 
 # --------------------------------------------------------------------------
@@ -178,17 +178,17 @@ class PipelineResult(_Strict):
     produced_by: str  # pipeline name + version, e.g. "pipeline-b 0.1.0"
 
     sources: list[Source] = Field(min_length=1)
-    identity: Optional[MachineIdentity] = None
+    identity: MachineIdentity | None = None
     facts: list[Fact] = Field(default_factory=list)
     parts: list[Part] = Field(default_factory=list)
-    scale: Optional[ScaleCalibration] = None
+    scale: ScaleCalibration | None = None
     joints: list[Joint] = Field(default_factory=list)
     control: list[ControlBehavior] = Field(default_factory=list)
     issues: list[Issue] = Field(default_factory=list)
     needs_human_review: bool = True
 
     @model_validator(mode="after")
-    def _check_references(self) -> "PipelineResult":
+    def _check_references(self) -> PipelineResult:
         source_ids = [s.source_id for s in self.sources]
         part_ids = [p.part_id for p in self.parts]
         joint_ids = [j.joint_id for j in self.joints]
@@ -230,10 +230,10 @@ class TwinRecord(_Strict):
     machine_key: str  # normalised "manufacturer/model", used for reuse lookups
     version: int = Field(ge=1)  # re-versioned when the user asks for an update (C6)
     status: Literal["draft", "needs_review", "approved"]
-    usd_path: Optional[str] = None
+    usd_path: str | None = None
     built_from: list[str] = Field(default_factory=list)  # PipelineResult.result_id values
     created_at: datetime
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class JobResult(_Strict):

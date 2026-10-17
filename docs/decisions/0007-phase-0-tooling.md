@@ -58,3 +58,13 @@ that day; commands are in `docs/worklog/2026-10-16.md`.
 - A contract change that forgets to regenerate the schema fails `uv run pytest`, with the regenerate
   command in the failure message.
 - Reversing any of these is a config edit; nothing else depends on them.
+
+## Follow-up (2026-10-17)
+Daniel reviewed the open questions from the Phase 0 pull request:
+- **Ruff:** adopt ruff's default rule set (`extend-select = ["E", "I"]` keeps the earlier E and I
+  rules on top). The only findings were the 32 style fixes in `contracts/pipeline_result.py`.
+  `ruff --fix` applied them and the generated JSON Schema stayed byte-identical, so the contract
+  version did not change.
+- **Oxlint warnings:** left as they are (lint still exits 0 on warnings).
+- The repository rename is handled outside this record (the local `origin` now points at
+  `MoonWalkers---Multimodal-Digital-Twin-Generator`).

@@ -27,11 +27,14 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       (Oct 16, 2026: branch `feat/phase-1-kb-orchestrator`)
 
 ## Phase 2 - USD export
-- [ ] Exporter writes a `.usda` with correct units (`metersPerUnit`), parts as meshes, and a
-      `PhysicsRevoluteJoint` with `ArticulationRootAPI` and an angular `DriveAPI`
-- [ ] Validation: open with `pxr`, check joints reference real prims; optional `omni_asset_validate`
-- [ ] Manual check in Isaac Sim 6.2.0 with a primitive test model (box + cylinder) before real meshes
-- [ ] Worklog with screenshots described; PR
+- [x] Exporter writes a `.usda` with correct units (`metersPerUnit`), parts as meshes, and a
+      `PhysicsRevoluteJoint` with `ArticulationRootAPI` and an angular `DriveAPI` (decision 0010)
+- [x] Validation: open with `pxr`, check joints reference real prims; optional `omni_asset_validate`
+      (both run in the test suite)
+- [x] Manual check in Isaac Sim 6.2.0 with a primitive test model (box + cylinder) before real meshes
+      (Oct 17, 2026, by Daniel: both test files opened and moved as expected; 0 errors in the log)
+- [x] Worklog with screenshots described; PR (Oct 17, 2026: branch `feat/phase-2-usd-export`; no
+      screenshots were shared, so the worklog records Daniel's description of what he saw)
 
 ## Phase 3 - Pipeline B (machine photos -> geometry)
 - [ ] Collect HA5C photos from public sources into `data/machines/haas-ha5c/inputs/`, logging each URL

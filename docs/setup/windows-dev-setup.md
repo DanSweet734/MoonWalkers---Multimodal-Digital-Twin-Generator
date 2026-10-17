@@ -45,6 +45,12 @@ cd ../dashboard;  npm ci;  npm run build
 - Workstation install: download the Windows zip, unzip to `C:\isaacsim`, run `post_install.bat`, then
   `isaac-sim.bat`; first launch "can take 5-10 minutes"
   (https://docs.isaacsim.omniverse.nvidia.com/6.2.0/installation/install_workstation.html).
+- The Windows zip is `isaac-sim-standalone-6.2.0-windows-x86_64.zip`, 10.53 GB, MD5
+  `86dabd127e9e8c225c239b41a8e3909b` (download page and server, checked 2026-10-17). Step-by-step
+  install and the twin check: `docs/setup/isaac-sim-check.md`.
+- Daniel's machine (checked 2026-10-17): RTX 4090 24 GB, driver 617.42, 32 GB RAM (the minimum),
+  i9-13900K with 24 cores. Daniel installed Isaac Sim 6.2.0 at `C:\isaacsim` the same day; its log
+  reports App Version 6.2.0 and Kit 110.4.0.
 
 ## Image-to-3D generators
 - Each generator gets its own environment; see `docs/decisions/0006-image-to-3d-generator.md` and each
