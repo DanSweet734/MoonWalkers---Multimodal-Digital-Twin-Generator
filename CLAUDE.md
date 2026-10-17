@@ -92,7 +92,12 @@ Dashboard (run from `dashboard/`):
 - Open a pull request with `gh pr create` when a phase or task is complete. PR description must list:
   what changed, how it was tested, docs updated, open questions.
 - Never force-push, never rewrite pushed history. To bring `main` into a feature branch, merge it in
-  (`git merge origin/main`) rather than rebasing; stacked PRs are merged in order with merge commits.
+  (`git merge origin/main`) rather than rebasing.
+- Keep one open phase PR at a time: start the next phase's branch from an up-to-date `main` after the
+  previous PR is merged. GitHub treats a PR whose base is another PR's branch as a stack. A stack
+  cannot be merged with `gh pr merge`; it needs the async merge API
+  (`gh api --method PUT repos/{owner}/{repo}/pulls/{n}/merge-async -f merge_method=merge -f merge_action=direct_merge -f sha=<head sha>`).
+  GitHub then rebases the next PR itself (seen on 2026-10-17; worklog of that date).
 
 ## Documentation workflow (do this for every task)
 - Append a dated entry to `docs/worklog/YYYY-MM-DD.md`: goal, what you did, commands run, results
