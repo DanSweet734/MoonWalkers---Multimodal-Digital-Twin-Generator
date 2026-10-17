@@ -15,11 +15,9 @@ install, build, and pass their checks; no digital twin is generated yet.
 |---|---|
 | Background research (digital twins, image-to-3D models, agents, prior MoonWalkers work) | Done |
 | Scope and goals | Defined (see [What it does](#what-it-does)) |
-| Architecture design, surveys, sketches and Figma wireframes | Done |
-| Software Requirements Specification (SRS) | Drafted and reviewed section by section by the team |
-| Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **In progress.** Phase 0 (scaffold) done; Phase 1 (knowledge base and orchestrator) next. See [docs/poc-plan.md](docs/poc-plan.md) |
-| Shared platform (dashboard, backend, knowledge base) | Scaffolded: backend `uv` project with the pipeline contract and its tests; Vite + React + TypeScript dashboard (starter page). Knowledge base not started |
+| Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
+| Technology stack | **Awaiting Approval.** Options researched; see [Technology stack](#technology-stack-candidates) |
+| Shared platform (dashboard, backend, knowledge base) | Not started |
 | Input pipelines | Not started; all four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
 Everything below describes the **planned design**. Anything marked *candidate* or *to be researched* has not been decided by the team.
@@ -373,4 +371,4 @@ everything are in the "Commands" section of `CLAUDE.md`.
 
 ## License
 
-No license has been chosen yet; GitHub's documentation notes that default copyright applies, meaning no one else may reproduce, distribute, or create derivative works from the code.
+No license has been chosen yet for this repository. Until one is added the default copyright applies, meaning no one else may reproduce, distribute, or create derivative works from the code.
