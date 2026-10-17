@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.0",
+  "result_id": "stub-c",
+  "job_id": "stub",
+  "pipeline": "C",
+  "input_types": ["layout_drawing"],
+  "produced_at": "2026-10-16T18:55:00-07:00",
+  "produced_by": "pipeline-c stub 0.1.0 (fixture data)",
+  "sources": [
+    {
+      "source_id": "src-haas-layout-drawing",
+      "kind": "url",
+      "input_type": "layout_drawing",
+      "uri": "https://www.haas.co.uk/wp-content/uploads/2019/10/HA5C_Dimensions.pdf",
+      "title": "HA5C layout drawing (PDF metadata title 'HA5C Rev B.cdr', created 2013-09-17)",
+      "retrieved_at": "2026-10-16T18:55:00-07:00"
+    },
+    {
+      "source_id": "src-haas-uk-product-page",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://haas.co.uk/?p=2253",
+      "title": "HA5C - Haas Automation UK",
+      "retrieved_at": "2026-10-16T18:55:00-07:00"
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "HA5C",
+    "category": "rotary indexer (5C collet)",
+    "confidence": 0.7,
+    "citations": [
+      {
+        "source_id": "src-haas-layout-drawing",
+        "locator": "PDF metadata",
+        "quote": "HA5C Rev B.cdr"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "center_height",
+      "value": 0.1016,
+      "unit": "m",
+      "original": "4.000 ± 0.001 in",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-haas-uk-product-page",
+          "locator": "specifications table, center height (imperial)",
+          "quote": "4.000 ± 0.001"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Center height not yet read from the layout drawing (its PDF text is compressed); value taken from the Haas UK product page.",
+      "ref": "center_height"
+    }
+  ],
+  "needs_human_review": true
+}

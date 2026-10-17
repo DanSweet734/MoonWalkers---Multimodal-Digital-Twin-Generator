@@ -1,0 +1,49 @@
+{
+  "schema_version": "0.1.0",
+  "result_id": "stub-a",
+  "job_id": "stub",
+  "pipeline": "A",
+  "input_types": ["nameplate_photo", "brochure_datasheet"],
+  "produced_at": "2026-10-16T18:55:00-07:00",
+  "produced_by": "pipeline-a stub 0.1.0 (fixture data)",
+  "sources": [
+    {
+      "source_id": "src-haas-uk-product-page",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://haas.co.uk/?p=2253",
+      "title": "HA5C - Haas Automation UK",
+      "retrieved_at": "2026-10-16T18:55:00-07:00"
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "HA5C",
+    "category": "rotary indexer (5C collet)",
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-uk-product-page",
+        "quote": "5C Collet Servo Rotary Head with Manual Collet Closer."
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "gear_ratio",
+      "value": "60:1",
+      "original": "60:1",
+      "confidence": 0.8,
+      "citations": [
+        {"source_id": "src-haas-uk-product-page", "locator": "specifications table", "quote": "60:1"}
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Fixture cites the Haas UK product page; a real Pipeline A would read a nameplate photo or brochure."
+    }
+  ],
+  "needs_human_review": true
+}
