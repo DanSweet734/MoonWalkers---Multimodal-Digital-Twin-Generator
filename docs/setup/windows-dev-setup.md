@@ -17,6 +17,28 @@ Machine: Windows 11, NVIDIA GeForce RTX 4090 (24 GB). Each step lists its source
 - Node.js (current LTS) for the dashboard: https://nodejs.org/
 - GitHub CLI for pull requests: https://cli.github.com/ , then `gh auth login`.
 
+Exact commands used on Oct 16, 2026 (PowerShell; winget ships with Windows 11). Open a new terminal (or
+restart VS Code) after the winget installs so the new PATH entries are picked up.
+
+```powershell
+winget install --id astral-sh.uv -e --accept-source-agreements --accept-package-agreements
+winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements
+uv python install 3.12
+gh auth login            # browser sign-in; GitHub.com, HTTPS
+```
+
+Versions this installed: uv 0.13.1, CPython 3.12.15, Node.js 24.20.0 with npm 11.19.0, GitHub CLI 2.102.0.
+winget's catalog can trail upstream releases (Node.js 24.22.0 was already out), so record what you get
+with `uv --version`, `node --version`, `npm --version` and `gh --version`.
+
+Then install the project dependencies (exact versions come from the lock files):
+
+```powershell
+cd backend;   uv sync;  uv run pytest
+cd ../dashboard;  npm ci;  npm run build
+```
+
 ## Isaac Sim 6.2.0 (for opening and checking twins)
 - Requirements: Windows 11 is supported; minimum GeForce RTX 4080 16 GB; 32 GB RAM minimum; Windows driver
   595.97 or newer (https://docs.isaacsim.omniverse.nvidia.com/6.2.0/installation/requirements.html).

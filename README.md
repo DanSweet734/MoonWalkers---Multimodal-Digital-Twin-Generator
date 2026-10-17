@@ -8,7 +8,8 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Starting the proof of concept. There is no runnable code in this repository yet.**
+**Proof of concept in progress: Phase 0 (scaffold) is done.** The backend package and the dashboard
+install, build, and pass their checks; no digital twin is generated yet.
 
 | Area | Status |
 |---|---|
@@ -17,8 +18,8 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 | Architecture design, surveys, sketches and Figma wireframes | Done |
 | Software Requirements Specification (SRS) | Drafted and reviewed section by section by the team |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **Next.** See [Proof of concept](#proof-of-concept) |
-| Shared platform (dashboard, backend, knowledge base) | Not started |
+| Proof of concept | **In progress.** Phase 0 (scaffold) done; Phase 1 (knowledge base and orchestrator) next. See [docs/poc-plan.md](docs/poc-plan.md) |
+| Shared platform (dashboard, backend, knowledge base) | Scaffolded: backend `uv` project with the pipeline contract and its tests; Vite + React + TypeScript dashboard (starter page). Knowledge base not started |
 | Input pipelines | Not started; all four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
 Everything below describes the **planned design**. Anything marked *candidate* or *to be researched* has not been decided by the team.
@@ -268,7 +269,7 @@ Two alternatives were considered in our Oct 6 research: an all-Python stack with
 
 ## Proof of concept
 
-The next phase. It must show that an AI agent can create a digital twin, in some capacity, from one input type.
+In progress (Phase 0 of [docs/poc-plan.md](docs/poc-plan.md) done). It must show that an AI agent can create a digital twin, in some capacity, from one input type.
 
 - **Input:** machine photos to start (video is required in the final product), sourced online until test photos from Dr. Li's lab arrive.
 - **Subject:** one well-known, relatively simple machine that has joints and control logic.
@@ -316,16 +317,6 @@ flowchart LR
 
 Decided on Oct 16, 2026: the technology stack (Option A), Neo4j for the knowledge base, the product name, the pipeline-to-orchestrator data flow, the definition of "functional", and the proof-of-concept scope.
 
----|---|
-| Technology stack | Options researched; team decision pending |
-| Knowledge graph technology (Neo4j suggested) | Suggestion only |
-| AI model / agent runtime | Not decided |
-| Product name | Not decided |
-| Numeric time targets for a build | None agreed |
-| Using a "digital cousin" as a fallback (in the ACDC paper, an asset that does not model a specific real-world counterpart but keeps similar geometry and semantics, unlike a twin) | Proposed in a team draft; pending advisor review |
-| Whether the dashboard needs a live 3D view | Wished for, not a requirement |
-| GPU availability and target Isaac Sim version | To be raised with the advisors |
-
 ---
 
 ## Related work
@@ -369,14 +360,16 @@ California State University, Northridge (CSUN), Computer Science capstone.
 | `.claude/settings.json` | Shared Claude Code permissions (tests, commits, and PRs allowed; installs ask first) |
 | `docs/methodology.md` | How we work: research, decide, build, verify, document |
 | `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |
-| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator) |
+| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling) |
 | `docs/worklog/` | Dated work entries |
 | `docs/research/` | Research notes and the project context file |
 | `docs/setup/` | Windows and Hugging Face setup guides |
-| `backend/` | Python package `moonwalkers`; the shared pipeline contract and its tests |
+| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12); the shared pipeline contract, its JSON Schema, and tests |
+| `dashboard/` | Vite + React + TypeScript app (starter page for now) |
 | `data/` | Local test data and outputs (gitignored except its README) |
 
-Source code beyond the contract arrives with the proof of concept.
+More source code arrives phase by phase; see `docs/poc-plan.md`. Commands to install, test, and run
+everything are in the "Commands" section of `CLAUDE.md`.
 
 ## License
 

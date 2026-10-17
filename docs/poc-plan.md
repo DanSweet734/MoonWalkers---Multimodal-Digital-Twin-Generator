@@ -11,10 +11,11 @@ Stop at the end of each phase, open a pull request, and wait for review before s
 Plus: a second request for the same machine reuses the stored twin and the result says so.
 
 ## Phase 0 - Scaffold
-- [ ] Python package under `backend/` with `uv`, ruff, pytest (ask before installing)
-- [ ] Move the contract into `backend/src/moonwalkers/contracts/`; the contract test passes
-- [ ] Vite + React + TypeScript app under `dashboard/` (ask before installing)
-- [ ] Worklog entry, PR
+- [x] Python package under `backend/` with `uv`, ruff, pytest (ask before installing)
+- [x] Move the contract into `backend/src/moonwalkers/contracts/`; the contract test passes
+- [x] Vite + React + TypeScript app under `dashboard/` (ask before installing)
+- [x] Worklog entry, PR (Oct 16, 2026: branch `chore/phase-0-scaffold`; also added a schema-drift test
+      and decision record 0007)
 
 ## Phase 1 - Knowledge base and orchestrator core
 - [ ] `KnowledgeBase` interface + JSON (or SQLite) implementation: save/load `TwinRecord`, look up by

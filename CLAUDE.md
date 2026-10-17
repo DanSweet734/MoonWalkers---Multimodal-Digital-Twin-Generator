@@ -26,7 +26,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 3. **Ask before installing anything** (pip/uv/npm/winget packages, model weights, system tools).
    Explain what it is, why, its license, and its size first.
 4. **Never read, print, or commit secrets.** API keys and tokens live in `.env` (gitignored) or the
-   Hugging Face token cache. Use `.env.example` for names only.
+   Hugging Face token cache. Use `example.env` for names only (not `.env.example`, which the
+   `.env.*` patterns in `.gitignore` and the Claude Code deny rules would catch).
 5. **Never commit large or generated files:** test media, model weights, generated meshes and `.usd`
    outputs stay in `data/` (gitignored). Commit only small fixtures under `backend/tests/fixtures/`.
 6. **Respect the contract.** Pipelines return `PipelineResult`; only the orchestrator writes to the
@@ -57,14 +58,23 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
 - Target the most recent Isaac Sim (6.2.0 as of Oct 16, 2026) for manual verification.
 - Image-to-3D generators run in their **own** environment and are called as a subprocess through an
   adapter in `generators/`. Primary: Hunyuan3D-2mv (multi-view). Fallback: Stable Fast 3D (single image).
-- Dashboard: React + TypeScript with Vite and npm.
+- Dashboard: React + TypeScript with Vite and npm; Oxlint for lint (decision 0007).
 
-## Commands (fill in exact commands once the scaffold exists)
-- Install/sync Python deps: `uv sync` (run from `backend/`)
-- Tests: `uv run pytest`
-- Lint and format: `uv run ruff check .` and `uv run ruff format .`
-- API (dev): `uv run uvicorn moonwalkers.api.app:app --reload`
-- Dashboard: `npm run dev`, `npm run build`, `npm run lint` (from `dashboard/`)
+## Commands
+First-time machine setup (uv, Python 3.12, Node.js LTS, GitHub CLI): `docs/setup/windows-dev-setup.md`.
+
+Backend (run from `backend/`):
+- Install/sync Python deps: `uv sync` (creates `backend/.venv` from `uv.lock`)
+- Tests: `uv run pytest`; without GPU/slow tests: `uv run pytest -m "not gpu and not slow"`
+- Lint and format: `uv run ruff check .` and `uv run ruff format .` (check only: `uv run ruff format --check .`)
+- Regenerate the contract JSON Schema after a contract change: `uv run python -m moonwalkers.contracts.json_schema`
+- API (dev, from Phase 5; FastAPI and uvicorn are not installed yet): `uv run uvicorn moonwalkers.api.app:app --reload`
+
+Dashboard (run from `dashboard/`):
+- Install deps: `npm ci` (exact versions from `package-lock.json`)
+- Dev server: `npm run dev` (http://localhost:5173)
+- Type-check and build: `npm run build`
+- Lint (Oxlint): `npm run lint`
 
 ## Code conventions
 - Python: type hints everywhere, ruff for lint and format, pytest for tests, small pure functions.
