@@ -16,3 +16,5 @@ implementation follows in the integration phase.
 ## Consequences
 No database server to run during the PoC. The interface must stay narrow enough that Neo4j can implement
 it without changing callers.
+
+Follow-up: decision 0008 chose JSON files for the PoC store.
