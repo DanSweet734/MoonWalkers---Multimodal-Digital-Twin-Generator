@@ -1,1 +1,47 @@
+# Secrets (never commit)
 .env
+.env.*
+!example.env
+secrets/
+
+# Claude Code personal files
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Local test data, model weights, and generated outputs (see data/README.md)
+data/*
+!data/README.md
+*.glb
+*.gltf
+*.obj
+*.ply
+*.usd
+*.usda
+*.usdc
+*.usdz
+!backend/tests/fixtures/**
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / dashboard
+node_modules/
+dashboard/dist/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

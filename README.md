@@ -1,6 +1,4 @@
-# MoonWalkers Multimodal Digital Twin Generator
-
-> **Title awaiting approval.**
+# MoonWalkers Multimodal Agentic Digital Twin Generation Platform
 
 A multimodal AI-agent platform that turns everyday facility and equipment information (walkthrough video, photos, nameplates, brochures, drawings, catalogs) into **functional digital twins** exported as **NVIDIA Omniverse-compatible `.usd`** scenes, and stores what it learns in a shared knowledge base so a machine's twin never has to be rebuilt from scratch.
 
@@ -10,18 +8,20 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Planning and requirements phase. There is no runnable code in this repository yet.**
+**Starting the proof of concept. There is no runnable code in this repository yet.**
 
 | Area | Status |
 |---|---|
 | Background research (digital twins, image-to-3D models, agents, prior MoonWalkers work) | Done |
 | Scope and goals | Defined (see [What it does](#what-it-does)) |
-| Software Requirements Specification (SRS) | Complete as of October 10th, 2026, written section by section by the team |
-| Technology stack | **Awaiting Approval.** Options researched; see [Technology stack](#technology-stack-candidates) |
+| Architecture design, surveys, sketches and Figma wireframes | Done |
+| Software Requirements Specification (SRS) | Drafted and reviewed section by section by the team |
+| Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
+| Proof of concept | **Next.** See [Proof of concept](#proof-of-concept) |
 | Shared platform (dashboard, backend, knowledge base) | Not started |
 | Input pipelines | Not started; all four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
-Everything below describes the **planned design**. Anything marked *candidate* has either not been decided by the team or not been approaved by the stakeholders.
+Everything below describes the **planned design**. Anything marked *candidate* or *to be researched* has not been decided by the team.
 
 ---
 
@@ -34,23 +34,25 @@ Everything below describes the **planned design**. Anything marked *candidate* h
 
 ### What "functional" means here
 
-The team's goal is a twin that **behaves like the real machine, not just looks like it**. The team's working definition (Oct 5, 2026) is both:
+The goal is a twin that **behaves like the real machine, not just looks like it**. The definition, set by the team on Oct 5, 2026 and confirmed by our advisors, is both:
 
 - **Moving parts** (articulation), and
 - **Control logic** (how the machine is driven).
 
-For example, a CNC machine's twin should have correct internals and behave like one in Omniverse, rather than being a hollow shell. The team has set this as the goal and the requirements are written as if time is available to see it fully realized.
+For example, a CNC machine's twin should have correct internals and behave like one in Omniverse, rather than being a hollow shell. The team has set this as the goal even though the semester may not leave time to deliver all of it; the requirements are written as if time is available.
 
-Builds are expected to take a *reasonable amount of time*: not real-time, not exorbitant. No numeric target or limit has been agreed upon as of yet. More testing is likely needed
+Builds are expected to take a *reasonable amount of time*: not real-time, not exorbitant. For now there is no target time; the target is the result, and time metrics will come from testing.
+
+Every fact attached to a twin (a spec value, a dimension, a manual) shows the user where it came from.
 
 ### The eight input types
 
 | # | Input | Pipeline |
 |---|---|---|
-| 1 | Video of a facility walkthrough | A |
-| 2 | Photos of machines / components | A |
-| 3 | Photos of equipment nameplates | B |
-| 4 | PDF product brochures / datasheets | B |
+| 1 | Video of a facility walkthrough | B |
+| 2 | Photos of machines / components | B |
+| 3 | Photos of equipment nameplates | A |
+| 4 | PDF product brochures / datasheets | A |
 | 5 | Facility layout drawings | C |
 | 6 | Schematic illustrations of machines | C |
 | 7 | PDF product catalogs | D |
@@ -64,18 +66,20 @@ Each team member builds the pipeline for two inputs after the shared platform ex
 
 ### System context
 
-Who and what the platform talks to. This view deliberately names no specific AI model, because the model and agent runtime have not been chosen.
+Who and what the platform talks to. The aim is for an AI assistant or agent to drive the platform to create, edit, and submit twins. No specific AI model is named, because the model and agent runtime are still to be researched.
 
 ```mermaid
 flowchart TB
   USER["Team member / user"]
+  AIA["AI assistant / agent<br/>(model to be researched)"]
   IN["Input material<br/>video, photos, nameplates,<br/>brochures, drawings, catalogs"]
-  PLATFORM["MoonWalkers Twin Generator<br/>dashboard + backend + agent<br/>shared knowledge base"]
+  PLATFORM["MoonWalkers platform<br/>dashboard, backend, agent,<br/>shared knowledge base"]
   WEB["Online catalogs and<br/>spec resources"]
   MODELS["AI / vision models<br/>(candidates, not decided)"]
   OMNI["NVIDIA Omniverse<br/>(opens the .usd twins)"]
 
   USER -->|"uploads, reviews twins"| PLATFORM
+  AIA -->|"creates, edits, submits twins"| PLATFORM
   IN -->|"uploaded"| PLATFORM
   PLATFORM <-->|"lookups"| WEB
   PLATFORM <-->|"inference"| MODELS
@@ -99,7 +103,7 @@ flowchart TD
   PB --> AG
   PC --> AG
   PD --> AG
-  AG <-->|"GraphRAG read / write"| KG[("Shared Knowledge Base<br/>(knowledge graph, candidate: Neo4j)")]
+  AG <-->|"GraphRAG read / write"| KG[("Shared Knowledge Base<br/>(Neo4j knowledge graph)")]
   AG -->|"tool call"| FUNC["Functional Fidelity Builder<br/>moving parts + control logic"]
   FUNC <--> KG
   AG -->|"assembled, functional scene"| EXP["Scene Export<br/>NVIDIA Omniverse .usd"]
@@ -163,17 +167,17 @@ Each pipeline handles a pair of inputs and has one owner. The models named in ea
 
 ```mermaid
 flowchart TB
-  subgraph PA["Pipeline A - Video + Photos (Daniel Sweet)"]
-    A1["Facility walkthrough video"] --> A2["Segment + track objects"]
-    A3["Machine / component photos"] --> A2
-    A2 --> A4["Multi-view 3D reconstruction"]
-    A4 --> A5["Posed 3D geometry"]
+  subgraph PA["Pipeline A - Nameplate + Brochure (Ava Harken)"]
+    A1["Nameplate photo"] --> A2["OCR: read model / serial #"]
+    A3["Brochure / datasheet PDF"] --> A4["Document parsing: specs, part numbers"]
+    A2 --> A5["Matched product identity"]
+    A4 --> A5
   end
-  subgraph PB["Pipeline B - Nameplate + Brochure (Ava Harken)"]
-    B1["Nameplate photo"] --> B2["OCR: read model / serial #"]
-    B3["Brochure / datasheet PDF"] --> B4["Document parsing: specs, part numbers"]
-    B2 --> B5["Matched product identity"]
-    B4 --> B5
+  subgraph PB["Pipeline B - Video + Photos (Daniel Sweet)"]
+    B1["Facility walkthrough video"] --> B2["Segment + track objects"]
+    B3["Machine / component photos"] --> B2
+    B2 --> B4["Multi-view 3D reconstruction"]
+    B4 --> B5["Posed 3D geometry"]
   end
   subgraph PC["Pipeline C - Layout + Schematic (Shankar Kiran Ragavender)"]
     C1["Facility layout drawing"] --> C2["Layout parsing: spatial placement"]
@@ -196,8 +200,8 @@ flowchart TB
 
 | Pipeline | Owner | Inputs | Candidate techniques (from research) |
 |---|---|---|---|
-| A | Daniel Sweet | Walkthrough video, machine/component photos | SAM 3 / SAM 2 for segmentation and tracking; VGGT for multi-view reconstruction |
-| B | Ava Harken | Nameplate photos, brochures/datasheets | Ocean-OCR for scene text; document parsing |
+| A | Ava Harken | Nameplate photos, brochures/datasheets | Ocean-OCR for scene text; document parsing |
+| B | Daniel Sweet | Walkthrough video, machine/component photos | SAM 3 / SAM 2 for segmentation and tracking; VGGT for multi-view reconstruction |
 | C | Shankar Kiran Ragavender | Layout drawings, schematic illustrations | Drawing/schematic interpretation to structured geometry and kinematics (approach not chosen) |
 | D | Sarkis Nazaryan | PDF catalogs, online catalogs/specs | Catalog extraction; Octopart-style parts APIs for electronic components; web search for other equipment |
 
@@ -238,54 +242,62 @@ stateDiagram-v2
 
 ---
 
-## Technology stack (proposal)
+## Technology stack
 
-**Not yet approved.** The options below come from the team's weekly research, and none has been tested as of yet.
+**Decided Oct 16, 2026 (Option A).** Our advisors left the stack to us.
 
-| Option | Summary |
+| Layer | Choice |
 |---|---|
-| A | Python backend (FastAPI) + task queue (Celery) + React/TypeScript dashboard + Docker + a graph database via its Python driver |
-| B | All Python, with a Gradio interface (lowest effort if the dashboard stays simple) |
-| C | Node/TypeScript backend with Python workers |
+| Backend | Python, FastAPI |
+| Task queue | Celery |
+| Dashboard | React + TypeScript (barebones first) |
+| Packaging | Docker |
+| Knowledge base | Neo4j through its Python driver; the proof of concept uses a simple store behind the same interface |
+| Output | OpenUSD (`.usd`) for NVIDIA Omniverse and Isaac Sim, targeting the most recent releases |
+| AI model and agent runtime | To be researched while we build |
 
-What the research found:
-
-- The similar projects reviewed (including two from Dr. Li's lab, AHa-3D, and NVlabs SAGE) are all Python-based research repositories.
-- Isaac Sim can run headless and has a Docker container that needs the NVIDIA Container Toolkit.
-- NVIDIA's Omniverse Web Viewer sample is React + TypeScript + Vite, so a live 3D view in the dashboard (a team wish, not a requirement) is possible in principle with a React front end and a GPU server.
-- Isaac Sim's own livestream has no authentication or encryption, which matters for any shared deployment.
-- **Neo4j** is likely the best suggestion for the knowledge graph. The AI model and agent runtime are also undecided.
+Two alternatives were considered in our Oct 6 research: an all-Python stack with a Gradio interface, and a Node/TypeScript backend with Python workers. The similar projects we reviewed (including two from Dr. Li's lab, AHa-3D, and NVlabs SAGE) are all Python-based. NVIDIA's Omniverse Web Viewer sample is React + TypeScript + Vite, so a live 3D view in the dashboard (a wish, not a requirement) is possible in principle. Isaac Sim's own livestream has no authentication or encryption, which matters for any shared deployment.
 
 ### Hardware notes
 
-- NVIDIA's Isaac Sim requirements page lists a minimum of GeForce RTX 4080 (16 GB) and states that GPUs without RT Cores (A100, H100) are not supported.
+- For now we run a locally hosted instance on the team's own GeForce RTX 4090 (24 GB) under Windows 11.
+- The latest Isaac Sim release is 6.2.0 (October 2026). Its requirements page lists Ubuntu 22.04/24.04 or Windows 11, a minimum of GeForce RTX 4080 (16 GB), and states that GPUs without RT Cores (A100, H100) are not supported.
 - TRELLIS.2, one candidate image-to-3D model, lists a requirement of an NVIDIA GPU with at least 24 GB; its README says it was verified on A100 and H100 and tested only on Linux.
-- Which GPUs the team can use beyond its own machines is still an open question.
 
 ---
 
+## Proof of concept
+
+The next phase. It must show that an AI agent can create a digital twin, in some capacity, from one input type.
+
+- **Input:** machine photos to start (video is required in the final product), sourced online until test photos from Dr. Li's lab arrive.
+- **Subject:** one well-known, relatively simple machine that has joints and control logic.
+- **Minimum result:** a scaled 3D model with cited facts; the aim is also one working joint, then control logic.
+- **Pass criteria:** the `.usd` opens in the target Isaac Sim version, a joint moves, and a second request for the same machine reuses the stored twin and says so.
+- **Human review:** expected in v1; later versions will let the user set how much human input is needed.
+
 ## Test data
 
-The faculty advisor suggested a small, standardized test set: his own lab as a controlled capture environment, plus product data from six websites (BHS, Inc.; Made-in-China.com; Wheeler Machinery Sales; Grizzly Industrial; MASCO; and a Haas Automation model guide). These sources vary in reliability from personal testings.
+The faculty advisor suggested a small, standardized test set: his own lab as a controlled capture environment (test inputs are coming from his lab), plus product data from six websites (BHS, Inc.; Made-in-China.com; Wheeler Machinery Sales; Grizzly Industrial; MASCO; and a Haas Automation model guide). These sources vary in reliability; the marketplace site in particular needs spot-checking.
 
 ---
 
 ## Roadmap
 
-Planned order of work. No dates are committed.
+Planned order of work. Green is done, yellow is current. No dates are committed yet.
 
 ```mermaid
 flowchart LR
-  R["Research<br/>done"]:::done --> SRS["Requirements (SRS)<br/>in progress"]:::active
-  SRS --> STACK["Stack and open decisions"]:::next
-  STACK --> PLAT["Shared platform<br/>dashboard, backend, knowledge base"]:::next
-  PLAT --> PIPE["Input pipelines A-D<br/>two inputs per team member"]:::next
-  PIPE --> FUNC["Functional fidelity<br/>moving parts + control logic"]:::next
+  R["Research"]:::done --> ARCH["Architecture, surveys,<br/>sketches and Figma"]:::done
+  ARCH --> SRS["Requirements (SRS)"]:::done
+  SRS --> POC["Proof of concept"]:::active
+  POC --> INT["Integration<br/>shared platform + pipelines A-D"]:::next
+  INT --> FUNC["Functional fidelity<br/>moving parts + control logic"]:::next
   FUNC --> EVAL["Evaluate on the<br/>standardized test set"]:::next
 
-  classDef done fill:#d4edda,stroke:#2f6f62
-  classDef active fill:#fff3cd,stroke:#b8860b
-  classDef next fill:#f1f1f1,stroke:#888
+  classDef done fill:#d4edda,stroke:#2f6f62,color:#1a1a1a
+  classDef active fill:#fff3cd,stroke:#b8860b,color:#1a1a1a
+  classDef next fill:#f1f1f1,stroke:#888,color:#1a1a1a
 ```
 
 ---
@@ -294,6 +306,17 @@ flowchart LR
 
 | Decision | State |
 |---|---|
+| AI model and agent runtime | To be researched while we build |
+| Owners for non-pipeline components | Deferred until the proof of concept works |
+| Live 3D view in the dashboard | Wished for, not a requirement |
+| Time targets for a build | None for now; metrics will come from testing |
+| Using a "digital cousin" as a fallback (in the ACDC paper, an asset that does not model a specific real-world counterpart but keeps similar geometry and semantics) | Accepted by our advisors for later; not in the proof of concept |
+| Spatial Web (HSML/HSTP) interoperability | Stretch goal |
+| Milestone dates | To be defined |
+
+Decided on Oct 16, 2026: the technology stack (Option A), Neo4j for the knowledge base, the product name, the pipeline-to-orchestrator data flow, the definition of "functional", and the proof-of-concept scope.
+
+---|---|
 | Technology stack | Options researched; team decision pending |
 | Knowledge graph technology (Neo4j suggested) | Suggestion only |
 | AI model / agent runtime | Not decided |
@@ -324,10 +347,10 @@ California State University, Northridge (CSUN), Computer Science capstone.
 
 | Name | Role |
 |---|---|
-| Daniel Sweet | Team lead; Pipeline A (video + machine/component photos) |
-| Ava Harken | Technical Lead; Pipeline B (nameplates + brochures/datasheets) |
-| Shankar Kiran Ragavender | Pipeline C (layout drawings + schematics) |
+| Daniel Sweet | Technical lead; Pipeline B (video + machine/component photos) |
+| Ava Harken | Product owner; Pipeline A (nameplates + brochures/datasheets) |
 | Sarkis Nazaryan | Pipeline D (PDF catalogs + online catalog/spec resources) |
+| Shankar Kiran Ragavender ("Kiran") | Pipeline C (layout drawings + schematics) |
 
 **Course instructor:** Professor Xunfei Jiang
 
@@ -338,6 +361,23 @@ California State University, Northridge (CSUN), Computer Science capstone.
 
 ---
 
+## Repository contents
+
+| Path | What it holds |
+|---|---|
+| `CLAUDE.md` | Project instructions for Claude Code (rules, layout, commands, workflow) |
+| `.claude/settings.json` | Shared Claude Code permissions (tests, commits, and PRs allowed; installs ask first) |
+| `docs/methodology.md` | How we work: research, decide, build, verify, document |
+| `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |
+| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator) |
+| `docs/worklog/` | Dated work entries |
+| `docs/research/` | Research notes and the project context file |
+| `docs/setup/` | Windows and Hugging Face setup guides |
+| `backend/` | Python package `moonwalkers`; the shared pipeline contract and its tests |
+| `data/` | Local test data and outputs (gitignored except its README) |
+
+Source code beyond the contract arrives with the proof of concept.
+
 ## License
 
-No license has been chosen yet for thie repository. Until one is added the default copyright applies, meaning no one else may reproduce, distribute, or create derivative works from the code.
+No license has been chosen yet; GitHub's documentation notes that default copyright applies, meaning no one else may reproduce, distribute, or create derivative works from the code.

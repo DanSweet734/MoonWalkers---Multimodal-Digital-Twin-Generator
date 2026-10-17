@@ -1,0 +1,161 @@
+{
+  "schema_version": "0.1.0",
+  "result_id": "res-0001",
+  "job_id": "job-0001",
+  "pipeline": "B",
+  "input_types": ["machine_photo"],
+  "produced_at": "2026-10-16T12:00:00Z",
+  "produced_by": "pipeline-b 0.1.0 (illustrative example, not a real run)",
+  "sources": [
+    {
+      "source_id": "src-photo-1",
+      "kind": "url",
+      "input_type": "machine_photo",
+      "uri": "https://www.haas.co.uk/wp-content/uploads/2019/10/HA5C_2011.original-1024x768.jpg",
+      "title": "HA5C product photo (Haas UK)",
+      "retrieved_at": "2026-10-16T12:00:00Z",
+      "license_note": "Manufacturer image; internal testing only"
+    },
+    {
+      "source_id": "src-product-page",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://haas.co.uk/?p=2253",
+      "title": "HA5C product page (Haas UK)",
+      "retrieved_at": "2026-10-16T12:00:00Z"
+    },
+    {
+      "source_id": "src-layout-drawing",
+      "kind": "url",
+      "input_type": "layout_drawing",
+      "uri": "https://www.haas.co.uk/wp-content/uploads/2019/10/HA5C_Dimensions.pdf",
+      "title": "HA5C Layout Drawing, Revision B, September 17, 2013",
+      "retrieved_at": "2026-10-16T12:00:00Z"
+    },
+    {
+      "source_id": "src-manual-2006",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---ha5c-indexer-operator's-manual---2006.pdf",
+      "title": "HA5C Indexer Operator's Manual (2006)",
+      "retrieved_at": "2026-10-16T12:00:00Z"
+    },
+    {
+      "source_id": "src-user-calibration",
+      "kind": "user_input",
+      "uri": "user",
+      "title": "User confirmed center height as the scale reference",
+      "retrieved_at": "2026-10-16T12:00:00Z"
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "HA5C",
+    "category": "rotary indexer (5C collet)",
+    "aliases": ["HA5C indexer"],
+    "confidence": 0.9,
+    "citations": [
+      {"source_id": "src-product-page", "quote": "5C Collet Servo Rotary Head with Manual Collet Closer."}
+    ]
+  },
+  "facts": [
+    {
+      "key": "center_height",
+      "value": 0.1016,
+      "unit": "m",
+      "original": "4.000 ± 0.001\"",
+      "confidence": 0.95,
+      "citations": [
+        {"source_id": "src-product-page"},
+        {"source_id": "src-layout-drawing"}
+      ]
+    },
+    {
+      "key": "max_spindle_speed",
+      "value": 7.156,
+      "unit": "rad/s",
+      "original": "0.001 to 410 °/sec",
+      "confidence": 0.7,
+      "citations": [
+        {"source_id": "src-product-page", "quote": "0.001 to 410 °/sec"}
+      ]
+    },
+    {
+      "key": "gear_ratio",
+      "value": "60:1",
+      "original": "60:1 self locking worm gear (33:1 HA5CSB)",
+      "confidence": 0.8,
+      "citations": [
+        {"source_id": "src-manual-2006", "quote": "60:1 self locking worm gear (33:1 HA5CSB)"}
+      ]
+    }
+  ],
+  "parts": [
+    {
+      "part_id": "body",
+      "name": "Indexer housing",
+      "geometry_file": "twins/haas-ha5c/v1/body.glb",
+      "geometry_format": "glb",
+      "generator": {"name": "image-to-3d (to be chosen)", "params": {}},
+      "citations": [{"source_id": "src-photo-1"}]
+    },
+    {
+      "part_id": "spindle",
+      "name": "Spindle and collet nose",
+      "geometry_file": "twins/haas-ha5c/v1/spindle.glb",
+      "geometry_format": "glb",
+      "citations": [{"source_id": "src-photo-1"}]
+    }
+  ],
+  "scale": {
+    "method": "known_dimension",
+    "reference": "center_height",
+    "known_value_m": 0.1016,
+    "citations": [
+      {"source_id": "src-user-calibration"},
+      {"source_id": "src-layout-drawing"}
+    ]
+  },
+  "joints": [
+    {
+      "joint_id": "spindle_rotation",
+      "joint_type": "revolute",
+      "parent_part": "body",
+      "child_part": "spindle",
+      "axis": [1.0, 0.0, 0.0],
+      "origin_m": [0.0, 0.0, 0.1016],
+      "max_velocity": 7.156,
+      "confidence": 0.6,
+      "citations": [
+        {"source_id": "src-product-page", "quote": "0.001 to 410 °/sec"},
+        {"source_id": "src-layout-drawing"}
+      ]
+    }
+  ],
+  "control": [
+    {
+      "behavior_id": "index_program",
+      "name": "Indexing program (absolute / incremental steps)",
+      "kind": "program_interpreter",
+      "description": "Steps the spindle to programmed angles; each cycle start runs the next step.",
+      "drives_joints": ["spindle_rotation"],
+      "spec": {
+        "modes": {"G90": "absolute", "G91": "incremental"},
+        "step_range_deg": [0.001, 999.999],
+        "loop_count_max": 999
+      },
+      "confidence": 0.7,
+      "citations": [
+        {"source_id": "src-manual-2006", "quote": "G90 and G91 are used to select absolute (G90) or incremental (G91) motion"},
+        {"source_id": "src-manual-2006", "quote": "Loop Counts allow you to repeat a step up to 999 times"}
+      ]
+    }
+  ],
+  "issues": [
+    {"severity": "info", "message": "Illustrative example: geometry files are placeholders until Pipeline B runs."},
+    {"severity": "warning", "message": "Spindle axis direction assumed along +X; measure from the mesh before export.", "ref": "spindle_rotation"},
+    {"severity": "warning", "message": "Max speed differs across Haas sources (410 vs 330/320 deg/s); using the Haas UK product page.", "ref": "max_spindle_speed"},
+    {"severity": "info", "message": "Generated meshes are one piece; the body/spindle split is a separate step."}
+  ],
+  "needs_human_review": true
+}
