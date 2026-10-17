@@ -1,8 +1,8 @@
 # 0009 - Machine keys, twin reuse, and re-versioning
 
-- **Status:** proposed (Claude Code, Phase 1; for team review in the Phase 1 pull request)
+- **Status:** accepted (proposed by Claude Code in Phase 1; Daniel reviewed and approved on 2026-10-17)
 - **Date:** 2026-10-16
-- **Decided by:** pending team review
+- **Decided by:** team (Daniel)
 
 ## Context
 PoC pass criterion: "a second request for the same machine reuses the stored twin and says so"

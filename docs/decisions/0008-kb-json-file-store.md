@@ -1,8 +1,8 @@
 # 0008 - PoC knowledge base store: one JSON file per record
 
-- **Status:** proposed (Claude Code, Phase 1; for team review in the Phase 1 pull request)
+- **Status:** accepted (proposed by Claude Code in Phase 1; Daniel reviewed and approved on 2026-10-17)
 - **Date:** 2026-10-16
-- **Decided by:** pending team review
+- **Decided by:** team (Daniel)
 
 ## Context
 Decision 0005 puts the knowledge base behind a `KnowledgeBase` interface and leaves the PoC store as
