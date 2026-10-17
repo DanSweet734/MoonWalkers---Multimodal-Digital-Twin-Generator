@@ -8,5 +8,5 @@
 - `2026-10-17-usd-physics-for-isaac-sim.md` - how to write a simulatable twin as OpenUSD for Isaac Sim 6.2
   (units, articulations, joints, drives, colliders, mass) and what each validator catches.
 
-Note: `project-context.md` summarizes internal material shared by Dr. Li's lab. Keep this repository private
-while it contains that file, or remove the file before making the repository public.
+Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
+Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.
