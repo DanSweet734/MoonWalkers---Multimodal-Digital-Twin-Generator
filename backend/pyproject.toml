@@ -5,6 +5,7 @@ description = "Backend for the MoonWalkers Multimodal Agentic Digital Twin Gener
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic>=2.14,<3",
+    "usd-core>=26.8,<27",
 ]
 
 [build-system]
@@ -16,7 +17,8 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+# ruff's default rule set, plus all pycodestyle errors (line length) and import sorting (decision 0007)
+extend-select = ["E", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -28,6 +30,7 @@ markers = [
 
 [dependency-groups]
 dev = [
+    "omniverse-asset-validator>=1.18,<2",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
 ]
