@@ -123,12 +123,39 @@ joints. So our validator now also reads the joint prims directly.
   masses are only the 1000 kg/m^3 default.
 - [INFERENCE] Run both validators: each catches problems the other misses.
 
+## Isaac Sim 6.2.0 check (2026-10-17, by Daniel)
+Versions from the Kit log (`kit_20261017_111353.log`):
+- `App Name: 'Isaac-Sim Full', App Version: '6.2.0', Kit Version: '110.4.0+feature.386251.187cf21b.gl'`
+- omni.physx, omni.physics and omni.usdphysics 110.4.4; isaacsim.core.api 5.3.2
+- NVIDIA driver 617.42; Windows 11 Pro build 26200
+
+Seen:
+- Both test files opened with nothing else needed and behaved as `docs/setup/isaac-sim-check.md`
+  describes. `spin.usda` turned steadily; in `quarter_turn.usda` the spindle turned 90 deg and settled
+  in about two seconds (Daniel's estimate).
+- The viewport was lit by a directional light that is not in the file, so Isaac Sim lights a stage
+  that has none.
+- The log has 0 errors and 14 warnings. The one relevant to us comes from
+  `isaacsim.core.throttling.extension`: "The current USD stage has no usable time-code range.
+  Timeline playback will loop over a single frame, which prevents time-accumulating sensors and
+  controllers from producing output. Author distinct startTimeCode and endTimeCode values in the
+  root layer before playing."
+- The other warnings are not about our files [INFERENCE: the "Unexpected reference count" warning
+  also appears for Isaac Sim's own startup stage, and the rest come from Isaac Sim extensions]:
+  skipping the non-NVIDIA Intel GPU, no material configuration file, `pxr.Semantics` deprecated, an
+  `omni.anim.graph.core` node registration, an omniclient empty URL, and "Unexpected reference
+  count" on stage close.
+
 ## Open questions (not confirmed)
-- Whether Isaac Sim needs a PhysicsScene in the file, or creates one on Play. We write one outside
-  the twin's root, so referencing stages do not inherit it.
+- Whether Isaac Sim needs a PhysicsScene in the file. Our files include one and work; a file without
+  one was not tried, which the PoC does not need.
 - How PhysX scales stiffness and damping for an acceleration drive with degree-based USD values. The
-  tuning (stiffness 100, damping 20) is checked by watching the spindle in Isaac Sim.
-- Whether Isaac Sim's viewport lights a stage that has no lights.
+  observed settle time (about 2 s, judged by eye) is slower than my estimate of under a second for
+  w = 10 rad/s. The gap may come from how PhysX scales the values, or from where "settled" was judged
+  by eye; not confirmed. Phase 6 should measure settle times in a scripted run before indexing speed
+  matters.
 - The exact attribute name and units for `maxJointVelocity` on PhysxJointAxisAPI, if we want to
   write the HA5C's cited 410 deg/s. Deferred to Phase 6.
 - Which collider to use for the real HA5C meshes (convex decomposition or SDF). Decided in Phase 3.
+- Which start and end time codes to author (the warning above needs only distinct values). Decided
+  with the Phase 3 export.

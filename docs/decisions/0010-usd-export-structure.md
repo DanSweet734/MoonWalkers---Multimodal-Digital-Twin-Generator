@@ -1,8 +1,8 @@
 # 0010 - How twins are written as OpenUSD for Isaac Sim
 
-- **Status:** proposed (Claude Code, Phase 2; for team review in the Phase 2 pull request)
+- **Status:** accepted (proposed by Claude Code in Phase 2; Daniel reviewed and approved on 2026-10-17)
 - **Date:** 2026-10-17
-- **Decided by:** pending team review
+- **Decided by:** team (Daniel)
 
 ## Context
 Phase 2 of `docs/poc-plan.md` needs an exporter that writes a twin as a `.usda` with correct units,
@@ -74,3 +74,15 @@ Implemented in `backend/src/moonwalkers/usd/`:
   not define; deferred to Phase 6.
 - The drive tuning is our assumption and may change after the Isaac Sim check.
 - Changing any of these means editing `exporter.py` and its tests; the contract is untouched.
+
+## Review and Isaac Sim check (2026-10-17)
+- **Daniel's review:** keep the drive tuning; use the default density whenever no source gives a
+  mass or density; prismatic joints may be needed later (for example on the backup drill press).
+- **Isaac Sim 6.2.0** (App Version 6.2.0, Kit 110.4.0, omni.physx 110.4.4) opened both test files
+  with nothing else needed, and they behaved as expected. `spin.usda` turned steadily at 30 deg/s
+  with the base still. In `quarter_turn.usda` the spindle turned 90 deg and settled in about two
+  seconds (Daniel's estimate). The log shows 0 errors.
+- **Follow-up for Phase 3:** Isaac Sim warns that the stage "has no usable time-code range", which
+  "prevents time-accumulating sensors and controllers from producing output", and advises: "Author
+  distinct startTimeCode and endTimeCode values in the root layer before playing." The exporter
+  will author a time range when the HA5C is exported, so the next Isaac Sim check covers it.

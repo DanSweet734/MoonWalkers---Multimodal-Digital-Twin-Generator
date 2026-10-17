@@ -92,6 +92,9 @@ Dashboard (run from `dashboard/`):
 - Open a pull request with `gh pr create` when a phase or task is complete. PR description must list:
   what changed, how it was tested, docs updated, open questions.
 - Never force-push, never rewrite pushed history.
+- While `docs/research/project-context.md` is in the repository, the GitHub repo must stay private:
+  run `gh repo view --json visibility` before pushing or opening a pull request (on 2026-10-17 the
+  repo was found public and made private).
 
 ## Documentation workflow (do this for every task)
 - Append a dated entry to `docs/worklog/YYYY-MM-DD.md`: goal, what you did, commands run, results

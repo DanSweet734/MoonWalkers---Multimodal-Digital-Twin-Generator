@@ -56,9 +56,8 @@ This writes `spin.usda`, `quarter_turn.usda` and `RUN.md` into the run folder.
    times faster.
 
 ## 4. Check `quarter_turn.usda`
-Open it and press **Play**. Expected: the spindle turns 90 degrees and then holds still. With our
-drive tuning we expect this to take under about a second [INFERENCE]; the exact time is not
-confirmed.
+Open it and press **Play**. Expected: the spindle turns 90 degrees and then holds still. With the
+current drive tuning this took about two seconds on 2026-10-17 (Daniel's estimate).
 
 ## 5. Record what you saw
 In the run folder's `RUN.md`, under "Isaac Sim check", note:
@@ -69,10 +68,27 @@ In the run folder's `RUN.md`, under "Isaac Sim check", note:
 
 Screenshots stay in the run folder (not in git); describe them in the worklog.
 
+## Warnings you can ignore
+The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
+not about the twin files:
+- "Skipping unsupported non-NVIDIA GPU" (the integrated Intel GPU);
+- "No material configuration file";
+- "Unexpected reference count ... while being closed in UsdContext" (also appears for Isaac Sim's own
+  startup stage);
+- `pxr.Semantics is deprecated`;
+- an `omni.anim.graph.core` node-registration message;
+- an omniclient "rejecting empty URL".
+
+One warning *is* about our files: the stage "has no usable time-code range". It does not affect
+these checks. The exporter will set a time range in Phase 3, before controllers need it.
+
+Isaac Sim lit the stage with a directional light that is not in the file, so the files do not need
+their own lights.
+
 ## If something looks wrong
 - **Nothing moves on Play:** copy any console errors. Check that the joint shows an angular drive in
   the Property panel.
 - **The spindle drops or flies away:** the joint is not holding it. Copy the console messages.
 - **The spindle turns about the wrong axis, or wobbles:** the joint frame or axis is wrong.
-- **The view is black:** the file has no lights. Adding a dome light from the Create menu should help
-  (not confirmed for 6.2).
+- **The view is black:** Isaac Sim normally adds a light (see above). If it does not, add a dome
+  light from the Create menu (not confirmed for 6.2).
