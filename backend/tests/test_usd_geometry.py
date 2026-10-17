@@ -1,6 +1,7 @@
-"""Primitive part meshes: right size, right place, faces wound outward."""
+"""Primitive part meshes: right size and place, closed and welded, faces wound outward."""
 
 import math
+from collections import Counter
 
 import pytest
 from pydantic import ValidationError
@@ -18,49 +19,60 @@ CYLINDER_X = {
 }
 
 
-def newell_normal(points):
-    """Face normal by Newell's method; follows the right-hand rule for the vertex order."""
-    nx = ny = nz = 0.0
-    for i, (x0, y0, z0) in enumerate(points):
-        x1, y1, z1 = points[(i + 1) % len(points)]
-        nx += (y0 - y1) * (z0 + z1)
-        ny += (z0 - z1) * (x0 + x1)
-        nz += (x0 - x1) * (y0 + y1)
-    return nx, ny, nz
-
-
-def assert_faces_point_outward(mesh: MeshData, center) -> None:
-    for face in mesh.faces():
-        pts = [mesh.points[i] for i in face]
-        n = newell_normal(pts)
-        centroid = [sum(c) / len(pts) for c in zip(*pts, strict=True)]
-        outward = [c - o for c, o in zip(centroid, center, strict=True)]
-        assert sum(a * b for a, b in zip(n, outward, strict=True)) > 0
-
-
 def assert_close(a, b, tol: float = 1e-12) -> None:
     assert all(math.isclose(x, y, abs_tol=tol) for x, y in zip(a, b, strict=True)), (a, b)
 
 
+def assert_faces_point_outward(mesh: MeshData, center) -> None:
+    for face, normal in zip(mesh.faces(), mesh.face_normals(), strict=True):
+        pts = [mesh.points[i] for i in face]
+        centroid = [sum(c) / len(pts) for c in zip(*pts, strict=True)]
+        outward = [c - o for c, o in zip(centroid, center, strict=True)]
+        assert sum(a * b for a, b in zip(normal, outward, strict=True)) > 0
+
+
+def assert_closed_and_welded(mesh: MeshData) -> None:
+    """No duplicate points, and every edge is shared by exactly two faces in opposite directions."""
+    assert len(set(mesh.points)) == len(mesh.points)
+    directed = Counter()
+    for face in mesh.faces():
+        for a, b in zip(face, face[1:] + face[:1], strict=True):
+            directed[(a, b)] += 1
+    assert all(count == 1 for count in directed.values())
+    assert all((b, a) in directed for a, b in directed)
+
+
 def test_box_mesh() -> None:
     mesh = primitive_mesh(BOX)
-    assert len(mesh.points) == 24
+    assert len(mesh.points) == 8
     assert mesh.face_vertex_counts == (4,) * 6
     lo, hi = mesh.extent()
     assert_close(lo, (-0.1, -0.08, 0.0))
     assert_close(hi, (0.1, 0.08, 0.14))
+    assert_closed_and_welded(mesh)
     assert_faces_point_outward(mesh, (0.0, 0.0, 0.07))
+
+
+def test_box_face_normals_are_the_axes() -> None:
+    normals = primitive_mesh(BOX).face_normals()
+    expected = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)]
+    for normal, axis in zip(normals, expected, strict=True):
+        assert_close(normal, axis)
 
 
 def test_cylinder_mesh_along_x() -> None:
     mesh = primitive_mesh(CYLINDER_X)
-    assert len(mesh.points) == 6 * 8
+    assert len(mesh.points) == 2 * 8
     assert mesh.face_vertex_counts == (4,) * 8 + (8, 8)
     lo, hi = mesh.extent()
     assert math.isclose(lo[0], 0.10) and math.isclose(hi[0], 0.16)
-    for _x, y, z in mesh.points:  # every point lies on the cylinder surface or a cap edge
+    for _x, y, z in mesh.points:  # every point lies on a cap's rim
         assert math.isclose(math.hypot(y, z - 0.1), 0.03)
+    assert_closed_and_welded(mesh)
     assert_faces_point_outward(mesh, (0.13, 0.0, 0.1))
+    caps = mesh.face_normals()[-2:]
+    assert_close(caps[0], (1, 0, 0), tol=1e-9)  # top cap faces along +axis
+    assert_close(caps[1], (-1, 0, 0), tol=1e-9)
 
 
 def test_cylinder_defaults_to_z_axis_and_32_segments() -> None:

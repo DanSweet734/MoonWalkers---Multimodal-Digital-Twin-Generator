@@ -8,9 +8,9 @@ contract leaves that dictionary open; these are the shapes the exporter understa
      "center_m": [0.13, 0, 0.1], "segments": 32}
 
 Primitives become polygon meshes so they take the same path through the exporter as the meshes
-that Pipeline B will produce in Phase 3. Faces do not share vertices, so they render with flat
-shading, and every face is wound counter-clockwise seen from outside (USD's default right-handed
-orientation).
+that Pipeline B will produce in Phase 3. Faces share their corner points (a closed, welded mesh),
+every face is wound counter-clockwise seen from outside (USD's default right-handed orientation),
+and ``face_normals`` gives the flat normal of each face for rendering.
 """
 
 from __future__ import annotations
@@ -55,6 +55,19 @@ class MeshData:
             faces.append(self.face_vertex_indices[start : start + count])
             start += count
         return faces
+
+    def face_normals(self) -> list[Vec3]:
+        """The unit normal of each face (Newell's method), following the right-hand rule."""
+        normals = []
+        for face in self.faces():
+            nx = ny = nz = 0.0
+            for i, j in zip(face, face[1:] + face[:1], strict=True):
+                (x0, y0, z0), (x1, y1, z1) = self.points[i], self.points[j]
+                nx += (y0 - y1) * (z0 + z1)
+                ny += (z0 - z1) * (x0 + x1)
+                nz += (x0 - x1) * (y0 + y1)
+            normals.append(normalize((nx, ny, nz)))
+        return normals
 
 
 class _Primitive(BaseModel):
@@ -113,13 +126,15 @@ _BOX_FACES: tuple[tuple[tuple[int, int, int], ...], ...] = (
 )
 
 
+_BOX_CORNERS = tuple((sx, sy, sz) for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1))
+
+
 def box_mesh(box: BoxPrimitive) -> MeshData:
     hx, hy, hz = (s / 2.0 for s in box.size_m)
     cx, cy, cz = box.center_m
-    points = tuple(
-        (cx + sx * hx, cy + sy * hy, cz + sz * hz) for face in _BOX_FACES for sx, sy, sz in face
-    )
-    return MeshData(points, (4,) * 6, tuple(range(24)))
+    points = tuple((cx + sx * hx, cy + sy * hy, cz + sz * hz) for sx, sy, sz in _BOX_CORNERS)
+    indices = tuple(_BOX_CORNERS.index(corner) for face in _BOX_FACES for corner in face)
+    return MeshData(points, (4,) * 6, indices)
 
 
 def cylinder_mesh(cylinder: CylinderPrimitive) -> MeshData:
@@ -127,17 +142,17 @@ def cylinder_mesh(cylinder: CylinderPrimitive) -> MeshData:
     angles = [2 * math.pi * i / n for i in range(n)]
     ring = [(r * math.cos(a), r * math.sin(a)) for a in angles]
 
-    local: list[Vec3] = []
-    counts: list[int] = []
+    # Points 0..n-1 are the bottom ring (z = -h), n..2n-1 the top ring (z = +h).
+    local = [(x, y, -h) for x, y in ring] + [(x, y, h) for x, y in ring]
+    indices: list[int] = []
     for i in range(n):  # side quads, one per segment
-        (x0, y0), (x1, y1) = ring[i], ring[(i + 1) % n]
-        local += [(x0, y0, -h), (x1, y1, -h), (x1, y1, h), (x0, y0, h)]
-        counts.append(4)
-    local += [(x, y, h) for x, y in ring]  # top cap, counter-clockwise seen from +z
-    local += [(x, y, -h) for x, y in reversed(ring)]  # bottom cap, seen from -z
-    counts += [n, n]
+        j = (i + 1) % n
+        indices += [i, j, n + j, n + i]
+    indices += [n + i for i in range(n)]  # top cap, counter-clockwise seen from +z
+    indices += list(reversed(range(n)))  # bottom cap, counter-clockwise seen from -z
+    counts = (4,) * n + (n, n)
 
     q = quat_between((0.0, 0.0, 1.0), cylinder.axis)
     cx, cy, cz = cylinder.center_m
     points = tuple((cx + px, cy + py, cz + pz) for px, py, pz in (rotate(q, p) for p in local))
-    return MeshData(points, tuple(counts), tuple(range(len(points))))
+    return MeshData(points, counts, tuple(indices))
