@@ -17,7 +17,7 @@ on request, using stub pipelines; no 3D model or `.usd` is generated yet.
 | Background research (digital twins, image-to-3D models, agents, prior MoonWalkers work) | Done |
 | Scope and goals | Defined (see [What it does](#what-it-does)) |
 | Architecture design, surveys, sketches and Figma wireframes | Done |
-| Software Requirements Specification (SRS) | Drafted and reviewed section by section by the team |
+| Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
 | Proof of concept | **In progress.** Phases 0-1 done; Phase 2 (USD export) next. See [docs/poc-plan.md](docs/poc-plan.md) |
 | Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse and re-versioning), and a JSON-file knowledge base, all tested. Dashboard: Vite + React + TypeScript starter page |
@@ -374,4 +374,4 @@ everything are in the "Commands" section of `CLAUDE.md`.
 
 ## License
 
-No license has been chosen yet; GitHub's documentation notes that default copyright applies, meaning no one else may reproduce, distribute, or create derivative works from the code.
+No license has been chosen yet for this repository. Until one is added the default copyright applies, meaning no one else may reproduce, distribute, or create derivative works from the code.
