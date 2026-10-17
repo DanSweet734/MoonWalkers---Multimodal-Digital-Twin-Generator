@@ -54,7 +54,8 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
 - Windows 11, one NVIDIA GeForce RTX 4090 (24 GB). Prefer cross-platform code (pathlib, no bash-only scripts).
 - Python 3.12 managed with `uv`; FastAPI backend; Celery comes in the integration phase, not the PoC.
 - OpenUSD via `usd-core` (`pxr`, includes `UsdPhysics`). Joints use standard UsdPhysics schemas:
-  `ArticulationRootAPI`, `RevoluteJoint`, `DriveAPI`; body0 = parent, body1 = child.
+  `ArticulationRootAPI`, `RevoluteJoint`, `DriveAPI`; body0 = parent, body1 = child. Export layout
+  and rules: decision 0010 (`backend/src/moonwalkers/usd/`).
 - Target the most recent Isaac Sim (6.2.0 as of Oct 16, 2026) for manual verification.
 - Image-to-3D generators run in their **own** environment and are called as a subprocess through an
   adapter in `generators/`. Primary: Hunyuan3D-2mv (multi-view). Fallback: Stable Fast 3D (single image).
@@ -68,6 +69,9 @@ Backend (run from `backend/`):
 - Tests: `uv run pytest`; without GPU/slow tests: `uv run pytest -m "not gpu and not slow"`
 - Lint and format: `uv run ruff check .` and `uv run ruff format .` (check only: `uv run ruff format --check .`)
 - Regenerate the contract JSON Schema after a contract change: `uv run python -m moonwalkers.contracts.json_schema`
+- Write the box-and-cylinder test twin (Phase 2 check): `uv run python -m moonwalkers.usd.primitive_twin ../data/machines/moonwalkers-testindexer/runs/<run>`
+- Validate an exported twin: `uv run python -m moonwalkers.usd.validate <file.usda>`, then NVIDIA's `uv run omni_asset_validate <file.usda>`
+- Check a twin by eye in Isaac Sim: `docs/setup/isaac-sim-check.md`
 - API (dev, from Phase 5; FastAPI and uvicorn are not installed yet): `uv run uvicorn moonwalkers.api.app:app --reload`
 
 Dashboard (run from `dashboard/`):

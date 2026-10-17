@@ -27,10 +27,13 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       (Oct 16, 2026: branch `feat/phase-1-kb-orchestrator`)
 
 ## Phase 2 - USD export
-- [ ] Exporter writes a `.usda` with correct units (`metersPerUnit`), parts as meshes, and a
-      `PhysicsRevoluteJoint` with `ArticulationRootAPI` and an angular `DriveAPI`
-- [ ] Validation: open with `pxr`, check joints reference real prims; optional `omni_asset_validate`
+- [x] Exporter writes a `.usda` with correct units (`metersPerUnit`), parts as meshes, and a
+      `PhysicsRevoluteJoint` with `ArticulationRootAPI` and an angular `DriveAPI` (decision 0010)
+- [x] Validation: open with `pxr`, check joints reference real prims; optional `omni_asset_validate`
+      (both run in the test suite)
 - [ ] Manual check in Isaac Sim 6.2.0 with a primitive test model (box + cylinder) before real meshes
+      (files ready in `data/machines/moonwalkers-testindexer/runs/2026-10-17_run-001/`; waiting for
+      the Isaac Sim install; steps in `docs/setup/isaac-sim-check.md`)
 - [ ] Worklog with screenshots described; PR
 
 ## Phase 3 - Pipeline B (machine photos -> geometry)

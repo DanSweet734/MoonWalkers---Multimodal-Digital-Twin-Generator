@@ -9,8 +9,11 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 ## Project status
 
 **Proof of concept in progress: Phases 0 (scaffold) and 1 (knowledge base and orchestrator core) are
-done.** The orchestrator stores twin records, reuses a stored twin on a second request, and re-versions
-on request, using stub pipelines; no 3D model or `.usd` is generated yet.
+done, and Phase 2 (USD export) is built and waiting for its Isaac Sim check.** The orchestrator
+stores twin records, reuses a stored twin on a second request, and re-versions on request, using
+stub pipelines. The USD exporter writes simulatable twins (rigid bodies, a driven revolute joint,
+cited provenance) that pass two validators; so far only a synthetic box-and-cylinder test twin, not
+the HA5C.
 
 | Area | Status |
 |---|---|
@@ -19,8 +22,8 @@ on request, using stub pipelines; no 3D model or `.usd` is generated yet.
 | Architecture design, surveys, sketches and Figma wireframes | Done |
 | Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **In progress.** Phases 0-1 done; Phase 2 (USD export) next. See [docs/poc-plan.md](docs/poc-plan.md) |
-| Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse and re-versioning), and a JSON-file knowledge base, all tested. Dashboard: Vite + React + TypeScript starter page |
+| Proof of concept | **In progress.** Phases 0-1 done; Phase 2 (USD export) built, waiting for the manual Isaac Sim check. See [docs/poc-plan.md](docs/poc-plan.md) |
+| Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse and re-versioning), JSON-file knowledge base, and USD exporter + validator, all tested. Dashboard: Vite + React + TypeScript starter page |
 | Input pipelines | Pipelines A, C, D are stubs returning cited HA5C fixture data; Pipeline B (photos) is built in Phase 3. All four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
 Everything below describes the **planned design**. Anything marked *candidate* or *to be researched* has not been decided by the team.
@@ -361,11 +364,11 @@ California State University, Northridge (CSUN), Computer Science capstone.
 | `.claude/settings.json` | Shared Claude Code permissions (tests, commits, and PRs allowed; installs ask first) |
 | `docs/methodology.md` | How we work: research, decide, build, verify, document |
 | `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |
-| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning) |
+| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export) |
 | `docs/worklog/` | Dated work entries |
 | `docs/research/` | Research notes and the project context file |
 | `docs/setup/` | Windows and Hugging Face setup guides |
-| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), and tests |
+| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), USD exporter and validator (`usd/`), and tests |
 | `dashboard/` | Vite + React + TypeScript app (starter page for now) |
 | `data/` | Local test data and outputs (gitignored except its README) |
 
