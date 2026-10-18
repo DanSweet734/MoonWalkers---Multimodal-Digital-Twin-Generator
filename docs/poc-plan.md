@@ -79,7 +79,7 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       approve/reject reviews, Daniel's choice. A rejected version is never reused, decision 0015.
       Types generated from the API; `npm test` on Node's runner. Hand check in a browser by Daniel:
       `docs/setup/dashboard.md`)
-- [ ] PR
+- [x] PR (Oct 18, 2026: branch `feat/phase-5-api-dashboard`, PR #9)
 
 ## Phase 6 - Control logic (level 3)
 - [ ] Represent the indexing program as a `ControlBehavior`; a small interpreter that turns G90/G91
