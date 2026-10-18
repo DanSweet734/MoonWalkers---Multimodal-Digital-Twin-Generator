@@ -242,3 +242,40 @@ def test_result_for_the_wrong_job_is_rejected(
             JobRequest(job_id="job-1", sources=[make_source("plate", InputType.NAMEPLATE_PHOTO)])
         )
     assert kb.list_machines() == []
+
+
+def test_exporter_sets_the_usd_path_before_the_twin_is_stored(
+    kb: KnowledgeBase, pipeline_b: CountingPipeline, photo_inputs, clock
+) -> None:
+    exported: list[str] = []
+
+    def exporter(twin, results) -> str:
+        assert kb.get_twin(twin.machine_key) is None  # not stored yet
+        exported.append(twin.twin_id)
+        return f"machines/haas-ha5c/runs/run-1/{twin.version}.usda"
+
+    orchestrator = Orchestrator(kb, {PipelineId.B: pipeline_b}, clock=clock, exporter=exporter)
+    job = orchestrator.run_job(JobRequest(job_id="job-1", sources=photo_inputs))
+
+    assert exported == ["haas/ha5c@v1"]
+    assert job.twin.usd_path == "machines/haas-ha5c/runs/run-1/1.usda"
+    assert kb.get_twin("haas/ha5c") == job.twin
+    assert "Exported to machines/haas-ha5c/runs/run-1/1.usda." in job.message
+
+    again = orchestrator.run_job(JobRequest(job_id="job-2", sources=photo_inputs, machine=HA5C))
+    assert again.reused_existing and exported == [
+        "haas/ha5c@v1"
+    ]  # a reused twin is not re-exported
+
+
+def test_failed_export_stores_nothing(
+    kb: KnowledgeBase, pipeline_b: CountingPipeline, photo_inputs, clock
+) -> None:
+    def exporter(twin, results) -> str:
+        raise ValueError("export failed")
+
+    orchestrator = Orchestrator(kb, {PipelineId.B: pipeline_b}, clock=clock, exporter=exporter)
+    with pytest.raises(ValueError, match="export failed"):
+        orchestrator.run_job(JobRequest(job_id="job-1", sources=photo_inputs))
+    assert kb.list_machines() == []
+    assert kb.get_result("res-job-1-b") is None
