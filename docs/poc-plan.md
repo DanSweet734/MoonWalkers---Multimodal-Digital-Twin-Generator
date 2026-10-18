@@ -58,10 +58,16 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       `feat/phase-3-pipeline-b`; twin `haas/ha5c@v2`, both validators pass)
 
 ## Phase 4 - Agent via MCP
-- [ ] MCP server in `backend/src/moonwalkers/mcp/` exposing the platform's actions as tools
-- [ ] Project `.mcp.json` so Claude Code can connect; a written agent procedure in `docs/`
-- [ ] End-to-end run where Claude Code drives the tools to build the HA5C twin; transcript summary in worklog
-- [ ] PR
+- [x] MCP server in `backend/src/moonwalkers/mcp/` exposing the platform's actions as tools
+      (Oct 18, 2026: 15 tools on the MCP Python SDK 2.3, state in the run folder; decision 0013)
+- [x] Project `.mcp.json` so Claude Code can connect; a written agent procedure in `docs/`
+      (Oct 18: Claude Code 2.1.302 lists the server as a project server awaiting approval;
+      `docs/agent-procedure.md`)
+- [x] End-to-end run where Claude Code drives the tools to build the HA5C twin; transcript summary in worklog
+      (Oct 18, 2026: a fresh Claude Code session built `haas/ha5c@v3` through the tools, asked Daniel
+      which parts turn, and showed reuse on a second request. All 26 of its quotes check out. It read
+      the worklog before the documents, which Daniel accepted. Worklog 2026-10-18)
+- [x] PR (Oct 18, 2026: branch `feat/phase-4-mcp-agent`)
 
 ## Phase 5 - API and barebones dashboard
 - [ ] FastAPI endpoints for jobs, twins, sources

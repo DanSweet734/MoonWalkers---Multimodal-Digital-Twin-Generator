@@ -10,6 +10,9 @@
 - `2026-10-17-ha5c-photo-to-twin.md` - Phase 3: the HA5C photo and documents, the facts read from them
   (with quotes and pages), which drawing dimension is which, what turns with the spindle, Hunyuan3D-2's
   requirements and license, measurements on the generated mesh, reproducibility, and export findings.
+- `2026-10-18-mcp-server-for-claude-code.md` - Phase 4: the MCP Python SDK 2.3 (license, dependencies,
+  API, how errors and results reach the client), how Claude Code loads and limits project MCP servers,
+  and measurements on our server.
 
 Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
 Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.
