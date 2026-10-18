@@ -28,6 +28,13 @@
       "sha256": "f99f3492b700f7606b7982db4b6d61b908fa1cfd197e589272ac1ebb317dfea0",
       "retrieved_at": "2026-10-18T00:32:38Z",
       "license_note": "Haas Automation manual; local copy for internal research only, not redistributed"
+    },
+    {
+      "source_id": "src-daniel-drawing-reading",
+      "kind": "user_input",
+      "uri": "user",
+      "title": "Daniel Sweet's reading of the HA5C layout drawing's width dimension (Claude Code session, 2026-10-18)",
+      "retrieved_at": "2026-10-18T18:51:13Z"
     }
   ],
   "identity": {
@@ -141,12 +148,17 @@
       "value": 0.3891,
       "unit": "m",
       "original": "15.32\" (389.1 mm)",
-      "confidence": 0.7,
+      "confidence": 0.85,
       "citations": [
         {
           "source_id": "src-haas-layout-drawing",
-          "locator": "p. 1, Front View: the widest dimension, just above the view's label; read as the overall width [INFERENCE]",
+          "locator": "p. 1, Front View: the widest dimension, just above the view's label; spans the motor housing end to the lever tip (Daniel Sweet's reading of the drawing)",
           "quote": "15.32\" (389.1 mm)"
+        },
+        {
+          "source_id": "src-daniel-drawing-reading",
+          "locator": "answer to \"On the drawing PDF, what does the 15.32 in dimension span?\"",
+          "quote": "Motor end to lever tip"
         }
       ]
     },
@@ -242,7 +254,7 @@
     },
     {
       "severity": "warning",
-      "message": "[INFERENCE] The drawing's dimensions were matched to views by where their text sits on the page (pypdf text positions), without seeing the drawing: 15.32\" and 8.3\" sit by the Front View, 7.93\" by the Top View. A person should confirm them on the drawing, including whether 7.93\" includes the spindle nose.",
+      "message": "[INFERENCE] The drawing's dimensions were matched to views by where their text sits on the page (pypdf text positions): 15.32\" and 8.3\" sit by the Front View, 7.93\" by the Top View. Daniel Sweet read 15.32\" on the drawing as the full width, motor end to lever tip (2026-10-18). Whether 7.93\" is the overall depth, and whether it includes the spindle nose, is not confirmed.",
       "ref": "overall_depth"
     }
   ]
