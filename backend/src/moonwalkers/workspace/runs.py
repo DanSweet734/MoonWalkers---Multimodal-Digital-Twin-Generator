@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -202,6 +203,16 @@ class Workspace:
         if spec is not None:
             _write_json(run_dir / SPEC_FILE, spec.model_dump(mode="json"))
         return SpecState(tuple(p for p in SPEC_PARTS if p in parts), spec)
+
+
+def default_data_dir() -> Path:
+    """``MOONWALKERS_DATA_DIR``; else ``data/`` in Claude Code's project folder
+    (``CLAUDE_PROJECT_DIR``); else the repository's ``data/`` next to ``backend/``."""
+    if os.environ.get("MOONWALKERS_DATA_DIR"):
+        return Path(os.environ["MOONWALKERS_DATA_DIR"]).resolve()
+    if os.environ.get("CLAUDE_PROJECT_DIR"):
+        return (Path(os.environ["CLAUDE_PROJECT_DIR"]) / "data").resolve()
+    return Path(__file__).resolve().parents[4] / "data"
 
 
 def sha256_of(path: Path) -> str:

@@ -85,6 +85,7 @@ from moonwalkers.workspace import (
     RunStatus,
     Workspace,
     WorkspaceError,
+    default_data_dir,
     list_runs,
     sha256_of,
 )
@@ -161,16 +162,6 @@ def default_generator() -> ImageTo3DGenerator:
     return (
         Hunyuan3DGenerator(Hunyuan3DConfig.under(Path(root))) if root else UnconfiguredGenerator()
     )
-
-
-def default_data_dir() -> Path:
-    """``MOONWALKERS_DATA_DIR``; else ``data/`` in Claude Code's project folder
-    (``CLAUDE_PROJECT_DIR``); else the repository's ``data/`` next to ``backend/``."""
-    if os.environ.get("MOONWALKERS_DATA_DIR"):
-        return Path(os.environ["MOONWALKERS_DATA_DIR"]).resolve()
-    if os.environ.get("CLAUDE_PROJECT_DIR"):
-        return (Path(os.environ["CLAUDE_PROJECT_DIR"]) / "data").resolve()
-    return Path(__file__).resolve().parents[4] / "data"
 
 
 def create_server(

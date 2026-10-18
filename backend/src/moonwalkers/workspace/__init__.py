@@ -16,6 +16,7 @@ from .runs import (
     SpecState,
     Workspace,
     WorkspaceError,
+    default_data_dir,
     sha256_of,
 )
 from .status import OPEN_STAGES, JobStep, RequestRecord, RunStatus, list_runs, run_status
@@ -33,6 +34,7 @@ __all__ = [
     "UnsupportedPhotoError",
     "Workspace",
     "WorkspaceError",
+    "default_data_dir",
     "list_runs",
     "photo_suffix",
     "run_images",

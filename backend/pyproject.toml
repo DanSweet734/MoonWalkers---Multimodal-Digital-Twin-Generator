@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "Backend for the MoonWalkers Multimodal Agentic Digital Twin Generation Platform"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "fastapi>=0.146,<0.147",
     "mcp>=2.3,<3",
     "numpy>=2.5,<3",
     "pydantic>=2.14,<3",
+    "python-multipart>=0.0.32,<0.1",
     "trimesh>=5.1,<6",
     "usd-core>=26.8,<27",
+    "uvicorn>=0.54,<1",
 ]
 
 [build-system]
