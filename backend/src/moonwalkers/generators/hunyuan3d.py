@@ -22,6 +22,7 @@ from moonwalkers.contracts.pipeline_result import Generator
 from .base import SINGLE_VIEW, GeneratorRequest, GeneratorRun, ImageTo3DGenerator
 from .subprocess_job import run_job
 
+GEN_ROOT_ENV = "MOONWALKERS_GEN_ROOT"  # the folder Hunyuan3DConfig.under expects
 DEFAULT_SCRIPT = Path(__file__).with_name("scripts") / "hunyuan3d_shape_job.py"
 MULTIVIEW_KEYS = frozenset({"front", "left", "back", "right"})  # hy3dgen MVImageProcessorV2
 

@@ -24,7 +24,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from moonwalkers.generators.base import GeneratorError
-from moonwalkers.generators.hunyuan3d import Hunyuan3DConfig, Hunyuan3DGenerator
+from moonwalkers.generators.hunyuan3d import GEN_ROOT_ENV, Hunyuan3DConfig, Hunyuan3DGenerator
 from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.orchestrator import OrchestratorError
 from moonwalkers.usd.exporter import ExportError
@@ -40,7 +40,6 @@ from .pipeline import (
     load_reference,
 )
 
-GEN_ROOT_ENV = "MOONWALKERS_GEN_ROOT"
 AXES = ("+x", "-x", "+y", "-y", "+z", "-z")
 
 
