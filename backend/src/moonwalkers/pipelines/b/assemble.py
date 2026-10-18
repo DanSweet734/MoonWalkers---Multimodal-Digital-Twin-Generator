@@ -73,6 +73,9 @@ def assemble(raw_mesh: Path, spec: GeometrySpec, out_dir: Path) -> AssembledPart
     paths = []
     for name, part in (("body", body), ("spindle", spindle)):
         part.apply_transform(placement)
+        # Name the part instead of keeping the generator's metadata, which holds a temporary file
+        # name; then the same geometry always gives the same file.
+        part.metadata = {"name": name}
         paths.append(out_dir / f"{name}.glb")
         part.export(paths[-1])
 

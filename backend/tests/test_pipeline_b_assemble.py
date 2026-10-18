@@ -62,3 +62,19 @@ def test_spec_rejects_unknown_fields_and_axes() -> None:
         spec(up="up")
     with pytest.raises(ValidationError):
         GeometrySpec.model_validate(spec().model_dump() | {"colour": "red"})
+
+
+def test_same_geometry_gives_the_same_part_files(indexer, tmp_path: Path) -> None:
+    # The generator names its mesh after a temporary file, so two runs differ only in that name.
+    to_gltf = np.linalg.inv(orientation_matrix(up="+y", front="+z"))
+    files = []
+    for run in ("run-a", "run-b"):
+        mesh = transformed(indexer(), to_gltf)
+        mesh.metadata["name"] = f"tmp-{run}.ply"
+        source = tmp_path / run / "mesh.glb"
+        source.parent.mkdir()
+        mesh.export(source)
+        parts = assemble(source, spec(), tmp_path / run / "parts")
+        files.append((parts.body_path.read_bytes(), parts.spindle_path.read_bytes()))
+    assert files[0] == files[1]
+    assert b"tmp-run" not in files[0][0] and b'"name":"body"' in files[0][0]
