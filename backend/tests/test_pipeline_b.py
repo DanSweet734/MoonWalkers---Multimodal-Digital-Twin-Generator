@@ -241,3 +241,11 @@ def test_parts_are_written_in_metres_in_the_twin_frame(
     # the box body: 2 x 3 x 2 units, front face at the joint (x = 0), base at z = 0
     assert body.bounds[0] == pytest.approx([-2 * SCALE, -1.5 * SCALE, 0.0], abs=1e-6)
     assert body.bounds[1] == pytest.approx([0.0, 1.5 * SCALE, 2 * SCALE], abs=1e-6)
+
+
+def test_generate_alone_makes_the_mesh_without_needing_a_spec(pipeline, photo_run) -> None:
+    run = pipeline.generate([photo_run.photo])
+    assert run.mesh_path.is_file() and pipeline.generator.calls == 1
+    assert not (photo_run.run_dir / "inspect_raw").exists()  # no renders, no spec stop
+    assert pipeline.generate([photo_run.photo]).mesh_path == run.mesh_path  # reused
+    assert pipeline.generator.calls == 1

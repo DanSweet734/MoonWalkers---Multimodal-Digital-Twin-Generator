@@ -140,8 +140,7 @@ class PipelineB(Pipeline):
         self.clock = clock
 
     def run(self, job_id: str, sources: list[Source]) -> PipelineResult:
-        photo, photo_path = self._photo(sources)
-        generated = self._generate(photo_path, photo.sha256 or "")
+        photo, generated = self._photo_and_mesh(sources)
         spec_path = self.run_dir / SPEC_FILE
         if not spec_path.is_file():
             views = render_views(load_mesh(generated.mesh_path), self.run_dir / INSPECT_DIR)
@@ -151,7 +150,15 @@ class PipelineB(Pipeline):
         parts = self._assemble(generated.mesh_path, spec_path, spec)
         return self._result(job_id, photo, generated, spec, spec_path, parts)
 
+    def generate(self, sources: list[Source]) -> GeneratorRun:
+        """Step 1 alone: the job's mesh, generated now or reused from this run folder."""
+        return self._photo_and_mesh(sources)[1]
+
     # ------------------------------------------------------------------------------------ steps
+    def _photo_and_mesh(self, sources: list[Source]) -> tuple[Source, GeneratorRun]:
+        photo, photo_path = self._photo(sources)
+        return photo, self._generate(photo_path, photo.sha256 or "")
+
     def _photo(self, sources: list[Source]) -> tuple[Source, Path]:
         """The job's one photo, with its SHA-256 filled in (checked if the request gave one)."""
         others = sorted(
@@ -352,6 +359,17 @@ class PipelineB(Pipeline):
 
     def _relative(self, path: Path) -> str:
         return Path(path).resolve().relative_to(self.data_dir).as_posix()
+
+
+def generated_mesh(run_dir: Path) -> Path:
+    """The run folder's generated mesh: the one ``generator/run.json`` records, else
+    ``generator/mesh.glb`` (runs made before the record existed)."""
+    out_dir = Path(run_dir) / GENERATOR_DIR
+    record = out_dir / GENERATOR_RECORD
+    mesh = out_dir / _read_json(record)["mesh_file"] if record.is_file() else out_dir / "mesh.glb"
+    if not mesh.is_file():
+        raise FileNotFoundError(f"no generated mesh in {out_dir}; generate it first")
+    return mesh
 
 
 def size_checks(parts: AssembledParts, reference: ReferenceFacts | None) -> list[Issue]:
