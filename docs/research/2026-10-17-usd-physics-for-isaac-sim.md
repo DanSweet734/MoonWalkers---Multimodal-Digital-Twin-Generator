@@ -152,10 +152,19 @@ Seen:
 - How PhysX scales stiffness and damping for an acceleration drive with degree-based USD values. The
   observed settle time (about 2 s, judged by eye) is slower than my estimate of under a second for
   w = 10 rad/s. The gap may come from how PhysX scales the values, or from where "settled" was judged
-  by eye; not confirmed. Phase 6 should measure settle times in a scripted run before indexing speed
-  matters.
+  by eye; not confirmed.
+  On 2026-10-18 the HA5C's quarter turn, with the same drive values, settled in under a second by
+  Daniel's estimate. With an acceleration drive mass should not matter [INFERENCE]. So the two
+  observations differ by judging by eye, or because the Phase 2 file had no time range; not
+  confirmed. Phase 6 should measure settle times in a scripted run before indexing speed matters.
 - The exact attribute name and units for `maxJointVelocity` on PhysxJointAxisAPI, if we want to
   write the HA5C's cited 410 deg/s. Deferred to Phase 6.
-- Which collider to use for the real HA5C meshes (convex decomposition or SDF). Decided in Phase 3.
-- Which start and end time codes to author (the warning above needs only distinct values). Decided
-  with the Phase 3 export.
+- Which collider to use for the real HA5C meshes (convex decomposition or SDF). **Answered in
+  Phase 3:** the convex hulls of decision 0010 were kept for both HA5C parts (a single-hull spindle
+  nose and a single-hull body). The body's hull overlaps the back of the spindle; jointed bodies do not
+  collide by default (decision 0010, Phase 3 update). The Isaac Sim check will show whether that is
+  enough.
+- Which start and end time codes to author (the warning above needs only distinct values).
+  **Answered in Phase 3** (commit `a37f5e7`): 0 to 1,000,000 at 60 time codes per second, the values
+  in NVIDIA's own example stage `isaacsim.examples.interactive/data/SurfaceGripper_gantry.usda`
+  (Isaac Sim 6.2.0). The HA5C Isaac Sim check should confirm the warning is gone.

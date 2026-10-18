@@ -86,6 +86,15 @@ def no_scene(stage):
     stage.RemovePrim(SCENE_PATH)
 
 
+def no_time_range(stage):
+    stage.ClearMetadata("startTimeCode")
+    stage.ClearMetadata("endTimeCode")
+
+
+def empty_time_range(stage):
+    stage.SetEndTimeCode(stage.GetStartTimeCode())
+
+
 def stale_extent(stage):
     UsdGeom.Mesh(stage.GetPrimAtPath(SPINDLE_MESH)).GetExtentAttr().Set(
         Vt.Vec3fArray([Gf.Vec3f(0, 0, 0), Gf.Vec3f(1, 1, 1)])
@@ -133,6 +142,8 @@ def no_twin_provenance(stage):
         (y_up, "error", "upAxis must be Z"),
         (no_kilograms, "error", "kilogramsPerUnit is not authored"),
         (no_scene, "warning", "no PhysicsScene"),
+        (no_time_range, "warning", "no usable time-code range"),
+        (empty_time_range, "warning", "no usable time-code range"),
         (stale_extent, "warning", "extent is missing or stale"),
         (broken_topology, "error", "topology is inconsistent"),
         (subdivided, "warning", "subdivision surface"),

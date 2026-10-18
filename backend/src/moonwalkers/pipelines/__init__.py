@@ -7,7 +7,8 @@ from .base import Pipeline, result_id_for
 
 
 def default_pipelines() -> dict[PipelineId, Pipeline]:
-    """The pipelines available today: stubs for A, C and D. Pipeline B arrives in Phase 3."""
+    """The stubs for A, C and D. Pipeline B needs a generator and a run folder, so its caller
+    builds it (``moonwalkers.pipelines.b``)."""
     return {
         p.pipeline_id: p for p in (a.create_pipeline(), c.create_pipeline(), d.create_pipeline())
     }

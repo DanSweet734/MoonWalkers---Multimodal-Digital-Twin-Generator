@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Backend for the MoonWalkers Multimodal Agentic Digital Twin Generation Platform"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "numpy>=2.5,<3",
     "pydantic>=2.14,<3",
+    "trimesh>=5.1,<6",
     "usd-core>=26.8,<27",
 ]
 
@@ -31,6 +33,7 @@ markers = [
 [dependency-groups]
 dev = [
     "omniverse-asset-validator>=1.18,<2",
+    "pypdf>=6.21,<7",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
 ]

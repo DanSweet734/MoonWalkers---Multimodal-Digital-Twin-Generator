@@ -55,6 +55,10 @@ def test_stage_units_and_default_prim(twin_and_result) -> None:
     assert UsdGeom.GetStageMetersPerUnit(stage) == 1.0
     assert UsdPhysics.StageHasAuthoredKilogramsPerUnit(stage)
     assert UsdPhysics.GetStageKilogramsPerUnit(stage) == 1.0
+    # Same timeline as NVIDIA's example stages, so Isaac Sim does not loop over a single frame.
+    assert stage.HasAuthoredTimeCodeRange()
+    assert (stage.GetStartTimeCode(), stage.GetEndTimeCode()) == (0.0, 1_000_000.0)
+    assert stage.GetTimeCodesPerSecond() == 60.0
     root = stage.GetDefaultPrim()
     assert root.GetPath() == Sdf.Path(ROOT)
     assert Usd.ModelAPI(root).GetKind() == "component"
@@ -228,15 +232,27 @@ def test_export_is_deterministic_lf_text(twin_and_result, tmp_path: Path) -> Non
     assert sorted(p.name for p in tmp_path.rglob("*") if p.is_file()) == ["twin.usda", "twin.usda"]
 
 
-def test_export_needs_a_usda_file_name(twin_and_result, tmp_path: Path) -> None:
+def test_export_writes_binary_crate_files(twin_and_result, tmp_path: Path) -> None:
     twin, result = twin_and_result
-    with pytest.raises(ExportError, match=".usda"):
-        export_twin(twin, [result], tmp_path / "twin.usdc")
+    text = Usd.Stage.Open(str(export_twin(twin, [result], tmp_path / "twin.usda")))
+    path = export_twin(twin, [result], tmp_path / "twin.usdc")
+    assert path.read_bytes().startswith(b"PXR-USDC")
+    crate = Usd.Stage.Open(str(path))
+    assert [p.GetPath() for p in crate.Traverse()] == [p.GetPath() for p in text.Traverse()]
+    assert [i for i in validate_stage(crate) if i.severity == "error"] == []
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["twin.usda", "twin.usdc"]
+
+
+@pytest.mark.parametrize("name", ["twin.usd", "twin.obj"])
+def test_export_needs_an_explicit_usd_format(twin_and_result, tmp_path: Path, name: str) -> None:
+    twin, result = twin_and_result
+    with pytest.raises(ExportError, match=r"\.usda \(text\) or \.usdc \(binary\)"):
+        export_twin(twin, [result], tmp_path / name)
 
 
 # --------------------------------------------------------------------------------- refusals
-def test_mesh_file_parts_wait_for_phase_3(example_result: PipelineResult, fixed_time) -> None:
-    twin = TwinRecord(
+def example_twin(example_result: PipelineResult, fixed_time) -> TwinRecord:
+    return TwinRecord(
         twin_id="haas/ha5c@v1",
         machine_key="haas/ha5c",
         version=1,
@@ -244,8 +260,40 @@ def test_mesh_file_parts_wait_for_phase_3(example_result: PipelineResult, fixed_
         built_from=[example_result.result_id],
         created_at=fixed_time,
     )
-    with pytest.raises(ExportError, match="Phase 3"):
-        build_stage(twin, [example_result])
+
+
+def test_mesh_file_parts_need_the_data_folder(example_result: PipelineResult, fixed_time) -> None:
+    with pytest.raises(ExportError, match="pass data_dir"):
+        build_stage(example_twin(example_result, fixed_time), [example_result])
+
+
+def test_missing_mesh_file_is_reported(
+    example_result: PipelineResult, fixed_time, tmp_path: Path
+) -> None:
+    with pytest.raises(ExportError, match="mesh file not found"):
+        build_stage(example_twin(example_result, fixed_time), [example_result], data_dir=tmp_path)
+
+
+def test_mesh_file_parts_are_exported(
+    example_result: PipelineResult, fixed_time, tmp_path: Path, indexer
+) -> None:
+    # The example's parts point at twins/haas-ha5c/v1/{body,spindle}.glb under the data folder.
+    from moonwalkers.pipelines.b.mesh_tools import split_by_cylinder
+
+    body, spindle = split_by_cylinder(indexer(), (1.0, 0, 0.2), (1, 0, 0), 0.45, 0.0)
+    folder = tmp_path / "twins" / "haas-ha5c" / "v1"
+    folder.mkdir(parents=True)
+    body.export(folder / "body.glb")
+    spindle.export(folder / "spindle.glb")
+
+    stage = build_stage(
+        example_twin(example_result, fixed_time), [example_result], data_dir=tmp_path
+    )
+    mesh = UsdGeom.Mesh(stage.GetPrimAtPath("/haas_ha5c/spindle/geometry"))
+    assert len(mesh.GetFaceVertexCountsAttr().Get()) == len(spindle.faces)
+    lo, hi = mesh.GetExtentAttr().Get()
+    assert math.isclose(lo[0], 1.0, abs_tol=1e-6) and math.isclose(hi[0], 1.6, abs_tol=1e-6)
+    assert [i.message for i in validate_stage(stage) if i.severity == "error"] == []
 
 
 def test_results_must_match_the_twin(twin_and_result) -> None:

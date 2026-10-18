@@ -15,10 +15,15 @@ An exported twin, for example machine key ``haas/ha5c``::
 Rules followed (sources in decision 0010 and docs/research/2026-10-17-usd-physics-for-isaac-sim.md):
 
 * Stage units are metres and kilograms with +Z up; angles are written in degrees.
+* The timeline runs from 0 to 1,000,000 at 60 time codes per second, as in NVIDIA's own example
+  stages (``isaacsim.examples.interactive/data/SurfaceGripper_gantry.usda`` in Isaac Sim 6.2.0).
+  Without a range, Isaac Sim warns that playback "will loop over a single frame".
 * Part transforms stay at identity: meshes are already in the twin's model frame, so each joint
   frame is the contract's ``origin_m`` in both bodies. UsdPhysics joint frames do not support scale,
   so any scale is baked into mesh points.
 * A twin without joints is written as static colliders (no rigid bodies, nothing moves on Play).
+* Parts are primitives (meshed by ``geometry``) or mesh files (GLB, OBJ) relative to ``data_dir``,
+  already in the twin frame and in metres (Pipeline B writes them that way).
 * Mass is not authored; physics engines infer it from the collision volume at 1000 kg/m^3. That is a
   placeholder, not the machine's real mass.
 * Every part, joint and the root carry their citations in ``customData["moonwalkers"]``.
@@ -47,12 +52,17 @@ from moonwalkers.contracts.pipeline_result import (
 
 from .frames import quat_between
 from .geometry import MeshData, primitive_mesh
+from .mesh_files import MESH_FILE_FORMATS, mesh_data_from_file
 from .units import KILOGRAMS_PER_UNIT, METERS_PER_UNIT, usd_angle, usd_length
 
 WORLD_JOINT = "fixed_to_world"
 JOINTS_SCOPE = "joints"
 GEOMETRY_PRIM = "geometry"
 SCENE_PATH = "/PhysicsScene"
+
+START_TIME_CODE = 0.0
+END_TIME_CODE = 1_000_000.0
+TIME_CODES_PER_SECOND = 60.0
 
 ROOT_PART_COLOR = (0.55, 0.57, 0.60)  # grey: the fixed base
 MOVING_PART_COLOR = (0.90, 0.45, 0.10)  # orange: parts that move
@@ -102,17 +112,26 @@ def export_twin(
     results: Sequence[PipelineResult],
     path: Path,
     drive: DriveSettings | None = None,
+    data_dir: Path | None = None,
 ) -> Path:
-    """Write the twin to ``path`` as ``.usda`` text with LF line endings; returns the path."""
+    """Write the twin to ``path``; returns the path.
+
+    ``.usda`` gives text with LF line endings, readable for small twins. ``.usdc`` gives a binary
+    crate file, which NVIDIA's asset validator asks for once arrays pass 64 elements, as a
+    generated mesh's do (decision 0012). ``data_dir`` is the project ``data/`` folder; mesh-file
+    parts are relative to it (contract).
+    """
     path = Path(path)
-    if path.suffix != ".usda":
-        raise ExportError(f"export writes text USD; use a .usda file name, not {path.name}")
-    stage = build_stage(twin, results, drive)  # keep a reference: the stage owns its root layer
-    text = stage.GetRootLayer().ExportToString()
+    if path.suffix not in (".usda", ".usdc"):
+        raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
+    stage = build_stage(twin, results, drive, data_dir)  # the stage owns its root layer: keep it
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.tmp")
+    tmp = path.with_name(f".{path.stem}.tmp{path.suffix}")  # the suffix picks the file format
     try:
-        tmp.write_text(text, encoding="utf-8", newline="\n")
+        if path.suffix == ".usda":
+            tmp.write_text(stage.GetRootLayer().ExportToString(), encoding="utf-8", newline="\n")
+        elif not stage.GetRootLayer().Export(str(tmp)):
+            raise ExportError(f"could not write {path}")
         os.replace(tmp, path)
     finally:
         tmp.unlink(missing_ok=True)
@@ -120,7 +139,10 @@ def export_twin(
 
 
 def build_stage(
-    twin: TwinRecord, results: Sequence[PipelineResult], drive: DriveSettings | None = None
+    twin: TwinRecord,
+    results: Sequence[PipelineResult],
+    drive: DriveSettings | None = None,
+    data_dir: Path | None = None,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()
@@ -137,6 +159,9 @@ def build_stage(
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
     UsdGeom.SetStageMetersPerUnit(stage, METERS_PER_UNIT)
     UsdPhysics.SetStageKilogramsPerUnit(stage, KILOGRAMS_PER_UNIT)
+    stage.SetStartTimeCode(START_TIME_CODE)
+    stage.SetEndTimeCode(END_TIME_CODE)
+    stage.SetTimeCodesPerSecond(TIME_CODES_PER_SECOND)
     stage.GetRootLayer().documentation = (
         f"MoonWalkers digital twin {twin.twin_id} ({twin.status.replace('_', ' ')}). "
         f"Written by moonwalkers {package_version('moonwalkers')}; units: m, kg, degrees."
@@ -155,7 +180,9 @@ def build_stage(
     body_paths: dict[str, Sdf.Path] = {}
     for part_id, (part, result_id) in parts.items():
         color = ROOT_PART_COLOR if part_id == root_part else MOVING_PART_COLOR
-        body_paths[part_id] = _write_part(stage, root_path, part, result_id, articulated, color)
+        body_paths[part_id] = _write_part(
+            stage, root_path, part, result_id, articulated, color, data_dir
+        )
 
     if articulated:
         UsdPhysics.ArticulationRootAPI.Apply(root)
@@ -245,16 +272,9 @@ def _write_part(
     result_id: str,
     articulated: bool,
     color: tuple[float, float, float],
+    data_dir: Path | None,
 ) -> Sdf.Path:
-    if part.geometry_format != "primitive" or part.primitive is None:
-        raise ExportError(
-            f"part '{part.part_id}' is a {part.geometry_format} file; only primitive parts are "
-            "exported until Pipeline B's mesh loader arrives (Phase 3)"
-        )
-    try:
-        mesh = primitive_mesh(part.primitive)
-    except ValueError as exc:
-        raise ExportError(f"part '{part.part_id}': {exc}") from exc
+    mesh = _part_mesh(part, data_dir)
 
     body = UsdGeom.Xform.Define(stage, root_path.AppendChild(_identifier(part.part_id))).GetPrim()
     body.SetDocumentation(part.name)
@@ -282,6 +302,28 @@ def _write_part(
     else:
         approximation.Set(UsdPhysics.Tokens.none)
     return body.GetPath()
+
+
+def _part_mesh(part: Part, data_dir: Path | None) -> MeshData:
+    """A primitive's generated mesh, or a mesh file read from ``data_dir``."""
+    try:
+        if part.geometry_format == "primitive" and part.primitive is not None:
+            return primitive_mesh(part.primitive)
+        if part.geometry_format in MESH_FILE_FORMATS and part.geometry_file:
+            if data_dir is None:
+                raise ExportError(f"part '{part.part_id}' is a mesh file; pass data_dir")
+            path = Path(data_dir) / part.geometry_file
+            if not path.is_file():
+                raise ExportError(f"part '{part.part_id}': mesh file not found: {path}")
+            return mesh_data_from_file(path)
+    except ExportError:
+        raise
+    except ValueError as exc:  # invalid primitive or unreadable mesh
+        raise ExportError(f"part '{part.part_id}': {exc}") from exc
+    raise ExportError(
+        f"part '{part.part_id}': geometry format '{part.geometry_format}' is not exported "
+        f"(supported: primitive, {', '.join(sorted(MESH_FILE_FORMATS))})"
+    )
 
 
 def _write_mesh(

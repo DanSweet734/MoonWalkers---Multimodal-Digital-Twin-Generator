@@ -86,3 +86,22 @@ Implemented in `backend/src/moonwalkers/usd/`:
   "prevents time-accumulating sensors and controllers from producing output", and advises: "Author
   distinct startTimeCode and endTimeCode values in the root layer before playing." The exporter
   will author a time range when the HA5C is exported, so the next Isaac Sim check covers it.
+
+## Updates in Phase 3 (2026-10-17)
+- **Time-code range (done, commit `a37f5e7`).** Every export now sets `startTimeCode` 0,
+  `endTimeCode` 1,000,000 and `timeCodesPerSecond` 60. These are the values in NVIDIA's own example
+  stage `isaacsim.examples.interactive/data/SurfaceGripper_gantry.usda` (Isaac Sim 6.2.0).
+  `moonwalkers.usd.validate` warns when a stage has no usable range. Confirmed on 2026-10-18:
+  Daniel saw no such warning for the HA5C files.
+- **Mesh-file parts.** Parts whose geometry is a GLB or OBJ file are read relative to the data folder
+  (`usd/mesh_files.py`). Pipeline B writes them already in the twin frame and in metres. The scale
+  is baked into the mesh points, as option 9b here requires; `ScaleCalibration` records how it was
+  found.
+- **Binary files (decision 0012).** `export_twin` also writes `.usdc` (crate). Twins with generated
+  meshes use it, because NVIDIA's validator fails text layers whose arrays pass 64 elements
+  (`UsdAsciiPerformanceChecker`). Small twins such as the Phase 2 test twin stay `.usda`.
+- **Colliders on real meshes.** The HA5C parts use the convex hulls chosen here. The body's hull
+  overlaps the back of the spindle. The joint's `physics:collisionEnabled` is not authored, so it
+  takes the schema's fallback, `False`. Its documentation in usd-core 26.8 reads: "Determines if the
+  jointed subtrees should collide or not." So the overlap should not push the parts apart.
+  Confirmed on 2026-10-18: no collisions, shaking or drift in the HA5C files.

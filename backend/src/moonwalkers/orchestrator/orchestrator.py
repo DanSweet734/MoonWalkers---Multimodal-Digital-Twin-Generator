@@ -6,6 +6,8 @@ One job (README, "Twin reuse: the request flow"; decision 0009):
 2. Otherwise route the inputs to their pipelines and run them.
 3. Work out the machine key from the results; if that machine's twin exists, reuse it.
 4. Otherwise, or when the user asks for a new version, store the results and a new twin version.
+   With an ``exporter``, the new version is written out (for example as USD) first and its file
+   becomes the twin's ``usd_path``; if the export fails, nothing is stored.
 
 The orchestrator is the only component that writes to the knowledge base (CLAUDE.md rule 6).
 New twins always get status ``needs_review``: v1 keeps a human in the loop (docs/methodology.md).
@@ -13,7 +15,7 @@ New twins always get status ``needs_review``: v1 keeps a human in the loop (docs
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +31,9 @@ from moonwalkers.kb import KnowledgeBase, machine_key
 from moonwalkers.pipelines import Pipeline
 
 from .router import route
+
+Exporter = Callable[[TwinRecord, Sequence[PipelineResult]], str]
+"""Writes a new twin version out and returns the file's path relative to the data folder."""
 
 
 class MachineHint(BaseModel):
@@ -75,10 +80,12 @@ class Orchestrator:
         kb: KnowledgeBase,
         pipelines: Mapping[PipelineId, Pipeline],
         clock: Clock = utc_now,
+        exporter: Exporter | None = None,
     ) -> None:
         self.kb = kb
         self.pipelines = dict(pipelines)
         self.clock = clock
+        self.exporter = exporter
 
     def run_job(self, request: JobRequest) -> JobResult:
         hinted_key = None
@@ -134,8 +141,6 @@ class Orchestrator:
     ) -> JobResult:
         previous = self.kb.get_twin(key)
         version = previous.version + 1 if previous is not None else 1
-        for result in results:  # results first, so a stored twin never points at missing results
-            self.kb.save_result(result)
         twin = TwinRecord(
             twin_id=f"{key}@v{version}",
             machine_key=key,
@@ -145,6 +150,11 @@ class Orchestrator:
             created_at=self.clock(),
             notes=notes,
         )
+        if self.exporter is not None:  # before storing anything, so a failed export leaves no trace
+            usd_path = self.exporter(twin, results)
+            twin = TwinRecord.model_validate({**twin.model_dump(), "usd_path": usd_path})
+        for result in results:  # results first, so a stored twin never points at missing results
+            self.kb.save_result(result)
         self.kb.save_twin(twin)
 
         ran = _pipeline_list(results)
@@ -155,6 +165,8 @@ class Orchestrator:
                 f"Built version {version} of the {key} twin as requested "
                 f"(previous: v{previous.version}) from {ran}."
             )
+        if twin.usd_path:
+            message += f" Exported to {twin.usd_path}."
         message += " It needs human review."
         if notes:
             message += f" Note: {notes}"

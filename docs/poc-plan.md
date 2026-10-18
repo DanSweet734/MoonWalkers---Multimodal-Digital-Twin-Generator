@@ -37,13 +37,25 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       screenshots were shared, so the worklog records Daniel's description of what he saw)
 
 ## Phase 3 - Pipeline B (machine photos -> geometry)
-- [ ] Collect HA5C photos from public sources into `data/machines/haas-ha5c/inputs/`, logging each URL
-- [ ] Generator adapter interface; Hunyuan3D-2mv adapter (multi-view), Stable Fast 3D fallback; each runs
-      in its own environment as a subprocess (ask before installing either)
-- [ ] Scale calibration from a known dimension (center height 4.000 in from the HA5C layout drawing)
-- [ ] Mesh split into body and spindle (manual or semi-automatic for the PoC; document the method)
-- [ ] Facts with citations from the Haas UK product page and the 2006 operator's manual
-- [ ] Worklog with run details (versions, time, VRAM if available); PR
+- [x] Collect HA5C photos from public sources into `data/machines/haas-ha5c/inputs/`, logging each URL
+      (Oct 17, 2026: only one clean photo was reachable, the Haas UK studio shot; the layout drawing and
+      2006 manual are saved alongside it, all listed with URLs and hashes in `SOURCES.md`)
+- [x] Generator adapter interface; Hunyuan3D-2mv adapter (multi-view), Stable Fast 3D fallback; each runs
+      in its own environment as a subprocess (ask before installing either). Changed by decision 0011:
+      one Hunyuan3D-2 adapter takes the single-image model (used, since there is one photo) or the
+      multi-view one (not yet run: no multi-view photo set), and the fallback is Hunyuan3D-2 single-image
+- [x] Scale calibration from a known dimension (center height 4.000 in from the HA5C layout drawing)
+      (0.189268 m per model unit; width and height within 3% of the drawing)
+- [x] Mesh split into body and spindle (manual or semi-automatic for the PoC; document the method)
+      (semi-automatic: a cited geometry spec, decision 0012; the nose alone turns, Daniel's choice)
+- [x] Facts with citations from the Haas UK product page and the 2006 operator's manual (plus the
+      layout drawing; quotes checked against the PDFs; `pipelines/b/haas_ha5c.reference.json`)
+- [x] Manual check of the HA5C twin in Isaac Sim 6.2.0: success levels 1 and 2 (Daniel;
+      `docs/setup/isaac-sim-check.md`, section 6) (Oct 18, 2026: level 2 reached. Sizes measured close
+      to expected; the spindle turns, reverses at -90 and holds a quarter turn. Small cosmetic gaps
+      show at the cut after turning; see decision 0012)
+- [x] Worklog with run details (versions, time, VRAM if available); PR (Oct 17, 2026: branch
+      `feat/phase-3-pipeline-b`; twin `haas/ha5c@v2`, both validators pass)
 
 ## Phase 4 - Agent via MCP
 - [ ] MCP server in `backend/src/moonwalkers/mcp/` exposing the platform's actions as tools

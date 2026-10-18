@@ -2,7 +2,7 @@
 
 Run from ``backend/``::
 
-    uv run python -m moonwalkers.usd.validate path/to/twin.usda
+    uv run python -m moonwalkers.usd.validate path/to/twin.usda   (or .usdc)
 
 The physics checks use OpenUSD's own UsdPhysics parser (``UsdPhysicsLoadStageFromPrimRange``), which
 reads the stage the way a physics engine would. Findings use the contract's ``Issue`` model; the
@@ -89,6 +89,14 @@ def _check_stage_metadata(stage: Usd.Stage, issues: list[Issue]) -> None:
             Issue(
                 severity="error",
                 message=f"kilogramsPerUnit is {UsdPhysics.GetStageKilogramsPerUnit(stage)}",
+            )
+        )
+    if not stage.HasAuthoredTimeCodeRange() or (stage.GetEndTimeCode() <= stage.GetStartTimeCode()):
+        issues.append(
+            Issue(
+                severity="warning",
+                message="no usable time-code range: Isaac Sim's timeline would loop over a single "
+                "frame (author distinct startTimeCode and endTimeCode)",
             )
         )
 
@@ -333,8 +341,8 @@ def _check_provenance(root: Usd.Prim, issues: list[Issue]) -> None:
 
 # ----------------------------------------------------------------------------------------- CLI
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate an exported MoonWalkers twin (.usda).")
-    parser.add_argument("path", type=Path, help="the .usda file to check")
+    parser = argparse.ArgumentParser(description="Validate an exported MoonWalkers twin.")
+    parser.add_argument("path", type=Path, help="the .usda or .usdc file to check")
     args = parser.parse_args(argv)
     issues = validate_file(args.path)
     for issue in issues:

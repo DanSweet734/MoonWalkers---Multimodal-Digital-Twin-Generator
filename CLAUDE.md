@@ -58,7 +58,12 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   and rules: decision 0010 (`backend/src/moonwalkers/usd/`).
 - Target the most recent Isaac Sim (6.2.0 as of Oct 16, 2026) for manual verification.
 - Image-to-3D generators run in their **own** environment and are called as a subprocess through an
-  adapter in `generators/`. Primary: Hunyuan3D-2mv (multi-view). Fallback: Stable Fast 3D (single image).
+  adapter in `generators/`. Primary: Hunyuan3D-2mv (multi-view). Fallback, and what the PoC uses while
+  there is one photo: Hunyuan3D-2 single-image (decision 0011). Setup: `docs/setup/generators.md`
+  (`C:\mw-gen` on Daniel's machine, found through `MOONWALKERS_GEN_ROOT`).
+- Pipeline B method (decision 0012): a cited `geometry_spec.json` per run folder orients, splits and
+  scales the generated mesh. One run folder holds one build, and its outputs are never overwritten.
+  Twins with generated meshes are written as binary `.usdc`.
 - Dashboard: React + TypeScript with Vite and npm; Oxlint for lint (decision 0007).
 
 ## Commands
@@ -66,11 +71,20 @@ First-time machine setup (uv, Python 3.12, Node.js LTS, GitHub CLI): `docs/setup
 
 Backend (run from `backend/`):
 - Install/sync Python deps: `uv sync` (creates `backend/.venv` from `uv.lock`)
-- Tests: `uv run pytest`; without GPU/slow tests: `uv run pytest -m "not gpu and not slow"`
+- Tests: `uv run pytest`; without GPU/slow tests: `uv run pytest -m "not gpu and not slow"`;
+  the real generator test (needs the generator environment, about 70 s):
+  `$env:MOONWALKERS_GEN_ROOT = "C:\mw-gen"; uv run pytest -m gpu`
 - Lint and format: `uv run ruff check .` and `uv run ruff format .` (check only: `uv run ruff format --check .`)
 - Regenerate the contract JSON Schema after a contract change: `uv run python -m moonwalkers.contracts.json_schema`
 - Write the box-and-cylinder test twin (Phase 2 check): `uv run python -m moonwalkers.usd.primitive_twin ../data/machines/moonwalkers-testindexer/runs/<run>`
-- Validate an exported twin: `uv run python -m moonwalkers.usd.validate <file.usda>`, then NVIDIA's `uv run omni_asset_validate <file.usda>`
+- Build a twin from a photo (Pipeline B): the run folder `../data/machines/<machine>/runs/<run>` holds
+  `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
+  The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
+  facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
+- Inspect a generated mesh, or try a spec without storing anything:
+  `uv run python -m moonwalkers.pipelines.b inspect <run> --up +y --front +z`, then
+  `... inspect <run> --preview --reference <facts.json>`
+- Validate an exported twin (`.usda` or `.usdc`): `uv run python -m moonwalkers.usd.validate <file>`, then NVIDIA's `uv run omni_asset_validate <file>`
 - Check a twin by eye in Isaac Sim: `docs/setup/isaac-sim-check.md`
 - API (dev, from Phase 5; FastAPI and uvicorn are not installed yet): `uv run uvicorn moonwalkers.api.app:app --reload`
 
