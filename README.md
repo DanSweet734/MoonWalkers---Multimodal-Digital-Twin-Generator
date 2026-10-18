@@ -280,7 +280,7 @@ Two alternatives were considered in our Oct 6 research: an all-Python stack with
 
 ## Proof of concept
 
-In progress (Phases 0-1 of [docs/poc-plan.md](docs/poc-plan.md) done). It must show that an AI agent can create a digital twin, in some capacity, from one input type.
+In progress (Phases 0-3 of [docs/poc-plan.md](docs/poc-plan.md) done; the HA5C twin reached success level 2 in Isaac Sim on Oct 18, 2026). It must show that an AI agent can create a digital twin, in some capacity, from one input type.
 
 - **Input:** machine photos to start (video is required in the final product), sourced online until test photos from Dr. Li's lab arrive.
 - **Subject:** one well-known, relatively simple machine that has joints and control logic.
