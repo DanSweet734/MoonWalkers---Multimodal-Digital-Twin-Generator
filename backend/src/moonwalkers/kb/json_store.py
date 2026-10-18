@@ -4,6 +4,7 @@ Layout under ``root`` (``data/kb/`` in normal use)::
 
     results/<result_id>.json
     twins/<manufacturer>/<model>/v0001.json
+    reviews/<manufacturer>/<model>/v0001/r0001.json   (decision 0015)
 
 Assumes one writer at a time (the PoC is single-user); a second process saving the same record at
 the same moment could overwrite it.
@@ -19,6 +20,7 @@ from moonwalkers.contracts.pipeline_result import PipelineResult, TwinRecord
 
 from .base import AlreadyExistsError, InvalidIdError, KnowledgeBase
 from .keys import validate_machine_key
+from .reviews import TwinReview
 
 ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
@@ -75,6 +77,21 @@ class JsonKnowledgeBase(KnowledgeBase):
             if model.is_dir() and any(model.glob("v*.json"))
         )
 
+    # ---------------------------------------------------------------- reviews
+    def save_review(self, review: TwinReview) -> None:
+        path = self._review_dir(review.machine_key, review.version) / f"r{review.number:04d}.json"
+        _write_new(path, review.model_dump_json(indent=2))
+
+    def list_reviews(self, machine_key: str, version: int) -> list[TwinReview]:
+        review_dir = self._review_dir(machine_key, version)
+        if not review_dir.is_dir():
+            return []
+        reviews = [
+            TwinReview.model_validate_json(p.read_text(encoding="utf-8"))
+            for p in review_dir.glob("r*.json")
+        ]
+        return sorted(reviews, key=lambda r: r.number)
+
     # ---------------------------------------------------------------- helpers
     def _result_path(self, result_id: str) -> Path:
         if not ID_PATTERN.fullmatch(result_id):
@@ -87,6 +104,12 @@ class JsonKnowledgeBase(KnowledgeBase):
     def _twin_dir(self, machine_key: str) -> Path:
         manufacturer, model = validate_machine_key(machine_key).split("/")
         return self.root / "twins" / manufacturer / model
+
+    def _review_dir(self, machine_key: str, version: int) -> Path:
+        manufacturer, model = validate_machine_key(machine_key).split("/")
+        if version < 1:
+            raise InvalidIdError(f"invalid twin version {version!r}: versions start at 1")
+        return self.root / "reviews" / manufacturer / model / f"v{version:04d}"
 
 
 def _version_file(version: int) -> str:
