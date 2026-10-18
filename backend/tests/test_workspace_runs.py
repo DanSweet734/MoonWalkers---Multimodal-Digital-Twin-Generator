@@ -1,4 +1,4 @@
-"""The MCP workspace: run folders, requests, reading notes and the geometry spec in parts."""
+"""The shared workspace: run folders, requests, reading notes and the geometry spec in parts."""
 
 import json
 from pathlib import Path
@@ -7,8 +7,8 @@ import pytest
 from pydantic import ValidationError
 
 from moonwalkers.contracts.pipeline_result import Citation, Fact, InputType, Source
-from moonwalkers.mcp.workspace import SPEC_PARTS_FILE, Workspace, WorkspaceError
 from moonwalkers.pipelines.b.pipeline import SPEC_FILE, RunFolderConflict
+from moonwalkers.workspace import SPEC_PARTS_FILE, Workspace, WorkspaceError
 
 JOINT = {
     "up": "+y",
@@ -40,6 +40,15 @@ def test_runs_are_numbered_per_machine_and_day(ws: Workspace, clock) -> None:
     assert request.job_id == f"moonwalkers-testindexer-{day(clock)}-run-002"
     assert request.machine is not None and request.machine.model == "Test Indexer"
     assert request.new_version and request.sources == []
+
+
+def test_a_run_folder_made_by_another_process_is_never_shared(ws: Workspace, clock) -> None:
+    first = ws.start_run("MoonWalkers", "Test Indexer")
+    taken = first.parent / f"{day(clock)}_run-002"
+    taken.mkdir()  # as if the MCP server and the API started runs at the same moment
+    third = ws.start_run("MoonWalkers", "Test Indexer")
+    assert third.name == f"{day(clock)}_run-003" and list(taken.iterdir()) == []
+    assert ws.machine_dir("MoonWalkers", "Test Indexer") == first.parent.parent
 
 
 @pytest.mark.parametrize(

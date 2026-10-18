@@ -38,6 +38,7 @@ from moonwalkers.usd.validate import validate_file
 from .pipeline import GENERATOR_DIR, GENERATOR_RECORD, PipelineB, ReferenceFacts, RunFolderConflict
 
 REQUEST_FILE = "request.json"
+JOB_RESULT_SUFFIX = ".job_result.json"
 TWIN_FILE = "twin.usdc"  # binary: a generated mesh is too big for text USD (decision 0012)
 CHECKS_DIR = "checks"
 # Drives for the hand check in Isaac Sim, as in Phase 2; chosen by us, not machine facts.
@@ -98,11 +99,23 @@ def build_run(
 
     pipelines = {**default_pipelines(), PipelineId.B: pipeline_b}
     job = Orchestrator(kb, pipelines, exporter=export).run_job(request)
-    _write_json(run_dir / f"{Path(request_path).stem}.job_result.json", job.model_dump(mode="json"))
+    write_job_result(run_dir, Path(request_path), job)
     if job.reused_existing:
         return BuildOutcome(job)
     _write_run_files(run_dir, kb, job, Path(request_path), reference_path, reference, findings)
     return BuildOutcome(job, findings, exported[0], exported[1:])
+
+
+def job_result_file(request_path: Path) -> str:
+    """The file name for what a request returned: ``request.json`` gives
+    ``request.job_result.json``, written next to it in the run folder."""
+    return f"{Path(request_path).stem}{JOB_RESULT_SUFFIX}"
+
+
+def write_job_result(run_dir: Path, request_path: Path, job: JobResult) -> Path:
+    path = Path(run_dir) / job_result_file(request_path)
+    _write_json(path, job.model_dump(mode="json"))
+    return path
 
 
 def _write_run_files(

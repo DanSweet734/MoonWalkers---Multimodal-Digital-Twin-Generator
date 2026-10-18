@@ -22,18 +22,20 @@ class TwinSummary(BaseModel):
     twin_id: str
     machine_key: str
     version: int
-    status: str
+    status: str = Field(description="as stored when it was built")
+    review_status: str = Field(description="the latest review's decision, or the stored status")
     usd_path: str | None = Field(description="relative to the data folder")
     created_at: datetime
     built_from: list[str]
 
     @classmethod
-    def of(cls, twin: TwinRecord) -> TwinSummary:
+    def of(cls, twin: TwinRecord, review_status: str) -> TwinSummary:
         return cls(
             twin_id=twin.twin_id,
             machine_key=twin.machine_key,
             version=twin.version,
             status=twin.status,
+            review_status=review_status,
             usd_path=twin.usd_path,
             created_at=twin.created_at,
             built_from=list(twin.built_from),
@@ -62,6 +64,23 @@ class RunInfo(BaseModel):
     machine_key: str
     new_version: bool
     existing_twin: TwinSummary | None
+    note: str
+
+
+class JobBrief(BaseModel):
+    run: str = Field(description="pass this to the other tools")
+    job_id: str | None
+    machine_key: str | None
+    new_version: bool
+    stage: str
+    stage_label: str
+    photo: str | None = Field(description="the input photo, relative to the data folder")
+    updated_at: datetime
+    next_step: str
+
+
+class JobList(BaseModel):
+    jobs: list[JobBrief]
     note: str
 
 
