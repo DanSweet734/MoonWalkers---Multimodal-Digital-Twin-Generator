@@ -22,6 +22,8 @@ Rules followed (sources in decision 0010 and docs/research/2026-10-17-usd-physic
   frame is the contract's ``origin_m`` in both bodies. UsdPhysics joint frames do not support scale,
   so any scale is baked into mesh points.
 * A twin without joints is written as static colliders (no rigid bodies, nothing moves on Play).
+* Parts are primitives (meshed by ``geometry``) or mesh files (GLB, OBJ) relative to ``data_dir``,
+  already in the twin frame and in metres (Pipeline B writes them that way).
 * Mass is not authored; physics engines infer it from the collision volume at 1000 kg/m^3. That is a
   placeholder, not the machine's real mass.
 * Every part, joint and the root carry their citations in ``customData["moonwalkers"]``.
@@ -50,6 +52,7 @@ from moonwalkers.contracts.pipeline_result import (
 
 from .frames import quat_between
 from .geometry import MeshData, primitive_mesh
+from .mesh_files import MESH_FILE_FORMATS, mesh_data_from_file
 from .units import KILOGRAMS_PER_UNIT, METERS_PER_UNIT, usd_angle, usd_length
 
 WORLD_JOINT = "fixed_to_world"
@@ -109,12 +112,16 @@ def export_twin(
     results: Sequence[PipelineResult],
     path: Path,
     drive: DriveSettings | None = None,
+    data_dir: Path | None = None,
 ) -> Path:
-    """Write the twin to ``path`` as ``.usda`` text with LF line endings; returns the path."""
+    """Write the twin to ``path`` as ``.usda`` text with LF line endings; returns the path.
+
+    ``data_dir`` is the project ``data/`` folder; mesh-file parts are relative to it (contract).
+    """
     path = Path(path)
     if path.suffix != ".usda":
         raise ExportError(f"export writes text USD; use a .usda file name, not {path.name}")
-    stage = build_stage(twin, results, drive)  # keep a reference: the stage owns its root layer
+    stage = build_stage(twin, results, drive, data_dir)  # the stage owns its root layer: keep it
     text = stage.GetRootLayer().ExportToString()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.tmp")
@@ -127,7 +134,10 @@ def export_twin(
 
 
 def build_stage(
-    twin: TwinRecord, results: Sequence[PipelineResult], drive: DriveSettings | None = None
+    twin: TwinRecord,
+    results: Sequence[PipelineResult],
+    drive: DriveSettings | None = None,
+    data_dir: Path | None = None,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()
@@ -165,7 +175,9 @@ def build_stage(
     body_paths: dict[str, Sdf.Path] = {}
     for part_id, (part, result_id) in parts.items():
         color = ROOT_PART_COLOR if part_id == root_part else MOVING_PART_COLOR
-        body_paths[part_id] = _write_part(stage, root_path, part, result_id, articulated, color)
+        body_paths[part_id] = _write_part(
+            stage, root_path, part, result_id, articulated, color, data_dir
+        )
 
     if articulated:
         UsdPhysics.ArticulationRootAPI.Apply(root)
@@ -255,16 +267,9 @@ def _write_part(
     result_id: str,
     articulated: bool,
     color: tuple[float, float, float],
+    data_dir: Path | None,
 ) -> Sdf.Path:
-    if part.geometry_format != "primitive" or part.primitive is None:
-        raise ExportError(
-            f"part '{part.part_id}' is a {part.geometry_format} file; only primitive parts are "
-            "exported until Pipeline B's mesh loader arrives (Phase 3)"
-        )
-    try:
-        mesh = primitive_mesh(part.primitive)
-    except ValueError as exc:
-        raise ExportError(f"part '{part.part_id}': {exc}") from exc
+    mesh = _part_mesh(part, data_dir)
 
     body = UsdGeom.Xform.Define(stage, root_path.AppendChild(_identifier(part.part_id))).GetPrim()
     body.SetDocumentation(part.name)
@@ -292,6 +297,28 @@ def _write_part(
     else:
         approximation.Set(UsdPhysics.Tokens.none)
     return body.GetPath()
+
+
+def _part_mesh(part: Part, data_dir: Path | None) -> MeshData:
+    """A primitive's generated mesh, or a mesh file read from ``data_dir``."""
+    try:
+        if part.geometry_format == "primitive" and part.primitive is not None:
+            return primitive_mesh(part.primitive)
+        if part.geometry_format in MESH_FILE_FORMATS and part.geometry_file:
+            if data_dir is None:
+                raise ExportError(f"part '{part.part_id}' is a mesh file; pass data_dir")
+            path = Path(data_dir) / part.geometry_file
+            if not path.is_file():
+                raise ExportError(f"part '{part.part_id}': mesh file not found: {path}")
+            return mesh_data_from_file(path)
+    except ExportError:
+        raise
+    except ValueError as exc:  # invalid primitive or unreadable mesh
+        raise ExportError(f"part '{part.part_id}': {exc}") from exc
+    raise ExportError(
+        f"part '{part.part_id}': geometry format '{part.geometry_format}' is not exported "
+        f"(supported: primitive, {', '.join(sorted(MESH_FILE_FORMATS))})"
+    )
 
 
 def _write_mesh(

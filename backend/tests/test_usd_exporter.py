@@ -239,8 +239,8 @@ def test_export_needs_a_usda_file_name(twin_and_result, tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------------- refusals
-def test_mesh_file_parts_wait_for_phase_3(example_result: PipelineResult, fixed_time) -> None:
-    twin = TwinRecord(
+def example_twin(example_result: PipelineResult, fixed_time) -> TwinRecord:
+    return TwinRecord(
         twin_id="haas/ha5c@v1",
         machine_key="haas/ha5c",
         version=1,
@@ -248,8 +248,40 @@ def test_mesh_file_parts_wait_for_phase_3(example_result: PipelineResult, fixed_
         built_from=[example_result.result_id],
         created_at=fixed_time,
     )
-    with pytest.raises(ExportError, match="Phase 3"):
-        build_stage(twin, [example_result])
+
+
+def test_mesh_file_parts_need_the_data_folder(example_result: PipelineResult, fixed_time) -> None:
+    with pytest.raises(ExportError, match="pass data_dir"):
+        build_stage(example_twin(example_result, fixed_time), [example_result])
+
+
+def test_missing_mesh_file_is_reported(
+    example_result: PipelineResult, fixed_time, tmp_path: Path
+) -> None:
+    with pytest.raises(ExportError, match="mesh file not found"):
+        build_stage(example_twin(example_result, fixed_time), [example_result], data_dir=tmp_path)
+
+
+def test_mesh_file_parts_are_exported(
+    example_result: PipelineResult, fixed_time, tmp_path: Path, indexer
+) -> None:
+    # The example's parts point at twins/haas-ha5c/v1/{body,spindle}.glb under the data folder.
+    from moonwalkers.pipelines.b.mesh_tools import split_by_cylinder
+
+    body, spindle = split_by_cylinder(indexer(), (1.0, 0, 0.2), (1, 0, 0), 0.45, 0.0)
+    folder = tmp_path / "twins" / "haas-ha5c" / "v1"
+    folder.mkdir(parents=True)
+    body.export(folder / "body.glb")
+    spindle.export(folder / "spindle.glb")
+
+    stage = build_stage(
+        example_twin(example_result, fixed_time), [example_result], data_dir=tmp_path
+    )
+    mesh = UsdGeom.Mesh(stage.GetPrimAtPath("/haas_ha5c/spindle/geometry"))
+    assert len(mesh.GetFaceVertexCountsAttr().Get()) == len(spindle.faces)
+    lo, hi = mesh.GetExtentAttr().Get()
+    assert math.isclose(lo[0], 1.0, abs_tol=1e-6) and math.isclose(hi[0], 1.6, abs_tol=1e-6)
+    assert [i.message for i in validate_stage(stage) if i.severity == "error"] == []
 
 
 def test_results_must_match_the_twin(twin_and_result) -> None:
