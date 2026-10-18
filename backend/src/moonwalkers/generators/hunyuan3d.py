@@ -77,6 +77,9 @@ class Hunyuan3DGenerator(ImageTo3DGenerator):
         self.config = config
         self.script = Path(script)
 
+    def fingerprint(self) -> dict[str, Any]:
+        return {"name": self.name, **asdict(self.config.settings)}
+
     def generate(self, request: GeneratorRequest) -> GeneratorRun:
         settings = self.config.settings
         views = sorted(request.images)

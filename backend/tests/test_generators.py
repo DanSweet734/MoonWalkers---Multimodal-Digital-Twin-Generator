@@ -2,6 +2,7 @@
 
 import os
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
@@ -125,3 +126,10 @@ def test_real_hunyuan3d_generation(tmp_path: Path) -> None:
     )
     mesh = trimesh.load(run.mesh_path, force="mesh")
     assert 1000 < len(mesh.faces) <= config.settings.max_faces
+
+
+def test_fingerprint_names_every_setting(tmp_path: Path) -> None:
+    settings = Hunyuan3DSettings(seed=7)
+    fingerprint = fake_generator(tmp_path, settings).fingerprint()
+    assert fingerprint == {"name": "hunyuan3d-2", **asdict(settings)}
+    assert fingerprint != fake_generator(tmp_path).fingerprint()  # another seed, another mesh

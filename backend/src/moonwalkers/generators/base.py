@@ -57,3 +57,8 @@ class ImageTo3DGenerator(ABC):
     @abstractmethod
     def generate(self, request: GeneratorRequest) -> GeneratorRun:
         """Run the generator; raises ``GeneratorError`` on failure."""
+
+    @abstractmethod
+    def fingerprint(self) -> dict[str, Any]:
+        """The name and every setting that shapes the output, as JSON values. An earlier mesh is
+        reused only for the same images and the same fingerprint."""
