@@ -210,6 +210,10 @@ async def test_mistakes_come_back_as_readable_tool_errors(setup, photo_run) -> N
             title="Sheet",
         )
         stray = [{"source_id": "src-unknown"}]
+        photo = [{"source_id": "src-photo"}]  # an input from add_input, not a reference source
+        assert "add_reference_source too" in await fails(
+            client, "add_fact", run=run, key="k", value=1, confidence=1.0, citations=photo
+        )
         assert "unknown sources" in await fails(
             client, "add_fact", run=run, key="k", value=1, confidence=1.0, citations=stray
         )

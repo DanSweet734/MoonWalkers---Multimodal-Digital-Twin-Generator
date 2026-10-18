@@ -23,6 +23,7 @@ from typing import Any, Literal
 from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from pydantic import ValidationError
 
 from moonwalkers.clock import Clock, utc_now
 from moonwalkers.contracts.pipeline_result import (
@@ -183,6 +184,19 @@ def create_server(
             control=[b.behavior_id for b in reference.control],
             issues=len(reference.issues),
         )
+
+    def save_notes(run_dir: Path, change: Callable[[dict[str, Any]], None]) -> ReferenceFacts:
+        """Save a change to the reading notes; explain the citation rule when one is broken."""
+        try:
+            return ws.update_reference(run_dir, change)
+        except ValidationError as exc:
+            if "citations of unknown sources" not in str(exc):
+                raise
+            raise ToolError(
+                f"{exc} -- Reading notes can cite only the sources recorded with "
+                "add_reference_source. The photo added with add_input is a job input: if a note "
+                "comes from it, record it with add_reference_source too."
+            ) from exc
 
     def need_reference(run_dir: Path) -> ReferenceFacts:
         reference = ws.reference(run_dir)
@@ -355,7 +369,7 @@ def create_server(
                     raise WorkspaceError(f"the reference facts already have {source_id!r}")
                 data["sources"].append(source.model_dump(mode="json"))
 
-            reference = ws.update_reference(run_dir, add)
+            reference = save_notes(run_dir, add)
             return SourceAdded(
                 run=run, source=source, inputs=[s.source_id for s in reference.sources]
             )
@@ -387,7 +401,7 @@ def create_server(
             def set_identity(data: dict[str, Any]) -> None:
                 data["identity"] = identity.model_dump(mode="json")
 
-            return summary(run_dir, ws.update_reference(run_dir, set_identity))
+            return summary(run_dir, save_notes(run_dir, set_identity))
 
     @server.tool(annotations=LOCAL_WRITE)
     def add_fact(
@@ -423,7 +437,7 @@ def create_server(
                     raise WorkspaceError(f"fact {key!r} exists; pass replace=true to change it")
                 data["facts"] = [*facts, fact.model_dump(mode="json")]
 
-            return summary(run_dir, ws.update_reference(run_dir, put))
+            return summary(run_dir, save_notes(run_dir, put))
 
     @server.tool(annotations=LOCAL_WRITE)
     def add_control(
@@ -461,7 +475,7 @@ def create_server(
                 kept = [b for b in data["control"] if b["behavior_id"] != behavior_id]
                 data["control"] = [*kept, behavior.model_dump(mode="json")]
 
-            return summary(run_dir, ws.update_reference(run_dir, put))
+            return summary(run_dir, save_notes(run_dir, put))
 
     @server.tool(annotations=LOCAL_WRITE)
     def add_issue(
@@ -480,7 +494,7 @@ def create_server(
             def put(data: dict[str, Any]) -> None:
                 data["issues"].append(issue.model_dump(mode="json"))
 
-            return summary(run_dir, ws.update_reference(run_dir, put))
+            return summary(run_dir, save_notes(run_dir, put))
 
     # ---------------------------------------------------------------------------- geometry
     @server.tool(annotations=LOCAL_WRITE)
