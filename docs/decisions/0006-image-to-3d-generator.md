@@ -1,6 +1,6 @@
 # 0006 - Image-to-3D generator for Pipeline B: Hunyuan3D-2mv first, Stable Fast 3D fallback
 
-- **Status:** accepted for the PoC
+- **Status:** accepted for the PoC; fallback changed by 0011 (2026-10-17)
 - **Date:** 2026-10-16
 - **Decided by:** team
 
@@ -24,3 +24,10 @@ Hunyuan3D-2mv primary, Stable Fast 3D fallback, each in its own environment, cal
 Generator dependencies never mix with the backend's. Swapping generators (for example TRELLIS.2 on a Linux
 machine later) only needs a new adapter. Licenses are fine for a US student PoC but must be revisited
 before any release.
+
+## Update (2026-10-17)
+Decision 0011 replaces the Stable Fast 3D fallback with Hunyuan3D-2's single-image model. That model
+runs in the same environment with no compiling and no gated weights. Stable Fast 3D's README lists
+Windows support as "experimental" and needs Visual Studio 2022 and gated weights. The first HA5C runs
+use the single-image model because only one clean photo is available; Hunyuan3D-2mv stays the
+primary choice for multi-view photo sets.

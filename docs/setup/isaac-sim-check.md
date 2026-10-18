@@ -2,7 +2,7 @@
 
 Purpose: confirm by eye that an exported twin opens in Isaac Sim at the right size and that its
 joint moves. Phase 2 does this with the synthetic box-and-cylinder test twin. Phase 3 repeats it
-with the HA5C. The files have already passed both validators (our own and NVIDIA's asset
+with the HA5C (section 6). The files have already passed both validators (our own and NVIDIA's asset
 validator), so this step checks what only the simulator can show.
 
 ## 1. Install Isaac Sim 6.2.0 (once)
@@ -68,6 +68,45 @@ In the run folder's `RUN.md`, under "Isaac Sim check", note:
 
 Screenshots stay in the run folder (not in git); describe them in the worklog.
 
+## 6. Phase 3: check the HA5C twin
+Files in `data/machines/haas-ha5c/runs/2026-10-17_run-003/`. All three are the stored twin
+`haas/ha5c@v2`; they differ only in the spindle's drive:
+- `twin.usdc`: the spindle holds at 0 degrees;
+- `checks/spin.usdc`: the spindle turns at 30 degrees per second;
+- `checks/quarter_turn.usdc`: the spindle turns to 90 degrees and holds.
+
+They are binary USD (decision 0012). Open them with **File > Open**, as before.
+
+1. **Before Play (success level 1).** Open `twin.usdc`. You should see:
+   - a grey HA5C body with the motor housing on one side, the handle on top and a lever sticking
+     out sideways, as in the Haas UK photo;
+   - a short orange cylinder with a bore (the spindle nose) at the front, pointing along +X. The
+     black six-screw disc around it is part of the grey body (decision 0012, Daniel's choice).
+
+   Expected sizes (from `RUN.md`):
+   - about 0.22 m along X, 0.38 m along Y and 0.20 m tall;
+   - the base at height 0 and the spindle axis 0.1016 m (4 in) above it;
+   - the nose about 0.065 m across.
+
+   For comparison, the Haas drawing gives 15.32 in (0.389 m) for the width and 8.3 in (0.211 m) for
+   the height including the handle. If the model looks 100 times too big or too small, the units
+   are wrong.
+2. **Play `twin.usdc`.** Nothing should move or fall. The console should no longer warn that the
+   stage "has no usable time-code range" (decision 0010, Phase 3 update). Please copy any warning
+   that mentions `/haas_ha5c`.
+3. **Play `checks/spin.usdc` (success level 2).** The spindle should turn about X at 30 degrees per
+   second, one turn every 12 seconds, while the body stays still. The nose is nearly round, so the
+   turning can be hard to see. Watch the bore's rim and any small bumps on the nose. A wireframe
+   view also shows the triangles moving, though the menu for it in 6.2 is not confirmed. The joint
+   is `/haas_ha5c/joints/spindle_rotation`; its angular drive's target velocity should read 30.
+4. **Play `checks/quarter_turn.usdc`.** The spindle should turn 90 degrees and hold, settling in
+   about two seconds as in Phase 2. The drive's target position should read 90.
+5. **Look for collisions between the parts.** The body's convex collider overlaps the back of the
+   spindle. Jointed parts should not collide (decision 0010, Phase 3 update). If the spindle
+   shakes, drifts or is pushed out of place, please report it.
+6. **Record** what you saw in `2026-10-17_run-003/RUN.md` under "Isaac Sim check": the version,
+   what each file did, any console warnings about our files, and the success level (1 or 2).
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:
@@ -79,8 +118,9 @@ not about the twin files:
 - an `omni.anim.graph.core` node-registration message;
 - an omniclient "rejecting empty URL".
 
-One warning *is* about our files: the stage "has no usable time-code range". It does not affect
-these checks. The exporter will set a time range in Phase 3, before controllers need it.
+One warning *was* about our files: the stage "has no usable time-code range". Since Phase 3 the
+exporter sets a time range (0 to 1,000,000 at 60 per second), so files exported now should not show
+it. The Phase 2 test files were made before that change.
 
 Isaac Sim lit the stage with a directional light that is not in the file, so the files do not need
 their own lights.

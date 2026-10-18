@@ -1,6 +1,11 @@
 # Connecting a Hugging Face account
 
-Some model weights we use are **gated**: you must accept the model's conditions in a browser before you can
+**Not needed for Phase 3.** The generator we use, Hunyuan3D-2 (decision 0011), is not gated. The
+Hugging Face API reported `gated=False` for `tencent/Hunyuan3D-2` and `tencent/Hunyuan3D-2mv` on
+2026-10-17, so its weights need no accepted conditions (`docs/setup/generators.md`). This guide is
+kept for gated models such as Stable Fast 3D, which decision 0011 moved to "later option".
+
+Some model weights are **gated**: you must accept the model's conditions in a browser before you can
 download them. Stable Fast 3D is gated
 ("you have to accept the conditions", https://huggingface.co/stabilityai/stable-fast-3d).
 
@@ -10,8 +15,7 @@ download them. Stable Fast 3D is gated
    Per Hugging Face's docs, "Requesting access can only be done from your browser," and access is granted
    either immediately (automatic approval) or after the authors review it (manual approval)
    (https://huggingface.co/docs/hub/models-gated).
-3. When you open the Hunyuan3D model pages linked from https://github.com/Tencent-Hunyuan/Hunyuan3D-2,
-   check whether they ask you to accept conditions too, and accept if so.
+3. The Hunyuan3D model pages need no acceptance (not gated, checked 2026-10-17).
 
 ## 2. Create a read-only token
 Create a User Access Token at https://huggingface.co/settings/tokens. Hugging Face recommends a `read`
