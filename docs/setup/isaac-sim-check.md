@@ -91,6 +91,10 @@ They are binary USD (decision 0012). Open them with **File > Open**, as before.
    For comparison, the Haas drawing gives 15.32 in (0.389 m) for the width and 8.3 in (0.211 m) for
    the height including the handle. If the model looks 100 times too big or too small, the units
    are wrong.
+
+   Measuring by hand is approximate. The measuring tool snaps to vertices, edges or surfaces, and
+   its lines are not axis-aligned. On 2026-10-18 Daniel's width and height came within 0.02 in of
+   the computed sizes, but a depth line stopped short of the back. The exact sizes are in `RUN.md`.
 2. **Play `twin.usdc`.** Nothing should move or fall. The console should no longer warn that the
    stage "has no usable time-code range" (decision 0010, Phase 3 update). Please copy any warning
    that mentions `/haas_ha5c`.
