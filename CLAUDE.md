@@ -38,6 +38,8 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
 -> Agent Orchestrator -> Knowledge Base (store interface) + USD Exporter -> `.usd` -> Isaac Sim.
 - For the PoC, **Claude Code is the agent**: the backend exposes its actions as MCP tools (add source,
   identify machine, check knowledge base, generate geometry, set scale, add joint, export, submit).
+  Server: `moonwalkers.mcp`, registered in `.mcp.json` (decision 0013). The agent follows
+  `docs/agent-procedure.md`.
 - Knowledge base: a simple JSON/SQLite store behind a `KnowledgeBase` interface; Neo4j comes later.
 - Contract: `backend/src/moonwalkers/contracts/pipeline_result.py` (Pydantic, SCHEMA_VERSION 0.1.0).
 - Units inside the contract are SI (m, rad, s, kg). Convert only at the USD export boundary.
@@ -86,6 +88,9 @@ Backend (run from `backend/`):
   `... inspect <run> --preview --reference <facts.json>`
 - Validate an exported twin (`.usda` or `.usdc`): `uv run python -m moonwalkers.usd.validate <file>`, then NVIDIA's `uv run omni_asset_validate <file>`
 - Check a twin by eye in Isaac Sim: `docs/setup/isaac-sim-check.md`
+- MCP server for the agent: Claude Code starts it from `.mcp.json` (approve it once per project). To
+  start it by hand over stdio: `uv run python -m moonwalkers.mcp`. It needs `MOONWALKERS_GEN_ROOT`
+  to generate new meshes.
 - API (dev, from Phase 5; FastAPI and uvicorn are not installed yet): `uv run uvicorn moonwalkers.api.app:app --reload`
 
 Dashboard (run from `dashboard/`):

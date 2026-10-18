@@ -1,0 +1,154 @@
+# Agent procedure: building a twin with the MoonWalkers tools
+
+This guide is for an AI agent (in the PoC, Claude Code; decision 0003) that is connected to the
+project's `moonwalkers` MCP server (decision 0013). It turns one machine photo into a functional
+digital twin: a body and a spindle on a revolute joint, scaled, with every fact cited. A person then
+reviews the twin. Each step below names the tool to use. The tools' own descriptions give their
+arguments.
+
+## Rules
+- **Cite every fact.** Each value, dimension and capability needs a source with a locator (page,
+  view or table) and a short verbatim quote. Never invent a number: if a source does not say it,
+  leave it out or record it as "not confirmed" (CLAUDE.md, rule 1).
+- **Label your reasoning.** Anything a source does not state, such as which dimension a drawing
+  number measures or which parts turn, is written with `[INFERENCE]` in the fact's locator, an
+  issue, or the joint's `method`.
+- **Disagreeing sources:** name both, pick one, and say which and why (`add_issue`), as
+  `docs/methodology.md` asks.
+- **Ask the person** when a judgement changes the twin and the sources do not settle it. Show them
+  the evidence and the preview images, then record their choice.
+- **Install nothing.** The server never installs packages. If something is missing, say so.
+- Twins are stored as `needs_review`. You do not approve them; a person does.
+
+## 0. Before you start
+1. In Claude Code, `/mcp` should list `moonwalkers` as connected. The first time, Claude Code asks
+   the person to approve this project server.
+2. Call `check_knowledge_base()`. It reports the data folder and `generator_root`. If
+   `generator_root` is null, new geometry cannot be generated: ask the person to set
+   `MOONWALKERS_GEN_ROOT` (`docs/setup/generators.md`) and restart.
+
+## 1. Reuse first
+- Call `check_knowledge_base(manufacturer, model)`.
+- If a twin exists and the person did not ask for a rebuild, call `request_twin(manufacturer,
+  model)`. Report its message, which says the stored twin was reused, plus the twin id and USD
+  path, and stop.
+- If they asked for a rebuild, build a new version: in step 2, start the run with
+  `new_version=true`.
+
+## 2. Start a run and add the photo
+1. **The inputs must already be in the data folder,** under `data/machines/<machine>/inputs/`,
+   each with a line in that folder's `SOURCES.md` (URL, date retrieved, SHA-256, license note;
+   `data/README.md`). If one is missing, tell the person; downloading files is outside these
+   tools.
+2. `start_run(manufacturer, model, new_version)` returns `run`, which every other tool takes.
+3. `add_input(run, path, source_id, title, retrieved_at, license_note)` adds the photo:
+   - the path is relative to the data folder;
+   - put the photo's original URL in the title;
+   - take `retrieved_at` and the license note from `SOURCES.md`.
+
+## 3. Read the documents and record cited notes
+1. **`add_reference_source`, once per document you use.**
+   - For a downloaded file, use `kind="url"` with its original URL, and pass `local_copy` (the
+     file under `data/`) so the copy you read is hashed.
+   - For something a person told you, use `kind="user_input"`.
+2. **Read the PDFs.** The Read tool cannot render PDFs here, so extract text with pypdf. From
+   `backend/`:
+   ```
+   uv run python -c "from pypdf import PdfReader; r = PdfReader('../data/machines/<machine>/inputs/documents/<file>.pdf'); print(r.pages[N - 1].extract_text())"
+   ```
+   Things to watch for:
+   - Give locators as PDF page numbers. If the printed page number differs, give both.
+   - pypdf may show symbols such as `±` and `°` as an unreadable character. Restore them from
+     context, and say so in your report.
+   - A drawing's text does not show what a dimension line spans. Mark such readings
+     `[INFERENCE]`, or ask the person.
+3. **`identify_machine`**, quoting the sources that name the machine.
+4. **`add_fact`** for each value, in SI units with the value as written in `original`. Pipeline B
+   uses:
+   - `center_height` (m): the spindle axis height above the base. **Required:** it sets the
+     scale.
+   - `max_spindle_speed` (rad/s): the joint's maximum velocity.
+   - `overall_width`, `overall_height`, `overall_depth` (m): size checks against the model. Say in
+     the locator what each dimension spans, for example whether a height includes a handle.
+5. **`add_control`** for how the machine is driven, for example an indexing program from the
+   manual. Pipeline B's joint is `spindle_rotation`: list it in `drives_joints`.
+6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see.
+
+## 4. Generate and inspect the geometry
+1. **`generate_geometry(run)`.** It takes about a minute on the GPU the first time, and reuses the
+   run's mesh after that. Open the returned views PNG with your Read tool.
+2. **Decide the axes from the views:** which generator axis points up, and which one the spindle
+   nose faces.
+3. **`inspect_geometry(run, up, front)`.** Open its views, then check:
+   - **`tip_slabs`:** centres that agree across depths mean the tip is a round nose; that gives the
+     spindle axis (y, z).
+   - **`profile`:** along +x it shows the body's front face (`r_max` jumps to the window), any
+     flange or disc in front of it, and the nose.
+   - **The base:** the lowest point should be a flat base, not a foot or a stray bit of mesh.
+4. **What turns?** If the documents do not say which front parts move with the spindle (a nose
+   only, or a flange too), say so, and ask the person to choose.
+
+## 5. Define the joint and the scale
+1. **`add_joint(run, up, front, spindle_axis_yz, spindle_radius, spindle_start_x, method)`.**
+   - `spindle_axis_yz` comes from the slabs.
+   - `spindle_radius` lies between the moving part's radius and the radius of whatever stays put.
+   - `spindle_start_x` sits just in front of the face the moving part starts from.
+   - `method` explains the numbers you used, with `[INFERENCE]` for judgement. It becomes a cited
+     source of the twin.
+2. **`set_scale(run)`** uses the cited `center_height`. Pass `base_z` only if the base is not the
+   lowest point.
+3. **`preview_twin(run)`** stores nothing. Open the assembled, body and spindle PNGs, and read
+   the size checks: a difference above 10% is a warning.
+4. You can call `add_joint` and `set_scale` again until the preview is right. Once you submit, the
+   run is fixed.
+
+## 6. Submit and report
+1. **`submit_twin(run)`** stores the result and a new twin version (needs review), exports
+   `twin.usdc` and two check files, and validates them. If the machine already has a twin and the
+   run is not a new version, it reuses the stored twin instead and says so.
+2. **Report to the person:**
+   - the twin id and the USD path;
+   - what was cited, and what is `[INFERENCE]`;
+   - the size checks and the twin's issues;
+   - the validation result;
+   - the next step: the Isaac Sim check in `docs/setup/isaac-sim-check.md`, section 6, using this
+     run's files.
+3. **A second request** for the same machine, `request_twin(manufacturer, model)`, should reuse
+   the stored twin and say so. Report its message.
+4. **Record the session** in `docs/worklog/<date>.md` (CLAUDE.md, "Documentation workflow"):
+   - the tools you called, in order;
+   - your choices and why, and the results;
+   - anything that went wrong.
+
+   Do not commit, push or open pull requests unless the person asks.
+
+## When a tool fails
+Tool errors say what is wrong. The common ones:
+
+| Error | What to do |
+|---|---|
+| "add a reference source first" | Call `add_reference_source` before `identify_machine` or `add_fact` |
+| "citations of unknown sources" | Cite a `source_id` you already recorded |
+| "the geometry spec is not complete" | Call both `add_joint` and `set_scale` |
+| "already built its twin" / "already assembled" / "already generated" | The run folder is fixed: start a new run (`new_version=true` for a rebuild) |
+| "the image-to-3D generator is not configured" | The person must set `MOONWALKERS_GEN_ROOT` for the server |
+| "Pipeline B (PoC) takes exactly one machine photo" | Add exactly one photo with `add_input` |
+
+Claude Code asks the person before each tool call unless they allow the tool. Only
+`check_knowledge_base` is read-only. `request_twin` stores nothing when it reuses a twin. The other
+tools write only inside the run folder, except `submit_twin`, which also writes the knowledge base.
+
+## The Phase 4 end-to-end check
+`docs/poc-plan.md`, Phase 4, asks for a run in which Claude Code drives these tools to build the
+HA5C twin.
+1. Set `MOONWALKERS_GEN_ROOT` (`docs/setup/generators.md`, step 6) and restart VS Code.
+2. Open a **new** Claude Code session in this repository, so the agent has none of the building
+   session's memory, and approve the `moonwalkers` server.
+3. Give it a prompt like this:
+
+   > Use the MoonWalkers MCP tools to build a new version of the Haas HA5C twin from the Haas UK
+   > photo in data/machines/haas-ha5c/inputs/, following docs/agent-procedure.md. Read the
+   > documents in that folder yourself and cite every fact. Do not copy facts from
+   > pipelines/b/haas_ha5c.reference.json; afterwards, compare your facts with it and report any
+   > difference. Then show that a second request for the HA5C reuses the stored twin. Write a
+   > summary of the session in today's worklog. Do not commit.

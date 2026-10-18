@@ -8,8 +8,8 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Proof of concept in progress: Phases 0-3 are done** (scaffold; knowledge base and orchestrator
-core; USD export; Pipeline B). The orchestrator stores twin records, reuses a stored twin on a
+**Proof of concept in progress: Phases 0-3 are done and Phase 4 is underway** (scaffold;
+knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP). The orchestrator stores twin records, reuses a stored twin on a
 second request, and re-versions on request. The USD exporter writes simulatable twins (rigid bodies,
 a driven revolute joint, cited provenance) that pass two validators. A synthetic box-and-cylinder
 test twin opened and moved as expected in Isaac Sim 6.2.0 on Oct 17, 2026. Phase 3 built the first
@@ -20,7 +20,7 @@ HA5C twin from one Haas photo:
 - both validators pass.
 
 In Isaac Sim 6.2.0 on Oct 18, 2026 the twin opened at the right size and its spindle turned:
-success level 2.
+success level 2. Phase 4 exposes these steps as MCP tools for Claude Code, the PoC's agent.
 
 | Area | Status |
 |---|---|
@@ -29,8 +29,8 @@ success level 2.
 | Architecture design, surveys, sketches and Figma wireframes | Done |
 | Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **In progress.** Phases 0-3 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026. Phase 4 (agent via MCP) next. See [docs/poc-plan.md](docs/poc-plan.md) |
-| Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing), JSON-file knowledge base, USD exporter (text or binary) + validator, and image-to-3D generator adapter, all tested. Dashboard: Vite + React + TypeScript starter page |
+| Proof of concept | **In progress.** Phases 0-3 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026. Phase 4 (agent via MCP): server, `.mcp.json` and agent procedure built; the end-to-end run in a fresh Claude Code session is next. See [docs/poc-plan.md](docs/poc-plan.md) |
+| Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing), JSON-file knowledge base, USD exporter (text or binary) + validator, image-to-3D generator adapter, and an MCP server with 15 tools for the agent, all tested. Dashboard: Vite + React + TypeScript starter page |
 | Input pipelines | Pipeline B (photos) turns one machine photo into a scaled body and spindle on a revolute joint, with facts cited from documents (decision 0012). Pipelines A, C, D are stubs returning cited HA5C fixture data. All four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
 Everything below describes the **planned design**. Anything marked *candidate* or *to be researched* has not been decided by the team.
@@ -369,13 +369,15 @@ California State University, Northridge (CSUN), Computer Science capstone.
 |---|---|
 | `CLAUDE.md` | Project instructions for Claude Code (rules, layout, commands, workflow) |
 | `.claude/settings.json` | Shared Claude Code permissions (tests, commits, and PRs allowed; installs ask first) |
+| `.mcp.json` | Registers the `moonwalkers` MCP server, so Claude Code can drive the platform (decision 0013) |
 | `docs/methodology.md` | How we work: research, decide, build, verify, document |
+| `docs/agent-procedure.md` | How the agent builds a twin with the MCP tools |
 | `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |
-| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export, generator setup, Pipeline B method) |
+| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export, generator setup, Pipeline B method, MCP server) |
 | `docs/worklog/` | Dated work entries |
 | `docs/research/` | Research notes and the project context file |
 | `docs/setup/` | Setup guides: Windows, Hugging Face, the image-to-3D generator, and the Isaac Sim check |
-| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), USD exporter and validator (`usd/`), image-to-3D generator adapters (`generators/`), Pipeline B (`pipelines/b/`), and tests |
+| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), USD exporter and validator (`usd/`), image-to-3D generator adapters (`generators/`), Pipeline B (`pipelines/b/`), the MCP server (`mcp/`), and tests |
 | `dashboard/` | Vite + React + TypeScript app (starter page for now) |
 | `data/` | Local test data and outputs (gitignored except its README) |
 
