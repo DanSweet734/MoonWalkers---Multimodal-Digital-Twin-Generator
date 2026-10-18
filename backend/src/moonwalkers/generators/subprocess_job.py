@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
@@ -23,7 +24,9 @@ def run_job(
     """Run ``python script job.json result.json`` in ``work_dir`` and return the result.
 
     The script's output goes to ``work_dir/generator.log``. A non-zero exit, a missing result, a
-    timeout, or a result whose ``status`` is not ``"ok"`` raises ``GeneratorError``.
+    timeout, or a result whose ``status`` is not ``"ok"`` raises ``GeneratorError``. The script's
+    temporary files go to ``work_dir/tmp``, removed afterwards: hy3dgen's mesh clean-up leaves its
+    temporary ``.ply`` files behind (``delete=False`` in hy3dgen/shapegen/postprocessors.py).
     """
     # Absolute paths: the child runs with cwd=work_dir, so relative ones would point elsewhere.
     python, script, work_dir = (
@@ -39,7 +42,10 @@ def run_job(
     job_path.write_text(json.dumps(dict(job), indent=2), encoding="utf-8", newline="\n")
     result_path.unlink(missing_ok=True)
 
-    child_env = {**os.environ, **(env or {}), "PYTHONIOENCODING": "utf-8"}
+    tmp_dir = work_dir / "tmp"
+    tmp_dir.mkdir(exist_ok=True)
+    temp_env = {name: str(tmp_dir) for name in ("TMPDIR", "TEMP", "TMP")}  # Python's tempfile
+    child_env = {**os.environ, **(env or {}), "PYTHONIOENCODING": "utf-8", **temp_env}
     with log_path.open("w", encoding="utf-8") as log:
         try:
             proc = subprocess.run(
@@ -55,6 +61,8 @@ def run_job(
             raise GeneratorError(
                 f"generator timed out after {timeout_s:g} s; see {log_path}"
             ) from exc
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
     if not result_path.is_file():
         raise GeneratorError(f"generator wrote no result (exit {proc.returncode}); see {log_path}")

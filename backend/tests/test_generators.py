@@ -133,3 +133,13 @@ def test_fingerprint_names_every_setting(tmp_path: Path) -> None:
     fingerprint = fake_generator(tmp_path, settings).fingerprint()
     assert fingerprint == {"name": "hunyuan3d-2", **asdict(settings)}
     assert fingerprint != fake_generator(tmp_path).fingerprint()  # another seed, another mesh
+
+
+def test_temporary_files_stay_in_the_run_and_are_removed(tmp_path: Path, image: Path) -> None:
+    out_dir = tmp_path / "out"
+    run = fake_generator(tmp_path).generate(
+        GeneratorRequest(images={"single": image}, out_dir=out_dir)
+    )
+    leftover = Path(run.details["leftover_seen"])
+    assert leftover.parent == out_dir.resolve() / "tmp"  # not the user's temp folder
+    assert not leftover.parent.exists()

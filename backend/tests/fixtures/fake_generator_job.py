@@ -7,6 +7,7 @@ tested without a GPU or model weights. ``seed == 666`` simulates a failed genera
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import trimesh
@@ -21,6 +22,8 @@ def main(argv: list[str]) -> int:
         return 1
     mesh_path = Path(job["out_dir"]) / "mesh.glb"
     trimesh.creation.box(extents=(1.0, 0.5, 0.25)).export(mesh_path)
+    with tempfile.NamedTemporaryFile(suffix=".ply", delete=False) as leftover:  # as hy3dgen does
+        leftover.write(b"temporary")
     result = {
         "status": "ok",
         "mesh_path": str(mesh_path),
@@ -29,6 +32,7 @@ def main(argv: list[str]) -> int:
         "versions": {"hy3dgen": "fake"},
         "images_seen": job["images"],
         "env_seen": {k: os.environ.get(k) for k in ("HY3DGEN_MODELS", "U2NET_HOME")},
+        "leftover_seen": leftover.name,
     }
     result_path.write_text(json.dumps(result), encoding="utf-8")
     return 0
