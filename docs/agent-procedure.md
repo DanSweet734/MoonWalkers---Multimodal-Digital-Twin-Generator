@@ -22,7 +22,9 @@ arguments.
 - **Ask the person** when a judgement changes the twin and the sources do not settle it. Show them
   the evidence and the preview images, then record their choice.
 - **Install nothing.** The server never installs packages. If something is missing, say so.
-- Twins are stored as `needs_review`. You do not approve them; a person does.
+- **Never review.** Twins are stored as `needs_review`. A person approves or rejects them, in the
+  dashboard (decision 0015). You can read a version's `review_status`, but you have no tool to set
+  it. A version rejected in review is never reused.
 
 ## 0. Before you start
 1. In Claude Code, `/mcp` should list `moonwalkers` as connected. Claude Code's documentation says
@@ -33,12 +35,29 @@ arguments.
    `MOONWALKERS_GEN_ROOT` (`docs/setup/generators.md`) and restart.
 
 ## 1. Reuse first
-- Call `check_knowledge_base(manufacturer, model)`.
-- If a twin exists and the person did not ask for a rebuild, call `request_twin(manufacturer,
+- Call `check_knowledge_base(manufacturer, model)`. Its note says which version a request would
+  reuse: the newest one not rejected in review.
+- If there is one and the person did not ask for a rebuild, call `request_twin(manufacturer,
   model)`. Report its message, which says the stored twin was reused, plus the twin id and USD
   path, and stop.
-- If they asked for a rebuild, build a new version: in step 2, start the run with
-  `new_version=true`.
+- If they asked for a rebuild, or every version was rejected, build a new version: in step 2,
+  start the run with `new_version=true`.
+
+## Jobs started in the dashboard
+Someone can upload a photo in the dashboard (decision 0014, `docs/setup/dashboard.md`). If the
+machine has a reusable twin and no new version was asked for, the platform reuses it at once and
+the job is done. Otherwise the job waits for you:
+1. **`list_jobs()`** shows open jobs, with each one's `run`, `stage` and `next_step`. The person
+   may also name the run, for example "Build the twin for the dashboard job
+   machines/haas-ha5c/runs/2026-10-19_run-001".
+2. **The job already has its request and photo.** The request names the machine and says whether
+   a new version was asked for. So skip `start_run` and `add_input`, and start at step 3 with that
+   `run`.
+3. **The photo's provenance** is the uploader's text, in the source's title (ending "(uploaded
+   through the dashboard)"), and its line in `SOURCES.md`. If the photo is unclear, or its
+   provenance is missing, ask the person before building.
+4. **Carry on with steps 3 to 6.** The job's page in the dashboard shows each step as you take
+   it.
 
 ## 2. Start a run and add the photo
 1. **The inputs must already be in the data folder,** under `data/machines/<machine>/inputs/`,
@@ -125,7 +144,7 @@ arguments.
    - the size checks and the twin's issues;
    - the validation result;
    - the next step: the Isaac Sim check in `docs/setup/isaac-sim-check.md`, section 6, using this
-     run's files.
+     run's files, then a review in the dashboard (the twin's page).
 3. **A second request** for the same machine, `request_twin(manufacturer, model)`, should reuse
    the stored twin and say so. Report its message.
 4. **Record the session** in `docs/worklog/<date>.md` (CLAUDE.md, "Documentation workflow"):
@@ -148,8 +167,9 @@ Tool errors say what is wrong. The common ones:
 | "Pipeline B (PoC) takes exactly one machine photo" | Add exactly one photo with `add_input` |
 
 Claude Code asks the person before each tool call unless they allow the tool. Only
-`check_knowledge_base` is read-only. `request_twin` stores nothing when it reuses a twin. The other
-tools write only inside the run folder, except `submit_twin`, which also writes the knowledge base.
+`check_knowledge_base` and `list_jobs` are read-only. `request_twin` stores nothing when it reuses a
+twin. The other tools write only inside the run folder, except `submit_twin`, which also writes the
+knowledge base.
 
 ## The Phase 4 end-to-end check
 `docs/poc-plan.md`, Phase 4, asks for a run in which Claude Code drives these tools to build the

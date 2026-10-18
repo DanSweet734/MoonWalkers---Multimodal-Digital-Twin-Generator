@@ -55,6 +55,16 @@ user request", and results "must say when a twin was found in the knowledge base
   base is checked [INFERENCE: Phase 4's MCP tools "identify machine" and "check knowledge base" should
   run before "generate geometry", so the agent passes a hint].
 - The contract has no "rejected" status, so a reviewer's rejection cannot be recorded yet; that needs a
-  contract change (new decision record and version bump) when review is built.
+  contract change (new decision record and version bump) when review is built. (Superseded by decision
+  0015: reviews became separate records, with no contract change.)
 - Merging facts from several versions or jobs into one twin is not decided; each version is built only
   from its own job's results.
+
+## Update (2026-10-18): reviews change which version is reused
+Decision 0015, chosen by Daniel in Phase 5, amends "Reuse: the latest version (option 1)":
+- A request reuses the newest version whose latest review did not reject it.
+- When every version was rejected, a request with inputs builds a new version, and the message says
+  why.
+- The reuse message names the version's review status and any newer versions it skipped.
+
+The key, the flow and re-versioning on request are unchanged.

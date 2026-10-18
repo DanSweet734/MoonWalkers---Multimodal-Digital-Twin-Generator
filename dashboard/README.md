@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# MoonWalkers dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A barebones web page for people (decision 0014):
+- **Jobs:** upload a machine photo and follow the job as the agent builds it.
+- **Twins:** each version with its facts, sources, citations and files, and its reviews.
+- **Sources:** every cited document, with the twins that cite it.
 
-Currently, two official plugins are available:
+It talks only to the MoonWalkers API (`backend/src/moonwalkers/api`). How to run both, and what to
+check by hand: `docs/setup/dashboard.md`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Commands
+Run these from `dashboard/`:
+- `npm ci`: install the exact packages in `package-lock.json`.
+- `npm run dev`: http://localhost:5173, with `/api` forwarded to the API on port 8000.
+- `npm run build`: type-check (app and tests), then build into `dist/`, which the API serves at `/`.
+- `npm run lint`: Oxlint.
+- `npm test`: the unit tests (`src/**/*.test.ts`), run by Node's own test runner.
 
-## React Compiler
+## Layout
+| Path | What it holds |
+|---|---|
+| `src/api/types.gen.ts` | TypeScript types generated from the API's models. Don't edit it; from `backend/`, run `uv run python -m moonwalkers.api.typescript` |
+| `src/api/client.ts` | The API calls. Writes send the `X-MoonWalkers-Client` header, which the API requires |
+| `src/lib/` | Routes in the URL hash, wording and formatting (`route.ts`, `format.ts`, with tests), and React hooks (`hooks.ts`) |
+| `src/components/` | Badges, citations, notes tables, images and file lists |
+| `src/pages/` | One file per page |
+| `src/index.css` | The monochrome style: white, grays and black. State is shown in words and border styles, not color |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Conventions
+- **No libraries beyond React.** `fetch` for data, the URL hash for pages, polling for live job
+  status.
+- **TypeScript strict,** with erasable syntax only, so Node can run the tests without a build
+  step. Import local files with their extension (`./format.ts`).
+- **Pure logic** goes in `src/lib/` with a `*.test.ts` next to it.

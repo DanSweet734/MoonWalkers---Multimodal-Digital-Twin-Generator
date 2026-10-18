@@ -70,8 +70,15 @@ Plus: a second request for the same machine reuses the stored twin and the resul
 - [x] PR (Oct 18, 2026: branch `feat/phase-4-mcp-agent`)
 
 ## Phase 5 - API and barebones dashboard
-- [ ] FastAPI endpoints for jobs, twins, sources
-- [ ] Dashboard: upload photos, see job status, see twin with sources and review status
+- [x] FastAPI endpoints for jobs, twins, sources
+      (Oct 18, 2026: `moonwalkers.api` on FastAPI 0.146, local only; jobs are run folders shared with
+      the MCP server through `moonwalkers.workspace`; an upload reuses a stored twin at once or waits
+      for the agent, which finds it with the new `list_jobs` tool. Decision 0014)
+- [x] Dashboard: upload photos, see job status, see twin with sources and review status
+      (Oct 18: jobs with live steps, twins with every fact's citation and quote, sources, and
+      approve/reject reviews, Daniel's choice. A rejected version is never reused, decision 0015.
+      Types generated from the API; `npm test` on Node's runner. Hand check in a browser by Daniel:
+      `docs/setup/dashboard.md`)
 - [ ] PR
 
 ## Phase 6 - Control logic (level 3)
