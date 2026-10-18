@@ -1,10 +1,12 @@
 """Shared fixtures."""
 
+import math
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+import trimesh
 
 from moonwalkers.contracts.pipeline_result import InputType, PipelineResult, Source
 from moonwalkers.kb import JsonKnowledgeBase, KnowledgeBase
@@ -13,6 +15,21 @@ FIXTURES = Path(__file__).parent / "fixtures"
 FIXED_TIME = datetime(2026, 10, 16, 12, 0, tzinfo=UTC)
 
 SourceFactory = Callable[[str, InputType | None], Source]
+
+
+@pytest.fixture
+def indexer() -> Callable[[], trimesh.Trimesh]:
+    """Builds a synthetic indexer in the twin frame: a 2 x 3 x 2 box centred at the origin (base at
+    z = -1) with a spindle of radius 0.4 from x = 1 to x = 1.6 on the axis y = 0, z = 0.2."""
+
+    def build() -> trimesh.Trimesh:
+        body = trimesh.creation.box(extents=(2.0, 3.0, 2.0))
+        spindle = trimesh.creation.cylinder(radius=0.4, height=0.6, sections=32)
+        spindle.apply_transform(trimesh.transformations.rotation_matrix(math.pi / 2, (0, 1, 0)))
+        spindle.apply_translation((1.3, 0.0, 0.2))
+        return trimesh.util.concatenate([body, spindle])
+
+    return build
 
 
 @pytest.fixture
