@@ -126,6 +126,7 @@ def test_real_hunyuan3d_generation(tmp_path: Path) -> None:
     )
     mesh = trimesh.load(run.mesh_path, force="mesh")
     assert 1000 < len(mesh.faces) <= config.settings.max_faces
+    assert not (tmp_path / "tmp").exists()  # hy3dgen's temporary .ply files went with it
 
 
 def test_fingerprint_names_every_setting(tmp_path: Path) -> None:
