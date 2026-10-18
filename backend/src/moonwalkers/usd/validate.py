@@ -91,6 +91,14 @@ def _check_stage_metadata(stage: Usd.Stage, issues: list[Issue]) -> None:
                 message=f"kilogramsPerUnit is {UsdPhysics.GetStageKilogramsPerUnit(stage)}",
             )
         )
+    if not stage.HasAuthoredTimeCodeRange() or (stage.GetEndTimeCode() <= stage.GetStartTimeCode()):
+        issues.append(
+            Issue(
+                severity="warning",
+                message="no usable time-code range: Isaac Sim's timeline would loop over a single "
+                "frame (author distinct startTimeCode and endTimeCode)",
+            )
+        )
 
 
 # ------------------------------------------------------------------------------------- physics

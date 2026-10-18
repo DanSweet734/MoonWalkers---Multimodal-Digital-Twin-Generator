@@ -55,6 +55,10 @@ def test_stage_units_and_default_prim(twin_and_result) -> None:
     assert UsdGeom.GetStageMetersPerUnit(stage) == 1.0
     assert UsdPhysics.StageHasAuthoredKilogramsPerUnit(stage)
     assert UsdPhysics.GetStageKilogramsPerUnit(stage) == 1.0
+    # Same timeline as NVIDIA's example stages, so Isaac Sim does not loop over a single frame.
+    assert stage.HasAuthoredTimeCodeRange()
+    assert (stage.GetStartTimeCode(), stage.GetEndTimeCode()) == (0.0, 1_000_000.0)
+    assert stage.GetTimeCodesPerSecond() == 60.0
     root = stage.GetDefaultPrim()
     assert root.GetPath() == Sdf.Path(ROOT)
     assert Usd.ModelAPI(root).GetKind() == "component"

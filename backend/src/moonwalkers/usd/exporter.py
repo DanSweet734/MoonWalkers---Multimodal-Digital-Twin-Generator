@@ -15,6 +15,9 @@ An exported twin, for example machine key ``haas/ha5c``::
 Rules followed (sources in decision 0010 and docs/research/2026-10-17-usd-physics-for-isaac-sim.md):
 
 * Stage units are metres and kilograms with +Z up; angles are written in degrees.
+* The timeline runs from 0 to 1,000,000 at 60 time codes per second, as in NVIDIA's own example
+  stages (``isaacsim.examples.interactive/data/SurfaceGripper_gantry.usda`` in Isaac Sim 6.2.0).
+  Without a range, Isaac Sim warns that playback "will loop over a single frame".
 * Part transforms stay at identity: meshes are already in the twin's model frame, so each joint
   frame is the contract's ``origin_m`` in both bodies. UsdPhysics joint frames do not support scale,
   so any scale is baked into mesh points.
@@ -53,6 +56,10 @@ WORLD_JOINT = "fixed_to_world"
 JOINTS_SCOPE = "joints"
 GEOMETRY_PRIM = "geometry"
 SCENE_PATH = "/PhysicsScene"
+
+START_TIME_CODE = 0.0
+END_TIME_CODE = 1_000_000.0
+TIME_CODES_PER_SECOND = 60.0
 
 ROOT_PART_COLOR = (0.55, 0.57, 0.60)  # grey: the fixed base
 MOVING_PART_COLOR = (0.90, 0.45, 0.10)  # orange: parts that move
@@ -137,6 +144,9 @@ def build_stage(
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
     UsdGeom.SetStageMetersPerUnit(stage, METERS_PER_UNIT)
     UsdPhysics.SetStageKilogramsPerUnit(stage, KILOGRAMS_PER_UNIT)
+    stage.SetStartTimeCode(START_TIME_CODE)
+    stage.SetEndTimeCode(END_TIME_CODE)
+    stage.SetTimeCodesPerSecond(TIME_CODES_PER_SECOND)
     stage.GetRootLayer().documentation = (
         f"MoonWalkers digital twin {twin.twin_id} ({twin.status.replace('_', ' ')}). "
         f"Written by moonwalkers {package_version('moonwalkers')}; units: m, kg, degrees."
