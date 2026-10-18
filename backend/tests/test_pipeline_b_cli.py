@@ -82,9 +82,9 @@ def test_build_stops_for_the_spec_then_builds_then_reuses(
     out = capsys.readouterr().out
     assert out.startswith(
         "No twin found for moonwalkers/testindexer; built version 1 from Pipeline B. Exported to "
-        "machines/moonwalkers-testindexer/runs/run-001/twin.usda. It needs human review."
+        "machines/moonwalkers-testindexer/runs/run-001/twin.usdc. It needs human review."
     )
-    for name in ("twin.usda", "checks/spin.usda", "checks/quarter_turn.usda"):
+    for name in ("twin.usdc", "checks/spin.usdc", "checks/quarter_turn.usdc"):
         assert not [i for i in validate_file(run_dir / name) if i.severity == "error"], name
     twin = TwinRecord.model_validate_json((run_dir / "twin_record.json").read_text("utf-8"))
     assert twin.twin_id == "moonwalkers/testindexer@v1"

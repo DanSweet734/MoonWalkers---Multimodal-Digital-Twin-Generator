@@ -232,10 +232,22 @@ def test_export_is_deterministic_lf_text(twin_and_result, tmp_path: Path) -> Non
     assert sorted(p.name for p in tmp_path.rglob("*") if p.is_file()) == ["twin.usda", "twin.usda"]
 
 
-def test_export_needs_a_usda_file_name(twin_and_result, tmp_path: Path) -> None:
+def test_export_writes_binary_crate_files(twin_and_result, tmp_path: Path) -> None:
     twin, result = twin_and_result
-    with pytest.raises(ExportError, match=".usda"):
-        export_twin(twin, [result], tmp_path / "twin.usdc")
+    text = Usd.Stage.Open(str(export_twin(twin, [result], tmp_path / "twin.usda")))
+    path = export_twin(twin, [result], tmp_path / "twin.usdc")
+    assert path.read_bytes().startswith(b"PXR-USDC")
+    crate = Usd.Stage.Open(str(path))
+    assert [p.GetPath() for p in crate.Traverse()] == [p.GetPath() for p in text.Traverse()]
+    assert [i for i in validate_stage(crate) if i.severity == "error"] == []
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["twin.usda", "twin.usdc"]
+
+
+@pytest.mark.parametrize("name", ["twin.usd", "twin.obj"])
+def test_export_needs_an_explicit_usd_format(twin_and_result, tmp_path: Path, name: str) -> None:
+    twin, result = twin_and_result
+    with pytest.raises(ExportError, match=r"\.usda \(text\) or \.usdc \(binary\)"):
+        export_twin(twin, [result], tmp_path / name)
 
 
 # --------------------------------------------------------------------------------- refusals

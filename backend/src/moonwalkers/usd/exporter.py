@@ -114,19 +114,24 @@ def export_twin(
     drive: DriveSettings | None = None,
     data_dir: Path | None = None,
 ) -> Path:
-    """Write the twin to ``path`` as ``.usda`` text with LF line endings; returns the path.
+    """Write the twin to ``path``; returns the path.
 
-    ``data_dir`` is the project ``data/`` folder; mesh-file parts are relative to it (contract).
+    ``.usda`` gives text with LF line endings, readable for small twins. ``.usdc`` gives a binary
+    crate file, which NVIDIA's asset validator asks for once arrays pass 64 elements, as a
+    generated mesh's do (decision 0012). ``data_dir`` is the project ``data/`` folder; mesh-file
+    parts are relative to it (contract).
     """
     path = Path(path)
-    if path.suffix != ".usda":
-        raise ExportError(f"export writes text USD; use a .usda file name, not {path.name}")
+    if path.suffix not in (".usda", ".usdc"):
+        raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
     stage = build_stage(twin, results, drive, data_dir)  # the stage owns its root layer: keep it
-    text = stage.GetRootLayer().ExportToString()
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.tmp")
+    tmp = path.with_name(f".{path.stem}.tmp{path.suffix}")  # the suffix picks the file format
     try:
-        tmp.write_text(text, encoding="utf-8", newline="\n")
+        if path.suffix == ".usda":
+            tmp.write_text(stage.GetRootLayer().ExportToString(), encoding="utf-8", newline="\n")
+        elif not stage.GetRootLayer().Export(str(tmp)):
+            raise ExportError(f"could not write {path}")
         os.replace(tmp, path)
     finally:
         tmp.unlink(missing_ok=True)

@@ -6,10 +6,11 @@
 ``RUN`` is a run folder, ``data/machines/<machine>/runs/<run>``, holding ``request.json`` (a
 ``JobRequest`` with the photo as a source). ``build`` sends the request through the orchestrator:
 the first time it generates the mesh and stops for the geometry spec; once
-``geometry_spec.json`` exists, it stores the twin in ``data/kb``, exports ``twin.usda`` (plus
-``checks/spin.usda`` and ``checks/quarter_turn.usda`` for the Isaac Sim check) and writes
-``RUN.md``. ``inspect`` renders and measures the generated mesh, and ``--preview`` tries the spec
-without storing anything. The generator environment is found through ``--gen-root`` or the
+``geometry_spec.json`` exists, it stores the twin in ``data/kb``, exports ``twin.usdc`` (plus
+``checks/spin.usdc`` and ``checks/quarter_turn.usdc`` for the Isaac Sim check) and writes
+``RUN.md``. One run folder holds one built twin: build a new version in a new run folder.
+``inspect`` renders and measures the generated mesh, and ``--preview`` tries the spec without
+storing anything. The generator environment is found through ``--gen-root`` or the
 ``MOONWALKERS_GEN_ROOT`` environment variable (docs/setup/generators.md).
 """
 
@@ -56,12 +57,12 @@ from .pipeline import (
 
 GEN_ROOT_ENV = "MOONWALKERS_GEN_ROOT"
 REQUEST_FILE = "request.json"
-TWIN_FILE = "twin.usda"
+TWIN_FILE = "twin.usdc"  # binary: a generated mesh is too big for text USD (decision 0012)
 CHECKS_DIR = "checks"
 # Drives for the hand check in Isaac Sim, as in Phase 2; chosen by us, not machine facts.
 CHECK_DRIVES = {
-    "spin.usda": DriveSettings.spin(math.radians(30.0)),
-    "quarter_turn.usda": DriveSettings.hold(math.radians(90.0)),
+    "spin.usdc": DriveSettings.spin(math.radians(30.0)),
+    "quarter_turn.usdc": DriveSettings.hold(math.radians(90.0)),
 }
 AXES = ("+x", "-x", "+y", "-y", "+z", "-z")
 
@@ -169,9 +170,11 @@ def _build(args: argparse.Namespace) -> int:
 
     def export(twin: TwinRecord, results: Sequence[PipelineResult]) -> str:
         path = run_dir / TWIN_FILE
-        if path.exists():
+        earlier = sorted(p.name for p in run_dir.glob("twin.usd*"))
+        if earlier:
             raise RunFolderConflict(
-                f"{path} exists: this run folder already holds an exported twin"
+                f"{run_dir} already holds an exported twin ({', '.join(earlier)}); "
+                "build a new version in a new run folder"
             )
         export_twin(twin, results, path, DriveSettings.hold(0.0), data_dir)
         findings.extend(validate_file(path))
@@ -288,8 +291,8 @@ def _run_notes(
         "",
         "- Isaac Sim version/build:",
         f"- `{TWIN_FILE}` (spindle holds 0 deg):",
-        "- `checks/spin.usda` (spindle turns at 30 deg/s):",
-        "- `checks/quarter_turn.usda` (spindle turns to 90 deg and holds):",
+        "- `checks/spin.usdc` (spindle turns at 30 deg/s):",
+        "- `checks/quarter_turn.usdc` (spindle turns to 90 deg and holds):",
         "- Success level reached (1-3):",
         "- Reviewer notes:",
     ]
