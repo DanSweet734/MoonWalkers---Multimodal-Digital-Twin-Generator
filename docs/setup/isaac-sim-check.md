@@ -99,13 +99,22 @@ They are binary USD (decision 0012). Open them with **File > Open**, as before.
    turning can be hard to see. Watch the bore's rim and any small bumps on the nose. A wireframe
    view also shows the triangles moving, though the menu for it in 6.2 is not confirmed. The joint
    is `/haas_ha5c/joints/spindle_rotation`; its angular drive's target velocity should read 30.
-4. **Play `checks/quarter_turn.usdc`.** The spindle should turn 90 degrees and hold, settling in
-   about two seconds as in Phase 2. The drive's target position should read 90.
+4. **Play `checks/quarter_turn.usdc`.** The spindle should turn 90 degrees and hold. It settled in
+   under a second on 2026-10-18 (Daniel's estimate). The drive's target position should read 90.
+   Once the nose has turned, small black gaps show around it. They are expected: the cut edges no
+   longer meet once the slightly out-of-round nose turns, about 1 mm apart and up to 2.8 mm after
+   90 degrees (decision 0012).
 5. **Look for collisions between the parts.** The body's convex collider overlaps the back of the
    spindle. Jointed parts should not collide (decision 0010, Phase 3 update). If the spindle
    shakes, drifts or is pushed out of place, please report it.
 6. **Record** what you saw in `2026-10-17_run-003/RUN.md` under "Isaac Sim check": the version,
-   what each file did, any console warnings about our files, and the success level (1 or 2).
+   what each file did, any console warnings about our files, and the success level (1 or 2). The
+   file is at `data/machines/haas-ha5c/runs/2026-10-17_run-003/RUN.md`. `data/` is gitignored, so
+   VS Code's search may skip it: open it from the Explorer, or send your notes to Claude Code to
+   add.
+
+**Result on 2026-10-18 (Daniel):** level 2, with no errors, no time-code warning and no collisions.
+The seam gaps from step 4 were seen. Details: `docs/worklog/2026-10-18.md`.
 
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are

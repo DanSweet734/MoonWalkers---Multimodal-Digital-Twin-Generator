@@ -50,8 +50,10 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       (semi-automatic: a cited geometry spec, decision 0012; the nose alone turns, Daniel's choice)
 - [x] Facts with citations from the Haas UK product page and the 2006 operator's manual (plus the
       layout drawing; quotes checked against the PDFs; `pipelines/b/haas_ha5c.reference.json`)
-- [ ] Manual check of the HA5C twin in Isaac Sim 6.2.0: success levels 1 and 2 (Daniel;
-      `docs/setup/isaac-sim-check.md`, section 6)
+- [x] Manual check of the HA5C twin in Isaac Sim 6.2.0: success levels 1 and 2 (Daniel;
+      `docs/setup/isaac-sim-check.md`, section 6) (Oct 18, 2026: level 2 reached. Sizes measured close
+      to expected; the spindle turns, reverses at -90 and holds a quarter turn. Small cosmetic gaps
+      show at the cut after turning; see decision 0012)
 - [x] Worklog with run details (versions, time, VRAM if available); PR (Oct 17, 2026: branch
       `feat/phase-3-pipeline-b`; twin `haas/ha5c@v2`, both validators pass)
 

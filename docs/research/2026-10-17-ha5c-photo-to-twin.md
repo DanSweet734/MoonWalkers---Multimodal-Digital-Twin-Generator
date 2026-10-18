@@ -237,6 +237,18 @@ front).
   documented as "Determines if the jointed subtrees should collide or not."
 - **Time range.** Since `a37f5e7` every export carries a time range (decision 0010, Phase 3 update).
 
+## 9. Isaac Sim check (2026-10-18)
+Daniel checked twin v2 in Isaac Sim 6.2.0 (`docs/worklog/2026-10-18.md`):
+- sizes close to expected (measured by hand);
+- the spindle turns at 30 degrees per second, reverses at -90 and holds a quarter turn;
+- no collisions, no errors, and no time-code warning;
+- success level 2.
+
+The seam shows small black gaps once the spindle turns. Measured: the shared cut edge's outer ring
+is 30.4-32.7 mm from the axis. After 90 degrees the spindle's edge is 1.09 mm (median) and up to
+2.83 mm from the body's, against 0 mm at rest. The out-of-round nose no longer meets its cut, and
+the open shells show through [INFERENCE].
+
 ## Open questions
 1. Does the six-screw disc turn on a real HA5C? Lab photos or a person at a machine could settle it.
 2. Is 15.32 in the overall width and 7.93 in the overall depth, with or without the nose? What is

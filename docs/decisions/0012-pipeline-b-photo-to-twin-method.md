@@ -1,7 +1,7 @@
 # 0012 - Pipeline B: from one photo to a scaled body and spindle
 
 - **Status:** accepted for the PoC (proposed by Claude Code in Phase 3; Daniel chose the spindle split
-  on 2026-10-17; the rest awaits his review in the Phase 3 PR)
+  on 2026-10-17, then reviewed PR #6 and checked the twin in Isaac Sim on 2026-10-18)
 - **Date:** 2026-10-17
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0010 (twins with generated meshes are written as binary `.usdc`)
@@ -128,3 +128,22 @@ Result: 0.189268 m per model unit, with an axis height of 0.5368 units. The size
 - Twins with generated meshes are binary, so reading their provenance needs a tool (`usdcat` or
   pxr) rather than a text editor. The run folder keeps `pipeline_result_b.json` and
   `twin_record.json` as plain JSON copies.
+
+## Isaac Sim check (2026-10-18)
+Daniel checked twin v2 in Isaac Sim 6.2.0 (worklog 2026-10-18; `RUN.md` of run-003):
+- **Level 2 reached.**
+  - Sizes measured by hand are close to the expected ones.
+  - The spindle turns at the drive's speed and reverses when the target changes.
+  - The quarter turn settles in under a second and holds.
+- **Collisions.** None between the overlapping hulls: no shaking, drift or push.
+- **Seam gaps.** After the spindle turns, small black gaps show at the seam. The shared cut edge's
+  outer ring lies 30.4-32.7 mm from the axis, because the generated nose is slightly out of round.
+  After a 90 degree turn the spindle's edge is 1.1 mm (median) and up to 2.8 mm from the body's, and
+  the hollow insides show through. This comes from option 3b's "leaves open edges at the cut" and is
+  cosmetic.
+
+  If the seam matters later, the candidates are:
+  - cut with a true cylinder and plane and cap the cut faces (option 3a);
+  - make the seam round.
+
+  Either needs its own decision.

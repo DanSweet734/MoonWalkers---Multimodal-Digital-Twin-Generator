@@ -91,8 +91,8 @@ Implemented in `backend/src/moonwalkers/usd/`:
 - **Time-code range (done, commit `a37f5e7`).** Every export now sets `startTimeCode` 0,
   `endTimeCode` 1,000,000 and `timeCodesPerSecond` 60. These are the values in NVIDIA's own example
   stage `isaacsim.examples.interactive/data/SurfaceGripper_gantry.usda` (Isaac Sim 6.2.0).
-  `moonwalkers.usd.validate` warns when a stage has no usable range. The HA5C Isaac Sim check
-  should show the warning gone.
+  `moonwalkers.usd.validate` warns when a stage has no usable range. Confirmed on 2026-10-18:
+  Daniel saw no such warning for the HA5C files.
 - **Mesh-file parts.** Parts whose geometry is a GLB or OBJ file are read relative to the data folder
   (`usd/mesh_files.py`). Pipeline B writes them already in the twin frame and in metres. The scale
   is baked into the mesh points, as option 9b here requires; `ScaleCalibration` records how it was
@@ -103,5 +103,5 @@ Implemented in `backend/src/moonwalkers/usd/`:
 - **Colliders on real meshes.** The HA5C parts use the convex hulls chosen here. The body's hull
   overlaps the back of the spindle. The joint's `physics:collisionEnabled` is not authored, so it
   takes the schema's fallback, `False`. Its documentation in usd-core 26.8 reads: "Determines if the
-  jointed subtrees should collide or not." So the overlap should not push the parts apart; the
-  Isaac Sim check will confirm.
+  jointed subtrees should collide or not." So the overlap should not push the parts apart.
+  Confirmed on 2026-10-18: no collisions, shaking or drift in the HA5C files.
