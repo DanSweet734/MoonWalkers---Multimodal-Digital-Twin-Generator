@@ -93,6 +93,11 @@ Supporting evidence: the generated mesh's width-to-height ratio is 1.9950 / 1.08
 drawing's 15.32 / 8.3 = 1.846. Daniel supplied an image of this drawing on Oct 5 (project-context
 Topic 13), so he can confirm the reading.
 
+**Update 2026-10-18.** Daniel read 15.32 in on the drawing as spanning "Motor end to lever tip", the
+full width including the side lever. The reference facts cite his reading. Still not confirmed on
+the drawing: whether 7.93 in is the overall depth, whether it includes the spindle nose, and what
+7.80 in is.
+
 ## 4. What turns with the spindle
 - **Stated in the manual:** "Chucks and face plates utilize the 2 3/16-10 threaded nose on the
   spindle." and "Screw the chuck on gently until it seats against the rear of the spindle." (PDF
@@ -244,6 +249,11 @@ Daniel checked twin v2 in Isaac Sim 6.2.0 (`docs/worklog/2026-10-18.md`):
 - no collisions, no errors, and no time-code warning;
 - success level 2.
 
+Daniel's measurements by hand: 14.89 in wide (motor end to lever tip) and 8.04 in tall (to the top of
+the handle), against 14.87 in and 8.05 in computed from the mesh. His depth line, 7.21 in, fell short
+of the computed 8.56 in: the back extreme is the casting's upper back, 5.5-7.5 in above the base, and
+his line probably stopped before it [INFERENCE].
+
 The seam shows small black gaps once the spindle turns. Measured: the shared cut edge's outer ring
 is 30.4-32.7 mm from the axis. After 90 degrees the spindle's edge is 1.09 mm (median) and up to
 2.83 mm from the body's, against 0 mm at rest. The out-of-round nose no longer meets its cut, and
@@ -251,8 +261,8 @@ the open shells show through [INFERENCE].
 
 ## Open questions
 1. Does the six-screw disc turn on a real HA5C? Lab photos or a person at a machine could settle it.
-2. Is 15.32 in the overall width and 7.93 in the overall depth, with or without the nose? What is
-   7.80 in? Daniel can check the drawing.
+2. Is 7.93 in the overall depth, with or without the nose? What is 7.80 in? (15.32 in is the full
+   width, motor end to lever tip: Daniel's reading, 2026-10-18.)
 3. Which side of the object is the multi-view model's `left` image (before the first multi-view run)?
 4. What is the license of the `u2net.onnx` model (rembg's code is MIT)?
 5. Is the uniform -3% size difference the generator's or ours? A second photo or a multi-view run

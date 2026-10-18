@@ -136,6 +136,10 @@ Daniel checked twin v2 in Isaac Sim 6.2.0 (worklog 2026-10-18; `RUN.md` of run-0
   - The spindle turns at the drive's speed and reverses when the target changes.
   - The quarter turn settles in under a second and holds.
 - **Collisions.** None between the overlapping hulls: no shaking, drift or push.
+- **Sizes by hand.** 14.89 in wide and 8.04 in tall, against 14.87 in and 8.05 in computed.
+  Daniel reads the drawing's 15.32 in as the full width, motor end to lever tip, so the -3.0% width
+  check compares like with like. The reference facts now cite his reading, and the next build
+  carries it.
 - **Seam gaps.** After the spindle turns, small black gaps show at the seam. The shared cut edge's
   outer ring lies 30.4-32.7 mm from the axis, because the generated nose is slightly out of round.
   After a 90 degree turn the spindle's edge is 1.1 mm (median) and up to 2.8 mm from the body's, and
