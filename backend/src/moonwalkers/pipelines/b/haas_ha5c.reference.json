@@ -1,0 +1,249 @@
+{
+  "sources": [
+    {
+      "source_id": "src-haas-uk-product-page",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://haas.co.uk/?p=2253",
+      "title": "HA5C product page, Haas Automation UK",
+      "retrieved_at": "2026-10-17T01:58:41Z",
+      "license_note": "Haas Automation web page; short quotes for internal research"
+    },
+    {
+      "source_id": "src-haas-layout-drawing",
+      "kind": "url",
+      "input_type": "layout_drawing",
+      "uri": "https://www.haas.co.uk/wp-content/uploads/2019/10/HA5C_Dimensions.pdf",
+      "title": "HA5C Layout Drawing, Revision B, September 17, 2013 (Haas Automation)",
+      "sha256": "d2c0f0b824d7610647804ca8eed87ace52934222729e344e260c8fc3008e4d29",
+      "retrieved_at": "2026-10-18T00:32:39Z",
+      "license_note": "(c) 2013 Haas Automation, Inc.; local copy for internal research only, not redistributed"
+    },
+    {
+      "source_id": "src-haas-ha5c-manual-2006",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---ha5c-indexer-operator's-manual---2006.pdf",
+      "title": "HA5C Indexer Operator's Manual, 96-4039 rev N, June 2006 (Haas Automation)",
+      "sha256": "f99f3492b700f7606b7982db4b6d61b908fa1cfd197e589272ac1ebb317dfea0",
+      "retrieved_at": "2026-10-18T00:32:38Z",
+      "license_note": "Haas Automation manual; local copy for internal research only, not redistributed"
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "HA5C",
+    "category": "rotary indexer (5C collet)",
+    "aliases": ["HA5C indexer", "HA5C digital indexing head"],
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-uk-product-page",
+        "quote": "5C Collet Servo Rotary Head with Manual Collet Closer."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 2 (printed p. 1), Description",
+        "quote": "The Haas HA5C digital indexing head is a fully automatic, programmable, rotary positioning device."
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "center_height",
+      "value": 0.1016,
+      "unit": "m",
+      "original": "4.000±.001\" (101.60±0.03 mm)",
+      "confidence": 0.95,
+      "citations": [
+        {
+          "source_id": "src-haas-layout-drawing",
+          "locator": "p. 1, Front View (left side)",
+          "quote": "4.000±.001\" (101.60±0.03 mm)"
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 4 (printed p. 3), Specifications: Spindle",
+          "quote": "Height 4.000 ± 0.001 from spindle center to base"
+        },
+        {
+          "source_id": "src-haas-uk-product-page",
+          "locator": "specifications table",
+          "quote": "4.000 ± 0.001"
+        }
+      ]
+    },
+    {
+      "key": "max_spindle_speed",
+      "value": 7.1558,
+      "unit": "rad/s",
+      "original": "0.001 to 410 °/sec",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-haas-uk-product-page",
+          "locator": "specifications table, Max Speed",
+          "quote": "0.001 to 410 °/sec"
+        }
+      ]
+    },
+    {
+      "key": "gear_ratio",
+      "value": "60:1",
+      "original": "60:1 self locking worm gear (33:1 HA5CSB)",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 4 (printed p. 3), Specifications: Motor",
+          "quote": "Gear Ratio 60:1 self locking worm gear (33:1 HA5CSB)"
+        },
+        {
+          "source_id": "src-haas-uk-product-page",
+          "locator": "specifications table",
+          "quote": "60:1"
+        }
+      ]
+    },
+    {
+      "key": "spindle_nose_thread",
+      "value": "2 3/16-10 NS-2A",
+      "original": "SPINDLE NOSE 2 3/16-10 NS-2A",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-haas-layout-drawing",
+          "locator": "p. 1, Side View",
+          "quote": "SPINDLE NOSE 2 3/16-10 NS-2A"
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 4 (printed p. 3), Specifications: Spindle",
+          "quote": "Nose Thread 2 3/16 - 10"
+        }
+      ]
+    },
+    {
+      "key": "collets",
+      "value": "5C",
+      "original": "Collets Standard 5C",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 4 (printed p. 3), Specifications: Spindle",
+          "quote": "Collets Standard 5C"
+        }
+      ]
+    },
+    {
+      "key": "overall_width",
+      "value": 0.3891,
+      "unit": "m",
+      "original": "15.32\" (389.1 mm)",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-haas-layout-drawing",
+          "locator": "p. 1, Front View: the widest dimension, just above the view's label; read as the overall width [INFERENCE]",
+          "quote": "15.32\" (389.1 mm)"
+        }
+      ]
+    },
+    {
+      "key": "overall_height",
+      "value": 0.2108,
+      "unit": "m",
+      "original": "8.3\" (211 mm) INCLUDES REMOVABLE HANDLE",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-haas-layout-drawing",
+          "locator": "p. 1, Front View (left side)",
+          "quote": "8.3\" (211 mm) INCLUDES REMOVABLE HANDLE"
+        }
+      ]
+    },
+    {
+      "key": "overall_depth",
+      "value": 0.2014,
+      "unit": "m",
+      "original": "7.93\" (201.4 mm)",
+      "confidence": 0.4,
+      "citations": [
+        {
+          "source_id": "src-haas-layout-drawing",
+          "locator": "p. 1, Top View; read as the overall depth (front to back) [INFERENCE]; whether it includes the spindle nose is not confirmed",
+          "quote": "7.93\" (201.4 mm)"
+        }
+      ]
+    }
+  ],
+  "control": [
+    {
+      "behavior_id": "index_program",
+      "name": "Indexing program (absolute and incremental steps)",
+      "kind": "program_interpreter",
+      "description": "The control holds a program of steps; Cycle Start runs the next step. Each step turns the spindle to an angle (G90, absolute) or by an angle (G91, incremental), clockwise or counter-clockwise, and can repeat (loop count) before the next step.",
+      "drives_joints": ["spindle_rotation"],
+      "spec": {
+        "modes": {"G90": "absolute", "G91": "incremental"},
+        "step_size_deg": [0.001, 999.999],
+        "steps_in_memory": 99,
+        "programs": 7,
+        "loop_count": [1, 999],
+        "resolution_deg": 0.001
+      },
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 2 (printed p. 1), Description",
+          "quote": "Positioning of the workpiece is accomplished by “programming” the angular movements into the memory of the control and then pushing the Cycle Start switch on the front panel."
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 2 (printed p. 1), Control",
+          "quote": "The control can be programmed to rotate the spindle in a clockwise or counter-clockwise direction with step sizes from .001 to 999.999°. There can be 99 different steps stored in memory."
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 2 (printed p. 1), Control",
+          "quote": "You may store seven separate programs (Prog 0 - Prog 6)."
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 34 (printed p. 33), Absolute/Incremental Motion",
+          "quote": "G90 and G91 are used to select absolute (G90) or incremental (G91) motion."
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 34 (printed p. 33), Loop Counts",
+          "quote": "The loop count display is three digits between 1 and 999 preceded by an L."
+        },
+        {
+          "source_id": "src-haas-ha5c-manual-2006",
+          "locator": "PDF p. 4 (printed p. 3), Specifications: Indexing",
+          "quote": "Resolution 0.001°"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Sources disagree on the maximum speed: 410 °/s on the Haas UK product page; the 2006 manual gives 330 °/s (specifications, PDF p. 4) and 320 °/s (features, PDF p. 3) for the brushless motor and 270 °/s for the brush motor. Used the product page: it describes the HA5C sold today and is where the photo comes from, while the 2006 manual may describe older units [INFERENCE].",
+      "ref": "max_spindle_speed"
+    },
+    {
+      "severity": "info",
+      "message": "The indexing program is described from the 2006 manual; nothing runs it yet (Phase 6 adds an interpreter). Whether today's HA5C control works the same way is not confirmed.",
+      "ref": "index_program"
+    },
+    {
+      "severity": "warning",
+      "message": "[INFERENCE] The drawing's dimensions were matched to views by where their text sits on the page (pypdf text positions), without seeing the drawing: 15.32\" and 8.3\" sit by the Front View, 7.93\" by the Top View. A person should confirm them on the drawing, including whether 7.93\" includes the spindle nose.",
+      "ref": "overall_depth"
+    }
+  ]
+}

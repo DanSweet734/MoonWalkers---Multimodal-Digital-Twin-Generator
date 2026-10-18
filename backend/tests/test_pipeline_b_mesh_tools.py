@@ -14,6 +14,7 @@ from moonwalkers.pipelines.b.mesh_tools import (
     radial_profile,
     render_views,
     split_by_cylinder,
+    tip_slabs,
     transformed,
     write_png,
 )
@@ -89,3 +90,11 @@ def test_render_views_writes_pngs_with_content(tmp_path: Path, indexer) -> None:
 def test_write_png_rejects_colour_images(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         write_png(tmp_path / "x.png", np.zeros((4, 4, 3), dtype=np.uint8))
+
+
+def test_tip_slabs_find_the_spindle_axis(indexer) -> None:
+    slabs = tip_slabs(indexer(), depths=(0.01, 0.1))
+    for slab in slabs:  # only the spindle's front ring is within 0.1 of its tip at x = 1.6
+        assert slab.axis_yz == pytest.approx((0.0, 0.2), abs=1e-9)
+        assert slab.radius == pytest.approx(0.4, abs=1e-9)
+    assert slabs[0].count > 0 and slabs[0].depth == 0.01

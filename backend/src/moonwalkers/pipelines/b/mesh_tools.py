@@ -189,6 +189,34 @@ def radial_profile(
     return profile
 
 
+@dataclass(frozen=True)
+class TipSlab:
+    """The vertices within ``depth`` of the mesh's front-most point (largest x)."""
+
+    depth: float
+    count: int
+    axis_yz: tuple[float, float]  # the centre of their y-z bounding box
+    radius: float  # their largest distance from that centre
+
+
+def tip_slabs(mesh: trimesh.Trimesh, depths: Sequence[float] = (0.01, 0.03, 0.06)) -> list[TipSlab]:
+    """Where a round nose at the front (+X) is centred, from thin slabs behind its tip.
+
+    Centres that agree across depths mean the tip is round about one line along X: the spindle
+    axis. This is how the HA5C's axis was found (decision 0012).
+    """
+    v = mesh.vertices
+    x_max = float(v[:, 0].max())
+    slabs = []
+    for depth in depths:
+        tip = v[v[:, 0] >= x_max - depth]
+        cy = float(tip[:, 1].min() + tip[:, 1].max()) / 2
+        cz = float(tip[:, 2].min() + tip[:, 2].max()) / 2
+        radius = float(np.hypot(tip[:, 1] - cy, tip[:, 2] - cz).max())
+        slabs.append(TipSlab(depth=depth, count=len(tip), axis_yz=(cy, cz), radius=radius))
+    return slabs
+
+
 # -------------------------------------------------------------------------------------- split
 def split_by_cylinder(
     mesh: trimesh.Trimesh,
