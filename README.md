@@ -8,7 +8,7 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Proof of concept in progress: Phases 0-3 are done and Phase 4 is underway** (scaffold;
+**Proof of concept in progress: Phases 0-3 are done and Phase 4 is in review** (scaffold;
 knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP). The orchestrator stores twin records, reuses a stored twin on a
 second request, and re-versions on request. The USD exporter writes simulatable twins (rigid bodies,
 a driven revolute joint, cited provenance) that pass two validators. A synthetic box-and-cylinder
@@ -20,7 +20,9 @@ HA5C twin from one Haas photo:
 - both validators pass.
 
 In Isaac Sim 6.2.0 on Oct 18, 2026 the twin opened at the right size and its spindle turned:
-success level 2. Phase 4 exposes these steps as MCP tools for Claude Code, the PoC's agent.
+success level 2. Phase 4 exposes these steps as 15 MCP tools for Claude Code, the PoC's agent. On
+Oct 18 a fresh Claude Code session used them to build twin v3 with its own cited facts, and showed
+that a second request reuses it.
 
 | Area | Status |
 |---|---|
@@ -29,7 +31,7 @@ success level 2. Phase 4 exposes these steps as MCP tools for Claude Code, the P
 | Architecture design, surveys, sketches and Figma wireframes | Done |
 | Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **In progress.** Phases 0-3 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026. Phase 4 (agent via MCP): server, `.mcp.json` and agent procedure built; the end-to-end run in a fresh Claude Code session is next. See [docs/poc-plan.md](docs/poc-plan.md) |
+| Proof of concept | **In progress.** Phases 0-3 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026. Phase 4 (agent via MCP) in review: a fresh Claude Code session built HA5C v3 through the tools and showed reuse. See [docs/poc-plan.md](docs/poc-plan.md) |
 | Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing), JSON-file knowledge base, USD exporter (text or binary) + validator, image-to-3D generator adapter, and an MCP server with 15 tools for the agent, all tested. Dashboard: Vite + React + TypeScript starter page |
 | Input pipelines | Pipeline B (photos) turns one machine photo into a scaled body and spindle on a revolute joint, with facts cited from documents (decision 0012). Pipelines A, C, D are stubs returning cited HA5C fixture data. All four have an owner (see [The four pipelines](#the-four-pipelines)) |
 

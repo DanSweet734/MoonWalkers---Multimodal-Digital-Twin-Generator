@@ -15,14 +15,19 @@ arguments.
   issue, or the joint's `method`.
 - **Disagreeing sources:** name both, pick one, and say which and why (`add_issue`), as
   `docs/methodology.md` asks.
+- **Follow the decision records.** Where one already settles a choice, follow it and cite it in
+  the issue. For example, decision 0002 gives the HA5C's maximum speed from the Haas UK product
+  page, not the 2006 manual. If the sources you have contradict a decision, say so and ask the
+  person.
 - **Ask the person** when a judgement changes the twin and the sources do not settle it. Show them
   the evidence and the preview images, then record their choice.
 - **Install nothing.** The server never installs packages. If something is missing, say so.
 - Twins are stored as `needs_review`. You do not approve them; a person does.
 
 ## 0. Before you start
-1. In Claude Code, `/mcp` should list `moonwalkers` as connected. The first time, Claude Code asks
-   the person to approve this project server.
+1. In Claude Code, `/mcp` should list `moonwalkers` as connected. Claude Code's documentation says
+   interactive sessions ask the person to approve a project server the first time. In Daniel's
+   VS Code session on 2026-10-18 it loaded without asking (decision 0013).
 2. Call `check_knowledge_base()`. It reports the data folder and `generator_root`. If
    `generator_root` is null, new geometry cannot be generated: ask the person to set
    `MOONWALKERS_GEN_ROOT` (`docs/setup/generators.md`) and restart.
@@ -51,6 +56,9 @@ arguments.
    - For a downloaded file, use `kind="url"` with its original URL, and pass `local_copy` (the
      file under `data/`) so the copy you read is hashed.
    - For something a person told you, use `kind="user_input"`.
+   - Reading notes (`identify_machine`, `add_fact`, `add_control`) can cite **only** sources
+     recorded this way. The photo from `add_input` is a job input: if a note comes from the photo,
+     record the photo with `add_reference_source` too.
 2. **Read the PDFs.** The Read tool cannot render PDFs here, so extract text with pypdf. From
    `backend/`:
    ```
@@ -60,8 +68,13 @@ arguments.
    - Give locators as PDF page numbers. If the printed page number differs, give both.
    - pypdf may show symbols such as `±` and `°` as an unreadable character. Restore them from
      context, and say so in your report.
-   - A drawing's text does not show what a dimension line spans. Mark such readings
-     `[INFERENCE]`, or ask the person.
+   - A drawing's text does not show what a dimension line spans. pypdf can report where each
+     text item sits on the page, via `page.extract_text(visitor_text=...)`, which places a
+     dimension in its view. What the line spans is still `[INFERENCE]`, unless the person confirms
+     it.
+   - **Web pages** are saved as HTML in `inputs/documents/` (for the HA5C, the Haas UK product
+     page). Search them with grep, or strip the tags with Python's `re` and `html` modules. Cite
+     the page's URL, with the saved copy as `local_copy`.
 3. **`identify_machine`**, quoting the sources that name the machine.
 4. **`add_fact`** for each value, in SI units with the value as written in `original`. Pipeline B
    uses:
@@ -128,7 +141,7 @@ Tool errors say what is wrong. The common ones:
 | Error | What to do |
 |---|---|
 | "add a reference source first" | Call `add_reference_source` before `identify_machine` or `add_fact` |
-| "citations of unknown sources" | Cite a `source_id` you already recorded |
+| "citations of unknown sources" | Cite a `source_id` recorded with `add_reference_source`, not the photo from `add_input` |
 | "the geometry spec is not complete" | Call both `add_joint` and `set_scale` |
 | "already built its twin" / "already assembled" / "already generated" | The run folder is fixed: start a new run (`new_version=true` for a rebuild) |
 | "the image-to-3D generator is not configured" | The person must set `MOONWALKERS_GEN_ROOT` for the server |

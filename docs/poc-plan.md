@@ -63,8 +63,11 @@ Plus: a second request for the same machine reuses the stored twin and the resul
 - [x] Project `.mcp.json` so Claude Code can connect; a written agent procedure in `docs/`
       (Oct 18: Claude Code 2.1.302 lists the server as a project server awaiting approval;
       `docs/agent-procedure.md`)
-- [ ] End-to-end run where Claude Code drives the tools to build the HA5C twin; transcript summary in worklog
-- [ ] PR
+- [x] End-to-end run where Claude Code drives the tools to build the HA5C twin; transcript summary in worklog
+      (Oct 18, 2026: a fresh Claude Code session built `haas/ha5c@v3` through the tools, asked Daniel
+      which parts turn, and showed reuse on a second request. All 26 of its quotes check out. It read
+      the worklog before the documents, which Daniel accepted. Worklog 2026-10-18)
+- [x] PR (Oct 18, 2026: branch `feat/phase-4-mcp-agent`)
 
 ## Phase 5 - API and barebones dashboard
 - [ ] FastAPI endpoints for jobs, twins, sources

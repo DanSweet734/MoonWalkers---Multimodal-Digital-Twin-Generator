@@ -55,7 +55,22 @@ quotes and locators.
 - "The feed rate display ranges between 00.001 and 270.000" (PDF p. 34).
 
 The twin uses 410 °/s, because the product page describes the HA5C sold today and is where the photo
-comes from; the manual may describe older units [INFERENCE]. Found but not used yet: "Torque 60 ft-lb
+comes from; the manual may describe older units [INFERENCE].
+
+**Update 2026-10-18.**
+- **The agent's choice.** The Phase 4 agent (twin v3) did not have the product page among its
+  inputs, so it chose the manual's Specifications table: 330 °/s, assuming a brushless unit
+  [INFERENCE]. The manual's "Brushless Models" drawing on PDF p. 5 lists the drawing's 15.32 in.
+- **The decision stays.** Daniel kept decision 0002's 410 °/s for later builds.
+- **The saved page.** A copy of the product page is now an input
+  (`documents/haas-uk_HA5C_product-page_2026-10-18.html`, SHA-256 `1ebc97cb...`, saved 20:25:44 UTC
+  from https://haas.co.uk/?p=2253, which redirects to https://www.haas.co.uk/rotaries/ha5c/).
+  Its specification table reads:
+  - "Max Speed 0.001 to 410 °/sec" and "Max Torque 60 ft-lb 81 Nm";
+  - "Center Height 4.000 ± 0.001";
+  - "Gear Ratio 60:1" and "Collet size std 5C".
+
+  The torque matches the manual's brushless figure. Found but not used yet: "Torque 60 ft-lb
 brushless, 20 ft-lb HA5CSB (45 ft-lb, brush)" (PDF p. 4), for drive tuning in Phase 6.
 
 **How the PDFs were read.**

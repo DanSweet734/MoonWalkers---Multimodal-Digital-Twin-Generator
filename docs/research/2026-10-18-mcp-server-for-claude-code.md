@@ -119,6 +119,29 @@ read.
   workspace. They include a full build with the fake generator, from `start_run` to `submit_twin`,
   followed by a reuse through `request_twin`.
 
+## 4. The end-to-end session (2026-10-18)
+A fresh Claude Code session in VS Code, from Daniel's report and that session's worklog entry:
+- **No prompts.** The `moonwalkers` server loaded without an approval prompt, and Daniel was not
+  asked to approve any tool call. The documentation explains the first only for "`claude -p` runs,
+  Agent SDK sessions, and cloud sessions" (section 2). That the VS Code session counts as one is
+  [INFERENCE]. The session's permission mode was not recorded.
+- **Calls and timing.** The agent made 34 tool calls, counted from its worklog table:
+
+  | Calls | Tools |
+  |---|---|
+  | 9 | `add_fact` |
+  | 3 each | `check_knowledge_base`, `add_issue`, `add_joint`, `preview_twin` |
+  | 2 each | `add_reference_source`, `identify_machine` (one failed), `add_control` |
+  | 1 each | `start_run`, `add_input`, `generate_geometry`, `inspect_geometry`, `set_scale`, `submit_twin`, `request_twin` | They ran from about 19:59 to 20:10 UTC, including the wait for Daniel's answer.
+  The generation job reported 46.8 s.
+- **One tool error.** `identify_machine` failed when it cited the photo from `add_input` ("citations
+  of unknown sources"). The error now explains the rule (decision 0013).
+- **Asking the person.** The agent asked one question, which front parts turn, with preview images
+  of both options, as the procedure asks.
+- **Quotes verified afterwards.** All 26 quotes in its reading notes are on the cited PDF pages
+  (pypdf, page by page). The checks ignored whitespace and the glyphs pypdf cannot decode, and
+  allowed the agent's "..." elisions and "/" row separators.
+
 ## Open questions
 - Does Claude Code in VS Code pick up a new `.mcp.json`, or a new user environment variable,
   without restarting VS Code? Restarting is the safe assumption.

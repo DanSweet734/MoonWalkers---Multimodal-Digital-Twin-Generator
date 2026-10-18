@@ -112,3 +112,27 @@ The facts below are quoted, with access dates, in
   Several concurrent agents would need per-run locking.
 - **Reversing it.** Moving to coarse tools or HTTP touches only `moonwalkers/mcp/`. The pipeline,
   orchestrator and knowledge base stay as they are.
+
+## End-to-end check (2026-10-18)
+- **The run.** A fresh Claude Code session in VS Code followed `docs/agent-procedure.md` with the
+  suggested prompt:
+  - it built `haas/ha5c@v3` (run `2026-10-18_run-001`);
+  - it asked Daniel which front parts turn, showing previews of both options (he chose the nose
+    only);
+  - its second request reused v3.
+- **Verified afterwards by the building session:**
+  - all 26 quotes in v3's reading notes appear on the cited PDF pages;
+  - both validators pass on all three files;
+  - Daniel counts the run, despite one caveat: the agent read the worklog before the documents
+    (worklog 2026-10-18).
+- **No approval prompts.** Daniel saw no prompt to approve the project server, and none for tool
+  calls. Claude Code's documentation says "In `claude -p` runs, Agent SDK sessions, and cloud
+  sessions, the prompt can't be shown, so the server loads without asking". That the VS Code
+  session counts as such a session is [INFERENCE], not confirmed. Prompts for tool calls depend on
+  the session's permission mode, which was not recorded.
+  - **The consequence:** in such sessions the server can start as soon as the project opens. It
+    writes only inside `data/` and runs the generator only when asked. To keep it off, the
+    documentation suggests listing it in `disabledMcpjsonServers`.
+- **One friction point.** `identify_machine` failed when the agent cited the photo from
+  `add_input`. The error now explains that reading notes cite only reference sources, and the
+  procedure says so.
