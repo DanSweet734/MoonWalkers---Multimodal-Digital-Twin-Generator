@@ -1,7 +1,8 @@
 """Command line for Pipeline B (decision 0012). Run from ``backend/``::
 
     uv run python -m moonwalkers.pipelines.b build RUN --reference FILE
-    uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z] [--preview]
+    uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--circle-x X ...]]
+    uv run python -m moonwalkers.pipelines.b inspect RUN --preview
 
 ``RUN`` is a run folder, ``data/machines/<machine>/runs/<run>``, holding ``request.json`` (a
 ``JobRequest`` with the photo as a source). ``build`` sends the request through the orchestrator:
@@ -91,6 +92,14 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--front", choices=AXES, help="the generator axis the spindle faces")
     inspect.add_argument("--window", type=float, help="profile radius limit (model units)")
     inspect.add_argument(
+        "--circle-x",
+        type=float,
+        nargs="+",
+        metavar="X",
+        help="x positions through the round moving part: fit circles there and use their centre "
+        "as the axis (when the spindle is not the front-most part)",
+    )
+    inspect.add_argument(
         "--preview", action="store_true", help=f"try RUN/{SPEC_FILE} without storing anything"
     )
     inspect.add_argument("--reference", type=Path, help="reference facts, for size checks")
@@ -112,8 +121,11 @@ def _inspect(args: argparse.Namespace) -> int:
         return 0
     if (args.up is None) != (args.front is None):
         raise UsageError("give both --up and --front, or neither")
+    if args.circle_x and args.up is None:
+        raise UsageError("--circle-x needs --up and --front")
     out_dir = run_dir / ("inspect_oriented" if args.up else "inspect_raw")
-    print(format_inspection(inspect_mesh(mesh, out_dir, args.up, args.front, args.window)))
+    inspection = inspect_mesh(mesh, out_dir, args.up, args.front, args.window, args.circle_x)
+    print(format_inspection(inspection))
     return 0
 
 

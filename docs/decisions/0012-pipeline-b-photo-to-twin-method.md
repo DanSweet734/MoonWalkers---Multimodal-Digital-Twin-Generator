@@ -154,8 +154,9 @@ Daniel checked twin v2 in Isaac Sim 6.2.0 (worklog 2026-10-18; `RUN.md` of run-0
 
 
 ## Known limitation: the spindle axis when the spindle is not the front-most part (2026-10-18)
-Found while building the Haas TH240 rotary table (worklog 2026-10-18, the TH240 entry). To fix
-before Pipeline B is used on more machines (`docs/poc-plan.md`, "Before more machines").
+Found while building the Haas TH240 rotary table (worklog 2026-10-18, the TH240 entry). **Fixed
+the same day with candidates (b) and (c)**: see "The fix" below. The item in
+`docs/poc-plan.md`, "Before more machines", is ticked.
 
 - **What the tool assumes.** `inspect_geometry` finds the spindle axis with
   `mesh_tools.tip_slabs`:
@@ -184,3 +185,66 @@ before Pipeline B is used on more machines (`docs/poc-plan.md`, "Before more mac
     mesh, so the agent knows to use (a) or (b).
 
   Any of them needs a test on a synthetic machine whose base reaches past its spindle.
+
+### The fix (2026-10-18; Daniel asked for it before Phase 6)
+- **Choice: (b) and (c), not (a).** The TH240's feet run along the whole bottom of the base, so any
+  slab placed behind the platter's face still holds their vertices. A front limit (a) alone would
+  still measure feet.
+- **(c) Warnings.** `inspect_geometry` (and `inspection.tip_warnings`) now warns in three cases:
+  - **not round:** the slabs' smaller y or z extent is under 80% of the larger;
+  - **at the bottom:** the slabs reach within 2% of the mesh's height of its lowest point;
+  - **disagreeing:** the slab centres are further apart than 10% of their radius.
+
+  Each warning tells the agent to use the circle fits.
+- **(b) Circle fits** (`mesh_tools.fit_circles`).
+  - A circle is fitted to the surface samples in a thin slice across x, with RANSAC. Circles
+    through random triples are scored by how many samples lie near them, which tolerates a slice
+    shared with feet, a cradle or a bore. The best circle is then refined by an algebraic least
+    squares fit (the Kåsa fit).
+  - A fit counts as `round` when its inliers fill at least 75% of the 10-degree sectors around
+    the centre, at least 25% of the slice's samples lie on it, and their rms is at most half the
+    tolerance.
+  - Both the slice thickness and the tolerance are 1% of the mesh's largest extent. The fit is
+    seeded, so it is repeatable.
+- **The scan.** Every oriented inspection also fits circles at 8 slices over the front 5-40% of
+  the mesh (`circle_scan`), so the round part shows up wherever it is.
+- **Choosing the axis.** With `circle_x` (the CLI's `--circle-x`), the median centre of the round
+  fits there becomes the axis (`axis_source: circle_fits`). The agent picks x positions inside the
+  round moving part, from the scan.
+  - The profile is then measured about that axis.
+  - The profile's default window grows to 1.05 times the fitted radius when the round part is
+    wider than a quarter of the mesh. That way the profile follows the part's rim instead of being
+    cut off; on the TH240 that is 0.607 instead of 0.499.
+  - If no fit is round, the axis stays the tip slabs' and a warning says so.
+- **Thresholds.** All of them (80%, 2%, 10%, 75%, 25%, 1.05) are [INFERENCE], set from the two
+  real meshes below and the synthetic tests.
+- **Measured on the real meshes** (read-only, views written to a scratch folder):
+
+  | Mesh | Warnings | Round scan slices | Axis |
+  |---|---|---|---|
+  | HA5C v3 (nose in front) | none | x = 0.281-0.396 (disc and face, r 0.27-0.30), 0.454 and 0.511 (nose, r 0.160-0.163) | tip slabs (0.0757, 0.0030); every round slice within 0.005 of it |
+  | TH240 v1 (feet in front) | not round (1.351 by 0.098), at the bottom (z = -0.730), disagreeing (0.096) | x = 0.496 and 0.596 (r 0.578) | `circle_x` 0.42, 0.46, 0.50: (-0.0153, 0.1373), r 0.578, rms 0.0033-0.0036 |
+
+  - **The TH240 twin.** The fitted TH240 axis is 0.0046 model units (about 0.9 mm) from the
+    scratch-script axis it was built with. Daniel's Isaac Sim check showed no wobble, and run
+    folders are never changed, so `haas/th240@v1` stands.
+  - **Inspection time:** 4-6 s on these 40,000-face meshes, including the views.
+- **Sources for the methods.**
+  - M. A. Fischler and R. C. Bolles, "Random Sample Consensus: A Paradigm for Model Fitting with
+    Applications to Image Analysis and Automated Cartography", Communications of the ACM 24(6),
+    381-395, 1981, https://doi.org/10.1145/358669.358692.
+  - I. Kåsa, "A curve fitting procedure and its error analysis", IEEE Transactions on
+    Instrumentation and Measurement 25, 8-14, 1976 (no DOI found).
+  - A. Al-Sharadqah and N. Chernov, "Error analysis for circle fitting algorithms",
+    https://arxiv.org/abs/0907.0421 (read 2026-10-18). It says "the Kåsa fit develops a heavy bias
+    toward smaller circles when data points are sampled from a small arc". The 75% sector rule
+    keeps short arcs out of the axis for that reason.
+- **Tests.** A synthetic rotary table (conftest `rotary_table`) has a platter of radius 0.6 and
+  feet that reach past it:
+  - the tip slabs measure the feet and the warnings fire;
+  - the scan finds the platter only where it is;
+  - `circle_x` gives the axis (0, 0.2);
+  - through the MCP tools, the agent's joint built from it gives a spindle part that is the
+    platter alone.
+
+  Also covered: concentric rings, empty slices and repeatability.

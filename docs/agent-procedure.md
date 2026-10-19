@@ -119,13 +119,19 @@ the job is done. Otherwise the job waits for you:
 2. **Decide the axes from the views:** which generator axis points up, and which one the spindle
    nose faces.
 3. **`inspect_geometry(run, up, front)`.** Open its views, then check:
+   - **`warnings` first.** They say when the tip slabs measured something other than the spindle.
    - **`tip_slabs`:** centres that agree across depths mean the tip is a round nose; that gives the
      spindle axis (y, z). The slabs start at the mesh's front-most point, so they find the spindle
-     only if it reaches furthest forward. If something else does, such as base feet or a bracket,
-     the slabs measure that instead. Check the axis height against the round part in the views.
-     On the TH240 this happened, and the axis came from circle fits to the platter rim, done in
-     scratch scripts. In that case say so in an issue, and give the method in `add_joint`'s
-     `method` (decision 0012, "Known limitation"; a tool fix is planned).
+     only if it reaches furthest forward. On the HA5C it does. On the TH240 the base's feet reach
+     further, and the warnings said the slabs were not round and reached the bottom of the mesh.
+   - **`circle_scan`:** circles fitted to slices over the front of the mesh. Slices marked
+     `round` show where a round part (platter, disc, nose) is, and its centre and radius.
+   - **If the warnings fire, or the slab axis is not on the round moving part in the views:** call
+     `inspect_geometry` again with `circle_x`, two or three x positions inside the round moving
+     part, taken from the round scan slices. The round fits' centre becomes the axis
+     (`axis_source: "circle_fits"`), and the profile is measured about it. Say in the joint's
+     `method` that the axis came from circle fits, with their x positions (decision 0012, "The
+     fix").
    - **`profile`:** along +x it shows the body's front face (`r_max` jumps to the window), any
      flange or disc in front of it, and the nose.
    - **The base:** the lowest point should be a flat base, not a foot or a stray bit of mesh.
@@ -134,7 +140,7 @@ the job is done. Otherwise the job waits for you:
 
 ## 5. Define the joint and the scale
 1. **`add_joint(run, up, front, spindle_axis_yz, spindle_radius, spindle_start_x, method)`.**
-   - `spindle_axis_yz` comes from the slabs.
+   - `spindle_axis_yz` is the inspection's `axis_yz`: from the slabs, or from the circle fits.
    - `spindle_radius` lies between the moving part's radius and the radius of whatever stays put.
    - `spindle_start_x` sits just in front of the face the moving part starts from.
    - `method` explains the numbers you used, with `[INFERENCE]` for judgement. It becomes a cited

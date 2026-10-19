@@ -50,6 +50,28 @@ def indexer() -> Callable[[], trimesh.Trimesh]:
 
 
 @pytest.fixture
+def rotary_table() -> Callable[[], trimesh.Trimesh]:
+    """A synthetic rotary table in the twin frame whose base reaches past its spindle, like the
+    TH240: a 2 x 3 x 2 box body (base at z = -1), a round platter of radius 0.6 from x = 1 to
+    x = 1.3 on the axis y = 0, z = 0.2, and two feet along the bottom (z = -1 to -0.8, at
+    y = +-1.2) that reach to x = 1.6, past the platter. The tip slabs measure the feet."""
+
+    def build() -> trimesh.Trimesh:
+        body = trimesh.creation.box(extents=(2.0, 3.0, 2.0))
+        platter = trimesh.creation.cylinder(radius=0.6, height=0.3, sections=64)
+        platter.apply_transform(trimesh.transformations.rotation_matrix(math.pi / 2, (0, 1, 0)))
+        platter.apply_translation((1.15, 0.0, 0.2))
+        feet = []
+        for y in (-1.2, 1.2):
+            foot = trimesh.creation.box(extents=(2.6, 0.4, 0.2))
+            foot.apply_translation((0.3, y, -0.9))
+            feet.append(foot)
+        return trimesh.util.concatenate([body, platter, *feet])
+
+    return build
+
+
+@pytest.fixture
 def clock() -> Callable[[], datetime]:
     """A clock that always returns FIXED_TIME."""
     return lambda: FIXED_TIME
@@ -135,6 +157,12 @@ class FakeGenerator(ImageTo3DGenerator):
 @pytest.fixture
 def fake_generator(indexer: Callable[[], trimesh.Trimesh]) -> Callable[..., FakeGenerator]:
     return lambda seed=0: FakeGenerator(indexer, seed)
+
+
+@pytest.fixture
+def generator_for() -> Callable[..., FakeGenerator]:
+    """A fake generator for another synthetic machine, such as ``rotary_table``."""
+    return lambda build, seed=0: FakeGenerator(build, seed)
 
 
 @dataclass(frozen=True)

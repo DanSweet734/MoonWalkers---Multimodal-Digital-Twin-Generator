@@ -65,7 +65,7 @@ from moonwalkers.pipelines import default_pipelines
 from moonwalkers.pipelines.b.assemble import AxisName
 from moonwalkers.pipelines.b.build import REQUEST_FILE, build_run
 from moonwalkers.pipelines.b.inspection import inspect_mesh, preview_parts
-from moonwalkers.pipelines.b.mesh_tools import load_mesh, render_views
+from moonwalkers.pipelines.b.mesh_tools import CircleFit, load_mesh, render_views
 from moonwalkers.pipelines.b.pipeline import (
     GENERATOR_DIR,
     GENERATOR_RECORD,
@@ -91,6 +91,7 @@ from moonwalkers.workspace import (
 )
 
 from .reports import (
+    CircleFitReport,
     GenerationReport,
     InspectionReport,
     JobBrief,
@@ -600,18 +601,29 @@ def create_server(
 
     @server.tool(annotations=LOCAL_WRITE)
     def inspect_geometry(
-        run: str, up: AxisName, front: AxisName, window: float | None = None
+        run: str,
+        up: AxisName,
+        front: AxisName,
+        window: float | None = None,
+        circle_x: list[float] | None = None,
     ) -> InspectionReport:
         """Orient the generated mesh (the generator axis that points up, and the one the spindle
-        nose faces) and measure it in twin axes: x front, y left, z up, in model units.
-        tip_slabs give the spindle axis (y, z) from thin slabs behind the nose tip; centres
-        that agree across depths mean a round nose. profile gives how far the surface reaches
-        from that axis along x (samples within `window`), which shows where the body's front
-        face, any flange and the nose are. Open the returned views PNG."""
+        faces) and measure it in twin axes: x front, y left, z up, in model units. Read
+        `warnings` first.
+        - tip_slabs: the axis (y, z) from thin slabs behind the mesh's front-most point. Right
+          only if the spindle is the front-most part (a nose, as on the HA5C).
+        - circle_scan: a circle fitted to the surface in slices over the front of the mesh;
+          `round` fits show where a round part (platter, nose, disc) is and its centre.
+        - circle_x: if the warnings say the tip slabs measured something else (base feet, a
+          bracket), inspect again with x positions inside the round moving part; their round
+          fits' centre becomes the axis (axis_source "circle_fits").
+        - profile: how far the surface reaches from the axis in use along x (samples within
+          `window`): where the body's front face, any flange and the spindle are.
+        Open the returned views PNG."""
         with guarded():
             run_dir = ws.run_dir(run)
             result = inspect_mesh(
-                generated_mesh(run_dir), run_dir / "inspect_oriented", up, front, window
+                generated_mesh(run_dir), run_dir / "inspect_oriented", up, front, window, circle_x
             )
             lowest = result.bounds[0][2]
             return InspectionReport(
@@ -620,12 +632,20 @@ def create_server(
                 faces=result.faces,
                 bounds_min=result.bounds[0],
                 bounds_max=result.bounds[1],
+                warnings=result.warnings,
                 tip_slabs=[
                     TipSlabReport(
-                        depth=s.depth, vertices=s.count, axis_yz=s.axis_yz, radius=s.radius
+                        depth=s.depth,
+                        vertices=s.count,
+                        axis_yz=s.axis_yz,
+                        radius=s.radius,
+                        extent_yz=s.extent_yz,
                     )
                     for s in result.tip
                 ],
+                circle_scan=[circle_report(f) for f in result.circle_scan],
+                circle_fits=[circle_report(f) for f in result.circle_fits],
+                axis_source=result.axis_source or "tip_slabs",
                 axis_yz=result.axis_yz,
                 axis_height_above_lowest=(
                     result.axis_yz[1] - lowest if result.axis_yz is not None else None
@@ -636,6 +656,18 @@ def create_server(
                     for s in result.profile
                 ],
             )
+
+    def circle_report(fit: CircleFit) -> CircleFitReport:
+        return CircleFitReport(
+            x=fit.x,
+            samples=fit.samples,
+            centre_yz=fit.centre_yz,
+            radius=fit.radius,
+            inliers=fit.inliers,
+            rms=fit.rms,
+            coverage=fit.coverage,
+            round=fit.round,
+        )
 
     def spec_status(run: str, run_dir: Path) -> SpecStatus:
         state = ws.spec_state(run_dir)

@@ -93,7 +93,9 @@ Backend (run from `backend/`):
   facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
 - Inspect a generated mesh, or try a spec without storing anything:
   `uv run python -m moonwalkers.pipelines.b inspect <run> --up +y --front +z`, then
-  `... inspect <run> --preview --reference <facts.json>`
+  `... inspect <run> --preview --reference <facts.json>`. If the inspection warns that the tip
+  slabs are not the spindle (something else is front-most), add `--circle-x X ...` with x positions
+  inside the round moving part, taken from its circle scan (decision 0012, "The fix").
 - Validate an exported twin (`.usda` or `.usdc`): `uv run python -m moonwalkers.usd.validate <file>`, then NVIDIA's `uv run omni_asset_validate <file>`
 - Check a twin by eye in Isaac Sim: `docs/setup/isaac-sim-check.md`
 - MCP server for the agent: Claude Code starts it from `.mcp.json` (approve it once per project). To

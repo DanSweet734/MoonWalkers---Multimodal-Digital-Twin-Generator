@@ -197,13 +197,17 @@ class TipSlab:
     count: int
     axis_yz: tuple[float, float]  # the centre of their y-z bounding box
     radius: float  # their largest distance from that centre
+    extent_yz: tuple[float, float]  # the bounding box's size: about equal for a round tip
+    z_min: float  # their lowest point: at the mesh's bottom, they measured a base or feet
 
 
 def tip_slabs(mesh: trimesh.Trimesh, depths: Sequence[float] = (0.01, 0.03, 0.06)) -> list[TipSlab]:
     """Where a round nose at the front (+X) is centred, from thin slabs behind its tip.
 
     Centres that agree across depths mean the tip is round about one line along X: the spindle
-    axis. This is how the HA5C's axis was found (decision 0012).
+    axis. This is how the HA5C's axis was found (decision 0012). It assumes the spindle is the
+    front-most part: when something else reaches further forward (the TH240's base feet), the
+    slabs measure that instead, so use ``fit_circles`` (decision 0012, "Known limitation").
     """
     v = mesh.vertices
     x_max = float(v[:, 0].max())
@@ -213,8 +217,142 @@ def tip_slabs(mesh: trimesh.Trimesh, depths: Sequence[float] = (0.01, 0.03, 0.06
         cy = float(tip[:, 1].min() + tip[:, 1].max()) / 2
         cz = float(tip[:, 2].min() + tip[:, 2].max()) / 2
         radius = float(np.hypot(tip[:, 1] - cy, tip[:, 2] - cz).max())
-        slabs.append(TipSlab(depth=depth, count=len(tip), axis_yz=(cy, cz), radius=radius))
+        slabs.append(
+            TipSlab(
+                depth=depth,
+                count=len(tip),
+                axis_yz=(cy, cz),
+                radius=radius,
+                extent_yz=(float(np.ptp(tip[:, 1])), float(np.ptp(tip[:, 2]))),
+                z_min=float(tip[:, 2].min()),
+            )
+        )
     return slabs
+
+
+# ------------------------------------------------------------------------------------ circles
+ROUND_COVERAGE = 0.75  # [INFERENCE] thresholds, from the HA5C and TH240 meshes (decision 0012)
+ROUND_INLIERS = 0.25
+SECTORS = 36  # coverage is counted in 10-degree sectors around the centre
+
+
+@dataclass(frozen=True)
+class CircleFit:
+    """The circle that best fits the surface in a thin slice across X: a round part's outline."""
+
+    x: float  # the slice's position
+    samples: int  # surface samples in the slice
+    centre_yz: tuple[float, float] | None  # None when the slice has too few samples
+    radius: float | None
+    inliers: float  # fraction of the slice's samples within the tolerance of the circle
+    rms: float | None  # those samples' root-mean-square distance from the circle
+    coverage: float  # fraction of 10-degree sectors around the centre holding an inlier
+    round: bool  # coverage, inliers and rms all good enough to trust the centre
+
+
+def fit_circles(
+    mesh: trimesh.Trimesh,
+    xs: Sequence[float],
+    thickness: float | None = None,
+    tolerance: float | None = None,
+    samples: int = 400_000,
+    iterations: int = 3000,
+    seed: int = 0,
+) -> list[CircleFit]:
+    """A circle fitted to the surface in a slice at each x, to find a round part's axis.
+
+    RANSAC: circles through random triples of the slice's surface samples are scored by how many
+    samples lie within ``tolerance`` of them; the best is refined by least squares on those
+    samples. So a round platter or nose is found even when feet, a cradle or a bore share the
+    slice. Concentric rings (a nose and its bore) give the same centre. Both ``thickness`` and
+    ``tolerance`` default to 1% of the mesh's largest extent. Seeded, so repeatable.
+    """
+    size = float(mesh.extents.max())
+    thickness = 0.01 * size if thickness is None else thickness
+    tolerance = 0.01 * size if tolerance is None else tolerance
+    points, _ = trimesh.sample.sample_surface(mesh, samples, seed=seed)
+    fits = []
+    for x in xs:
+        in_slice = points[np.abs(points[:, 0] - x) <= thickness / 2][:, 1:]
+        rng = np.random.default_rng(seed)
+        fits.append(_fit_circle(float(x), in_slice, tolerance, rng, iterations))
+    return fits
+
+
+def scan_positions(mesh: trimesh.Trimesh, count: int = 8) -> list[float]:
+    """x positions over the front 5-40% of the mesh's length, back to front, where a spindle,
+    platter or nose usually is [INFERENCE]: the default slices for a circle scan."""
+    lo, hi = float(mesh.bounds[0][0]), float(mesh.bounds[1][0])
+    return [hi - f * (hi - lo) for f in np.linspace(0.40, 0.05, count)]
+
+
+def _fit_circle(
+    x: float, p: np.ndarray, tolerance: float, rng: np.random.Generator, iterations: int
+) -> CircleFit:
+    empty = CircleFit(x, len(p), None, None, 0.0, None, 0.0, False)
+    if len(p) < 3:
+        return empty
+    centres, radii = _circles_through_triples(p, rng, iterations)
+    if len(centres) == 0:
+        return empty
+    best, best_count = 0, -1
+    for start in range(0, len(centres), 200):  # chunks keep the distance matrix small
+        dist = np.linalg.norm(p[None, :, :] - centres[start : start + 200, None, :], axis=2)
+        counts = (np.abs(dist - radii[start : start + 200, None]) <= tolerance).sum(axis=1)
+        if int(counts.max()) > best_count:
+            best, best_count = start + int(counts.argmax()), int(counts.max())
+    centre, radius = centres[best], float(radii[best])
+    for _ in range(3):  # refine on the samples near the circle
+        near = np.abs(np.linalg.norm(p - centre, axis=1) - radius) <= tolerance
+        if near.sum() < 3:
+            break
+        centre, radius = _least_squares_circle(p[near])
+    residual = np.linalg.norm(p - centre, axis=1) - radius
+    near = np.abs(residual) <= tolerance
+    if not near.any():
+        return empty
+    angles = np.arctan2(p[near, 1] - centre[1], p[near, 0] - centre[0])
+    sectors = np.floor((angles + np.pi) / (2 * np.pi) * SECTORS).astype(int) % SECTORS
+    coverage = len(np.unique(sectors)) / SECTORS
+    inliers = float(near.mean())
+    rms = float(np.sqrt(np.mean(residual[near] ** 2)))
+    return CircleFit(
+        x=x,
+        samples=len(p),
+        centre_yz=(float(centre[0]), float(centre[1])),
+        radius=radius,
+        inliers=inliers,
+        rms=rms,
+        coverage=coverage,
+        round=coverage >= ROUND_COVERAGE and inliers >= ROUND_INLIERS and rms <= tolerance / 2,
+    )
+
+
+def _circles_through_triples(
+    p: np.ndarray, rng: np.random.Generator, iterations: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Centres and radii of the circles through ``iterations`` random triples of points."""
+    a, b, c = (p[rng.integers(0, len(p), size=iterations)] for _ in range(3))
+    d = 2 * (
+        a[:, 0] * (b[:, 1] - c[:, 1])
+        + b[:, 0] * (c[:, 1] - a[:, 1])
+        + c[:, 0] * (a[:, 1] - b[:, 1])
+    )
+    ok = np.abs(d) > 1e-12  # three points on one line have no circle
+    a, b, c, d = a[ok], b[ok], c[ok], d[ok]
+    a2, b2, c2 = (a**2).sum(axis=1), (b**2).sum(axis=1), (c**2).sum(axis=1)
+    cy = (a2 * (b[:, 1] - c[:, 1]) + b2 * (c[:, 1] - a[:, 1]) + c2 * (a[:, 1] - b[:, 1])) / d
+    cz = (a2 * (c[:, 0] - b[:, 0]) + b2 * (a[:, 0] - c[:, 0]) + c2 * (b[:, 0] - a[:, 0])) / d
+    centres = np.column_stack([cy, cz])
+    return centres, np.linalg.norm(a - centres, axis=1)
+
+
+def _least_squares_circle(p: np.ndarray) -> tuple[np.ndarray, float]:
+    """The algebraic least-squares circle (Kasa fit) through 2D points."""
+    lhs = np.column_stack([2 * p, np.ones(len(p))])
+    rhs = (p**2).sum(axis=1)
+    (cy, cz, c), *_ = np.linalg.lstsq(lhs, rhs, rcond=None)
+    return np.array([cy, cz]), float(np.sqrt(max(c + cy * cy + cz * cz, 0.0)))
 
 
 # -------------------------------------------------------------------------------------- split

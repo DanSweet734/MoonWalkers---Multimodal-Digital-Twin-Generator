@@ -148,3 +148,8 @@ The facts below are quoted, with access dates, in
   - `check_knowledge_base`, `request_twin` and `start_run` follow the new reuse rule: the newest
     approved version, else the newest not rejected in review.
   - The agent has no review tool: only people approve or reject.
+- **Context cost, measured again (2026-10-18, after the tip-slab fix):** the tool list with its
+  schemas is 41,996 characters, against 35,051 in Phase 4. That is about 10,500 tokens
+  [INFERENCE: at 4 characters per token]. The growth comes from `list_jobs`, the review status,
+  and `inspect_geometry`'s warnings and circle fits. One `inspect_geometry` result on the TH240
+  mesh is about 7,100-7,350 characters.
