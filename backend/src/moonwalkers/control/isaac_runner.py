@@ -2,7 +2,8 @@
 ``run_program.py``.
 
 1. Open the program's ``program.usdc`` in Isaac Sim.
-2. Open Window > Script Editor, open this file in it, and press Run. It prints what it found.
+2. Open Window > Script Editor, paste this whole file into it (open it in a text editor, select
+   all, copy), and click Run at the bottom. It prints what it found.
 3. Press Play. On every physics step the runner sets the joint's drive target to the program's
    planned angle at that moment, and its target velocity to the planned speed, so the drive does
    not trail behind.
