@@ -54,7 +54,7 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
 ## Repository layout (target)
 - `backend/src/moonwalkers/` - Python package: `contracts/`, `pipelines/{a,b,c,d}/`, `orchestrator/`,
   `kb/`, `usd/` (exporter), `generators/` (image-to-3D adapters), `workspace/` (run folders, job
-  status, uploads), `api/` (FastAPI), `mcp/` (MCP server)
+  status, uploads), `control/` (indexing programs), `api/` (FastAPI), `mcp/` (MCP server)
 - `backend/tests/` - pytest tests; `backend/tests/fixtures/` - small JSON/image fixtures
 - `dashboard/` - React + TypeScript (Vite), barebones
 - `data/` - local test data and outputs (gitignored, see `data/README.md`)
@@ -96,6 +96,11 @@ Backend (run from `backend/`):
   `... inspect <run> --preview --reference <facts.json>`. If the inspection warns that the tip
   slabs are not the spindle (something else is front-most), add `--circle-x X ...` with x positions
   inside the round moving part, taken from its circle scan (decision 0012, "The fix").
+- Indexing programs (control logic, level 3, decision 0016): `uv run python -m moonwalkers.control list`
+  (the HA5C manual's examples), `... show <program>`, and `... run <program> --twin haas/ha5c[@vN]`,
+  which writes `data/machines/<machine>/programs/<date>_<program>_v<N>/` (open its `PROGRAM.md`).
+  A build writes `programs/<behaviour>/` into the run when a control behaviour carries `spec["program"]`.
+  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
 - Validate an exported twin (`.usda` or `.usdc`): `uv run python -m moonwalkers.usd.validate <file>`, then NVIDIA's `uv run omni_asset_validate <file>`
 - Check a twin by eye in Isaac Sim: `docs/setup/isaac-sim-check.md`
 - MCP server for the agent: Claude Code starts it from `.mcp.json` (approve it once per project). To

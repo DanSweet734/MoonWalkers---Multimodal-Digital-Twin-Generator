@@ -84,9 +84,16 @@ Plus: a second request for the same machine reuses the stored twin and the resul
 - [x] PR (Oct 18, 2026: branch `feat/phase-5-api-dashboard`, PR #9)
 
 ## Phase 6 - Control logic (level 3)
-- [ ] Represent the indexing program as a `ControlBehavior`; a small interpreter that turns G90/G91
+- [x] Represent the indexing program as a `ControlBehavior`; a small interpreter that turns G90/G91
       steps into joint drive targets
+      (Oct 18, 2026: `moonwalkers.control`. The manual's step table lives in `spec["program"]`,
+      and the interpreter runs it as auto-continue: G90/G91, home, circle division, dwell,
+      subroutines. The manual's Examples #2-#6 ship as cited program files, and its two stated
+      equivalences hold exactly. Builds and the CLI write a program folder with a runner for
+      Isaac Sim. Decision 0016)
 - [ ] Demonstrate in Isaac Sim; document limits honestly
+      (program folders for HA5C v3 are ready: `docs/setup/isaac-sim-check.md`, section 7; limits in
+      decision 0016)
 - [ ] PR and a short PoC report in `docs/`
 
 ## Before more machines (noted Oct 18, 2026)

@@ -25,7 +25,12 @@ data/
           twin_record.json    # copies of what the knowledge base stored
           pipeline_result_b.json
           request.job_result.json  # what the request returned (one per request file)
+          programs/<behaviour>/    # when the control behaviour carries a program (decision 0016)
           RUN.md              # versions, settings, time taken, success level, reviewer notes
+      programs/
+        2026-10-18_ha5c-manual-example-5-subroutine_v3/   # a program run on a stored twin:
+          program.usdc, run_program.py, program_native.usdc,   # python -m moonwalkers.control run
+          program.json, trajectory.json, PROGRAM.md
   kb/                    # the proof-of-concept knowledge base (JSON files, decision 0008)
     results/<result_id>.json
     twins/<manufacturer>/<model>/v0001.json
