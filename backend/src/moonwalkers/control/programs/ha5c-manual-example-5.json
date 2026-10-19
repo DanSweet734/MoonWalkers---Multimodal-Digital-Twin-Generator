@@ -1,0 +1,116 @@
+{
+  "name": "ha5c-manual-example-5",
+  "sources": [
+    {
+      "source_id": "src-haas-ha5c-manual-2006",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---ha5c-indexer-operator's-manual---2006.pdf",
+      "title": "HA5C Indexer Operator's Manual, 96-4039 rev N, June 2006 (Haas Automation)",
+      "sha256": "f99f3492b700f7606b7982db4b6d61b908fa1cfd197e589272ac1ebb317dfea0",
+      "retrieved_at": "2026-10-18T00:32:38Z",
+      "license_note": "Haas Automation manual; local copy for internal research only, not redistributed"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "index_program",
+    "name": "Manual Example #5: index 90 degrees, slow feed 15 degrees, three times, return home",
+    "kind": "program_interpreter",
+    "description": "Three pairs of a 90-degree index at 80 deg/s and a 15-degree slow feed at 25 deg/s, then return home (G88).",
+    "drives_joints": [
+      "spindle_rotation"
+    ],
+    "spec": {
+      "program": {
+        "columns": [
+          "step",
+          "step_size_deg",
+          "feed_deg_s (G96: Step#)",
+          "loop_count",
+          "g_code"
+        ],
+        "rows": [
+          [
+            1,
+            90.0,
+            80.0,
+            1,
+            91
+          ],
+          [
+            2,
+            15.0,
+            25.0,
+            1,
+            91
+          ],
+          [
+            3,
+            90.0,
+            80.0,
+            1,
+            91
+          ],
+          [
+            4,
+            15.0,
+            25.0,
+            1,
+            91
+          ],
+          [
+            5,
+            90.0,
+            80.0,
+            1,
+            91
+          ],
+          [
+            6,
+            15.0,
+            25.0,
+            1,
+            91
+          ],
+          [
+            7,
+            0.0,
+            80.0,
+            1,
+            88
+          ],
+          [
+            8,
+            0.0,
+            80.0,
+            1,
+            99
+          ]
+        ]
+      }
+    },
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "We want to index 90 degrees (90°), slow feed for 15 degrees (15°), repeat this pattern three times and return home."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "01 90.000 080.000 1 91"
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "02 15.000 25.000 1 91"
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "07 0 080.000 1 88"
+      }
+    ]
+  }
+}

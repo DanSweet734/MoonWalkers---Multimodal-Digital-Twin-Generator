@@ -125,6 +125,15 @@ def export_twin(
     if path.suffix not in (".usda", ".usdc"):
         raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
     stage = build_stage(twin, results, drive, data_dir)  # the stage owns its root layer: keep it
+    return write_stage(stage, path)
+
+
+def write_stage(stage: Usd.Stage, path: Path) -> Path:
+    """Write a stage built by ``build_stage`` (and perhaps added to) to ``path``, atomically:
+    ``.usda`` as text with LF line endings, ``.usdc`` as a binary crate file."""
+    path = Path(path)
+    if path.suffix not in (".usda", ".usdc"):
+        raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.stem}.tmp{path.suffix}")  # the suffix picks the file format
     try:

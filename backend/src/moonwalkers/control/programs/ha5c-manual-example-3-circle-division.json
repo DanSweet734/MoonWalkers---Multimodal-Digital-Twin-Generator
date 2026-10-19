@@ -1,0 +1,76 @@
+{
+  "name": "ha5c-manual-example-3-circle-division",
+  "sources": [
+    {
+      "source_id": "src-haas-ha5c-manual-2006",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---ha5c-indexer-operator's-manual---2006.pdf",
+      "title": "HA5C Indexer Operator's Manual, 96-4039 rev N, June 2006 (Haas Automation)",
+      "sha256": "f99f3492b700f7606b7982db4b6d61b908fa1cfd197e589272ac1ebb317dfea0",
+      "retrieved_at": "2026-10-18T00:32:38Z",
+      "license_note": "Haas Automation manual; local copy for internal research only, not redistributed"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "index_program",
+    "name": "Manual Example #3 with circle division (G98)",
+    "kind": "program_interpreter",
+    "description": "The same two hole patterns, written as circle divisions of 4 and 5.",
+    "drives_joints": [
+      "spindle_rotation"
+    ],
+    "spec": {
+      "program": {
+        "columns": [
+          "step",
+          "step_size_deg",
+          "feed_deg_s (G96: Step#)",
+          "loop_count",
+          "g_code"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            270.0,
+            4,
+            98
+          ],
+          [
+            2,
+            0.0,
+            270.0,
+            5,
+            98
+          ],
+          [
+            3,
+            0.0,
+            270.0,
+            1,
+            99
+          ]
+        ]
+      }
+    },
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "Example #3 could have also been done using Circle Division."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "01 0 270.000 4 98"
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "02 0 270.000 5 98"
+      }
+    ]
+  }
+}

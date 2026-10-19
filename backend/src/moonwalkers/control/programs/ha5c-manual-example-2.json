@@ -1,0 +1,103 @@
+{
+  "name": "ha5c-manual-example-2",
+  "sources": [
+    {
+      "source_id": "src-haas-ha5c-manual-2006",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---ha5c-indexer-operator's-manual---2006.pdf",
+      "title": "HA5C Indexer Operator's Manual, 96-4039 rev N, June 2006 (Haas Automation)",
+      "sha256": "f99f3492b700f7606b7982db4b6d61b908fa1cfd197e589272ac1ebb317dfea0",
+      "retrieved_at": "2026-10-18T00:32:38Z",
+      "license_note": "Haas Automation manual; local copy for internal research only, not redistributed"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "index_program",
+    "name": "Manual Example #2: index 90 degrees, feed back 10.25 degrees at 5 deg/s, return home",
+    "kind": "program_interpreter",
+    "description": "Steps entered on the keypad in Examples #1 and #2: step 1 indexes 90 degrees at the default (maximum) feed rate, step 2 feeds -10.25 degrees at 5 degrees per second, step 3 returns home (G88). Clearing memory sets the other steps to G99, so step 4 ends it.",
+    "drives_joints": [
+      "spindle_rotation"
+    ],
+    "spec": {
+      "program": {
+        "columns": [
+          "step",
+          "step_size_deg",
+          "feed_deg_s (G96: Step#)",
+          "loop_count",
+          "g_code"
+        ],
+        "rows": [
+          [
+            1,
+            90.0,
+            null,
+            1,
+            91
+          ],
+          [
+            2,
+            -10.25,
+            5.0,
+            1,
+            91
+          ],
+          [
+            3,
+            0.0,
+            null,
+            1,
+            88
+          ],
+          [
+            4,
+            0.0,
+            null,
+            1,
+            99
+          ]
+        ]
+      }
+    },
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 38 (printed p. 37), Programming Examples",
+        "quote": "you want the indexing head to index 90 degrees (Step 1)"
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 38 (printed p. 37), Programming Examples",
+        "quote": "in the opposite direction for 10.25 degrees (Step2), then return home (Step 3)."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 38 (printed p. 37), Programming Examples",
+        "quote": "Enter - 1 0 2 5 0 on the keypad."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 38 (printed p. 37), Programming Examples",
+        "quote": "Enter 5 0 0 0 on the keypad."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 38 (printed p. 37), Programming Examples",
+        "quote": "Enter 8 8 on the keypad."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 35 (printed p. 34), Clearing a Program",
+        "quote": "The displays will cycle through all 99 steps and set all but the first to G99."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 35 (printed p. 34), Default Values",
+        "quote": "F (maximum feed rate defined by parameters)"
+      }
+    ]
+  }
+}
