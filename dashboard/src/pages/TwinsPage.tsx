@@ -11,7 +11,8 @@ export function TwinsPage() {
       <h1>Twins</h1>
       <p className="lead">
         Every stored twin version, newest first. A new version is built only when someone asks for
-        one; a request for a machine reuses its newest version that review did not reject.
+        one. A request for a machine reuses its newest approved version, or, if none is approved,
+        its newest version not rejected. Approving never locks a twin: it can still be rebuilt.
       </p>
       {twins.data === undefined ? (
         <Loading error={twins.error} />

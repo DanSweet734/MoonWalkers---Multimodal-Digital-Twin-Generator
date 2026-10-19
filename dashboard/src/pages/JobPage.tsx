@@ -5,7 +5,7 @@ import type { JobDetail, Source } from '../api/types.gen.ts'
 import { ErrorNote, Loading, Section, StageBadge } from '../components/common.tsx'
 import { FileList, Gallery, Photo } from '../components/media.tsx'
 import { ControlList, FactsTable, IdentityBlock, IssueList } from '../components/notes.tsx'
-import { formatTime, isOpen } from '../lib/format.ts'
+import { fileUrl, formatTime, isOpen } from '../lib/format.ts'
 import { useApi } from '../lib/hooks.ts'
 import { twinHash } from '../lib/route.ts'
 
@@ -49,6 +49,16 @@ function JobView({ detail, error }: { detail: JobDetail; error: string | undefin
         ) : null}
       </div>
       {result ? <p className="message">{result.message}</p> : null}
+      {result?.twin.usd_path ? (
+        <p>
+          <a className="button-link" href={fileUrl(result.twin.usd_path)}>
+            Download the twin (USD)
+          </a>{' '}
+          <span className="muted small">
+            {result.twin.twin_id}, {result.twin.usd_path.split('/').pop()}: opens in Isaac Sim
+          </span>
+        </p>
+      ) : null}
       {detail.agent_prompt ? <AgentPrompt prompt={detail.agent_prompt} /> : null}
 
       <Section title="Steps">

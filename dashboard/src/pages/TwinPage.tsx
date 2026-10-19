@@ -258,7 +258,11 @@ function ReviewForm({ where, onDone }: { where: Props; onDone: () => void }) {
           {busy ? 'Saving…' : 'Record review'}
         </button>
       </div>
-      <p className="muted small">Reviews are added, never changed: the newest one decides.</p>
+      <p className="muted small">
+        Reviews are added, never changed: the newest one decides. Approving never locks the twin:
+        a new version can still be built, and requests keep reusing the approved one until a newer
+        version is approved too.
+      </p>
       {error ? (
         <p className="error" role="alert">
           {error}

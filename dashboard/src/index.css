@@ -442,6 +442,15 @@ button {
   cursor: pointer;
 }
 
+.button-link {
+  display: inline-block;
+  border: 2px solid var(--strong-line);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0.3rem 0.9rem;
+  text-decoration: none;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: progress;
