@@ -48,6 +48,17 @@ def test_inspect_shows_raw_then_oriented_measurements(generated, capsys) -> None
     assert (run_dir / "inspect_oriented" / "views.png").is_file()
 
 
+def test_inspect_with_circle_x_uses_the_fitted_axis(generated, capsys) -> None:
+    run_dir = str(generated.run_dir)
+    args = ["inspect", run_dir, "--up", "+y", "--front", "+z", "--circle-x", "1.2", "1.4"]
+    assert cli.main(args) == 0
+    out = capsys.readouterr().out
+    assert "circle fits at circle_x:" in out and "x = +1.200: centre (y, z) = (" in out
+    assert "axis in use, from the round circle fits" in out
+    assert cli.main(["inspect", run_dir, "--circle-x", "1.2"]) == 1
+    assert "--circle-x needs --up and --front" in capsys.readouterr().err
+
+
 def test_preview_tries_the_spec_without_recording_it(
     generated, write_spec, test_reference, tmp_path, capsys
 ) -> None:

@@ -312,6 +312,49 @@ async def test_a_built_run_cannot_be_changed(setup, photo_run) -> None:
 
 
 @pytest.mark.anyio
+async def test_when_feet_reach_past_the_spindle_circle_x_gives_the_axis(
+    photo_run, rotary_table, generator_for, clock
+) -> None:
+    """The TH240 case on the synthetic rotary table: the tip slabs measure the feet, the warnings
+    say so, the scan shows the platter, and circle_x through it gives the axis the twin uses."""
+    generator = generator_for(rotary_table)
+    server = create_server(Workspace(photo_run.data_dir, clock), lambda: generator, clock=clock)
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        await ok(client, "generate_geometry", run=run)
+        first = await ok(client, "inspect_geometry", run=run, up="+y", front="+z")
+        assert first["axis_source"] == "tip_slabs"
+        assert any("not round" in w for w in first["warnings"])
+        platter_x = [f["x"] for f in first["circle_scan"] if f["round"]]
+        assert platter_x and all(1.0 < x < 1.3 for x in platter_x)
+
+        second = await ok(
+            client, "inspect_geometry", run=run, up="+y", front="+z", circle_x=platter_x
+        )
+        assert second["axis_source"] == "circle_fits"
+        assert second["axis_yz"] == pytest.approx([0.0, 0.2], abs=0.005)
+        assert second["axis_height_above_lowest"] == pytest.approx(1.2, abs=0.005)
+
+        await ok(
+            client,
+            "add_joint",
+            run=run,
+            up="+y",
+            front="+z",
+            spindle_axis_yz=second["axis_yz"],
+            spindle_radius=0.65,
+            spindle_start_x=1.01,
+            method="Axis from circle fits through the platter; the feet reach past it.",
+        )
+        await ok(client, "set_scale", run=run)
+        preview = await ok(client, "preview_twin", run=run)
+    low, high = preview["spindle_bounds_m"]
+    platter = 1.2 * 0.1016 / second["axis_height_above_lowest"]  # 1.2 units across, scaled
+    assert high[1] - low[1] == pytest.approx(platter, rel=0.01)  # the platter alone: no feet
+    assert high[2] - low[2] == pytest.approx(platter, rel=0.01)
+
+
+@pytest.mark.anyio
 async def test_without_a_generator_root_only_earlier_meshes_can_be_used(photo_run, clock) -> None:
     server = create_server(Workspace(photo_run.data_dir, clock), UnconfiguredGenerator)
     async with Client(server) as client:

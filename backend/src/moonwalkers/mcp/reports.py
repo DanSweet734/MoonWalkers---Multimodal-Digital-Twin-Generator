@@ -115,6 +115,18 @@ class TipSlabReport(BaseModel):
     vertices: int
     axis_yz: tuple[float, float]
     radius: float
+    extent_yz: tuple[float, float] = Field(description="about equal for a round tip")
+
+
+class CircleFitReport(BaseModel):
+    x: float
+    samples: int
+    centre_yz: tuple[float, float] | None
+    radius: float | None
+    inliers: float = Field(description="fraction of the slice's samples on the circle")
+    rms: float | None
+    coverage: float = Field(description="fraction of 10-degree sectors around the centre")
+    round: bool = Field(description="good enough to trust the centre")
 
 
 class ProfileSliceReport(BaseModel):
@@ -129,11 +141,15 @@ class InspectionReport(BaseModel):
     faces: int
     bounds_min: Vec3 = Field(description="model units, twin axes: x front, y left, z up")
     bounds_max: Vec3
+    warnings: list[str] = Field(description="read these first: when the tip slabs are wrong")
     tip_slabs: list[TipSlabReport]
-    axis_yz: tuple[float, float] | None = Field(description="from the middle tip slab")
+    circle_scan: list[CircleFitReport] = Field(description="slices over the front of the mesh")
+    circle_fits: list[CircleFitReport] = Field(description="slices at the circle_x given")
+    axis_source: str = Field(description="tip_slabs, or circle_fits when circle_x found it")
+    axis_yz: tuple[float, float] | None = Field(description="the axis in use")
     axis_height_above_lowest: float | None
     window: float | None
-    profile: list[ProfileSliceReport]
+    profile: list[ProfileSliceReport] = Field(description="about the axis in use")
 
 
 class SpecStatus(BaseModel):
