@@ -1,10 +1,12 @@
 """Build and write the JSON Schema for the shared contract.
 
-``pipeline_result.schema.json`` is generated from the Pydantic models, never edited by hand, and the
-dashboard's TypeScript types are generated from it. Regenerate it after any contract change
-(run from ``backend/``)::
+``pipeline_result.schema.json`` is generated from the Pydantic models and never edited by hand. It
+is the contract's schema for pipeline authors. The dashboard's TypeScript types come from the same
+models through the API's OpenAPI schema (``moonwalkers.api.typescript``, decision 0014).
+Regenerate both after any contract change (run from ``backend/``)::
 
     uv run python -m moonwalkers.contracts.json_schema
+    uv run python -m moonwalkers.api.typescript
 """
 
 from __future__ import annotations

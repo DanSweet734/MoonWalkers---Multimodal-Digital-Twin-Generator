@@ -151,3 +151,36 @@ Daniel checked twin v2 in Isaac Sim 6.2.0 (worklog 2026-10-18; `RUN.md` of run-0
   - make the seam round.
 
   Either needs its own decision.
+
+
+## Known limitation: the spindle axis when the spindle is not the front-most part (2026-10-18)
+Found while building the Haas TH240 rotary table (worklog 2026-10-18, the TH240 entry). To fix
+before Pipeline B is used on more machines (`docs/poc-plan.md`, "Before more machines").
+
+- **What the tool assumes.** `inspect_geometry` finds the spindle axis with
+  `mesh_tools.tip_slabs`:
+  - it takes the vertices within 0.01, 0.03 and 0.06 model units of the mesh's front-most point
+    (largest x);
+  - it uses the middle of their y and z extent as the axis (y, z).
+
+  That is right only when the spindle nose is the front-most part, as on the HA5C.
+- **What happened on the TH240.** The base's front feet reach past the platter's face (x = 0.995
+  against 0.615 model units), so the slabs measured the feet and gave an axis height of
+  z = -0.68, nowhere near the platter.
+- **The workaround used.** The agent measured the axis with read-only scratch scripts:
+  - circle fits to the outermost surface sample per angle bin, over the platter rim's upper half,
+    at x = 0.42, 0.46 and 0.50 gave centre (-0.017, 0.133), radius 0.583, rms 0.002;
+  - the housing's rear end agreed within 0.005 model units (about 1 mm).
+
+  Daniel's Isaac Sim check showed the platter turning cleanly about its centre, so the workaround
+  worked. But it lives outside the tools, and so outside what a person can repeat from the run
+  folder.
+- **Fix candidates [INFERENCE: not built or tested].**
+  - (a) **A front limit:** let `inspect_geometry` take the x at which the slabs start, so the
+    agent can step behind feet or brackets.
+  - (b) **Rim circle fits** as a tool, at x positions the agent chooses. This is the method that
+    worked on the TH240, and it works for faces that are flat discs rather than noses.
+  - (c) **A warning** when the slab centres disagree, or when the slab sits at the bottom of the
+    mesh, so the agent knows to use (a) or (b).
+
+  Any of them needs a test on a synthetic machine whose base reaches past its spindle.

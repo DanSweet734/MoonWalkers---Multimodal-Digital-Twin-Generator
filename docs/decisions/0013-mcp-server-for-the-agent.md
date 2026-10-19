@@ -1,7 +1,8 @@
 # 0013 - The MCP server the agent drives: one tool per platform action, state in the run folder
 
-- **Status:** proposed (Claude Code, Phase 4). Daniel approved the SDK install and the plan for the
-  end-to-end check on 2026-10-18; the design awaits his review in the Phase 4 PR.
+- **Status:** accepted (proposed by Claude Code in Phase 4; Daniel approved the SDK install and the
+  end-to-end plan, then reviewed and merged the Phase 4 PR, #8, on 2026-10-18). Updated for Phase 5
+  (section at the end).
 - **Date:** 2026-10-18
 - **Decided by:** team (Daniel)
 
@@ -136,3 +137,14 @@ The facts below are quoted, with access dates, in
 - **One friction point.** `identify_machine` failed when the agent cited the photo from
   `add_input`. The error now explains that reading notes cite only reference sources, and the
   procedure says so.
+
+## Update for Phase 5 (2026-10-18)
+- **The workspace moved.** `workspace.py` is now the shared package `moonwalkers.workspace`, also
+  used by the API (decision 0014). `moonwalkers.mcp` still exports `Workspace`.
+- **A sixteenth tool.** `list_jobs` is read-only. It lists open jobs, such as a photo uploaded in
+  the dashboard, with each job's next step.
+- **Reviews (decision 0015).**
+  - Twin summaries carry `review_status` beside the stored `status`.
+  - `check_knowledge_base`, `request_twin` and `start_run` follow the new reuse rule: the newest
+    approved version, else the newest not rejected in review.
+  - The agent has no review tool: only people approve or reject.

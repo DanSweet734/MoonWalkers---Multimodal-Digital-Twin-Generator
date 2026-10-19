@@ -120,6 +120,10 @@ They are binary USD (decision 0012). Open them with **File > Open**, as before.
 **Result on 2026-10-18 (Daniel):** level 2, with no errors, no time-code warning and no collisions.
 The seam gaps from step 4 were seen. Details: `docs/worklog/2026-10-18.md`.
 
+**Since Phase 5:** after a check, a person can record the decision as a review of that twin version
+in the dashboard: approve or reject, with what was seen as the reason (`docs/setup/dashboard.md`,
+decision 0015). A rejected version is no longer reused.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

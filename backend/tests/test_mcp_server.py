@@ -11,8 +11,11 @@ from typing import Any
 import pytest
 from mcp import Client
 
+from moonwalkers.contracts.pipeline_result import TwinRecord
+from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.mcp import Workspace, create_server, default_data_dir
 from moonwalkers.mcp.server import UnconfiguredGenerator
+from moonwalkers.orchestrator import Orchestrator
 
 MACHINE = {"manufacturer": "MoonWalkers", "model": "Test Indexer"}
 SHEET = [{"source_id": "src-sheet", "locator": "p. 1", "quote": "centre height 0.1016 m"}]
@@ -88,6 +91,7 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
     assert list(tools) == [
         "check_knowledge_base",
         "request_twin",
+        "list_jobs",
         "start_run",
         "add_input",
         "add_reference_source",
@@ -104,6 +108,7 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
     ]
     assert all(t.description and t.output_schema for t in tools.values())
     assert tools["check_knowledge_base"].annotations.read_only_hint is True  # type: ignore[union-attr]
+    assert tools["list_jobs"].annotations.read_only_hint is True  # type: ignore[union-attr]
     assert tools["submit_twin"].annotations.read_only_hint is False  # type: ignore[union-attr]
     assert "citations" in tools["add_fact"].input_schema["required"]
 
@@ -176,7 +181,64 @@ async def test_an_agent_builds_a_twin_then_a_second_request_reuses_it(setup, pho
         )
         stored = await ok(client, "check_knowledge_base", **MACHINE)
         assert [v["version"] for v in stored["versions"]] == [1]
+        assert stored["versions"][0]["review_status"] == "needs_review"
+        assert (await ok(client, "list_jobs"))["jobs"] == []  # the built job is finished
+        finished = (await ok(client, "list_jobs", include_finished=True))["jobs"]
+        assert [(j["run"], j["stage"]) for j in finished] == [(run, "built")]
     assert generator.calls == 1  # the mesh was generated once
+
+
+@pytest.mark.anyio
+async def test_list_jobs_finds_a_waiting_job_and_says_what_comes_next(setup, photo_run) -> None:
+    server, _ = setup
+    async with Client(server) as client:
+        assert (await ok(client, "list_jobs"))["jobs"] == []
+        run = (await ok(client, "start_run", **MACHINE))["run"]
+        assert (await ok(client, "list_jobs"))["jobs"][0]["next_step"].startswith("add_input")
+        await ok(
+            client,
+            "add_input",
+            run=run,
+            path=photo_run.photo.uri,
+            source_id="src-photo",
+            title="Test photo",
+        )
+        listed = await ok(client, "list_jobs", machine="moonwalkers/testindexer")
+        job = listed["jobs"][0]
+        assert (job["run"], job["stage"], job["photo"]) == (
+            run,
+            "waiting_for_agent",
+            photo_run.photo.uri,
+        )
+        assert job["next_step"].startswith("the cited reading notes")
+        assert listed["note"] == "1 job(s) shown, 1 waiting for the agent."
+        assert (await ok(client, "list_jobs", machine="haas-ha5c"))["jobs"] == []
+        assert "not a machine folder" in await fails(client, "list_jobs", machine="Haas HA5C")
+
+
+@pytest.mark.anyio
+async def test_a_twin_rejected_in_review_is_not_reused(
+    photo_run, fake_generator, clock, fixed_time
+) -> None:
+    kb = JsonKnowledgeBase(photo_run.data_dir / "kb")
+    key = "moonwalkers/testindexer"
+    kb.save_twin(
+        TwinRecord(
+            twin_id=f"{key}@v1",
+            machine_key=key,
+            version=1,
+            status="needs_review",
+            created_at=fixed_time,
+        )
+    )
+    Orchestrator(kb, {}, clock=clock).review_twin(key, 1, "rejected", "Daniel", "Wrong split.")
+    server = create_server(Workspace(photo_run.data_dir, clock), fake_generator, kb=kb, clock=clock)
+    async with Client(server) as client:
+        assert "was rejected in review" in await fails(client, "request_twin", **MACHINE)
+        report = await ok(client, "check_knowledge_base", **MACHINE)
+        assert report["versions"][0]["review_status"] == "rejected"
+        assert "all rejected in review" in report["note"]
+        assert (await ok(client, "start_run", **MACHINE))["existing_twin"] is None
 
 
 @pytest.mark.anyio

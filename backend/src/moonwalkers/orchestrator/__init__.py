@@ -8,6 +8,7 @@ from .orchestrator import (
     Orchestrator,
     OrchestratorError,
     PipelineUnavailableError,
+    TwinNotFoundError,
     UnidentifiedMachineError,
 )
 from .router import ROUTES, route
@@ -21,6 +22,7 @@ __all__ = [
     "Orchestrator",
     "OrchestratorError",
     "PipelineUnavailableError",
+    "TwinNotFoundError",
     "UnidentifiedMachineError",
     "route",
 ]

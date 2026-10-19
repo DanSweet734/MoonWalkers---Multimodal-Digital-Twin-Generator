@@ -44,4 +44,5 @@ source once even when several results cite it).
 - `tests/test_kb.py` runs against every implementation through the parametrized `kb` fixture, so a
   Neo4j store must pass the same tests before it can replace this one.
 - Changing a stored record (for example, a reviewer approving a twin) needs a new method; today the
-  store only adds records.
+  store only adds records. (2026-10-18: decision 0015 records reviews as new files,
+  `reviews/<manufacturer>/<model>/v0001/r0001.json`, so the store still only adds records.)

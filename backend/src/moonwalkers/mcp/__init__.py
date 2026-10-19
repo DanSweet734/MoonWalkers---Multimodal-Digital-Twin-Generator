@@ -4,7 +4,8 @@ Claude Code, the PoC's agent (decision 0003), starts it from the project's ``.mc
 follows ``docs/agent-procedure.md``.
 """
 
+from moonwalkers.workspace import Workspace
+
 from .server import create_server, default_data_dir
-from .workspace import Workspace
 
 __all__ = ["Workspace", "create_server", "default_data_dir"]

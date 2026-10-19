@@ -2,8 +2,8 @@
 
 Only the orchestrator writes to the knowledge base (CLAUDE.md rule 6). The PoC implementation keeps
 JSON files (decision 0008); a Neo4j implementation follows in the integration phase. Records are
-append-only: a stored pipeline result or twin version is never overwritten, so every earlier
-version stays available.
+append-only: a stored pipeline result, twin version or review is never overwritten, so every
+earlier version and decision stays available.
 """
 
 from __future__ import annotations
@@ -11,6 +11,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from moonwalkers.contracts.pipeline_result import PipelineResult, Source, TwinRecord
+
+from .reviews import ReviewStatus, TwinReview, review_status
 
 
 class KnowledgeBaseError(Exception):
@@ -51,6 +53,19 @@ class KnowledgeBase(ABC):
     @abstractmethod
     def list_machines(self) -> list[str]:
         """Machine keys that have at least one twin version, sorted."""
+
+    @abstractmethod
+    def save_review(self, review: TwinReview) -> None:
+        """Store a review (decision 0015). Raises ``AlreadyExistsError`` if that twin version
+        already has a review with the same number."""
+
+    @abstractmethod
+    def list_reviews(self, machine_key: str, version: int) -> list[TwinReview]:
+        """A twin version's reviews, oldest first; empty if there are none."""
+
+    def review_status(self, twin: TwinRecord) -> ReviewStatus:
+        """The twin version's latest review decision, or the status it was stored with."""
+        return review_status(twin, self.list_reviews(twin.machine_key, twin.version))
 
     def sources_for_twin(self, twin: TwinRecord) -> list[Source]:
         """Every source behind a twin, from the results it was built from.

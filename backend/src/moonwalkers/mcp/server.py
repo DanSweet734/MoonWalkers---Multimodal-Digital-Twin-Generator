@@ -34,6 +34,7 @@ from moonwalkers.contracts.pipeline_result import (
     Issue,
     MachineIdentity,
     Source,
+    TwinRecord,
 )
 from moonwalkers.generators.base import (
     GeneratorError,
@@ -46,7 +47,13 @@ from moonwalkers.generators.hunyuan3d import (
     Hunyuan3DConfig,
     Hunyuan3DGenerator,
 )
-from moonwalkers.kb import JsonKnowledgeBase, KnowledgeBase, KnowledgeBaseError, machine_key
+from moonwalkers.kb import (
+    JsonKnowledgeBase,
+    KnowledgeBase,
+    KnowledgeBaseError,
+    machine_key,
+    validate_machine_key,
+)
 from moonwalkers.orchestrator import (
     JobRequest,
     MachineHint,
@@ -72,10 +79,22 @@ from moonwalkers.pipelines.b.pipeline import (
     size_checks,
 )
 from moonwalkers.usd.exporter import ExportError
+from moonwalkers.workspace import (
+    OPEN_STAGES,
+    REFERENCE_FILE,
+    RunStatus,
+    Workspace,
+    WorkspaceError,
+    default_data_dir,
+    list_runs,
+    sha256_of,
+)
 
 from .reports import (
     GenerationReport,
     InspectionReport,
+    JobBrief,
+    JobList,
     KnowledgeBaseReport,
     PreviewReport,
     ProfileSliceReport,
@@ -88,14 +107,14 @@ from .reports import (
     TipSlabReport,
     TwinSummary,
 )
-from .workspace import REFERENCE_FILE, Workspace, WorkspaceError, sha256_of
 
 SERVER_NAME = "moonwalkers"
 INSTRUCTIONS = """\
 MoonWalkers platform (proof of concept): build a functional digital twin of a machine from one
 photo, with every fact cited. Follow docs/agent-procedure.md. The usual order is:
 - check_knowledge_base; then request_twin if a twin exists and no rebuild was asked for;
-- start_run, then add_input (the photo);
+- start_run, then add_input (the photo). A photo uploaded in the dashboard is already a job:
+  list_jobs finds it, and you continue it from add_reference_source;
 - add_reference_source, identify_machine, add_fact and add_control (cited reading notes);
 - generate_geometry, then inspect_geometry (open the PNG views it returns);
 - add_joint and set_scale, then preview_twin, then submit_twin.
@@ -113,6 +132,15 @@ EXPECTED_ERRORS: tuple[type[BaseException], ...] = (
     KnowledgeBaseError,
     FileNotFoundError,
 )
+# What an open job does next, by the first step it has not done (moonwalkers.workspace.status).
+NEXT_STEPS = {
+    "photo": "add_input with the machine photo",
+    "notes": "the cited reading notes: add_reference_source, identify_machine, add_fact",
+    "mesh": "generate_geometry, then inspect_geometry",
+    "spec": "add_joint and set_scale",
+    "preview": "preview_twin",
+    "twin": "submit_twin",
+}
 
 
 class UnconfiguredGenerator(Hunyuan3DGenerator):
@@ -136,16 +164,6 @@ def default_generator() -> ImageTo3DGenerator:
     )
 
 
-def default_data_dir() -> Path:
-    """``MOONWALKERS_DATA_DIR``; else ``data/`` in Claude Code's project folder
-    (``CLAUDE_PROJECT_DIR``); else the repository's ``data/`` next to ``backend/``."""
-    if os.environ.get("MOONWALKERS_DATA_DIR"):
-        return Path(os.environ["MOONWALKERS_DATA_DIR"]).resolve()
-    if os.environ.get("CLAUDE_PROJECT_DIR"):
-        return (Path(os.environ["CLAUDE_PROJECT_DIR"]) / "data").resolve()
-    return Path(__file__).resolve().parents[4] / "data"
-
-
 def create_server(
     workspace: Workspace,
     generator_factory: Callable[[], ImageTo3DGenerator] = default_generator,
@@ -156,8 +174,32 @@ def create_server(
     ws = workspace
     data_dir = Path(ws.data_dir).resolve()
     kb = kb or JsonKnowledgeBase(data_dir / "kb")
+    orchestrator = Orchestrator(kb, default_pipelines(), clock=clock)  # reuse rules, decision 0015
     lock = threading.Lock()  # tools run in worker threads; one at a time keeps files consistent
     server = MCPServer(SERVER_NAME, instructions=INSTRUCTIONS)
+
+    def twin_summary(twin: TwinRecord) -> TwinSummary:
+        return TwinSummary.of(twin, kb.review_status(twin))
+
+    def job_brief(status: RunStatus) -> JobBrief:
+        todo = next((s.step for s in status.steps if not s.done and s.step != "preview"), None)
+        if status.stage not in OPEN_STAGES:
+            next_step = f"nothing: {status.stage_label}"
+        elif todo is None:
+            next_step = "submit_twin"
+        else:
+            next_step = NEXT_STEPS[todo]
+        return JobBrief(
+            run=status.run,
+            job_id=status.job_id,
+            machine_key=status.machine_key,
+            new_version=status.new_version,
+            stage=status.stage,
+            stage_label=status.stage_label,
+            photo=status.photo.uri if status.photo else None,
+            updated_at=status.updated_at,
+            next_step=next_step,
+        )
 
     @contextmanager
     def guarded() -> Iterator[None]:
@@ -226,13 +268,21 @@ def create_server(
                     note="Give a manufacturer and a model to see one machine's twin versions.",
                 )
             key = machine_key(manufacturer, model)
-            versions = [TwinSummary.of(t) for t in kb.list_versions(key)]
-            note = (
-                f"{key} has {len(versions)} twin version(s); a request for it reuses "
-                f"v{versions[-1].version} unless a new version is asked for (request_twin)."
-                if versions
-                else f"No twin for {key} yet; build one with start_run."
-            )
+            versions = [twin_summary(t) for t in kb.list_versions(key)]
+            reusable = orchestrator.reusable_twin(key)
+            if not versions:
+                note = f"No twin for {key} yet; build one with start_run."
+            elif reusable is None:
+                note = (
+                    f"{key} has {len(versions)} twin version(s), all rejected in review; a "
+                    "request builds a new version (start_run)."
+                )
+            else:
+                note = (
+                    f"{key} has {len(versions)} twin version(s); a request for it reuses "
+                    f"v{reusable.version} unless a new version is asked for (request_twin): the "
+                    "newest approved version, else the newest not rejected in review."
+                )
             return KnowledgeBaseReport(
                 data_dir=str(data_dir),
                 generator_root=root,
@@ -245,24 +295,52 @@ def create_server(
     @server.tool(annotations=LOCAL_WRITE)
     def request_twin(manufacturer: str, model: str) -> RequestOutcome:
         """Ask the platform for a machine's twin by name. If one is stored, the orchestrator
-        reuses the latest version and says so; nothing is built or stored. If none is stored,
-        this fails; build one with start_run."""
+        reuses the newest approved version, else the newest not rejected in review, and says so;
+        nothing is built or stored. If there is none to reuse, this fails; build one with
+        start_run."""
         with guarded():
             job = JobRequest(
                 job_id=f"request-{clock().strftime('%Y%m%dT%H%M%S%f')}",
                 machine=MachineHint(manufacturer=manufacturer, model=model),
             )
-            orchestrator = Orchestrator(kb, default_pipelines(), clock=clock)
             try:
                 result = orchestrator.run_job(job)
             except NoInputsError as exc:
                 key = machine_key(manufacturer, model)
+                if kb.list_versions(key):
+                    raise ToolError(
+                        f"Every twin version of {key} was rejected in review; build a new one "
+                        "with start_run."
+                    ) from exc
                 raise ToolError(f"No twin for {key} yet; build one with start_run.") from exc
             return RequestOutcome(
                 message=result.message,
                 reused_existing=result.reused_existing,
-                twin=TwinSummary.of(result.twin),
+                twin=twin_summary(result.twin),
             )
+
+    @server.tool(annotations=READ_ONLY)
+    def list_jobs(machine: str | None = None, include_finished: bool = False) -> JobList:
+        """List jobs (run folders), the most recently changed first. By default only open ones:
+        for example a photo someone uploaded in the dashboard, waiting for you to build it.
+        machine narrows the list: a machine folder (haas-ha5c) or key (haas/ha5c). Continue a
+        job by passing its run to the other tools; a dashboard job already has its photo and
+        its request (machine, new_version), so start at add_reference_source. Changes nothing."""
+        with guarded():
+            folder = None
+            if machine is not None:
+                folder = (
+                    validate_machine_key(machine).replace("/", "-") if "/" in machine else machine
+                )
+            statuses = list_runs(ws, folder)
+            shown = [s for s in statuses if include_finished or s.stage in OPEN_STAGES]
+            waiting = sum(s.stage == "waiting_for_agent" for s in shown)
+            note = (
+                f"{len(shown)} job(s) shown, {waiting} waiting for the agent."
+                if shown
+                else "No open jobs. Start one with start_run, or ask for a photo upload."
+            )
+            return JobList(jobs=[job_brief(s) for s in shown], note=note)
 
     # --------------------------------------------------------------------------- run setup
     @server.tool(annotations=LOCAL_WRITE)
@@ -274,7 +352,7 @@ def create_server(
             run_dir = ws.start_run(manufacturer, model, new_version)
             request = ws.request(run_dir)
             key = machine_key(manufacturer, model)
-            existing = kb.get_twin(key)
+            existing = orchestrator.reusable_twin(key)
             if existing is not None and not new_version:
                 note = (
                     f"{key} already has v{existing.version}: submit_twin will reuse it. Start "
@@ -288,7 +366,7 @@ def create_server(
                 job_id=request.job_id,
                 machine_key=key,
                 new_version=new_version,
-                existing_twin=TwinSummary.of(existing) if existing else None,
+                existing_twin=twin_summary(existing) if existing else None,
                 note=note,
             )
 
@@ -686,7 +764,7 @@ def create_server(
                 run=run,
                 message=outcome.job.message,
                 reused_existing=outcome.job.reused_existing,
-                twin=TwinSummary.of(outcome.job.twin),
+                twin=twin_summary(outcome.job.twin),
                 twin_file=str(outcome.twin_file) if outcome.twin_file else None,
                 check_files=[str(p) for p in outcome.check_files],
                 validation=outcome.validation,

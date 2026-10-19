@@ -14,7 +14,10 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 - Success levels: (1) scaled 3D model with cited facts opens in Isaac Sim; (2) spindle joint rotates;
   (3) an indexing program drives the joint. A second request for the same machine must reuse the stored
   twin and say so.
-- Human review is expected: results default to `needs_human_review = true`.
+- Human review is expected: results default to `needs_human_review = true`. People approve or reject
+  a twin version in the dashboard; reviews are separate append-only records. A request reuses the
+  newest approved version, else the newest not rejected; approving never locks a twin, it can still
+  be rebuilt (decision 0015). The agent never reviews.
 - Work in the phases listed in `docs/poc-plan.md`. Stop at the end of each phase for review.
 
 ## Non-negotiable rules
@@ -40,13 +43,18 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   identify machine, check knowledge base, generate geometry, set scale, add joint, export, submit).
   Server: `moonwalkers.mcp`, registered in `.mcp.json` (decision 0013). The agent follows
   `docs/agent-procedure.md`.
+- The API (`moonwalkers.api`, FastAPI, decision 0014) serves the dashboard on 127.0.0.1 only. It
+  and the MCP server share the data folder through `moonwalkers.workspace` (run folders are the
+  jobs). An upload either reuses a stored twin at once or waits for the agent, which finds it with
+  the `list_jobs` tool. The API never runs the generator.
 - Knowledge base: a simple JSON/SQLite store behind a `KnowledgeBase` interface; Neo4j comes later.
 - Contract: `backend/src/moonwalkers/contracts/pipeline_result.py` (Pydantic, SCHEMA_VERSION 0.1.0).
 - Units inside the contract are SI (m, rad, s, kg). Convert only at the USD export boundary.
 
 ## Repository layout (target)
 - `backend/src/moonwalkers/` - Python package: `contracts/`, `pipelines/{a,b,c,d}/`, `orchestrator/`,
-  `kb/`, `usd/` (exporter), `generators/` (image-to-3D adapters), `api/` (FastAPI), `mcp/` (MCP server)
+  `kb/`, `usd/` (exporter), `generators/` (image-to-3D adapters), `workspace/` (run folders, job
+  status, uploads), `api/` (FastAPI), `mcp/` (MCP server)
 - `backend/tests/` - pytest tests; `backend/tests/fixtures/` - small JSON/image fixtures
 - `dashboard/` - React + TypeScript (Vite), barebones
 - `data/` - local test data and outputs (gitignored, see `data/README.md`)
@@ -91,19 +99,26 @@ Backend (run from `backend/`):
 - MCP server for the agent: Claude Code starts it from `.mcp.json` (approve it once per project). To
   start it by hand over stdio: `uv run python -m moonwalkers.mcp`. It needs `MOONWALKERS_GEN_ROOT`
   to generate new meshes.
-- API (dev, from Phase 5; FastAPI and uvicorn are not installed yet): `uv run uvicorn moonwalkers.api.app:app --reload`
+- API and the built dashboard (127.0.0.1 only): `uv run python -m moonwalkers.api [--data <folder>] [--port 8000]`,
+  then http://127.0.0.1:8000/ (API docs at `/api/docs`). With reloading: `uv run uvicorn moonwalkers.api.app:app --reload`.
+  Running and checking it by hand: `docs/setup/dashboard.md`.
+- Regenerate the dashboard's TypeScript types after changing an API or contract model:
+  `uv run python -m moonwalkers.api.typescript` (writes `dashboard/src/api/types.gen.ts`; a test fails when it is stale)
 
 Dashboard (run from `dashboard/`):
 - Install deps: `npm ci` (exact versions from `package-lock.json`)
-- Dev server: `npm run dev` (http://localhost:5173)
-- Type-check and build: `npm run build`
+- Dev server: `npm run dev` (http://localhost:5173; forwards `/api` to the API on port 8000)
+- Type-check and build: `npm run build` (into `dist/`, which the API serves at `/`)
 - Lint (Oxlint): `npm run lint`
+- Tests: `npm test` (Node's built-in test runner on `src/**/*.test.ts`; nothing to install)
 
 ## Code conventions
 - Python: type hints everywhere, ruff for lint and format, pytest for tests, small pure functions.
 - Every new module gets tests. Fix failing tests before committing; never delete a test to make it pass.
 - No network calls in unit tests; use fixtures. Mark GPU or slow tests `@pytest.mark.gpu` / `slow`.
-- TypeScript: strict mode; generate types from `contracts/*.schema.json` rather than hand-copying.
+- TypeScript: strict mode, erasable syntax only; never hand-copy backend types: generate them from the
+  API's OpenAPI schema, which includes the contract models (`moonwalkers.api.typescript`, decision 0014).
+  Pure logic goes in `dashboard/src/lib/` with a `*.test.ts` beside it.
 
 ## Git workflow
 - Never commit to `main` directly. One branch per task: `feat/...`, `fix/...`, `docs/...`, `chore/...`.

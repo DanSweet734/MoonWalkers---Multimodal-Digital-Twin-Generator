@@ -1,16 +1,19 @@
 """Agent orchestrator core: run a job's pipelines, then reuse or version the machine's twin.
 
-One job (README, "Twin reuse: the request flow"; decision 0009):
+One job (README, "Twin reuse: the request flow"; decisions 0009 and 0015):
 
-1. If the request names the machine and its twin exists, reuse it without running any pipeline.
+1. If the request names the machine and it has a reusable twin, reuse it without running any
+   pipeline. The reusable version is the newest one a review approved; if none is approved, the
+   newest one not rejected. A rejected version is never reused.
 2. Otherwise route the inputs to their pipelines and run them.
-3. Work out the machine key from the results; if that machine's twin exists, reuse it.
+3. Work out the machine key from the results; if that machine has a reusable twin, reuse it.
 4. Otherwise, or when the user asks for a new version, store the results and a new twin version.
    With an ``exporter``, the new version is written out (for example as USD) first and its file
    becomes the twin's ``usd_path``; if the export fails, nothing is stored.
 
-The orchestrator is the only component that writes to the knowledge base (CLAUDE.md rule 6).
-New twins always get status ``needs_review``: v1 keeps a human in the loop (docs/methodology.md).
+The orchestrator is the only component that writes to the knowledge base (CLAUDE.md rule 6), and
+that includes reviews. New twins always get status ``needs_review``: v1 keeps a human in the loop
+(docs/methodology.md). Only a person's review approves or rejects one (``review_twin``).
 """
 
 from __future__ import annotations
@@ -27,7 +30,13 @@ from moonwalkers.contracts.pipeline_result import (
     Source,
     TwinRecord,
 )
-from moonwalkers.kb import KnowledgeBase, machine_key
+from moonwalkers.kb import (
+    KnowledgeBase,
+    ReviewDecision,
+    TwinReview,
+    machine_key,
+    validate_machine_key,
+)
 from moonwalkers.pipelines import Pipeline
 
 from .router import route
@@ -72,6 +81,10 @@ class UnidentifiedMachineError(OrchestratorError):
     """Neither the request nor any pipeline result names the machine."""
 
 
+class TwinNotFoundError(OrchestratorError):
+    """No twin version with that machine key and version is stored."""
+
+
 class Orchestrator:
     """Runs jobs against a knowledge base and a set of pipelines."""
 
@@ -88,26 +101,67 @@ class Orchestrator:
         self.exporter = exporter
 
     def run_job(self, request: JobRequest) -> JobResult:
+        reused = self.reuse(request)
+        if reused is not None:
+            return reused
         hinted_key = None
         if request.machine is not None:
             hinted_key = machine_key(request.machine.manufacturer, request.machine.model)
-            if not request.new_version:
-                existing = self.kb.get_twin(hinted_key)
-                if existing is not None:
-                    return _reused(request.job_id, existing)
 
         results = self._run_pipelines(request)
         key, notes = _choose_machine_key(hinted_key, results)
 
         if not request.new_version:
-            existing = self.kb.get_twin(key)
+            existing = self.reusable_twin(key)
             if existing is not None:
                 detail = (
                     f" It was identified after running {_pipeline_list(results)}; "
                     "those results were not stored."
                 )
-                return _reused(request.job_id, existing, detail)
-        return self._store_new_version(request.job_id, key, results, notes)
+                return self._reused(request.job_id, existing, detail)
+        return self._store_new_version(request.job_id, key, results, notes, request.new_version)
+
+    def reuse(self, request: JobRequest) -> JobResult | None:
+        """Step 1 alone: when the request names its machine, asks for no new version, and that
+        machine has a reusable twin, the job's result reusing it. Otherwise None: the request
+        needs its pipelines run. Stores nothing and runs nothing."""
+        if request.machine is None or request.new_version:
+            return None
+        key = machine_key(request.machine.manufacturer, request.machine.model)
+        existing = self.reusable_twin(key)
+        return None if existing is None else self._reused(request.job_id, existing)
+
+    def reusable_twin(self, key: str) -> TwinRecord | None:
+        """The version a request for this machine reuses (decision 0015): the newest one a review
+        approved, so an unreviewed rebuild never replaces an approved twin; if none is approved,
+        the newest one not rejected. None if every version was rejected (or there is none)."""
+        newest_first = [(t, self.kb.review_status(t)) for t in reversed(self.kb.list_versions(key))]
+        for wanted in ({"approved"}, {"draft", "needs_review"}):
+            twin = next((t for t, status in newest_first if status in wanted), None)
+            if twin is not None:
+                return twin
+        return None
+
+    def review_twin(
+        self, key: str, version: int, decision: ReviewDecision, reviewer: str, reason: str
+    ) -> TwinReview:
+        """Record a person's review of one twin version (decision 0015). Reviews are added, never
+        changed: a second review of the same version is stored after the first and decides its
+        review status from then on."""
+        key = validate_machine_key(key)
+        if self.kb.get_twin(key, version) is None:
+            raise TwinNotFoundError(f"no twin {key}@v{version} is stored")
+        review = TwinReview(
+            machine_key=key,
+            version=version,
+            number=len(self.kb.list_reviews(key, version)) + 1,
+            decision=decision,
+            reviewer=reviewer,
+            reason=reason,
+            reviewed_at=self.clock(),
+        )
+        self.kb.save_review(review)
+        return review
 
     def _run_pipelines(self, request: JobRequest) -> list[PipelineResult]:
         routed = route(request.sources)
@@ -137,7 +191,12 @@ class Orchestrator:
         return results
 
     def _store_new_version(
-        self, job_id: str, key: str, results: list[PipelineResult], notes: str | None
+        self,
+        job_id: str,
+        key: str,
+        results: list[PipelineResult],
+        notes: str | None,
+        requested: bool,
     ) -> JobResult:
         previous = self.kb.get_twin(key)
         version = previous.version + 1 if previous is not None else 1
@@ -160,10 +219,15 @@ class Orchestrator:
         ran = _pipeline_list(results)
         if previous is None:
             message = f"No twin found for {key}; built version 1 from {ran}."
-        else:
+        elif requested:
             message = (
                 f"Built version {version} of the {key} twin as requested "
                 f"(previous: v{previous.version}) from {ran}."
+            )
+        else:
+            message = (
+                f"Every stored version of the {key} twin was rejected in review, so built "
+                f"version {version} (previous: v{previous.version}) from {ran}."
             )
         if twin.usd_path:
             message += f" Exported to {twin.usd_path}."
@@ -171,6 +235,25 @@ class Orchestrator:
         if notes:
             message += f" Note: {notes}"
         return JobResult(job_id=job_id, twin=twin, reused_existing=False, message=message)
+
+    def _reused(self, job_id: str, twin: TwinRecord, detail: str = "") -> JobResult:
+        status = self.kb.review_status(twin).replace("_", " ")
+        # Newer versions are skipped when rejected, or when this one is approved and they are not.
+        newer = [
+            f"v{t.version} ({self.kb.review_status(t).replace('_', ' ')})"
+            for t in self.kb.list_versions(twin.machine_key)
+            if t.version > twin.version
+        ]
+        skipped = f" Newer versions were not reused: {', '.join(newer)}." if newer else ""
+        return JobResult(
+            job_id=job_id,
+            twin=twin,
+            reused_existing=True,
+            message=(
+                f"Found an existing twin (v{twin.version}, {status}) for {twin.machine_key}; "
+                f"reused it.{skipped}{detail} Ask for a new version to rebuild it."
+            ),
+        )
 
 
 def _choose_machine_key(
@@ -204,19 +287,6 @@ def _choose_machine_key(
         return chosen, None
     where = " (named in the request)" if hinted_key is not None else ""
     return chosen, f"Machine identity disagreement; used {chosen}{where}. {'; '.join(others)}."
-
-
-def _reused(job_id: str, twin: TwinRecord, detail: str = "") -> JobResult:
-    status = twin.status.replace("_", " ")
-    return JobResult(
-        job_id=job_id,
-        twin=twin,
-        reused_existing=True,
-        message=(
-            f"Found an existing twin (v{twin.version}, {status}) for {twin.machine_key}; "
-            f"reused it.{detail} Ask for a new version to rebuild it."
-        ),
-    )
 
 
 def _pipeline_list(results: list[PipelineResult]) -> str:

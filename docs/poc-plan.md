@@ -70,12 +70,30 @@ Plus: a second request for the same machine reuses the stored twin and the resul
 - [x] PR (Oct 18, 2026: branch `feat/phase-4-mcp-agent`)
 
 ## Phase 5 - API and barebones dashboard
-- [ ] FastAPI endpoints for jobs, twins, sources
-- [ ] Dashboard: upload photos, see job status, see twin with sources and review status
-- [ ] PR
+- [x] FastAPI endpoints for jobs, twins, sources
+      (Oct 18, 2026: `moonwalkers.api` on FastAPI 0.146, local only; jobs are run folders shared with
+      the MCP server through `moonwalkers.workspace`; an upload reuses a stored twin at once or waits
+      for the agent, which finds it with the new `list_jobs` tool. Decision 0014)
+- [x] Dashboard: upload photos, see job status, see twin with sources and review status
+      (Oct 18: jobs with live steps, twins with every fact's citation and quote, sources, and
+      approve/reject reviews, Daniel's choice. Requests reuse the newest approved version, never a
+      rejected one, decision 0015. Types generated from the API; `npm test` on Node's runner.
+      Daniel's hand check in a browser: minimal but functional. A reused HA5C job worked, and a
+      TH240 photo became `haas/th240@v1`, built by Claude Code from the dashboard job and level 2
+      in Isaac Sim)
+- [x] PR (Oct 18, 2026: branch `feat/phase-5-api-dashboard`, PR #9)
 
 ## Phase 6 - Control logic (level 3)
 - [ ] Represent the indexing program as a `ControlBehavior`; a small interpreter that turns G90/G91
       steps into joint drive targets
 - [ ] Demonstrate in Isaac Sim; document limits honestly
 - [ ] PR and a short PoC report in `docs/`
+
+## Before more machines (noted Oct 18, 2026)
+Found while building the second machine, the Haas TH240, from a dashboard job. Do these before
+Pipeline B is used on other machines.
+- [ ] `inspect_geometry` finds the spindle axis when the spindle is not the front-most part. On the
+      TH240 the base's feet reach past the platter, so the tip slabs measured the feet. The agent
+      worked around it with scratch scripts (decision 0012, "Known limitation"; candidates: a front
+      limit, rim circle fits as a tool, a warning). Test it on a synthetic machine whose base
+      reaches past its spindle.

@@ -1,8 +1,8 @@
-"""Run folders as the agent's workspace (decision 0013).
+"""Run folders as the shared workspace of the agent and the dashboard (decisions 0013, 0014).
 
-Every MCP tool works on one run folder, ``data/machines/<machine>/runs/<run>`` (data/README.md),
-and keeps its state in files there, so a person can read each step and the command line works on
-the same folders:
+Every MCP tool and every API job works on one run folder,
+``data/machines/<machine>/runs/<run>`` (data/README.md), and keeps its state in files there, so a
+person can read each step and the command line works on the same folders:
 
 - ``request.json``: the ``JobRequest``, with the job id, the machine the agent named,
   ``new_version``, and the input photo once added.
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -61,16 +62,24 @@ class Workspace:
     clock: Clock = utc_now
 
     # --------------------------------------------------------------------------------- folders
+    def machine_dir(self, manufacturer: str, model: str) -> Path:
+        """``machines/<machine>``: the machine key with "/" replaced by "-" (decision 0009)."""
+        return self.data_dir / "machines" / machine_key(manufacturer, model).replace("/", "-")
+
     def start_run(self, manufacturer: str, model: str, new_version: bool = False) -> Path:
         """A new run folder for the machine, named after the local date, with its request."""
-        folder = machine_key(manufacturer, model).replace("/", "-")
-        runs = self.data_dir / "machines" / folder / "runs"
+        machine = self.machine_dir(manufacturer, model)
+        folder, runs = machine.name, machine / "runs"
         day = self.clock().astimezone().date().isoformat()
+        runs.mkdir(parents=True, exist_ok=True)
         number = 1
-        while (runs / f"{day}_run-{number:03d}").exists():
-            number += 1
-        run_dir = runs / f"{day}_run-{number:03d}"
-        run_dir.mkdir(parents=True)
+        while True:  # mkdir refuses an existing folder, so two processes never share a run
+            run_dir = runs / f"{day}_run-{number:03d}"
+            try:
+                run_dir.mkdir()
+                break
+            except FileExistsError:
+                number += 1
         request = JobRequest(
             job_id=f"{folder}-{day}-run-{number:03d}",
             machine=MachineHint(manufacturer=manufacturer, model=model),
@@ -194,6 +203,16 @@ class Workspace:
         if spec is not None:
             _write_json(run_dir / SPEC_FILE, spec.model_dump(mode="json"))
         return SpecState(tuple(p for p in SPEC_PARTS if p in parts), spec)
+
+
+def default_data_dir() -> Path:
+    """``MOONWALKERS_DATA_DIR``; else ``data/`` in Claude Code's project folder
+    (``CLAUDE_PROJECT_DIR``); else the repository's ``data/`` next to ``backend/``."""
+    if os.environ.get("MOONWALKERS_DATA_DIR"):
+        return Path(os.environ["MOONWALKERS_DATA_DIR"]).resolve()
+    if os.environ.get("CLAUDE_PROJECT_DIR"):
+        return (Path(os.environ["CLAUDE_PROJECT_DIR"]) / "data").resolve()
+    return Path(__file__).resolve().parents[4] / "data"
 
 
 def sha256_of(path: Path) -> str:
