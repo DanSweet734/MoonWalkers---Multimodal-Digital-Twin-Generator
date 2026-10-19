@@ -36,6 +36,7 @@ from moonwalkers.contracts.pipeline_result import (
     Source,
     TwinRecord,
 )
+from moonwalkers.control.program import IndexProgram, runnable_behaviors
 from moonwalkers.generators.base import (
     GeneratorError,
     GeneratorRequest,
@@ -535,7 +536,12 @@ def create_server(
         """Record how the machine is controlled (for example its indexing program), citing
         the manual. Pipeline B's joint is named "spindle_rotation"; list it in drives_joints
         if this behaviour moves the spindle. spec holds structured details (units in the key
-        names, for example step_size_deg)."""
+        names, for example step_size_deg). To make the twin run a program (success level 3,
+        decision 0016), use kind "program_interpreter" and put the program in
+        spec["program"]["rows"], one row per step as the manual prints it: [step,
+        step_size_deg, feed_deg_s (or the Step# for G96), loop_count, g_code], for example the
+        manual's programming examples. It is checked now, and the build writes a program folder
+        for Isaac Sim."""
         with guarded():
             run_dir = ws.run_dir(run)
             need_reference(run_dir)
@@ -549,6 +555,8 @@ def create_server(
                 confidence=confidence,
                 citations=citations,
             )
+            if runnable_behaviors([behavior]):
+                IndexProgram.from_behavior(behavior)  # refuses a program that cannot run
 
             def put(data: dict[str, Any]) -> None:
                 kept = [b for b in data["control"] if b["behavior_id"] != behavior_id]
