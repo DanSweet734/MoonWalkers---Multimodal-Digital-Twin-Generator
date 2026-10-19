@@ -101,3 +101,10 @@ Pipeline B is used on other machines.
       real TH240 mesh the warnings fire and `circle_x` gives the platter axis; the HA5C is
       unchanged. Tested on a synthetic rotary table. Decision 0012, "The fix"; branch
       `fix/spindle-axis-not-front-most`)
+- [ ] Joints other than one spindle turning about the front axis. Pipeline B builds exactly one
+      revolute joint about the twin's +X: a spindle facing the front, as on the HA5C and TH240
+      (`pipelines/b/pipeline.py`, `axis=(1.0, 0.0, 0.0)`; decision 0012). The backup machine, the
+      Grizzly T33901 drill press, has "about five joints" (decision 0002). [INFERENCE] Its spindle
+      turns about, and its quill slides along, a vertical axis, so it needs other axes, several
+      joints and prismatic joints. Noted Oct 18, 2026, while fixing the item above; it needs its
+      own decision. Not started.
