@@ -3,8 +3,8 @@
 One job (README, "Twin reuse: the request flow"; decisions 0009 and 0015):
 
 1. If the request names the machine and it has a reusable twin, reuse it without running any
-   pipeline. A version is reusable unless its latest review rejected it; the newest reusable
-   version is the one reused.
+   pipeline. The reusable version is the newest one a review approved; if none is approved, the
+   newest one not rejected. A rejected version is never reused.
 2. Otherwise route the inputs to their pipelines and run them.
 3. Work out the machine key from the results; if that machine has a reusable twin, reuse it.
 4. Otherwise, or when the user asks for a new version, store the results and a new twin version.
@@ -132,10 +132,13 @@ class Orchestrator:
         return None if existing is None else self._reused(request.job_id, existing)
 
     def reusable_twin(self, key: str) -> TwinRecord | None:
-        """The version a request for this machine reuses: the newest one whose latest review did
-        not reject it (decision 0015). None if there is no such version."""
-        for twin in reversed(self.kb.list_versions(key)):
-            if self.kb.review_status(twin) != "rejected":
+        """The version a request for this machine reuses (decision 0015): the newest one a review
+        approved, so an unreviewed rebuild never replaces an approved twin; if none is approved,
+        the newest one not rejected. None if every version was rejected (or there is none)."""
+        newest_first = [(t, self.kb.review_status(t)) for t in reversed(self.kb.list_versions(key))]
+        for wanted in ({"approved"}, {"draft", "needs_review"}):
+            twin = next((t for t, status in newest_first if status in wanted), None)
+            if twin is not None:
                 return twin
         return None
 
@@ -235,14 +238,13 @@ class Orchestrator:
 
     def _reused(self, job_id: str, twin: TwinRecord, detail: str = "") -> JobResult:
         status = self.kb.review_status(twin).replace("_", " ")
-        # Every version newer than the reused one was rejected (reusable_twin skips only those).
-        versions = self.kb.list_versions(twin.machine_key)
-        newer = [t.version for t in versions if t.version > twin.version]
-        skipped = (
-            f" Newer versions were rejected in review: {', '.join(f'v{v}' for v in newer)}."
-            if newer
-            else ""
-        )
+        # Newer versions are skipped when rejected, or when this one is approved and they are not.
+        newer = [
+            f"v{t.version} ({self.kb.review_status(t).replace('_', ' ')})"
+            for t in self.kb.list_versions(twin.machine_key)
+            if t.version > twin.version
+        ]
+        skipped = f" Newer versions were not reused: {', '.join(newer)}." if newer else ""
         return JobResult(
             job_id=job_id,
             twin=twin,

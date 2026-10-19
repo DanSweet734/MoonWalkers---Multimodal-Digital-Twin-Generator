@@ -280,8 +280,8 @@ def create_server(
             else:
                 note = (
                     f"{key} has {len(versions)} twin version(s); a request for it reuses "
-                    f"v{reusable.version} unless a new version is asked for (request_twin). "
-                    "A version rejected in review is never reused."
+                    f"v{reusable.version} unless a new version is asked for (request_twin): the "
+                    "newest approved version, else the newest not rejected in review."
                 )
             return KnowledgeBaseReport(
                 data_dir=str(data_dir),
@@ -295,8 +295,9 @@ def create_server(
     @server.tool(annotations=LOCAL_WRITE)
     def request_twin(manufacturer: str, model: str) -> RequestOutcome:
         """Ask the platform for a machine's twin by name. If one is stored, the orchestrator
-        reuses the newest version not rejected in review and says so; nothing is built or
-        stored. If there is none to reuse, this fails; build one with start_run."""
+        reuses the newest approved version, else the newest not rejected in review, and says so;
+        nothing is built or stored. If there is none to reuse, this fails; build one with
+        start_run."""
         with guarded():
             job = JobRequest(
                 job_id=f"request-{clock().strftime('%Y%m%dT%H%M%S%f')}",

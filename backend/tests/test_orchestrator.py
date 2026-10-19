@@ -298,8 +298,28 @@ def test_a_rejected_version_is_never_reused(
     again = orchestrator.run_job(JobRequest(job_id="job-3", sources=photo_inputs, machine=HA5C))
     assert again.reused_existing and again.twin.version == 1
     assert "(v1, needs review)" in again.message
-    assert "Newer versions were rejected in review: v2." in again.message
+    assert "Newer versions were not reused: v2 (rejected)." in again.message
     assert pipeline_b.calls == 1  # reuse still runs no pipeline
+
+
+def test_an_approved_version_comes_before_newer_unreviewed_ones(
+    orchestrator: Orchestrator, document_inputs, photo_inputs
+) -> None:
+    orchestrator.run_job(JobRequest(job_id="job-1", sources=document_inputs))
+    orchestrator.review_twin("haas/ha5c", 1, "approved", "Daniel Sweet", "Checked in Isaac Sim.")
+    rebuild = JobRequest(job_id="job-2", sources=photo_inputs, machine=HA5C, new_version=True)
+    assert orchestrator.run_job(rebuild).twin.version == 2  # improving is always possible
+
+    again = orchestrator.run_job(JobRequest(job_id="job-3", sources=[], machine=HA5C))
+    assert again.twin.version == 1  # the unreviewed v2 does not replace the approved v1
+    assert again.message.startswith(
+        "Found an existing twin (v1, approved) for haas/ha5c; reused it. "
+        "Newer versions were not reused: v2 (needs review)."
+    )
+    orchestrator.review_twin("haas/ha5c", 2, "approved", "Daniel Sweet", "Better split.")
+    assert orchestrator.reusable_twin("haas/ha5c").version == 2  # type: ignore[union-attr]
+    orchestrator.review_twin("haas/ha5c", 2, "rejected", "Daniel Sweet", "Wrong after all.")
+    assert orchestrator.reusable_twin("haas/ha5c").version == 1  # type: ignore[union-attr]
 
 
 def test_a_later_review_can_reverse_a_rejection(
