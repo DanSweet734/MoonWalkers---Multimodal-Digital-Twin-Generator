@@ -76,9 +76,11 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       for the agent, which finds it with the new `list_jobs` tool. Decision 0014)
 - [x] Dashboard: upload photos, see job status, see twin with sources and review status
       (Oct 18: jobs with live steps, twins with every fact's citation and quote, sources, and
-      approve/reject reviews, Daniel's choice. A rejected version is never reused, decision 0015.
-      Types generated from the API; `npm test` on Node's runner. Hand check in a browser by Daniel:
-      `docs/setup/dashboard.md`)
+      approve/reject reviews, Daniel's choice. Requests reuse the newest approved version, never a
+      rejected one, decision 0015. Types generated from the API; `npm test` on Node's runner.
+      Daniel's hand check in a browser: minimal but functional. A reused HA5C job worked, and a
+      TH240 photo became `haas/th240@v1`, built by Claude Code from the dashboard job and level 2
+      in Isaac Sim)
 - [x] PR (Oct 18, 2026: branch `feat/phase-5-api-dashboard`, PR #9)
 
 ## Phase 6 - Control logic (level 3)

@@ -26,7 +26,12 @@ that a second request reuses it. Phase 5 adds a FastAPI backend and a barebones 
 - **Jobs:** upload a photo, then follow the job as the agent builds it. A machine that already has
   a twin gets it reused at once.
 - **Twins:** see a twin with every fact's source and quote.
-- **Reviews:** approve or reject a twin version. A rejected version is never reused.
+- **Reviews:** approve or reject a twin version. Requests reuse the newest approved version, and
+  never a rejected one.
+
+On Oct 18 the dashboard also took a photo of a second machine, the Haas TH240 rotary table. Claude
+Code built `haas/th240@v1` from it, and its platter turned cleanly in Isaac Sim 6.2.0 (success
+level 2).
 
 | Area | Status |
 |---|---|

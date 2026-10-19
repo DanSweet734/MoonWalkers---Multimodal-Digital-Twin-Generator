@@ -62,7 +62,8 @@ user request", and results "must say when a twin was found in the knowledge base
 
 ## Update (2026-10-18): reviews change which version is reused
 Decision 0015, chosen by Daniel in Phase 5, amends "Reuse: the latest version (option 1)":
-- A request reuses the newest version whose latest review did not reject it.
+- A request reuses the newest approved version; if none is approved, the newest one whose latest
+  review did not reject it.
 - When every version was rejected, a request with inputs builds a new version, and the message says
   why.
 - The reuse message names the version's review status and any newer versions it skipped.

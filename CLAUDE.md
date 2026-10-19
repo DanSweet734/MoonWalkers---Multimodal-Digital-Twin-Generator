@@ -15,8 +15,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   (3) an indexing program drives the joint. A second request for the same machine must reuse the stored
   twin and say so.
 - Human review is expected: results default to `needs_human_review = true`. People approve or reject
-  a twin version in the dashboard; reviews are separate append-only records, and a rejected version
-  is never reused (decision 0015). The agent never reviews.
+  a twin version in the dashboard; reviews are separate append-only records. A request reuses the
+  newest approved version, else the newest not rejected; approving never locks a twin, it can still
+  be rebuilt (decision 0015). The agent never reviews.
 - Work in the phases listed in `docs/poc-plan.md`. Stop at the end of each phase for review.
 
 ## Non-negotiable rules

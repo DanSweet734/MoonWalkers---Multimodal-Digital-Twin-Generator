@@ -24,7 +24,8 @@ arguments.
 - **Install nothing.** The server never installs packages. If something is missing, say so.
 - **Never review.** Twins are stored as `needs_review`. A person approves or rejects them, in the
   dashboard (decision 0015). You can read a version's `review_status`, but you have no tool to set
-  it. A version rejected in review is never reused.
+  it. Requests reuse the newest approved version, else the newest not rejected; a rejected version
+  is never reused.
 
 ## 0. Before you start
 1. In Claude Code, `/mcp` should list `moonwalkers` as connected. Claude Code's documentation says
@@ -36,7 +37,7 @@ arguments.
 
 ## 1. Reuse first
 - Call `check_knowledge_base(manufacturer, model)`. Its note says which version a request would
-  reuse: the newest one not rejected in review.
+  reuse: the newest approved one, else the newest one not rejected in review.
 - If there is one and the person did not ask for a rebuild, call `request_twin(manufacturer,
   model)`. Report its message, which says the stored twin was reused, plus the twin id and USD
   path, and stop.
@@ -64,6 +65,12 @@ the job is done. Otherwise the job waits for you:
    each with a line in that folder's `SOURCES.md` (URL, date retrieved, SHA-256, license note;
    `data/README.md`). If one is missing, tell the person; downloading files is outside these
    tools.
+   - **Some sites block scripts.** haascnc.com answers curl and WebFetch with a Cloudflare
+     challenge (HTTP 403), as found while building the TH240 (worklog 2026-10-18). Ask the person
+     to open the page in their browser and save it ("Webpage, Complete") into
+     `inputs/documents/`. Then hash the saved HTML and log it in `SOURCES.md`, saying it was saved
+     in a browser. Files the page links to, such as layout drawings on another host, may still
+     download normally.
 2. `start_run(manufacturer, model, new_version)` returns `run`, which every other tool takes.
 3. `add_input(run, path, source_id, title, retrieved_at, license_note)` adds the photo:
    - the path is relative to the data folder;

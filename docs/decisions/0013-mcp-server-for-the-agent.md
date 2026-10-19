@@ -145,6 +145,6 @@ The facts below are quoted, with access dates, in
   the dashboard, with each job's next step.
 - **Reviews (decision 0015).**
   - Twin summaries carry `review_status` beside the stored `status`.
-  - `check_knowledge_base`, `request_twin` and `start_run` follow the new reuse rule: a version
-    rejected in review is never reused.
+  - `check_knowledge_base`, `request_twin` and `start_run` follow the new reuse rule: the newest
+    approved version, else the newest not rejected in review.
   - The agent has no review tool: only people approve or reject.
