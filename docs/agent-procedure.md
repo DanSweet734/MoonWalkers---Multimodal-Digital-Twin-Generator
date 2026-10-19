@@ -120,7 +120,12 @@ the job is done. Otherwise the job waits for you:
    nose faces.
 3. **`inspect_geometry(run, up, front)`.** Open its views, then check:
    - **`tip_slabs`:** centres that agree across depths mean the tip is a round nose; that gives the
-     spindle axis (y, z).
+     spindle axis (y, z). The slabs start at the mesh's front-most point, so they find the spindle
+     only if it reaches furthest forward. If something else does, such as base feet or a bracket,
+     the slabs measure that instead. Check the axis height against the round part in the views.
+     On the TH240 this happened, and the axis came from circle fits to the platter rim, done in
+     scratch scripts. In that case say so in an issue, and give the method in `add_joint`'s
+     `method` (decision 0012, "Known limitation"; a tool fix is planned).
    - **`profile`:** along +x it shows the body's front face (`r_max` jumps to the window), any
      flange or disc in front of it, and the nose.
    - **The base:** the lowest point should be a flat base, not a foot or a stray bit of mesh.

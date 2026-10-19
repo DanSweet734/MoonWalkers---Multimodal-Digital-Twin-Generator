@@ -88,3 +88,12 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       steps into joint drive targets
 - [ ] Demonstrate in Isaac Sim; document limits honestly
 - [ ] PR and a short PoC report in `docs/`
+
+## Before more machines (noted Oct 18, 2026)
+Found while building the second machine, the Haas TH240, from a dashboard job. Do these before
+Pipeline B is used on other machines.
+- [ ] `inspect_geometry` finds the spindle axis when the spindle is not the front-most part. On the
+      TH240 the base's feet reach past the platter, so the tip slabs measured the feet. The agent
+      worked around it with scratch scripts (decision 0012, "Known limitation"; candidates: a front
+      limit, rim circle fits as a tool, a warning). Test it on a synthetic machine whose base
+      reaches past its spindle.
