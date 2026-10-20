@@ -249,7 +249,7 @@
     },
     {
       "severity": "info",
-      "message": "The indexing program is described from the 2006 manual; nothing runs it yet (Phase 6 adds an interpreter). Whether today's HA5C control works the same way is not confirmed.",
+      "message": "The indexing program is described from the 2006 manual. This behaviour carries no program, so a build from these facts writes no program folder; the manual's examples run on a stored twin with python -m moonwalkers.control run (decision 0016). Whether today's HA5C control works the same way is not confirmed.",
       "ref": "index_program"
     },
     {

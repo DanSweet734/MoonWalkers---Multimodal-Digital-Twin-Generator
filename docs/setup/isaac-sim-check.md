@@ -2,8 +2,9 @@
 
 Purpose: confirm by eye that an exported twin opens in Isaac Sim at the right size and that its
 joint moves. Phase 2 does this with the synthetic box-and-cylinder test twin. Phase 3 repeats it
-with the HA5C (section 6), and Phase 6 runs an indexing program on it (section 7). The files have already passed both validators (our own and NVIDIA's asset
-validator), so this step checks what only the simulator can show.
+with the HA5C (section 6), and Phase 6 runs an indexing program on it (section 7). The files have
+already passed both validators (our own and NVIDIA's asset validator), so this step checks what
+only the simulator can show.
 
 ## 1. Install Isaac Sim 6.2.0 (once)
 Steps quoted from the install page

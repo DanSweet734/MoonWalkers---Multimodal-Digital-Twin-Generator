@@ -170,7 +170,8 @@ one origin and the API needs no CORS settings.
 
 ## Open questions
 - **The look in a browser.** The pages were not checked in a browser in this session, which has
-  none. Daniel's hand check (`docs/setup/dashboard.md`) covers it.
+  none. Daniel's hand check (`docs/setup/dashboard.md`) covers it. (Answered 2026-10-18: "minimal
+  but functional", worklog 2026-10-18.)
 - **PDFs in a sandboxed page:** whether browsers open them is not tested. They are served without
   the sandbox policy.
 - **Separate processes.** The MCP server and the API are separate processes on one data folder.

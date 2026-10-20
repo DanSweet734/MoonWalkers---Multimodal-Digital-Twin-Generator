@@ -301,12 +301,12 @@ Two alternatives were considered in our Oct 6 research: an all-Python stack with
 
 ## Proof of concept
 
-In progress (Phases 0-5 of [docs/poc-plan.md](docs/poc-plan.md) done, Phase 6 in review; the HA5C twin reached success level 2 in Isaac Sim on Oct 18, 2026, and level 3 awaits its check). It must show that an AI agent can create a digital twin, in some capacity, from one input type. The report so far: [docs/poc-report.md](docs/poc-report.md). To run the dashboard: [docs/setup/dashboard.md](docs/setup/dashboard.md).
+All three success levels met (Phases 0-6 of [docs/poc-plan.md](docs/poc-plan.md); Phase 6 in review). The HA5C twin reached level 2 in Isaac Sim 6.2.0 on Oct 18, 2026, and level 3 on Oct 19, 2026. It had to show that an AI agent can create a digital twin, in some capacity, from one input type. The report, with the results and the decisions behind them: [docs/poc-report.md](docs/poc-report.md). To run the dashboard: [docs/setup/dashboard.md](docs/setup/dashboard.md).
 
 - **Input:** machine photos to start (video is required in the final product), sourced online until test photos from Dr. Li's lab arrive.
-- **Subject:** one well-known, relatively simple machine that has joints and control logic.
-- **Minimum result:** a scaled 3D model with cited facts; the aim is also one working joint, then control logic.
-- **Pass criteria:** the `.usd` opens in the target Isaac Sim version, a joint moves, and a second request for the same machine reuses the stored twin and says so.
+- **Subject:** the Haas HA5C rotary indexer: one well-known, relatively simple machine that has joints and control logic.
+- **Success levels:** (1) a scaled 3D model with cited facts opens in Isaac Sim; (2) the spindle rotates on a joint; (3) an indexing program from the machine's manual drives the joint.
+- **Also required:** a second request for the same machine reuses the stored twin and says so.
 - **Human review:** expected in v1; later versions will let the user set how much human input is needed.
 
 ## Test data
@@ -394,7 +394,7 @@ California State University, Northridge (CSUN), Computer Science capstone.
 | `docs/methodology.md` | How we work: research, decide, build, verify, document |
 | `docs/agent-procedure.md` | How the agent builds a twin with the MCP tools |
 | `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |
-| `docs/poc-report.md` | The proof of concept's report: results per success level, the per-run record, limits |
+| `docs/poc-report.md` | The proof of concept's report: results per success level, the per-run record, the decisions behind them, limits |
 | `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export, generator setup, Pipeline B method, MCP server, API and dashboard, twin reviews, indexing programs) |
 | `docs/worklog/` | Dated work entries |
 | `docs/research/` | Research notes and the project context file |
