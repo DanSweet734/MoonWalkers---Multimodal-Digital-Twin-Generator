@@ -35,6 +35,13 @@
       "uri": "user",
       "title": "Daniel Sweet's reading of the HA5C layout drawing's width dimension (Claude Code session, 2026-10-18)",
       "retrieved_at": "2026-10-18T18:51:13Z"
+    },
+    {
+      "source_id": "src-daniel-drawing-reading-depth",
+      "kind": "user_input",
+      "uri": "user",
+      "title": "Daniel Sweet's reading of the HA5C layout drawing's depth dimension (Claude Code session, 2026-10-19)",
+      "retrieved_at": "2026-10-20T03:45:35Z"
     }
   ],
   "identity": {
@@ -181,12 +188,17 @@
       "value": 0.2014,
       "unit": "m",
       "original": "7.93\" (201.4 mm)",
-      "confidence": 0.4,
+      "confidence": 0.7,
       "citations": [
         {
           "source_id": "src-haas-layout-drawing",
-          "locator": "p. 1, Top View; read as the overall depth (front to back) [INFERENCE]; whether it includes the spindle nose is not confirmed",
+          "locator": "p. 1, Top View; the overall depth, from the spindle nose to the back of the unit (Daniel Sweet's reading of the drawing)",
           "quote": "7.93\" (201.4 mm)"
+        },
+        {
+          "source_id": "src-daniel-drawing-reading-depth",
+          "locator": "answer to \"On the drawing, what do the 7.93 in and 7.80 in dimensions span?\"",
+          "quote": "7.93 looks to be the depth view from the nose of the spindle to the back of the component"
         }
       ]
     }
@@ -249,12 +261,12 @@
     },
     {
       "severity": "info",
-      "message": "The indexing program is described from the 2006 manual; nothing runs it yet (Phase 6 adds an interpreter). Whether today's HA5C control works the same way is not confirmed.",
+      "message": "The indexing program is described from the 2006 manual. This behaviour carries no program, so a build from these facts writes no program folder; the manual's examples run on a stored twin with python -m moonwalkers.control run (decision 0016). Whether today's HA5C control works the same way is not confirmed.",
       "ref": "index_program"
     },
     {
-      "severity": "warning",
-      "message": "[INFERENCE] The drawing's dimensions were matched to views by where their text sits on the page (pypdf text positions): 15.32\" and 8.3\" sit by the Front View, 7.93\" by the Top View. Daniel Sweet read 15.32\" on the drawing as the full width, motor end to lever tip (2026-10-18). Whether 7.93\" is the overall depth, and whether it includes the spindle nose, is not confirmed.",
+      "severity": "info",
+      "message": "[INFERENCE] The drawing's dimensions were matched to views by where their text sits on the page (pypdf text positions): 15.32\" and 8.3\" sit by the Front View, 7.93\" by the Top View. Daniel Sweet read 15.32\" on the drawing as the full width, motor end to lever tip (2026-10-18), and 7.93\" as the depth from the spindle nose to the back (2026-10-19). What 7.80\" spans (printed right of the Side View, level with its spindle centreline) is not confirmed; no fact uses it.",
       "ref": "overall_depth"
     }
   ]

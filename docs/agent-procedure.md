@@ -111,6 +111,15 @@ the job is done. Otherwise the job waits for you:
      the locator what each dimension spans, for example whether a height includes a handle.
 5. **`add_control`** for how the machine is driven, for example an indexing program from the
    manual. Pipeline B's joint is `spindle_rotation`: list it in `drives_joints`.
+   - **To make the twin run a program** (success level 3, decision 0016), use kind
+     `program_interpreter` and put a program from the manual in `spec["program"]["rows"]`.
+     Write one row per step, as the manual prints it: `[step, step_size_deg, feed_deg_s,
+     loop_count, g_code]`. For a G96 subroutine call, the third column is the Step# to jump to.
+   - **Cite the page and quote the rows,** for example the HA5C manual's Example #3, PDF p. 39.
+   - **The tool checks the program at once** against the manual's limits and codes. The build
+     then writes `programs/<behaviour>/` in the run folder, which holds `program.usdc` and the
+     runner for Isaac Sim.
+   - Ready-made programs from the HA5C manual: `uv run python -m moonwalkers.control list`.
 6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see.
 
 ## 4. Generate and inspect the geometry
@@ -162,7 +171,8 @@ the job is done. Otherwise the job waits for you:
    - the size checks and the twin's issues;
    - the validation result;
    - the next step: the Isaac Sim check in `docs/setup/isaac-sim-check.md`, section 6, using this
-     run's files, then a review in the dashboard (the twin's page).
+     run's files, then a review in the dashboard (the twin's page);
+   - with a program: its folder `programs/<behaviour>/` and section 7 of that guide (level 3).
 3. **A second request** for the same machine, `request_twin(manufacturer, model)`, should reuse
    the stored twin and say so. Report its message.
 4. **Record the session** in `docs/worklog/<date>.md` (CLAUDE.md, "Documentation workflow"):

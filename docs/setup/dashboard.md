@@ -89,7 +89,8 @@ are added, never edited: a later review of the same version decides from then on
   and requests keep reusing the approved version until the new one is approved too.
 - **Approving an older version changes reuse.** For example, approving HA5C v2 (Daniel's Isaac Sim
   check, level 2) while v3 is unreviewed makes requests reuse v2 instead of v3.
-- **Candidates checked in Isaac Sim:** HA5C v2 and TH240 v1, both level 2 (their `RUN.md` files).
+- **Candidates checked in Isaac Sim:** HA5C v2 and TH240 v1, both level 2 (their `RUN.md` files),
+  and HA5C v3, level 3 through its Example #5 program file (that folder's `PROGRAM.md`).
 
 ## 5. Report back
 For the worklog: what you checked in section 2 and 3, the browser and its version, anything that

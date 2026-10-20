@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import math
 import platform
+import shutil
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from importlib.metadata import version as package_version
@@ -28,6 +29,8 @@ from moonwalkers.contracts.pipeline_result import (
     PipelineResult,
     TwinRecord,
 )
+from moonwalkers.control.export import write_program_folder
+from moonwalkers.control.program import ProgramFile, runnable_behaviors
 from moonwalkers.generators.base import ImageTo3DGenerator
 from moonwalkers.kb import KnowledgeBase
 from moonwalkers.orchestrator import JobRequest, Orchestrator
@@ -41,6 +44,7 @@ REQUEST_FILE = "request.json"
 JOB_RESULT_SUFFIX = ".job_result.json"
 TWIN_FILE = "twin.usdc"  # binary: a generated mesh is too big for text USD (decision 0012)
 CHECKS_DIR = "checks"
+PROGRAMS_DIR = "programs"  # one folder per control behaviour with a program (decision 0016)
 # Drives for the hand check in Isaac Sim, as in Phase 2; chosen by us, not machine facts.
 CHECK_DRIVES = {
     "spin.usdc": DriveSettings.spin(math.radians(30.0)),
@@ -84,17 +88,27 @@ def build_run(
                 f"{run_dir} already holds an exported twin ({', '.join(earlier)}); "
                 "build a new version in a new run folder"
             )
+        programs = program_files(results)  # a program that cannot run fails before any file
         export_twin(twin, results, path, DriveSettings.hold(0.0), data_dir)
-        findings.extend(validate_file(path))
-        errors = [i for i in findings if i.severity == "error"]
-        if errors:
-            path.unlink()
-            raise ExportError(f"the exported twin failed validation: {errors[0].message}")
-        exported.append(path)
-        for name, drive in CHECK_DRIVES.items():
-            exported.append(
-                export_twin(twin, results, run_dir / CHECKS_DIR / name, drive, data_dir)
-            )
+        written = [path]
+        try:
+            findings.extend(validate_file(path))
+            errors = [i for i in findings if i.severity == "error"]
+            if errors:
+                raise ExportError(f"the exported twin failed validation: {errors[0].message}")
+            for name, drive in CHECK_DRIVES.items():
+                check = run_dir / CHECKS_DIR / name
+                written.append(check)
+                export_twin(twin, results, check, drive, data_dir)
+            for program in programs:  # level 3: the program drives the joint (decision 0016)
+                folder = run_dir / PROGRAMS_DIR / program.name
+                written.append(folder)
+                write_program_folder(folder, program, twin, results, data_dir)
+        except BaseException:  # nothing is stored, so leave no files that claim otherwise
+            for item in written:
+                shutil.rmtree(item) if item.is_dir() else item.unlink(missing_ok=True)
+            raise
+        exported.extend(p for p in written if p.is_file())
         return path.relative_to(data_dir).as_posix()
 
     pipelines = {**default_pipelines(), PipelineId.B: pipeline_b}
@@ -104,6 +118,23 @@ def build_run(
         return BuildOutcome(job)
     _write_run_files(run_dir, kb, job, Path(request_path), reference_path, reference, findings)
     return BuildOutcome(job, findings, exported[0], exported[1:])
+
+
+def program_files(results: Sequence[PipelineResult]) -> list[ProgramFile]:
+    """A program file for each control behaviour that carries a program to run, with the
+    sources its citations name (decision 0016)."""
+    programs = []
+    for result in results:
+        for behavior in runnable_behaviors(result.control):
+            cited = {c.source_id for c in behavior.citations}
+            programs.append(
+                ProgramFile(
+                    name=behavior.behavior_id.lower().replace("_", "-"),
+                    sources=[s for s in result.sources if s.source_id in cited],
+                    behavior=behavior,
+                )
+            )
+    return programs
 
 
 def job_result_file(request_path: Path) -> str:
@@ -203,6 +234,12 @@ def _run_notes(
     lines += [f"- {i.severity}: {i.message} ({i.ref or '-'})" for i in findings] or [
         "- no findings"
     ]
+    programs = program_files(results)
+    if programs:
+        lines += ["", "## Programs (decision 0016)", ""]
+        lines += [
+            f"- `{PROGRAMS_DIR}/{p.name}/`: {p.behavior.name}; see its PROGRAM.md" for p in programs
+        ]
     lines += [
         "",
         "## Isaac Sim check (fill in)",
@@ -211,6 +248,11 @@ def _run_notes(
         f"- `{TWIN_FILE}` (spindle holds 0 deg):",
         "- `checks/spin.usdc` (spindle turns at 30 deg/s):",
         "- `checks/quarter_turn.usdc` (spindle turns to 90 deg and holds):",
+        *(
+            f"- `{PROGRAMS_DIR}/{p.name}/program.usdc` with run_program.py (the program "
+            "drives the spindle):"
+            for p in programs
+        ),
         "- Success level reached (1-3):",
         "- Reviewer notes:",
     ]

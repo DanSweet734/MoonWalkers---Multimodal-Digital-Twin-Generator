@@ -5,6 +5,7 @@ and its spindle nose facing +Z; the spindle axis is at y = 0, z = 0.2 above a ba
 the box's front face is at x = 1.
 """
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -352,6 +353,48 @@ async def test_when_feet_reach_past_the_spindle_circle_x_gives_the_axis(
     platter = 1.2 * 0.1016 / second["axis_height_above_lowest"]  # 1.2 units across, scaled
     assert high[1] - low[1] == pytest.approx(platter, rel=0.01)  # the platter alone: no feet
     assert high[2] - low[2] == pytest.approx(platter, rel=0.01)
+
+
+@pytest.mark.anyio
+async def test_a_recorded_program_is_checked_and_built_into_the_run(setup, photo_run) -> None:
+    """Level 3 through the tools: the agent records the manual's Example #3 as the control
+    behaviour's program, and the build writes the program folder for Isaac Sim."""
+    server, _ = setup
+    example_3 = [[1, 90.0, 270.0, 4, 91], [2, 72.0, 270.0, 5, 91], [3, 0.0, 270.0, 1, 99]]
+    control = {
+        "behavior_id": "index_program",
+        "name": "Manual Example #3",
+        "kind": "program_interpreter",
+        "description": "A four-hole pattern, then a five-hole pattern.",
+        "confidence": 0.9,
+        "citations": SHEET,
+        "drives_joints": ["spindle_rotation"],
+    }
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        too_fast = {"program": {"rows": [[1, 90.0, 300.0, 1, 91], [2, 0.0, 270.0, 1, 99]]}}
+        assert "feed rate 300.0 is outside" in await fails(
+            client, "add_control", run=run, **control, spec=too_fast
+        )
+        await ok(client, "add_control", run=run, **control, spec={"program": {"rows": example_3}})
+        await ok(client, "generate_geometry", run=run)
+        joint = {
+            "up": "+y",
+            "front": "+z",
+            "spindle_axis_yz": [0.0, 0.2],
+            "spindle_radius": 0.45,
+            "spindle_start_x": 1.0,
+            "method": "synthetic",
+        }
+        await ok(client, "add_joint", run=run, **joint)
+        await ok(client, "set_scale", run=run)
+        await ok(client, "submit_twin", run=run)
+    folder = photo_run.data_dir / run / "programs" / "index-program"
+    assert (folder / "program.usdc").is_file() and (folder / "run_program.py").is_file()
+    trajectory = json.loads((folder / "trajectory.json").read_text(encoding="utf-8"))
+    assert trajectory["final_deg"] == pytest.approx(720.0)
+    notes = (photo_run.data_dir / run / "RUN.md").read_text(encoding="utf-8")
+    assert "`programs/index-program/`: Manual Example #3" in notes
 
 
 @pytest.mark.anyio

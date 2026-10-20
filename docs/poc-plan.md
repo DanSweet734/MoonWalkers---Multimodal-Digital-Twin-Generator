@@ -84,10 +84,21 @@ Plus: a second request for the same machine reuses the stored twin and the resul
 - [x] PR (Oct 18, 2026: branch `feat/phase-5-api-dashboard`, PR #9)
 
 ## Phase 6 - Control logic (level 3)
-- [ ] Represent the indexing program as a `ControlBehavior`; a small interpreter that turns G90/G91
+- [x] Represent the indexing program as a `ControlBehavior`; a small interpreter that turns G90/G91
       steps into joint drive targets
-- [ ] Demonstrate in Isaac Sim; document limits honestly
-- [ ] PR and a short PoC report in `docs/`
+      (Oct 18, 2026: `moonwalkers.control`. The manual's step table lives in `spec["program"]`,
+      and the interpreter runs it as auto-continue: G90/G91, home, circle division, dwell,
+      subroutines. The manual's Examples #2-#6 ship as cited program files, and its two stated
+      equivalences hold exactly. Builds and the CLI write a program folder with a runner for
+      Isaac Sim. Decision 0016)
+- [x] Demonstrate in Isaac Sim; document limits honestly
+      (Oct 19, 2026: Daniel ran the manual's Example #5 on HA5C v3 in Isaac Sim 6.2.0. The spindle
+      followed the program with the runner, and again after Stop then Play. The time-sampled file
+      did the same with no script. Level 3 met. Limits: decision 0016 and `docs/poc-report.md`,
+      section 6)
+- [x] PR and a short PoC report in `docs/`
+      (PR #11; `docs/poc-report.md`, with results per level, the decisions behind them and the
+      limits)
 
 ## Before more machines (noted Oct 18, 2026)
 Found while building the second machine, the Haas TH240, from a dashboard job. Do these before
@@ -107,4 +118,5 @@ Pipeline B is used on other machines.
       Grizzly T33901 drill press, has "about five joints" (decision 0002). [INFERENCE] Its spindle
       turns about, and its quill slides along, a vertical axis, so it needs other axes, several
       joints and prismatic joints. Noted Oct 18, 2026, while fixing the item above; it needs its
-      own decision. Not started.
+      own decision. Not started. (Oct 19, 2026: its manual was read, and the seven decisions it
+      needs are listed in `docs/poc-report.md`, section 8.)

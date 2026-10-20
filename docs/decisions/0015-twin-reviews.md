@@ -1,8 +1,8 @@
 # 0015 - Reviews of twin versions: separate append-only records; a rejected version is not reused
 
-- **Status:** proposed (Claude Code, Phase 5). Daniel chose "approve or reject, and skip rejected
-  versions", then "approved first" after trying the dashboard, both on 2026-10-18; the details await
-  his review in the Phase 5 PR.
+- **Status:** accepted (proposed by Claude Code in Phase 5; Daniel chose "approve or reject, and
+  skip rejected versions", then "approved first" after trying the dashboard, and reviewed and
+  merged the Phase 5 PR, #9, all on 2026-10-18).
 - **Date:** 2026-10-18
 - **Decided by:** team (Daniel)
 

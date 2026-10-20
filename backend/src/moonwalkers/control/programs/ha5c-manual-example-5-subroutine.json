@@ -1,0 +1,97 @@
+{
+  "name": "ha5c-manual-example-5-subroutine",
+  "sources": [
+    {
+      "source_id": "src-haas-ha5c-manual-2006",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---ha5c-indexer-operator's-manual---2006.pdf",
+      "title": "HA5C Indexer Operator's Manual, 96-4039 rev N, June 2006 (Haas Automation)",
+      "sha256": "f99f3492b700f7606b7982db4b6d61b908fa1cfd197e589272ac1ebb317dfea0",
+      "retrieved_at": "2026-10-18T00:32:38Z",
+      "license_note": "Haas Automation manual; local copy for internal research only, not redistributed"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "index_program",
+    "name": "Manual Example #5 with a subroutine (G96)",
+    "kind": "program_interpreter",
+    "description": "Step 1 calls the subroutine at step 4 three times (steps 4 and 5, ended by step 6's G99); then step 2 returns home and step 3 (G95) ends the program.",
+    "drives_joints": [
+      "spindle_rotation"
+    ],
+    "spec": {
+      "program": {
+        "columns": [
+          "step",
+          "step_size_deg",
+          "feed_deg_s (G96: Step#)",
+          "loop_count",
+          "g_code"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            4,
+            3,
+            96
+          ],
+          [
+            2,
+            0.0,
+            80.0,
+            1,
+            88
+          ],
+          [
+            3,
+            0.0,
+            80.0,
+            1,
+            95
+          ],
+          [
+            4,
+            90.0,
+            80.0,
+            1,
+            91
+          ],
+          [
+            5,
+            15.0,
+            25.0,
+            1,
+            91
+          ],
+          [
+            6,
+            0.0,
+            80.0,
+            1,
+            99
+          ]
+        ]
+      }
+    },
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "This is the same program (#5) using subroutines."
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 39 (printed p. 38), Programming Examples",
+        "quote": "01 0 Step# 4 3 96"
+      },
+      {
+        "source_id": "src-haas-ha5c-manual-2006",
+        "locator": "PDF p. 40 (printed p. 39), Programming Examples",
+        "quote": "Step #1 tells the control to jump to Step #4. The control will do Steps #4 and #5 three times, with Step #6 marking the end of the subroutine."
+      }
+    ]
+  }
+}

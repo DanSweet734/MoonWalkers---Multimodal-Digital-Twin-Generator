@@ -2,8 +2,9 @@
 
 Purpose: confirm by eye that an exported twin opens in Isaac Sim at the right size and that its
 joint moves. Phase 2 does this with the synthetic box-and-cylinder test twin. Phase 3 repeats it
-with the HA5C (section 6). The files have already passed both validators (our own and NVIDIA's asset
-validator), so this step checks what only the simulator can show.
+with the HA5C (section 6), and Phase 6 runs an indexing program on it (section 7). The files have
+already passed both validators (our own and NVIDIA's asset validator), so this step checks what
+only the simulator can show.
 
 ## 1. Install Isaac Sim 6.2.0 (once)
 Steps quoted from the install page
@@ -124,6 +125,72 @@ The seam gaps from step 4 were seen. Details: `docs/worklog/2026-10-18.md`.
 in the dashboard: approve or reject, with what was seen as the reason (`docs/setup/dashboard.md`,
 decision 0015). A rejected version is no longer reused.
 
+## 7. Phase 6: an indexing program drives the spindle (success level 3)
+The program is the manual's Example #5, in its subroutine form:
+- index 90° at 80 °/s and slow-feed 15° at 25 °/s, three times;
+- then return home.
+
+It runs on HA5C v3, with a 1 s pause after each move. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-ha5c\programs\2026-10-18_ha5c-manual-example-5-subroutine_v3\`.
+Its `PROGRAM.md` lists every move with its start and end times. The method is decision 0016.
+
+1. **Open the file.** In Isaac Sim 6.2.0, File > Open that folder's `program.usdc`. The orange
+   part is the spindle.
+2. **Start the runner.** Open `run_program.py` from the same folder in a text editor (VS Code or
+   Notepad), select all and copy. In Isaac Sim, go to Window > Script Editor, paste it, and click
+   **Run** at the bottom. The editor's output should show:
+   - `'ha5c-manual-example-5-subroutine' on /haas_ha5c/joints/spindle_rotation: 15 points over
+     16.112 s`;
+   - `driving the joint(s) on each physics step through simulation_manager; press Play` (or
+     `omni.physx`).
+3. **Press Play.** The output prints `first physics step at t = ...`. The spindle should then:
+   - turn a quarter turn quickly;
+   - pause about 1 s;
+   - turn slowly by 15° (0.6 s);
+   - pause, and do both twice more;
+   - at about 11 s, turn back 315° to where it started, and stop at about 15 s.
+
+   The output prints `finished at 16.112 s, target 0.000 deg`.
+4. **Run it again.** Stop, then Play, runs it again from the start, and the runner prints its lines
+   again, marked `(run 2)` and so on. Running the pasted script again replaces the earlier runner.
+   (Folders written before 2026-10-19 hold a runner that prints only on the first run; the joint
+   still moves on every run.)
+5. **Optional: no script.** Open `program_native.usdc` from the same folder in a new Isaac Sim
+   session, so that no runner from step 2 is still registered, and press Play without running the
+   script. The spindle should make the same moves: Isaac Sim 6.2.0 follows time-sampled drive
+   targets by itself (checked on 2026-10-19).
+6. **Optional: Example #3** (a four-hole, then a five-hole pattern: four 90° and five 72° indexes
+   at 270 °/s, 11.7 s). The folder is `...\programs\2026-10-18_ha5c-manual-example-3_v3\`; repeat
+   steps 1 to 4 there.
+7. **Record what you saw** in the folder's `PROGRAM.md`, under "Check in Isaac Sim (fill in)", or
+   send it to Claude Code to add:
+   - the runner's output lines;
+   - whether the moves and pauses matched the timeline;
+   - where it stopped;
+   - the native file's result.
+
+**Result on 2026-10-19 (Daniel):** level 3, with no errors.
+- The runner used `simulation_manager`, printed its first physics step at t = 0.017 s and finished
+  at 16.112 s, target 0.000°. The spindle followed the timeline, and Stop, then Play, ran it again.
+- `program_native.usdc` (step 5, in a new session) made the same moves with no script and
+  stopped where it started.
+- Example #3 (step 6) was not checked.
+- In a third session the native file was played again, with no errors. By eye, the two files play
+  identically.
+
+**To try the changed runner** (it prints its lines on every run), use the folders written on
+2026-10-19: `...\programs\2026-10-19_ha5c-manual-example-5-subroutine_v3\` and
+`...\programs\2026-10-19_ha5c-manual-example-3_v3\`. Follow steps 1 to 4 in each. On the second
+Play the output should print `first physics step at t = ... (run 2)`.
+
+Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
+
+**If nothing moves on Play:**
+- If no `first physics step` line was printed, the callback did not fire. In the pasted script,
+  change `API = "auto"` near the top to `API = "omni.physx"`, run it again, and press Play.
+- If the line was printed but the spindle still does not move, copy the output, plus any red
+  errors in the console.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:
@@ -132,8 +199,12 @@ not about the twin files:
 - "Unexpected reference count ... while being closed in UsdContext" (also appears for Isaac Sim's own
   startup stage);
 - `pxr.Semantics is deprecated`;
-- an `omni.anim.graph.core` node-registration message;
-- an omniclient "rejecting empty URL".
+- an `omni.anim.graph.core` node-registration message ("Python import process in
+  omni.anim.graph.core failed - 'NoneType' object is not subscriptable. Aborting Python node
+  registration"), printed while extensions start, before any file is opened (seen again on
+  2026-10-19);
+- an omniclient "rejecting empty URL";
+- "Snippet folder doesn't exist", when the Script Editor opens (seen on 2026-10-19).
 
 One warning *was* about our files: the stage "has no usable time-code range". Since Phase 3 the
 exporter sets a time range (0 to 1,000,000 at 60 per second), so files exported now should not show

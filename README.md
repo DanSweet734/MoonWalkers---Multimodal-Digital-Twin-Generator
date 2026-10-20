@@ -8,8 +8,10 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Proof of concept in progress: Phases 0-4 are done and Phase 5 is in review** (scaffold;
-knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP; API and dashboard). The orchestrator stores twin records, reuses a stored twin on a
+**Proof of concept: all three success levels met in Isaac Sim. Phases 0-5 are done, and Phase 6
+reached level 3 on Oct 19, 2026 and is in review** (scaffold;
+knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP; API and dashboard;
+control logic). The orchestrator stores twin records, reuses a stored twin on a
 second request, and re-versions on request. The USD exporter writes simulatable twins (rigid bodies,
 a driven revolute joint, cited provenance) that pass two validators. A synthetic box-and-cylinder
 test twin opened and moved as expected in Isaac Sim 6.2.0 on Oct 17, 2026. Phase 3 built the first
@@ -33,14 +35,22 @@ On Oct 18 the dashboard also took a photo of a second machine, the Haas TH240 ro
 Code built `haas/th240@v1` from it, and its platter turned cleanly in Isaac Sim 6.2.0 (success
 level 2).
 
+Phase 6 adds control logic for success level 3. An indexing program, written as the 2006 HA5C
+manual's step table (absolute and incremental steps, loops, circle division, subroutines), runs
+through an interpreter. A runner then drives the twin's spindle with it in Isaac Sim. On Oct 19,
+2026 the manual's Example #5 drove the HA5C v3 spindle in Isaac Sim 6.2.0 as planned (success
+level 3). A second file, with the motion stored as time samples on the drive's target, did the
+same with no script. The proof of concept's report, with the decisions behind it, is
+[docs/poc-report.md](docs/poc-report.md).
+
 | Area | Status |
 |---|---|
 | Background research (digital twins, image-to-3D models, agents, prior MoonWalkers work) | Done |
 | Scope and goals | Defined (see [What it does](#what-it-does)) |
 | Architecture design, surveys, sketches and Figma wireframes | Done |
-| Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
+| Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and turned in. No explicit approval yet; we treat it as approved unless the stakeholders say otherwise (Oct 19, 2026) |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **In progress.** Phases 0-4 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026, and a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse. Phase 5 (API and dashboard) in review. See [docs/poc-plan.md](docs/poc-plan.md) |
+| Proof of concept | **Success levels 1-3 met; Phase 6 in review.** Phases 0-5 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026; a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse; the dashboard took a second machine (TH240, level 2). Phase 6: the manual's Example #5 drove HA5C v3's spindle in Isaac Sim 6.2.0 on Oct 19, 2026 (level 3). See [docs/poc-plan.md](docs/poc-plan.md) and [docs/poc-report.md](docs/poc-report.md) |
 | Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing, reviews), JSON-file knowledge base, USD exporter (text or binary) + validator, image-to-3D generator adapter, an MCP server with 16 tools for the agent, and a local FastAPI API, all tested. Dashboard: barebones React + TypeScript pages for jobs, twins with their sources, reviews and sources |
 | Input pipelines | Pipeline B (photos) turns one machine photo into a scaled body and spindle on a revolute joint, with facts cited from documents (decision 0012). Pipelines A, C, D are stubs returning cited HA5C fixture data. All four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
@@ -291,12 +301,12 @@ Two alternatives were considered in our Oct 6 research: an all-Python stack with
 
 ## Proof of concept
 
-In progress (Phases 0-4 of [docs/poc-plan.md](docs/poc-plan.md) done, Phase 5 in review; the HA5C twin reached success level 2 in Isaac Sim on Oct 18, 2026). It must show that an AI agent can create a digital twin, in some capacity, from one input type. To run the dashboard: [docs/setup/dashboard.md](docs/setup/dashboard.md).
+All three success levels met (Phases 0-6 of [docs/poc-plan.md](docs/poc-plan.md); Phase 6 in review). The HA5C twin reached level 2 in Isaac Sim 6.2.0 on Oct 18, 2026, and level 3 on Oct 19, 2026. It had to show that an AI agent can create a digital twin, in some capacity, from one input type. The report, with the results and the decisions behind them: [docs/poc-report.md](docs/poc-report.md). To run the dashboard: [docs/setup/dashboard.md](docs/setup/dashboard.md).
 
 - **Input:** machine photos to start (video is required in the final product), sourced online until test photos from Dr. Li's lab arrive.
-- **Subject:** one well-known, relatively simple machine that has joints and control logic.
-- **Minimum result:** a scaled 3D model with cited facts; the aim is also one working joint, then control logic.
-- **Pass criteria:** the `.usd` opens in the target Isaac Sim version, a joint moves, and a second request for the same machine reuses the stored twin and says so.
+- **Subject:** the Haas HA5C rotary indexer: one well-known, relatively simple machine that has joints and control logic.
+- **Success levels:** (1) a scaled 3D model with cited facts opens in Isaac Sim; (2) the spindle rotates on a joint; (3) an indexing program from the machine's manual drives the joint.
+- **Also required:** a second request for the same machine reuses the stored twin and says so.
 - **Human review:** expected in v1; later versions will let the user set how much human input is needed.
 
 ## Test data
@@ -329,7 +339,7 @@ flowchart LR
 
 | Decision | State |
 |---|---|
-| AI model and agent runtime | To be researched while we build |
+| AI model and agent runtime | The proof of concept uses Claude Code through our MCP server (decision 0003); Codex is planned next, and its needs are in [docs/poc-report.md](docs/poc-report.md), section 7. The final product's model is still to be researched |
 | Owners for non-pipeline components | Deferred until the proof of concept works |
 | Live 3D view in the dashboard | Wished for, not a requirement |
 | Time targets for a build | None for now; metrics will come from testing |
@@ -384,11 +394,12 @@ California State University, Northridge (CSUN), Computer Science capstone.
 | `docs/methodology.md` | How we work: research, decide, build, verify, document |
 | `docs/agent-procedure.md` | How the agent builds a twin with the MCP tools |
 | `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |
-| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export, generator setup, Pipeline B method, MCP server, API and dashboard, twin reviews) |
+| `docs/poc-report.md` | The proof of concept's report: results per success level, the per-run record, the decisions behind them, limits |
+| `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export, generator setup, Pipeline B method, MCP server, API and dashboard, twin reviews, indexing programs) |
 | `docs/worklog/` | Dated work entries |
 | `docs/research/` | Research notes and the project context file |
 | `docs/setup/` | Setup guides: Windows, Hugging Face, the image-to-3D generator, the Isaac Sim check, and running the dashboard |
-| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base and reviews (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), USD exporter and validator (`usd/`), image-to-3D generator adapters (`generators/`), Pipeline B (`pipelines/b/`), run folders and job status (`workspace/`), the MCP server (`mcp/`), the API (`api/`), and tests |
+| `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base and reviews (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), USD exporter and validator (`usd/`), image-to-3D generator adapters (`generators/`), Pipeline B (`pipelines/b/`), indexing programs (`control/`), run folders and job status (`workspace/`), the MCP server (`mcp/`), the API (`api/`), and tests |
 | `dashboard/` | Vite + React + TypeScript dashboard: jobs, twins with their sources and reviews, sources (see `dashboard/README.md`) |
 | `data/` | Local test data and outputs (gitignored except its README) |
 
