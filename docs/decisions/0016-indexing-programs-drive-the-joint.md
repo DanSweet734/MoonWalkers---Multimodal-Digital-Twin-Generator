@@ -1,7 +1,8 @@
 # 0016 - Control logic: the manual's indexing program drives the twin's joint
 
-- **Status:** proposed (Claude Code, Phase 6); awaits Daniel's Isaac Sim check and his review in
-  the Phase 6 PR.
+- **Status:** accepted (proposed by Claude Code in Phase 6; Daniel reviewed the Phase 6 PR, #11,
+  and checked level 3 in Isaac Sim 6.2.0 on 2026-10-19). Check results and what they change: the
+  section at the end.
 - **Date:** 2026-10-18
 - **Decided by:** team (Daniel)
 
@@ -101,10 +102,10 @@ proposals.
 - **Level 3 is reachable by hand.** Open `program.usdc`, paste `run_program.py`, press Play.
   - Program folders for HA5C v3 were written for Examples #5 (subroutine form) and #3, under
     `data/machines/haas-ha5c/programs/`.
-  - Until Daniel's check, "drives the joint" is shown in tests and in the files, not yet in the
-    simulator.
-- **One manual-click step remains.** The runner is a script, not part of the USD. A self-contained
-  file would need PhysX to follow time samples (the experiment) or an OmniGraph (option 3c).
+  - Daniel's check on 2026-10-19 showed it in the simulator (section below).
+- **One manual-click step remains with the runner.** The runner is a script, not part of the USD.
+  The check showed that the experiment's file, `program_native.usdc`, needs no script: Isaac Sim
+  6.2.0 follows the time samples on the drive's target (section below).
 - **Not the controller's timing.** Motion starts and stops at full feed rate, so real moves take
   slightly longer, by their acceleration. The pause after each step is a stand-in.
 - **The agent can give a twin control logic** by recording a program from the manual
@@ -114,3 +115,41 @@ proposals.
   (Parameter 12 = 1-4), the CNC relay and remote inputs are out of scope.
 - **Reversing it.** `moonwalkers.control` stands alone, and builds only call it when a behaviour
   carries a program. Removing it leaves twins as they were in Phase 5.
+
+## Isaac Sim check (2026-10-19)
+Daniel checked the Example #5 program folder on HA5C v3
+(`data/machines/haas-ha5c/programs/2026-10-18_ha5c-manual-example-5-subroutine_v3/`, whose
+`PROGRAM.md` holds the full record). Isaac Sim 6.2.0 (Kit 110.4.0, build 386251), in two
+sessions, with no errors in either log.
+- **`program.usdc` with the runner: level 3 met.**
+  - The runner used `SimulationManager` (`PHYSICS_PRE_STEP`), so the `omni.physx` fallback was
+    not needed. Its first physics step came at t = 0.017 s (one step at 60 Hz).
+  - Daniel: "It did exactly as you said." It printed "finished at 16.112 s, target 0.000 deg"
+    16.48 s of wall-clock time after Play (from the log's timestamps).
+  - Stop, then Play, ran it again from the start, "exactly as the script said".
+- **`program_native.usdc` with no script: it moves.** In a new session it "performed the moves as
+  program.usdc with the script", and stopped exactly where it started. So Isaac Sim 6.2.0 follows
+  time samples on `drive:angular:physics:targetPosition` by itself. Its timing was not compared
+  with a clock.
+- **One fix from the check.** On the second Play, the runner printed nothing, because it printed
+  its lines once per start of the script. The joint still moved, since the targets are set on
+  every step. `isaac_runner.Progress` now starts a new run whenever the timeline's time goes back,
+  so the lines print on every run ("(run 2)" from the second). This is tested outside Isaac Sim,
+  and the changed runner has not yet been run in Isaac Sim. Folders written earlier keep their
+  copy of the runner.
+- **The warning Daniel asked about.** "Python import process in omni.anim.graph.core failed -
+  'NoneType' object is not subscriptable. Aborting Python node registration" comes while Isaac
+  Sim's extensions start, before any file is opened (35.5 s and 7.0 s into the two sessions). It
+  is on the guide's list of warnings to ignore (`docs/setup/isaac-sim-check.md`).
+
+**What this changes.** Nothing in the decision yet: the runner stays the default.
+- It follows NVIDIA's advice for fixed time stepping.
+- It sets the target velocity as well as the position. With only a position target (the native
+  file), our drive trails a moving target by about damping / stiffness × speed = 0.2 s × speed,
+  which is 16° during an 80 °/s index [INFERENCE: the steady-state error of a second-order spring
+  tracking a ramp; not measured].
+
+The native file is now a confirmed way to show a program with no script, for example to someone
+without this guide. Whether to make it the default, perhaps with the target velocity time-sampled
+too, is a choice for the integration phase. It should come after measuring both files' joint
+angle over time against the plan.

@@ -91,10 +91,14 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       subroutines. The manual's Examples #2-#6 ship as cited program files, and its two stated
       equivalences hold exactly. Builds and the CLI write a program folder with a runner for
       Isaac Sim. Decision 0016)
-- [ ] Demonstrate in Isaac Sim; document limits honestly
-      (program folders for HA5C v3 are ready: `docs/setup/isaac-sim-check.md`, section 7; limits in
-      decision 0016)
-- [ ] PR and a short PoC report in `docs/`
+- [x] Demonstrate in Isaac Sim; document limits honestly
+      (Oct 19, 2026: Daniel ran the manual's Example #5 on HA5C v3 in Isaac Sim 6.2.0. The spindle
+      followed the program with the runner, and again after Stop then Play. The time-sampled file
+      did the same with no script. Level 3 met. Limits: decision 0016 and `docs/poc-report.md`,
+      section 6)
+- [x] PR and a short PoC report in `docs/`
+      (PR #11; `docs/poc-report.md`, with results per level, the decisions behind them and the
+      limits)
 
 ## Before more machines (noted Oct 18, 2026)
 Found while building the second machine, the Haas TH240, from a dashboard job. Do these before

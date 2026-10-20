@@ -1,8 +1,8 @@
 # 0014 - The API and barebones dashboard: run folders as jobs, the agent builds, local only
 
-- **Status:** proposed (Claude Code, Phase 5). Daniel chose the install, the job flow, review in
-  the dashboard and the monochrome look on 2026-10-18; the design awaits his review in the Phase 5
-  PR.
+- **Status:** accepted (proposed by Claude Code in Phase 5; Daniel chose the install, the job
+  flow, review in the dashboard and the monochrome look, then reviewed and merged the Phase 5 PR,
+  #9, on 2026-10-18).
 - **Date:** 2026-10-18
 - **Decided by:** team (Daniel)
 

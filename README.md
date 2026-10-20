@@ -8,7 +8,8 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Proof of concept in progress: Phases 0-5 are done and Phase 6 is in review** (scaffold;
+**Proof of concept: all three success levels met in Isaac Sim. Phases 0-5 are done, and Phase 6
+reached level 3 on Oct 19, 2026 and is in review** (scaffold;
 knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP; API and dashboard;
 control logic). The orchestrator stores twin records, reuses a stored twin on a
 second request, and re-versions on request. The USD exporter writes simulatable twins (rigid bodies,
@@ -36,8 +37,11 @@ level 2).
 
 Phase 6 adds control logic for success level 3. An indexing program, written as the 2006 HA5C
 manual's step table (absolute and incremental steps, loops, circle division, subroutines), runs
-through an interpreter. A runner then drives the twin's spindle with it in Isaac Sim. The Isaac Sim
-check is pending. The proof of concept's report is [docs/poc-report.md](docs/poc-report.md).
+through an interpreter. A runner then drives the twin's spindle with it in Isaac Sim. On Oct 19,
+2026 the manual's Example #5 drove the HA5C v3 spindle in Isaac Sim 6.2.0 as planned (success
+level 3). A second file, with the motion stored as time samples on the drive's target, did the
+same with no script. The proof of concept's report, with the decisions behind it, is
+[docs/poc-report.md](docs/poc-report.md).
 
 | Area | Status |
 |---|---|
@@ -46,7 +50,7 @@ check is pending. The proof of concept's report is [docs/poc-report.md](docs/poc
 | Architecture design, surveys, sketches and Figma wireframes | Done |
 | Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **In progress.** Phases 0-5 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026; a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse; the dashboard took a second machine (TH240, level 2). Phase 6 (control logic, level 3) in review, its Isaac Sim check pending. See [docs/poc-plan.md](docs/poc-plan.md) and [docs/poc-report.md](docs/poc-report.md) |
+| Proof of concept | **Success levels 1-3 met; Phase 6 in review.** Phases 0-5 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026; a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse; the dashboard took a second machine (TH240, level 2). Phase 6: the manual's Example #5 drove HA5C v3's spindle in Isaac Sim 6.2.0 on Oct 19, 2026 (level 3). See [docs/poc-plan.md](docs/poc-plan.md) and [docs/poc-report.md](docs/poc-report.md) |
 | Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing, reviews), JSON-file knowledge base, USD exporter (text or binary) + validator, image-to-3D generator adapter, an MCP server with 16 tools for the agent, and a local FastAPI API, all tested. Dashboard: barebones React + TypeScript pages for jobs, twins with their sources, reviews and sources |
 | Input pipelines | Pipeline B (photos) turns one machine photo into a scaled body and spindle on a revolute joint, with facts cited from documents (decision 0012). Pipelines A, C, D are stubs returning cited HA5C fixture data. All four have an owner (see [The four pipelines](#the-four-pipelines)) |
 

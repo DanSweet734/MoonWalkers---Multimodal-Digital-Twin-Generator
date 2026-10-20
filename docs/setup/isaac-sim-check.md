@@ -150,12 +150,14 @@ Its `PROGRAM.md` lists every move with its start and end times. The method is de
    - at about 11 s, turn back 315° to where it started, and stop at about 15 s.
 
    The output prints `finished at 16.112 s, target 0.000 deg`.
-4. **Run it again.** Stop, then Play, runs it again from the start. Running the pasted script again
-   replaces the earlier runner.
+4. **Run it again.** Stop, then Play, runs it again from the start, and the runner prints its lines
+   again, marked `(run 2)` and so on. Running the pasted script again replaces the earlier runner.
+   (Folders written before 2026-10-19 hold a runner that prints only on the first run; the joint
+   still moves on every run.)
 5. **Optional: no script.** Open `program_native.usdc` from the same folder in a new Isaac Sim
-   session (or after Stop, File > Open), and press Play without running the script. Does the
-   spindle move? Either answer is useful: it tells us whether PhysX follows time-sampled drive
-   targets by itself.
+   session, so that no runner from step 2 is still registered, and press Play without running the
+   script. The spindle should make the same moves: Isaac Sim 6.2.0 follows time-sampled drive
+   targets by itself (checked on 2026-10-19).
 6. **Optional: Example #3** (a four-hole, then a five-hole pattern: four 90° and five 72° indexes
    at 270 °/s, 11.7 s). The folder is `...\programs\2026-10-18_ha5c-manual-example-3_v3\`; repeat
    steps 1 to 4 there.
@@ -165,6 +167,15 @@ Its `PROGRAM.md` lists every move with its start and end times. The method is de
    - whether the moves and pauses matched the timeline;
    - where it stopped;
    - the native file's result.
+
+**Result on 2026-10-19 (Daniel):** level 3, with no errors.
+- The runner used `simulation_manager`, printed its first physics step at t = 0.017 s and finished
+  at 16.112 s, target 0.000°. The spindle followed the timeline, and Stop, then Play, ran it again.
+- `program_native.usdc` (step 5, in a new session) made the same moves with no script and
+  stopped where it started.
+- Example #3 (step 6) was not checked.
+
+Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 
 **If nothing moves on Play:**
 - If no `first physics step` line was printed, the callback did not fire. In the pasted script,
@@ -180,8 +191,12 @@ not about the twin files:
 - "Unexpected reference count ... while being closed in UsdContext" (also appears for Isaac Sim's own
   startup stage);
 - `pxr.Semantics is deprecated`;
-- an `omni.anim.graph.core` node-registration message;
-- an omniclient "rejecting empty URL".
+- an `omni.anim.graph.core` node-registration message ("Python import process in
+  omni.anim.graph.core failed - 'NoneType' object is not subscriptable. Aborting Python node
+  registration"), printed while extensions start, before any file is opened (seen again on
+  2026-10-19);
+- an omniclient "rejecting empty URL";
+- "Snippet folder doesn't exist", when the Script Editor opens (seen on 2026-10-19).
 
 One warning *was* about our files: the stage "has no usable time-code range". Since Phase 3 the
 exporter sets a time range (0 to 1,000,000 at 60 per second), so files exported now should not show

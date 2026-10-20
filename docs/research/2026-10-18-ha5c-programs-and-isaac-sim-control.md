@@ -157,10 +157,18 @@ All 28 quotes in the packaged program files were checked against these pages wit
   - Read outside Isaac Sim, the runner finds the program on `/haas_ha5c/joints/spindle_rotation`
     and gives (40°, 80 °/s) at 0.5 s, (90°, 0) at 1.5 s and (169°, -80 °/s) at 13.0 s.
 
+## Answered by Daniel's check (2026-10-19, Isaac Sim 6.2.0)
+The record is in decision 0016, "Isaac Sim check", and in the Example #5 folder's `PROGRAM.md`.
+- **Does `SimulationEvent.PHYSICS_PRE_STEP` fire on Play in the Isaac Sim GUI?** Yes. The runner
+  registered through `SimulationManager` and printed "first physics step at t = 0.017 s" on Play,
+  and the spindle followed the timeline. The `omni.physx` fallback was not needed.
+- **Does PhysX follow time-sampled drive targets without a script?** Yes, in 6.2.0:
+  `program_native.usdc` performed the same moves with no script and stopped where it started.
+  Whether it plays slower than real time, as the Robot Simulation Tips page warns for keyframed
+  motion, was not measured.
+
 ## Open questions
-- Does `SimulationEvent.PHYSICS_PRE_STEP` fire on Play in the Isaac Sim GUI? This is to be seen
-  in Daniel's check: the runner prints a line on the first physics step.
-- Does PhysX follow time-sampled drive targets without a script? `program_native.usdc` tests
-  this.
+- How far each file's joint angle trails the plan in Isaac Sim, measured rather than estimated
+  (0.2 s × speed without the target velocity, [INFERENCE] above).
 - The HA5C's real acceleration, home direction and positive direction (Parameters 18, 44, 27 and
   11): not in the manual.
