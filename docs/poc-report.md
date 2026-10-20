@@ -66,8 +66,10 @@ check").
 - **With no script.** The second file, `program_native.usdc`, stores the same motion as time
   samples on the drive's target. Opened in a new session, it made the same moves and stopped where
   it started. That answers an open question of decision 0016: Isaac Sim 6.2.0 follows a drive's
-  time-sampled target by itself.
-- **The logs** of both sessions show no errors. The one warning Daniel asked about, from
+  time-sampled target by itself. By eye, the two files play identically (Daniel); their timing
+  was not measured.
+- **The logs** of all three sessions show no errors: the runner session and two no-script
+  sessions. The one warning Daniel asked about, from
   `omni.anim.graph.core`, is printed while Isaac Sim's own extensions start, before any file is
   opened; it is not about the twin.
 - **Behind it:**
@@ -81,6 +83,8 @@ check").
 - After the fresh agent built HA5C v3, its `request_twin` answered "Found an existing twin (v3,
   needs review) for haas/ha5c; reused it."
 - In the dashboard, an upload for the HA5C stopped at once and reused v3 (worklog 2026-10-18).
+- Since Daniel approved v3 on 2026-10-19, a request reuses it as the newest approved version
+  (decision 0015).
 
 **The agent.**
 - A fresh Claude Code session built HA5C v3 through the MCP tools: it read the manual and the
@@ -98,8 +102,8 @@ was 6.2.0 for every check (Kit 110.4.0, build 386251, from the 2026-10-19 logs).
 |---|---|---|---|---|---|---|
 | haas/ha5c@v1 | `haas-ha5c/runs/2026-10-17_run-002` | Claude Code (CLI) | Haas UK photo | 49.4 s | not checked (the text USD failed NVIDIA's performance check, so v2 was made) | needs review |
 | haas/ha5c@v2 | `haas-ha5c/runs/2026-10-17_run-003` | Claude Code (CLI) | the same photo | 49.0 s | 2 (Daniel, 2026-10-18) | needs review |
-| haas/ha5c@v3 | `haas-ha5c/runs/2026-10-18_run-001` | a fresh Claude Code session through MCP | the same photo | 46.8 s | 3 (Daniel, 2026-10-19, through the Example #5 program file built from this twin). Its size was not measured on its own: its mesh measures the same as v2's | needs review |
-| haas/th240@v1 | `haas-th240/runs/2026-10-18_run-001` | Claude Code through MCP, from a dashboard job | Haas TH240 page image | 57.1 s | 2 (Daniel, 2026-10-18) | needs review |
+| haas/ha5c@v3 | `haas-ha5c/runs/2026-10-18_run-001` | a fresh Claude Code session through MCP | the same photo | 46.8 s | 3 (Daniel, 2026-10-19, through the Example #5 program file built from this twin). Its size was not measured on its own: its mesh measures the same as v2's | **approved** (Daniel, 2026-10-19): "Shows mostly accurate surfaces and animations look good too" |
+| haas/th240@v1 | `haas-th240/runs/2026-10-18_run-001` | Claude Code through MCP, from a dashboard job | Haas TH240 page image | 57.1 s | 2 (Daniel, 2026-10-18) | **approved** (Daniel, 2026-10-19): "Accurate geometry on at least half, spindle looks clear and model looks ready for further refinement and testing" |
 
 Programs, written from the command line for the stored twin (folders under
 `data/machines/haas-ha5c/programs/`):
@@ -108,6 +112,7 @@ Programs, written from the command line for the stored twin (folders under
 |---|---|---|---|
 | `2026-10-18_ha5c-manual-example-5-subroutine_v3` | Example #5, subroutine form | 16.112 s, back at 0° | level 3 (Daniel, 2026-10-19), with the runner and with no script |
 | `2026-10-18_ha5c-manual-example-3_v3` | Example #3: four 90° and five 72° indexes | 11.667 s, at 720° (two turns) | not checked |
+| `2026-10-19_ha5c-manual-example-5-subroutine_v3`, `2026-10-19_ha5c-manual-example-3_v3` | the same two, written with the runner that prints on every run | as above | not checked yet |
 
 The metrics from Dr. Li's agentic-pipeline deck were not measured formally for these single-photo
 runs: component coverage, count accuracy, spatial plausibility and visual match. That is a step
@@ -331,7 +336,7 @@ Claude Code proposed these. Daniel reviewed PR #11 and checked level 3.
   | What happens between steps? | A 1 s pause after each move (Parameter 16, "Auto Continue Dwell", 0 to 9.9 s) | No pause (`--dwell 0`) | It stands in for the machining after each index, and makes each index visible | No: the HA5C's value is not given |
   | Which way does an absolute or home move turn? | Directly to the programmed angle, so from 315° home is 315° back | The shortest way, 45° forward (`--absolute shortest`, like Parameter 27's option +24) | It is the plain reading of "absolute position command", and it does not depend on Parameter 27, whose HA5C setting is not given | No |
   | How does a move speed up and slow down? | It does not: each move runs at its feed rate from start to end | Model Parameters 18 and 44 | The manual names the parameters but gives no HA5C values | No: real moves take a little longer |
-  | Which way is positive? | Right-handed about the twin's spindle axis (+X, out of the nose) | None | Parameter 11 can reverse the real motor | No |
+  | Which way is positive? | Right-handed about the twin's spindle axis (+X, out of the nose): counter-clockwise as seen from in front | Clockwise | Parameter 11 can reverse the real motor, and the manuals point both ways (section 7) | No |
   | How fast can it go? | The feed rate given, or the manual's 270 °/s without one, and never above the joint's cited top speed | None | Both limits are cited. The joint's cap (330 °/s on v3) slowed no example, since the manual's feeds stop at 270 °/s | Yes (cited) |
   | What about the signals to and from the mill (G86, G87, G89, G92, G93)? | No motion and no wait; G94 adds the manual's 250 ms | Simulate a mill | There is no mill in the simulation | The 250 ms is the manual's |
   | What about G73 and G85? | Refused, with the reason | None | G73 is a "peck cycle (linear operation only)", and the manual lists G85 without describing it | Yes (cited) |
@@ -359,7 +364,8 @@ Claude Code proposed these. Daniel reviewed PR #11 and checked level 3.
   - Sizes come from one cited dimension, so other dimensions are off by up to several percent.
   - The multi-view generator was not run, because no multi-view photo set exists yet.
 - **Placeholder physics.** Masses come from a placeholder density (1000 kg/m³), and the drive's
-  stiffness and damping are simulation choices, not machine facts.
+  stiffness and damping are simulation choices, not machine facts. The Haas UK page does give the
+  HA5C head's weight, "48 lb 21.8 kg", which a later twin can use.
 - **One joint about the front axis.** Pipeline B builds one spindle on one revolute joint. The
   backup drill press needs other axes, several joints and a sliding joint (`docs/poc-plan.md`,
   "Before more machines").
@@ -367,26 +373,142 @@ Claude Code proposed these. Daniel reviewed PR #11 and checked level 3.
   - Acceleration is not modelled: the manual names the parameters but gives no HA5C values.
   - The pause after each step stands in for machining.
   - How absolute and home moves turn, and the spindle's positive direction, are not confirmed.
-  - The runner is a script a person pastes into Isaac Sim. The no-script file works in 6.2.0,
-    but its tracking of the plan was not measured.
+  - The runner is a script a person pastes into Isaac Sim. The no-script file works in 6.2.0 and
+    looks the same by eye, but neither file's tracking of the plan was measured.
   - Only Example #5 was checked in Isaac Sim. The other examples are checked by tests only.
   - Only rotary indexing is modelled. The HA5C's linear mode (Parameter 12) and its CNC relay
     and remote inputs are out of scope.
 - **A person stays in the loop.** The agent asks a person when the sources do not settle a
   judgement, such as which parts turn, and needs a person to fetch pages that block scripts.
-  Every twin waits for a person's review. None of the four twins has been reviewed in the
-  dashboard yet.
+  Every twin waits for a person's review. Daniel approved HA5C v3 and TH240 v1 on 2026-10-19,
+  with his reasons. HA5C v1 and v2 are not reviewed: v3 replaces them, and a request reuses it.
 - **Local and single-user.** The API has no login and listens on 127.0.0.1 only. The knowledge
   base is JSON files with one writer at a time. Pipelines A, C and D are stubs.
+- **Licenses.** Hunyuan3D-2's license excludes the EU, the UK and South Korea. The team is in the
+  US, so this matters only for a release or a deployment abroad (decision 0011).
 
-## 7. Next
-- **To close the PoC:** review the checked twins in the dashboard (HA5C v2 and v3, TH240 v1), with
-  what was seen in Isaac Sim as the reason.
-- **For the integration phase:**
-  - multi-view input;
-  - more joint types and machines (the drill press first needs its own decision);
-  - measured tracking of programs in Isaac Sim, then a choice between the runner and the
-    no-script file;
-  - the Neo4j knowledge base and Celery jobs;
-  - Pipelines A, C and D from their owners;
-  - formal metrics on the standardized test set.
+## 7. Open questions, by priority
+Daniel answered what he could on 2026-10-19. We then researched the machine questions ourselves
+in trusted sources, the manuals and the makers' pages
+(`docs/research/2026-10-19-open-questions-research.md`). A platform agent should do that
+research one day too. What is left is below, most important first.
+
+### 7.1 For the advisors
+1. **Access.** The repository is private. Would you like to be invited as collaborators, or may we
+   make it public? If it goes public, the team must first choose a license.
+2. **How far control logic should go.** For a proof of concept, we consider a program that drives
+   the joint as the manual describes "functional" enough. Should a later version also model the
+   real controller's acceleration, and the signals between the indexer and a mill (the remote
+   Cycle Start and the CNC relay)?
+3. **The lab's photos.** When will they arrive, and of which machines? Multi-view photos would let
+   us run the multi-view generator and test the size errors (item 10).
+4. **A real HA5C.** Does the lab, or anyone at CSUN, have an HA5C or a similar Haas indexer? One
+   look would settle items 7 to 9.
+5. **The next machine.** Should the next twin be the backup drill press (section 8), or a machine
+   from the lab?
+6. **Evaluation.** Which of the metrics from Dr. Li's agentic-pipeline deck matter first? Our
+   methodology lists asset retrieval correctness, component coverage, count accuracy,
+   spatial-relation plausibility, placement quality, render-vs-input visual match and trace
+   quality, plus a functional check of our own. On which test set should they be measured?
+
+### 7.2 About the HA5C: researched, still open
+7. **Does the six-screw disc turn?** No source found says. The 2006 parts list names a "SPINDLE
+   COVER S5C" and a "BEARING END CAP", and lists six cap screws and six copper washers, without
+   saying which part they hold. [INFERENCE] Six screws with sealing washers suggest a fixed
+   cover, which agrees with the twin (the nose turns alone).
+8. **Which way does a positive step turn?** The manuals point both ways.
+   - The 2006 manual says "All Haas indexers home in the clockwise direction as viewed from the
+     spindle", and the 2012 manual says the same, "as viewed from the platter/spindle".
+   - Parameter 27's "+256: search for home in positive direction" implies that this clockwise
+     search is the negative direction.
+   - The 2012 manual says "The direction of G33 motion is clockwise when the step size is set to
+     1.000", without saying from where.
+
+   The twin turns counter-clockwise, as seen from the front, for a positive step.
+9. **The controller's settings:**
+   - the direction of a program's return home (Parameter 27);
+   - acceleration (Parameters 18 and 44; for 18 the two manuals even give different scale
+     factors, "(Par 18)*100" and "(Par 18)*10");
+   - the pause between steps (Parameter 16).
+
+   Neither manual gives the HA5C's values. The 2012 manual keeps the 2006 programming model.
+   Whether a 2026 HA5C controller does is not confirmed.
+10. **Sizes.**
+    - The HA5C model is about 3% small in both width and height (v2: -3.0% and -3.0%). Is that
+      the generator or our method? More photos from other angles would tell. A platform agent could find them online
+      without needing a person.
+    - Daniel read 7.93 in on the drawing as the depth from the spindle nose to the back. What 7.80
+      in spans is not known.
+
+### 7.3 Measurements still to make
+11. **How closely the spindle follows the plan** in Isaac Sim: with the runner, with the no-script
+    file, and the drive's settle time. This decides whether the no-script file can become the
+    default.
+12. **Two quick checks:**
+    - the runner that prints on every run (written on 2026-10-19), and Example #3, both in the
+      `2026-10-19_...` program folders;
+    - writing the cited weight (21.8 kg) and top speed into the twin itself. Neither is in the
+      file yet: masses use the placeholder density, and only the interpreter enforces the top
+      speed.
+
+### 7.4 Before more agents, users or a release
+13. **Codex.** We want the platform to work with Claude Code and, later, Codex. Codex supports
+    local MCP servers like ours, configured in `.codex/config.toml`, but its default tool timeout
+    is 60 s, while generating a mesh takes 47-57 s. A Codex setup needs a longer timeout and a
+    procedure worded for Codex. Not yet tried.
+14. **Unattended runs.** Whether unattended `claude -p` runs stay on the subscription is not
+    confirmed. That matters if the dashboard ever starts the agent itself (decision 0003).
+15. **Several writers.** The API and the agent's MCP server are two programs that write into the
+    same data folder. Today they write different files. With several users or agents, two could
+    write the same file at once, and one write could be lost. The database planned for the
+    integration phase (SQLite or Neo4j) handles that (decision 0008).
+16. **The multi-view input order.** Which side of the machine each of the generator's four images
+    must show, to be checked with its example images before the first multi-view run.
+17. **One license not confirmed:** that of the background-removal model `u2net.onnx`, which the
+    generator's rembg package downloads. The package itself is MIT. To check before any release.
+
+## 8. Next
+### What the next machine needs: the backup drill press
+The Grizzly T33901 manual describes these motions:
+- **the spindle** turns, at twelve belt-selected speeds, 340-2860 RPM;
+- **the quill** slides 3-1/4 in, moved down by three downfeed handles and returned by a spring,
+  with an adjustable depth stop;
+- **the table** "moves vertically, rotates 360° around its center, rotates 360° around the column,
+  and tilts 45° left or right", and each motion has a lock;
+- **the controls** are a keyed ON/OFF switch, the LED and the laser.
+
+The manual also gives a cited weight of 108 lb, and sizes. Today, Pipeline B builds one revolute
+joint about the twin's +X, and the exporter refuses sliding (prismatic) joints, though the contract
+allows them. [INFERENCE] A drill-press twin needs these decisions, each with its own record:
+1. **Several moving parts from one mesh.** How to cut out the quill with the spindle and chuck,
+   the handles, the table and its arm. One cylinder cut is not enough. The options include
+   several cuts in the geometry spec, learned part segmentation, or more photos.
+2. **Joint types and axes.** Vertical and tilted axes, and sliding joints for the quill and the
+   table height. The exporter needs prismatic joints with linear drives.
+3. **A chain of joints.**
+   - The base and column are fixed.
+   - The table arm slides up the column and turns around it.
+   - The table tilts and turns on the arm.
+   - The quill slides in the head, and the spindle turns in the quill.
+
+   The exporter today handles one parent and one child.
+4. **Coupled motion.** The downfeed handles turn while the quill slides. Leads to try: PhysX's
+   rack-and-pinion joint, or NVIDIA's mimic joints. Neither is in usd-core's UsdPhysics, and
+   neither has been checked in Isaac Sim 6.2.
+5. **Springs, stops and locks.** The quill's return spring (a drive towards the top), the depth
+   stop (an adjustable limit), and adjustments that are locked rather than driven.
+6. **Control logic for a manual machine.** It has no program. Its "control" is a keyed switch, a
+   belt speed chosen from twelve, and the operator's feed down to the depth stop. We need to decide
+   how a `ControlBehavior` describes that.
+7. **Facts and scale.** Which cited dimension sets the scale (for example the 7 in from spindle to
+   column), and how the cited 108 lb is split between the parts.
+
+### For the integration phase
+- multi-view input, and an agent that finds more photos and documents online;
+- more joint types and machines (above);
+- measured tracking of programs in Isaac Sim, then a choice between the runner and the no-script
+  file;
+- the Neo4j knowledge base and Celery jobs;
+- Pipelines A, C and D from their owners;
+- a Codex setup beside Claude Code;
+- formal metrics on the standardized test set.

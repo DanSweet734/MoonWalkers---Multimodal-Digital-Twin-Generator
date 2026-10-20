@@ -173,7 +173,8 @@ one origin and the API needs no CORS settings.
   none. Daniel's hand check (`docs/setup/dashboard.md`) covers it. (Answered 2026-10-18: "minimal
   but functional", worklog 2026-10-18.)
 - **PDFs in a sandboxed page:** whether browsers open them is not tested. They are served without
-  the sandbox policy.
+  the sandbox policy. (Answered 2026-10-19: the "saved copy" links open the PDF in a separate tab,
+  Daniel's check.)
 - **Separate processes.** The MCP server and the API are separate processes on one data folder.
   Each has its own lock, and they write different files. Two writers on the same file at the same
   moment are not guarded against (decision 0008: one writer at a time).

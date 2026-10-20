@@ -118,4 +118,5 @@ Pipeline B is used on other machines.
       Grizzly T33901 drill press, has "about five joints" (decision 0002). [INFERENCE] Its spindle
       turns about, and its quill slides along, a vertical axis, so it needs other axes, several
       joints and prismatic joints. Noted Oct 18, 2026, while fixing the item above; it needs its
-      own decision. Not started.
+      own decision. Not started. (Oct 19, 2026: its manual was read, and the seven decisions it
+      needs are listed in `docs/poc-report.md`, section 8.)

@@ -111,7 +111,9 @@ Result: 0.189268 m per model unit, with an axis height of 0.5368 units. The size
 - width: -3.0% (cited 15.32 in, fact confidence 0.7);
 - height with the handle: -3.0% (cited 8.3 in, fact confidence 0.8);
 - depth: +7.9% (cited 7.93 in, fact confidence 0.4; which dimension it is was inferred from where
-  its text sits on the drawing).
+  its text sits on the drawing). On 2026-10-19 Daniel read 7.93 in as the depth from the spindle
+  nose to the back. The reference facts now cite his reading, with confidence 0.7, for later
+  builds; this run is unchanged.
 
 ## Consequences
 - Re-running a build costs nothing: the generator and the assembly are reused. A second request

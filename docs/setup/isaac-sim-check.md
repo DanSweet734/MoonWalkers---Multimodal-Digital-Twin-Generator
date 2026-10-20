@@ -175,6 +175,13 @@ Its `PROGRAM.md` lists every move with its start and end times. The method is de
 - `program_native.usdc` (step 5, in a new session) made the same moves with no script and
   stopped where it started.
 - Example #3 (step 6) was not checked.
+- In a third session the native file was played again, with no errors. By eye, the two files play
+  identically.
+
+**To try the changed runner** (it prints its lines on every run), use the folders written on
+2026-10-19: `...\programs\2026-10-19_ha5c-manual-example-5-subroutine_v3\` and
+`...\programs\2026-10-19_ha5c-manual-example-3_v3\`. Follow steps 1 to 4 in each. On the second
+Play the output should print `first physics step at t = ... (run 2)`.
 
 Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 

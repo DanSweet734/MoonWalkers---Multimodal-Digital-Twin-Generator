@@ -130,7 +130,10 @@ sessions, with no errors in either log.
 - **`program_native.usdc` with no script: it moves.** In a new session it "performed the moves as
   program.usdc with the script", and stopped exactly where it started. So Isaac Sim 6.2.0 follows
   time samples on `drive:angular:physics:targetPosition` by itself. Its timing was not compared
-  with a clock.
+  with a clock. Daniel later opened it again in a third session (log `kit_20261019_202904.log`:
+  Play at 73.7 s for 36 s, no errors). By eye, the files with and without the script play
+  identically, and the native file "Looked just as fast" (Daniel). Isaac Sim's log does not record
+  joint angles, so it cannot confirm the timing.
 - **One fix from the check.** On the second Play, the runner printed nothing, because it printed
   its lines once per start of the script. The joint still moved, since the targets are set on
   every step. `isaac_runner.Progress` now starts a new run whenever the timeline's time goes back,

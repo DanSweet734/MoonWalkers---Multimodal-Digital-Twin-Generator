@@ -276,8 +276,12 @@ the open shells show through [INFERENCE].
 
 ## Open questions
 1. Does the six-screw disc turn on a real HA5C? Lab photos or a person at a machine could settle it.
+   (2026-10-19: researched in the 2006 and 2012 manuals and online, still not settled;
+   `2026-10-19-open-questions-research.md`, section 1.)
 2. Is 7.93 in the overall depth, with or without the nose? What is 7.80 in? (15.32 in is the full
-   width, motor end to lever tip: Daniel's reading, 2026-10-18.)
+   width, motor end to lever tip: Daniel's reading, 2026-10-18.) (2026-10-19: Daniel read 7.93 in
+   as the depth from the spindle nose to the back, and the reference facts cite his reading. 7.80
+   in is still not identified.)
 3. Which side of the object is the multi-view model's `left` image (before the first multi-view run)?
 4. What is the license of the `u2net.onnx` model (rembg's code is MIT)?
 5. Is the uniform -3% size difference the generator's or ours? A second photo or a multi-view run

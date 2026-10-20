@@ -48,7 +48,7 @@ same with no script. The proof of concept's report, with the decisions behind it
 | Background research (digital twins, image-to-3D models, agents, prior MoonWalkers work) | Done |
 | Scope and goals | Defined (see [What it does](#what-it-does)) |
 | Architecture design, surveys, sketches and Figma wireframes | Done |
-| Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and awaiting stakeholder approval |
+| Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and turned in. No explicit approval yet; we treat it as approved unless the stakeholders say otherwise (Oct 19, 2026) |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
 | Proof of concept | **Success levels 1-3 met; Phase 6 in review.** Phases 0-5 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026; a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse; the dashboard took a second machine (TH240, level 2). Phase 6: the manual's Example #5 drove HA5C v3's spindle in Isaac Sim 6.2.0 on Oct 19, 2026 (level 3). See [docs/poc-plan.md](docs/poc-plan.md) and [docs/poc-report.md](docs/poc-report.md) |
 | Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing, reviews), JSON-file knowledge base, USD exporter (text or binary) + validator, image-to-3D generator adapter, an MCP server with 16 tools for the agent, and a local FastAPI API, all tested. Dashboard: barebones React + TypeScript pages for jobs, twins with their sources, reviews and sources |
@@ -339,7 +339,7 @@ flowchart LR
 
 | Decision | State |
 |---|---|
-| AI model and agent runtime | To be researched while we build |
+| AI model and agent runtime | The proof of concept uses Claude Code through our MCP server (decision 0003); Codex is planned next, and its needs are in [docs/poc-report.md](docs/poc-report.md), section 7. The final product's model is still to be researched |
 | Owners for non-pipeline components | Deferred until the proof of concept works |
 | Live 3D view in the dashboard | Wished for, not a requirement |
 | Time targets for a build | None for now; metrics will come from testing |

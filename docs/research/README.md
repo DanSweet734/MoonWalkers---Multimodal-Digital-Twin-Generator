@@ -17,6 +17,10 @@
   semantics (step table, G codes, loops, subroutines, auto continue, parameters, examples), and how a
   program can drive a joint in Isaac Sim (per-step callbacks, the SimulationManager API, the drive
   formula, the Script Editor).
+- `2026-10-19-open-questions-research.md` - before presenting the PoC: what trusted sources say
+  about the PoC's open questions (the six-screw disc, spindle and home direction, acceleration,
+  today's controller, the HA5C's weight), the backup drill press's moving parts, couplings in
+  PhysX, and running our MCP server from Codex.
 - `2026-10-18-api-and-dashboard.md` - Phase 5: FastAPI 0.146 (release, pinning, what the install
   added), generating TypeScript types (why not `openapi-typescript` or `json-schema-to-typescript`),
   Node's test runner for TypeScript, protecting a local API without a login (OWASP, the MCP
