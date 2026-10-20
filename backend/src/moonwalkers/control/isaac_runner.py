@@ -7,8 +7,8 @@
 3. Press Play. On every physics step the runner sets the joint's drive target to the program's
    planned angle at that moment, and its target velocity to the planned speed, so the drive does
    not trail behind.
-4. Press Stop, then Play, to run the program again from the start. Running this file again
-   replaces the earlier runner; ``stop()`` removes it.
+4. Press Stop, then Play, to run the program again from the start; the runner prints its lines
+   again. Running this file again replaces the earlier runner; ``stop()`` removes it.
 
 The program's motion is stored in the stage itself: every joint with the attributes
 ``moonwalkers:program:times`` (seconds) and ``moonwalkers:program:anglesDeg`` (degrees), written by
@@ -63,6 +63,35 @@ class Program:
         return a0 + speed * (t - t0), speed
 
 
+class Progress:
+    """What the runner prints as the timeline runs. A run starts on the first physics step, and
+    again whenever the timeline's time goes back, as it does on Stop, then Play."""
+
+    def __init__(self, programs):
+        self.programs = programs
+        self.runs = 0
+        self.last_t = None
+        self.finished = set()
+
+    def lines(self, t):
+        """The lines to print on the physics step at timeline time ``t`` (seconds)."""
+        lines = []
+        if self.last_t is None or t < self.last_t:
+            self.runs += 1
+            self.finished = set()
+            again = f" (run {self.runs})" if self.runs > 1 else ""
+            lines.append(f"MoonWalkers runner: first physics step at t = {t:.3f} s{again}")
+        self.last_t = t
+        for program in self.programs:
+            if t >= program.duration and program.joint_path not in self.finished:
+                self.finished.add(program.joint_path)
+                lines.append(
+                    f"MoonWalkers runner: '{program.name}' finished at {program.duration:.3f} s, "
+                    f"target {program.angles[-1]:.3f} deg"
+                )
+        return lines
+
+
 def find_programs(stage):
     """Every joint on the stage that carries a program."""
     programs = []
@@ -101,23 +130,16 @@ def start():
         drive.CreateTargetPositionAttr()
         drive.CreateTargetVelocityAttr()
         drives.append((drive, program))
-    state = {"first": True, "finished": set()}
+    progress = Progress(programs)
 
     def on_step(*_args):
         t = float(timeline.get_current_time())
-        if state["first"]:
-            print(f"MoonWalkers runner: first physics step at t = {t:.3f} s")
-            state["first"] = False
         for drive, program in drives:
             angle, speed = program.target_at(t)
             drive.GetTargetPositionAttr().Set(angle)
             drive.GetTargetVelocityAttr().Set(speed)
-            if t >= program.duration and program.joint_path not in state["finished"]:
-                state["finished"].add(program.joint_path)
-                print(
-                    f"MoonWalkers runner: '{program.name}' finished at {program.duration:.3f} s, "
-                    f"target {program.angles[-1]:.3f} deg"
-                )
+        for line in progress.lines(t):
+            print(line)
 
     api, handle = _subscribe(on_step)
     setattr(builtins, HANDLE, (api, handle))

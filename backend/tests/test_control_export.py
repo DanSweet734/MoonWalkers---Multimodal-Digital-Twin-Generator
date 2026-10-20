@@ -92,6 +92,25 @@ def test_the_runner_follows_the_program_it_finds_on_the_stage(
         runner.Program("/j", "p", [0.0, 2.0, 1.0], [0.0, 1.0, 2.0])
 
 
+def test_the_runner_prints_its_lines_again_after_stop_then_play(
+    tmp_path: Path, twin_and_result
+) -> None:
+    twin, result = twin_and_result
+    folder = write_program_folder(tmp_path / "p", program(), twin, [result], tmp_path).folder
+    runner = load_runner(folder)
+    progress = runner.Progress(runner.find_programs(Usd.Stage.Open(str(folder / "program.usdc"))))
+    finished = "'ha5c-manual-example-5-subroutine' finished at 16.112 s, target 0.000 deg"
+    # Daniel's check on 2026-10-19: Play, the program to its end, Stop, then Play again
+    assert progress.lines(1 / 60) == ["MoonWalkers runner: first physics step at t = 0.017 s"]
+    assert progress.lines(8.0) == []
+    assert progress.lines(16.2) == [f"MoonWalkers runner: {finished}"]
+    assert progress.lines(30.0) == []
+    assert progress.lines(1 / 60) == [
+        "MoonWalkers runner: first physics step at t = 0.017 s (run 2)"
+    ]
+    assert progress.lines(16.2) == [f"MoonWalkers runner: {finished}"]
+
+
 def test_the_joints_cited_top_speed_caps_the_feeds(tmp_path: Path, twin_and_result) -> None:
     twin, result = twin_and_result
     slow = result.model_copy(

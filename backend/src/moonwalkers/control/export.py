@@ -6,8 +6,8 @@ A program folder holds::
     trajectory.json      the interpreter's output: settings, waypoints, events and notes
     program.usdc         the twin, holding its start angle, with the program on the driven joint
     run_program.py       the runner to load in Isaac Sim's Script Editor (isaac_runner.py)
-    program_native.usdc  the same motion as time samples on the drive's own target: a test of
-                         whether Isaac Sim follows them with no runner
+    program_native.usdc  the same motion as time samples on the drive's own target, which Isaac
+                         Sim 6.2.0 follows with no runner (checked on 2026-10-19)
     PROGRAM.md           the steps, the timeline, what to check, and room for the result
 
 On the driven joint, ``program.usdc`` carries ``moonwalkers:program:times`` (seconds) and
@@ -175,13 +175,14 @@ def program_notes(
         "   the bottom. It prints the program it found and the physics API it uses.",
         "3. Press Play. The spindle should follow the timeline above, and the runner prints a",
         "   line when the program finishes. Stop, then Play, runs it again.",
-        "4. Optional: open `program_native.usdc` and press Play with no runner. Does it move?",
+        "4. Optional: in a new Isaac Sim session, open `program_native.usdc` and press Play",
+        "   without the script. It should make the same moves (Isaac Sim 6.2.0 did on 2026-10-19).",
         "",
         "- Isaac Sim version/build:",
         "- Runner output (API, first physics step):",
         "- Did the spindle follow the timeline (moves, pauses, return home)?",
         "- Where did it stop?",
-        "- `program_native.usdc` without the runner: moves or not:",
+        "- `program_native.usdc` without the script: same moves or not:",
         "- Success level reached (1-3):",
         "- Reviewer notes:",
     ]
