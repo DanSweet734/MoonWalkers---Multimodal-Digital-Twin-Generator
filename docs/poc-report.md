@@ -3,10 +3,14 @@
 **Status: final for the proof of concept, 2026-10-19.** All three success levels were met in Isaac
 Sim 6.2.0. Written by Claude Code with Daniel Sweet; the evidence for each claim is linked.
 
-**The answer, in short.** Yes: an AI agent can create a functional digital twin from machine photos.
+**The answer, in short.** Yes, at proof-of-concept level: for one machine and one photo, an AI
+agent created a digital twin that meets this PoC's definition of functional, a moving joint and a
+control program that drives it. Level 3 is shown for this one machine only (a second machine, the
+TH240, reached level 2), and not yet for several joints or against the real controller.
 - Claude Code, working through our platform's MCP tools, built a twin of the Haas HA5C rotary
   indexer from one photo. Every fact in it cites a Haas document, with a page or a quote.
-- The twin opens at its real size in Isaac Sim, and its spindle turns on a joint.
+- The twin opens close to its real size in Isaac Sim (width and height within 3%, depth +7.9%),
+  and its spindle turns on a joint.
 - The manual's own indexing program (Example #5) drives that joint as the manual describes.
 - A second request for the HA5C reuses the stored twin and says so. A second machine (the Haas
   TH240) went from a dashboard upload to a turning twin the same way.
@@ -43,8 +47,10 @@ end of Phase 6 the backend has 341 tests (`uv run pytest`) and the dashboard has
 ## 3. Results
 **Level 1, a scaled model with cited facts, opens in Isaac Sim: met.**
 - **HA5C v2** opened in Isaac Sim 6.2.0 on 2026-10-18. Daniel measured its sizes close to the
-  expected ones (worklog 2026-10-18). The scale comes from the drawing's 4.000 in centre height,
-  and the width and height are within 3% of the drawing (decision 0012).
+  expected ones (worklog 2026-10-18). The scale comes from the drawing's 4.000 in centre height.
+  The width and height are within 3% of the drawing (-3.0% each), and the depth is +7.9% against
+  the drawing's 7.93 in, which Daniel reads as running from the spindle nose to the back (decision
+  0012, the run's `RUN.md`).
 - **Haas TH240 v1** (a second machine, from a dashboard upload) opened on 2026-10-18. Its height
   is within 0.1% of the drawing, its width +2.7% and its depth +6.6% (its `RUN.md`).
 
@@ -419,8 +425,8 @@ research one day too. What is left is below, most important first.
 8. **Which way does a positive step turn?** The manuals point both ways.
    - The 2006 manual says "All Haas indexers home in the clockwise direction as viewed from the
      spindle", and the 2012 manual says the same, "as viewed from the platter/spindle".
-   - Parameter 27's "+256: search for home in positive direction" implies that this clockwise
-     search is the negative direction.
+   - [INFERENCE] Parameter 27's "+256: search for home in positive direction" implies that this
+     clockwise search is the negative direction. No manual states it.
    - The 2012 manual says "The direction of G33 motion is clockwise when the step size is set to
      1.000", without saying from where.
 
