@@ -1,7 +1,8 @@
 # MoonWalkers proof of concept: report
 
 **Status: final for the proof of concept, 2026-10-19.** All three success levels were met in Isaac
-Sim 6.2.0. Written by Claude Code with Daniel Sweet; the evidence for each claim is linked.
+Sim 6.2.0. Written by Claude Code with Daniel Sweet. The evidence for each claim is named: a
+decision record, a worklog, a run's `RUN.md` or a program folder.
 
 **The answer, in short.** Yes, at proof-of-concept level: for one machine and one photo, an AI
 agent created a digital twin that meets this PoC's definition of functional, a moving joint and a
@@ -55,8 +56,8 @@ end of Phase 6 the backend has 341 tests (`uv run pytest`) and the dashboard has
   is within 0.1% of the drawing, its width +2.7% and its depth +6.6% (its `RUN.md`).
 
 **Level 2, the spindle rotates on a joint: met.**
-- **HA5C v2:** the spindle turned at the set speed, reversed when the target was set to -90, and
-  held a quarter turn, with no collisions. Small seam gaps show after turning; they are cosmetic
+- **HA5C v2:** the spindle turned at the set speed, reversed when its target velocity was set to
+  -90, and held a quarter turn, with no collisions. Small seam gaps show after turning; they are cosmetic
   (decision 0012).
 - **TH240 v1:** the platter turned cleanly about its own centre, with no wobble and no collisions.
 
@@ -294,8 +295,9 @@ it costs us.
   - **Why:** the decisions that need judgement (the axes, what turns, where the scale comes from)
     stay visible and are cited one by one. A person can follow a build from its run folder, and
     any MCP client can use the same server.
-  - **Cost:** about 15 tool calls per build. The tool descriptions take about 8,800 tokens of the
-    agent's context (measured with 15 tools). One tool runs at a time.
+  - **Cost:** many tool calls. The v3 build took more than 30 up to `submit_twin` (worklog
+    2026-10-18), where decision 0013 had estimated about 15. The tool descriptions take about
+    8,800 tokens of the agent's context (measured with 15 tools). One tool runs at a time.
 - **0014, the API and the barebones dashboard** (Daniel chose the job flow, the install and the
   look).
   - **Chose:** a local FastAPI API (127.0.0.1 only) serving a plain monochrome React dashboard.
