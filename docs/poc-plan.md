@@ -4,6 +4,11 @@
 **Machine:** Haas HA5C rotary indexer. **Decided:** Oct 16, 2026 (see `docs/decisions/`).
 Stop at the end of each phase, open a pull request, and wait for review before starting the next.
 
+**Complete.** All phases are done, and the PoC was presented to the advisors on Oct 22, 2026, with
+positive feedback (`docs/poc-report.md`). The next phase, integration, starts with the Grizzly
+T33901 drill press, which the advisors approved. Its plan is written as that phase's first task
+(CLAUDE.md, "Current phase").
+
 ## Success levels
 1. A scaled 3D model of the HA5C, with cited facts, that opens in Isaac Sim.
 2. The spindle is a separate part on a revolute joint that rotates in Isaac Sim.

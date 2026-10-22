@@ -97,7 +97,10 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
   Outputs You generate." Review it again before any release (decision 0011).
 - **pymeshlab:** GPL-3.0. It lives only in this environment and runs in the generator's own
   process; the backend never imports it.
-- **rembg:** MIT. The license of the `u2net.onnx` model it downloads is not confirmed.
+- **rembg:** MIT. The license of the `u2net.onnx` model it downloads is not confirmed. On
+  2026-10-22, the U-2-Net project the model comes from [INFERENCE: rembg names it `u2net`] showed
+  the Apache-2.0 license (https://github.com/xuebinqin/U-2-Net). Its page states no separate terms
+  for the trained weights.
 - **The rest:** not reviewed one by one. On 2026-10-17 the PyPI entries of the current releases of
   torch, torchvision, diffusers, transformers, accelerate, einops, omegaconf and opencv-python listed
   BSD, Apache-2.0 or MIT licenses; the older pinned versions were not checked.

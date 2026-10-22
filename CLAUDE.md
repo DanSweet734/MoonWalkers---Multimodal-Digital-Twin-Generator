@@ -6,19 +6,40 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: proof of concept (PoC)
-- Goal: show an AI agent can create a digital twin from one input type: **machine photos** (Pipeline B).
-- Subject machine: **Haas HA5C** rotary indexer (one servo-driven spindle = one revolute joint; indexing
-  program = control logic). Backup: Grizzly T33901 drill press.
-- Pipelines A, C, D are **stubs** that return fixture data in the shared contract. Do not build them.
-- Success levels: (1) scaled 3D model with cited facts opens in Isaac Sim; (2) spindle joint rotates;
-  (3) an indexing program drives the joint. A second request for the same machine must reuse the stored
-  twin and say so.
-- Human review is expected: results default to `needs_human_review = true`. People approve or reject
-  a twin version in the dashboard; reviews are separate append-only records. A request reuses the
-  newest approved version, else the newest not rejected; approving never locks a twin, it can still
-  be rebuilt (decision 0015). The agent never reviews.
-- Work in the phases listed in `docs/poc-plan.md`. Stop at the end of each phase for review.
+## Current phase: integration, starting with the Grizzly T33901 drill press
+- **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three
+  success levels: a scaled model with cited facts; a spindle joint that rotates; an indexing
+  program that drives it. It was presented to the advisors on 2026-10-22, with positive feedback.
+  The record is `docs/poc-report.md` (results, decisions 0001-0016, inaccuracies, open questions)
+  and `docs/poc-plan.md`. The HA5C remains the reference twin.
+- **Next machine, approved by the advisors on 2026-10-22: Grizzly T33901 drill press.** Its goals:
+  - several moving parts cut from one model;
+  - sliding (prismatic) joints and a chain of joints;
+  - motions that move together: the downfeed handles turn as the quill slides;
+  - a way to describe a manual machine's control.
+
+  Start from:
+  - `docs/poc-report.md`, section 8, the seven decisions it needs;
+  - `docs/research/2026-10-19-open-questions-research.md`, section 6, the manual's cited facts.
+    The manual is in `data/machines/grizzly-t33901/inputs/`; no photo has been collected yet.
+- **First task of the phase:** write its plan, like `docs/poc-plan.md`, and stop for review.
+- **Direction from the advisors** (`docs/poc-report.md`, section 7):
+  - build a more complete product before the lab's photos and real-world checks come;
+  - get as close to the real machine as the sources allow, and log every inaccuracy;
+  - use Claude Code and Anthropic's tools first; compatibility with other agents (Codex) comes
+    later;
+  - model the HA5C controller's acceleration and mill signals if possible. If not possible,
+    record why and bring it back to the stakeholders.
+- **Pipelines A, C and D belong to their owners** (Ava, Kiran, Sarkis). They replace their stubs
+  in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and
+  do not change the contract without a decision record.
+- **Human review is expected.** Results default to `needs_human_review = true`.
+  - People approve or reject a twin version in the dashboard, and reviews are separate
+    append-only records.
+  - A request reuses the newest approved version, else the newest not rejected.
+  - Approving never locks a twin: it can still be rebuilt (decision 0015).
+  - The agent never reviews.
+- **Work in the phases of the current plan.** Stop at the end of each phase for review.
 
 ## Non-negotiable rules
 1. **Every fact needs a source.** Spec values, dimensions, version numbers, and tool capabilities must
@@ -39,7 +60,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 ## Architecture (data flow)
 Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) -> `PipelineResult`
 -> Agent Orchestrator -> Knowledge Base (store interface) + USD Exporter -> `.usd` -> Isaac Sim.
-- For the PoC, **Claude Code is the agent**: the backend exposes its actions as MCP tools (add source,
+- **Claude Code is the agent** (decision 0003; the advisors confirmed on 2026-10-22 to use Claude
+  Code first): the backend exposes its actions as MCP tools (add source,
   identify machine, check knowledge base, generate geometry, set scale, add joint, export, submit).
   Server: `moonwalkers.mcp`, registered in `.mcp.json` (decision 0013). The agent follows
   `docs/agent-procedure.md`.
@@ -139,6 +161,9 @@ Dashboard (run from `dashboard/`):
   cannot be merged with `gh pr merge`; it needs the async merge API
   (`gh api --method PUT repos/{owner}/{repo}/pulls/{n}/merge-async -f merge_method=merge -f merge_action=direct_merge -f sha=<head sha>`).
   GitHub then rebases the next PR itself (seen on 2026-10-17; worklog of that date).
+- Teammates' pipeline branches and PRs (for example `Sarkis`) run beside the phase PR and are
+  theirs: do not commit to, rebase or delete them. A change that touches their pipeline folders
+  or the contract is discussed with the owner first.
 
 ## Documentation workflow (do this for every task)
 - Append a dated entry to `docs/worklog/YYYY-MM-DD.md`: goal, what you did, commands run, results
