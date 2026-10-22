@@ -8,10 +8,10 @@ A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's 
 
 ## Project status
 
-**Proof of concept: all three success levels met in Isaac Sim. Phases 0-5 are done, and Phase 6
-reached level 3 on Oct 19, 2026 and is in review** (scaffold;
-knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP; API and dashboard;
-control logic). The orchestrator stores twin records, reuses a stored twin on a
+**Proof of concept: all three success levels met in Isaac Sim, and Phases 0-6 are done**
+(scaffold; knowledge base and orchestrator core; USD export; Pipeline B; agent via MCP; API and
+dashboard; control logic). Phase 6 reached level 3 on Oct 19, 2026 and was merged on Oct 20, 2026
+(PR #11). The orchestrator stores twin records, reuses a stored twin on a
 second request, and re-versions on request. The USD exporter writes simulatable twins (rigid bodies,
 a driven revolute joint, cited provenance) that pass two validators. A synthetic box-and-cylinder
 test twin opened and moved as expected in Isaac Sim 6.2.0 on Oct 17, 2026. Phase 3 built the first
@@ -50,7 +50,7 @@ same with no script. The proof of concept's report, with the decisions behind it
 | Architecture design, surveys, sketches and Figma wireframes | Done |
 | Software Requirements Specification (SRS) | Complete as of October 8th, 2026, written section by section by the team and turned in. No explicit approval yet; we treat it as approved unless the stakeholders say otherwise (Oct 19, 2026) |
 | Technology stack | **Decided (Oct 16, 2026):** see [Technology stack](#technology-stack) |
-| Proof of concept | **Success levels 1-3 met; Phase 6 in review.** Phases 0-5 done: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026; a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse; the dashboard took a second machine (TH240, level 2). Phase 6: the manual's Example #5 drove HA5C v3's spindle in Isaac Sim 6.2.0 on Oct 19, 2026 (level 3). See [docs/poc-plan.md](docs/poc-plan.md) and [docs/poc-report.md](docs/poc-report.md) |
+| Proof of concept | **Success levels 1-3 met; Phases 0-6 done** (Phase 6 merged Oct 20, 2026, PR #11). The report was checked against the repository on Oct 21, 2026 (PR #12) and goes to the advisors this week. Phases 0-5: the HA5C twin, built from one photo, reached success level 2 in Isaac Sim 6.2.0 on Oct 18, 2026; a fresh Claude Code session built HA5C v3 through the MCP tools and showed reuse; the dashboard took a second machine (TH240, level 2). Phase 6: the manual's Example #5 drove HA5C v3's spindle in Isaac Sim 6.2.0 on Oct 19, 2026 (level 3). See [docs/poc-plan.md](docs/poc-plan.md) and [docs/poc-report.md](docs/poc-report.md) |
 | Shared platform (dashboard, backend, knowledge base) | Backend: pipeline contract, Input Router, orchestrator core (reuse, re-versioning, export before storing, reviews), JSON-file knowledge base, USD exporter (text or binary) + validator, image-to-3D generator adapter, an MCP server with 16 tools for the agent, and a local FastAPI API, all tested. Dashboard: barebones React + TypeScript pages for jobs, twins with their sources, reviews and sources |
 | Input pipelines | Pipeline B (photos) turns one machine photo into a scaled body and spindle on a revolute joint, with facts cited from documents (decision 0012). Pipelines A, C, D are stubs returning cited HA5C fixture data. All four have an owner (see [The four pipelines](#the-four-pipelines)) |
 
@@ -301,7 +301,7 @@ Two alternatives were considered in our Oct 6 research: an all-Python stack with
 
 ## Proof of concept
 
-All three success levels met (Phases 0-6 of [docs/poc-plan.md](docs/poc-plan.md); Phase 6 in review). The HA5C twin reached level 2 in Isaac Sim 6.2.0 on Oct 18, 2026, and level 3 on Oct 19, 2026. It had to show that an AI agent can create a digital twin, in some capacity, from one input type. The report, with the results and the decisions behind them: [docs/poc-report.md](docs/poc-report.md). To run the dashboard: [docs/setup/dashboard.md](docs/setup/dashboard.md).
+All three success levels met, and Phases 0-6 of [docs/poc-plan.md](docs/poc-plan.md) are done (Phase 6 merged Oct 20, 2026). The HA5C twin reached level 2 in Isaac Sim 6.2.0 on Oct 18, 2026, and level 3 on Oct 19, 2026. It had to show that an AI agent can create a digital twin, in some capacity, from one input type. The report, with the results and the decisions behind them: [docs/poc-report.md](docs/poc-report.md). To run the dashboard: [docs/setup/dashboard.md](docs/setup/dashboard.md).
 
 - **Input:** machine photos to start (video is required in the final product), sourced online until test photos from Dr. Li's lab arrive.
 - **Subject:** the Haas HA5C rotary indexer: one well-known, relatively simple machine that has joints and control logic.
