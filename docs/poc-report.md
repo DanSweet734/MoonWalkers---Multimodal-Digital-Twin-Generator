@@ -518,8 +518,8 @@ These are tasks for the team, not questions for the advisors.
     same data folder. Today they write different files. With several users or agents, two could
     write the same file at once, and one write could be lost. The database planned for the
     integration phase (SQLite or Neo4j) handles that (decision 0008).
-    **Answer:** if it is a problem, the team looks into solutions together. The candidates
-    [INFERENCE]:
+    **Answer:** tackle it when the platform has several users, if that is where it goes. The
+    candidates then [INFERENCE]:
     - a lock per file or run folder;
     - one process that makes every write;
     - the SQLite or Neo4j store that decision 0008 already plans for several writers.
@@ -527,12 +527,22 @@ These are tasks for the team, not questions for the advisors.
     must show, to be checked with its example images before the first multi-view run.
     **Answer:** not raised; it is our choice. This is the generator's own convention: hy3dgen
     documents "front, front clockwise 90, back, front clockwise 270" (`docs/setup/generators.md`).
+    Check it before putting serious work into multi-view input. CLAUDE.md says so, so every new
+    conversation sees it.
 17. **One license not confirmed:** that of the background-removal model `u2net.onnx`, which the
     generator's rembg package downloads. The package itself is MIT. To check before any release.
     **Researched on 2026-10-22:** U-2-Net, the project the model comes from [INFERENCE: rembg
     names it `u2net`], is published under the Apache-2.0 license
     (https://github.com/xuebinqin/U-2-Net). Its page states no separate terms for the trained
     weights, so they stay not confirmed until a release needs them.
+18. **Scenes, not only machines** (raised by Daniel on 2026-10-22). The aim is to recreate whole
+    rooms and scenes. For example, a video of a machine in Dr. Li's lab could also recreate the lab
+    around it.
+    - Today Pipeline B removes the photo's background before generating, so it makes one object
+      per photo (`docs/setup/generators.md`, "How the backend uses it").
+    - A scene needs another structure [INFERENCE: not researched yet]. Either reconstruct the
+      whole scene from many views, or find each object, model it, and place it in the room.
+    - To research in a later phase, with video input.
 
 ## 8. Next
 ### The next machine: the Grizzly T33901 drill press (approved 2026-10-22)

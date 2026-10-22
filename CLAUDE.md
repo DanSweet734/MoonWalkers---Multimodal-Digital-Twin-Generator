@@ -30,9 +30,12 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     later;
   - model the HA5C controller's acceleration and mill signals if possible. If not possible,
     record why and bring it back to the stakeholders.
-- **Pipelines A, C and D belong to their owners** (Ava, Kiran, Sarkis). They replace their stubs
-  in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and
-  do not change the contract without a decision record.
+- **Who owns what.**
+  - Pipelines A, C and D belong to their owners (Ava, Kiran, Sarkis). They replace their stubs
+    in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and
+    do not change the contract without a decision record.
+  - Daniel and Claude Code own Pipeline B and the shared platform: contract, orchestrator,
+    knowledge base, exporter, MCP server, API and dashboard.
 - **Human review is expected.** Results default to `needs_human_review = true`.
   - People approve or reject a twin version in the dashboard, and reviews are separate
     append-only records.
@@ -93,6 +96,10 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   adapter in `generators/`. Primary: Hunyuan3D-2mv (multi-view). Fallback, and what the PoC uses while
   there is one photo: Hunyuan3D-2 single-image (decision 0011). Setup: `docs/setup/generators.md`
   (`C:\mw-gen` on Daniel's machine, found through `MOONWALKERS_GEN_ROOT`).
+  **Before any serious work with the multi-view model**, check which side of the machine each of
+  its four images must show. hy3dgen documents "front, front clockwise 90, back, front clockwise
+  270", but which side `left` is was never confirmed. Use the repository's example images
+  (`docs/setup/generators.md`, "Adding the multi-view model later").
 - Pipeline B method (decision 0012): a cited `geometry_spec.json` per run folder orients, splits and
   scales the generated mesh. One run folder holds one build, and its outputs are never overwritten.
   Twins with generated meshes are written as binary `.usdc`.
