@@ -27,14 +27,27 @@ Rules followed (sources in decision 0010 and docs/research/2026-10-17-usd-physic
 * Mass is not authored; physics engines infer it from the collision volume at 1000 kg/m^3. That is a
   placeholder, not the machine's real mass.
 * Every part, joint and the root carry their citations in ``customData["moonwalkers"]``.
+
+Several joints (decision 0017):
+
+* Revolute and prismatic joints both turn their frame's X axis onto the contract axis. Prismatic
+  limits and linear drive targets are in metres, the stage unit.
+* Joints form one tree from the root part, so a chain of any length is one articulation.
+* Parts that are not joined directly do not collide with each other (``PhysicsFilteredPairsAPI``):
+  a machine's own parts are held by its joints and limits, and a convex hull can enclose a part
+  that sits inside another (the spindle inside the head). Joined parts already do not collide (the
+  joint's ``collisionEnabled`` fallback is false). A twin of two parts gets no filtered pairs.
+* ``JointSettings`` gives one joint its own drive, limits (a lock or a depth stop), starting
+  position or coupling to another joint (decisions 0018 and 0019). Joints without settings get
+  ``drive`` (revolute) or a hold at 0 (prismatic), as before.
 """
 
 from __future__ import annotations
 
 import json
 import os
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
 from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import Any, Literal
@@ -53,6 +66,7 @@ from moonwalkers.contracts.pipeline_result import (
 from .frames import quat_between
 from .geometry import MeshData, primitive_mesh
 from .mesh_files import MESH_FILE_FORMATS, mesh_data_from_file
+from .physx_schemas import apply_mimic, define_rack_and_pinion, set_joint_state
 from .units import KILOGRAMS_PER_UNIT, METERS_PER_UNIT, usd_angle, usd_length
 
 WORLD_JOINT = "fixed_to_world"
@@ -74,14 +88,16 @@ class ExportError(ValueError):
 
 @dataclass(frozen=True)
 class DriveSettings:
-    """The angular drive written on every revolute joint.
+    """A joint drive: angular on a revolute joint, linear on a prismatic one.
 
     These are simulation tuning values chosen by us, not facts about a machine [INFERENCE]. The
     drive type "acceleration" makes the spring act on acceleration rather than force (UsdPhysics
     DriveAPI docs), so the response does not depend on the placeholder masses. Position mode holds
-    ``target`` (rad) with a critically damped spring: stiffness = w^2 and damping = 2w for w = 10
-    rad/s. Velocity mode turns at ``target`` (rad/s) with zero stiffness, as Isaac Sim's GUI
-    tutorial recommends for velocity control ("a high damping and zero stiffness").
+    ``target`` (rad, or m on a prismatic joint) with a critically damped spring: stiffness = w^2
+    and damping = 2w for w = 10 rad/s. Velocity mode moves at ``target`` (rad/s or m/s) with zero
+    stiffness, as Isaac Sim's GUI tutorial recommends for velocity control ("a high damping and
+    zero stiffness"). With the "acceleration" type, stiffness and damping have the same meaning
+    for both kinds (per second squared and per second).
     """
 
     mode: Literal["position", "velocity"] = "position"
@@ -98,13 +114,59 @@ class DriveSettings:
 
     @classmethod
     def hold(cls, angle_rad: float = 0.0) -> DriveSettings:
-        """Hold (or move to) a joint angle."""
+        """Hold (or move to) a joint position: an angle, or a distance on a prismatic joint."""
         return cls(mode="position", target=angle_rad)
 
     @classmethod
     def spin(cls, speed_rad_s: float) -> DriveSettings:
         """Turn continuously at a joint speed."""
         return cls(mode="velocity", target=speed_rad_s, stiffness=0.0, damping=20.0)
+
+    @classmethod
+    def free(cls, damping: float) -> DriveSettings:
+        """No spring: the joint moves freely within its limits, slowed by ``damping`` (a stand-in
+        for friction, so a pushed part comes to rest)."""
+        return cls(mode="velocity", target=0.0, stiffness=0.0, damping=damping)
+
+
+@dataclass(frozen=True)
+class JointCoupling:
+    """The joint follows ``leader``: position = ``ratio`` * leader position + ``offset``, in the
+    contract's units (rad per m for a turning joint that follows a sliding one; decision 0019).
+
+    ``method`` "mimic" writes PhysX's ``PhysxMimicJointAPI``, a two-way hard constraint inside the
+    articulation. "rack_and_pinion" writes a ``PhysxPhysicsRackAndPinionJoint`` kept out of the
+    articulation; it ties the joints' speeds, so ``offset`` comes from their starting positions.
+    """
+
+    leader: str
+    ratio: float
+    offset: float = 0.0
+    method: Literal["mimic", "rack_and_pinion"] = "mimic"
+
+
+@dataclass(frozen=True)
+class JointSettings:
+    """How one joint is written, beyond what the contract says (decisions 0017-0019).
+
+    ``drive`` is the joint's own drive, or None for no drive (a follower must have none: the
+    coupling moves it). ``limits`` replace the contract's, in its units: equal limits lock the
+    joint, and a depth stop narrows a slide. ``start`` is the position the joint starts at.
+    ``note`` says why, for example that a value is a stand-in; it is written into the joint's
+    provenance.
+    """
+
+    drive: DriveSettings | None
+    limits: tuple[float, float] | None = None
+    start: float | None = None
+    coupling: JointCoupling | None = None
+    note: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.limits is not None and self.limits[0] > self.limits[1]:
+            raise ValueError(f"lower limit {self.limits[0]} is above upper limit {self.limits[1]}")
+        if self.coupling is not None and self.drive is not None:
+            raise ValueError("a joint that follows another cannot have its own drive")
 
 
 def export_twin(
@@ -113,18 +175,21 @@ def export_twin(
     path: Path,
     drive: DriveSettings | None = None,
     data_dir: Path | None = None,
+    *,
+    joint_settings: Mapping[str, JointSettings] | None = None,
 ) -> Path:
     """Write the twin to ``path``; returns the path.
 
     ``.usda`` gives text with LF line endings, readable for small twins. ``.usdc`` gives a binary
     crate file, which NVIDIA's asset validator asks for once arrays pass 64 elements, as a
     generated mesh's do (decision 0012). ``data_dir`` is the project ``data/`` folder; mesh-file
-    parts are relative to it (contract).
+    parts are relative to it (contract). ``joint_settings`` maps joint ids to their settings.
     """
     path = Path(path)
     if path.suffix not in (".usda", ".usdc"):
         raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
-    stage = build_stage(twin, results, drive, data_dir)  # the stage owns its root layer: keep it
+    # The stage owns its root layer: keep it.
+    stage = build_stage(twin, results, drive, data_dir, joint_settings=joint_settings)
     return write_stage(stage, path)
 
 
@@ -152,9 +217,12 @@ def build_stage(
     results: Sequence[PipelineResult],
     drive: DriveSettings | None = None,
     data_dir: Path | None = None,
+    *,
+    joint_settings: Mapping[str, JointSettings] | None = None,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()
+    settings = dict(joint_settings or {})
     _check_results_match(twin, results)
     parts = _collect(results, "parts", "part_id")
     joints = _collect(results, "joints", "joint_id")
@@ -163,6 +231,8 @@ def build_stage(
     _check_prim_names(list(parts), reserved={JOINTS_SCOPE}, what="part")
     _check_prim_names(list(joints), reserved={WORLD_JOINT}, what="joint")
     root_part = _root_part(parts, joints)
+    _check_settings(settings, joints)
+    settings = _with_follower_starts(settings, joints)
 
     stage = Usd.Stage.CreateInMemory()
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
@@ -201,8 +271,13 @@ def build_stage(
         anchor.GetPrim().SetDocumentation(
             f"Fixes the root part '{root_part}' to the world, making a fixed-base articulation."
         )
-        for joint, result_id in joints.values():
-            _write_joint(stage, scope, joint, result_id, body_paths, drive)
+        joint_paths = {joint_id: scope.AppendChild(_identifier(joint_id)) for joint_id in joints}
+        for joint_id, (joint, result_id) in joints.items():
+            _write_joint(stage, scope, joint, result_id, body_paths, drive, settings.get(joint_id))
+        for joint_id, joint_setting in settings.items():
+            if joint_setting.coupling is not None:
+                _write_coupling(stage, joints, joint_paths, body_paths, joint_id, joint_setting)
+        _filter_unjoined_pairs(stage, body_paths, joints)
 
     UsdPhysics.Scene.Define(stage, SCENE_PATH)  # default gravity: earth, opposite the up axis
     return stage
@@ -249,8 +324,6 @@ def _root_part(parts: dict[str, tuple[Part, str]], joints: dict[str, tuple[Joint
         return next(iter(parts))
     children: dict[str, str] = {}
     for joint_id, (joint, _) in joints.items():
-        if joint.joint_type == "prismatic":
-            raise ExportError(f"joint '{joint_id}': prismatic joints are not exported yet")
         if joint.child_part in children:
             raise ExportError(
                 f"part '{joint.child_part}' is the child of two joints "
@@ -271,6 +344,40 @@ def _root_part(parts: dict[str, tuple[Part, str]], joints: dict[str, tuple[Joint
         if part != roots[0]:
             raise ExportError(f"part '{part}' is not connected to the root part '{roots[0]}'")
     return roots[0]
+
+
+def _check_settings(
+    settings: Mapping[str, JointSettings], joints: dict[str, tuple[Joint, str]]
+) -> None:
+    """Settings must name real joints, and fit their type; couplings must be ones PhysX takes."""
+    for joint_id, setting in settings.items():
+        if joint_id not in joints:
+            raise ExportError(f"settings name joint '{joint_id}', which the twin does not have")
+        joint = joints[joint_id][0]
+        if joint.joint_type == "fixed":
+            raise ExportError(f"joint '{joint_id}' is fixed, so it takes no settings")
+        coupling = setting.coupling
+        if coupling is None:
+            continue
+        if coupling.leader == joint_id or coupling.leader not in joints:
+            raise ExportError(f"joint '{joint_id}' follows '{coupling.leader}', not another joint")
+        leader = joints[coupling.leader][0]
+        if leader.joint_type == "fixed":
+            raise ExportError(
+                f"joint '{joint_id}' cannot follow the fixed joint '{leader.joint_id}'"
+            )
+        if coupling.method == "mimic" and joint.joint_type == "revolute":
+            limits = setting.limits or (joint.lower_limit, joint.upper_limit)
+            if None in limits:
+                # PhysxMimicJointAPI supports "PhysicsRevoluteJoint (with a limit set)".
+                raise ExportError(f"joint '{joint_id}' follows by mimic, so it needs limits")
+        if coupling.method == "rack_and_pinion" and (
+            joint.joint_type != "revolute" or leader.joint_type != "prismatic"
+        ):
+            raise ExportError(
+                f"joint '{joint_id}': a rack and pinion couples a revolute follower to a "
+                "prismatic leader"
+            )
 
 
 # ------------------------------------------------------------------------------------ writing
@@ -368,17 +475,21 @@ def _write_joint(
     result_id: str,
     body_paths: dict[str, Sdf.Path],
     drive: DriveSettings,
+    setting: JointSettings | None,
 ) -> None:
     path = scope.AppendChild(_identifier(joint.joint_id))
     if joint.joint_type == "revolute":
         usd_joint: UsdPhysics.Joint = UsdPhysics.RevoluteJoint.Define(stage, path)
+    elif joint.joint_type == "prismatic":
+        usd_joint = UsdPhysics.PrismaticJoint.Define(stage, path)
     else:
         usd_joint = UsdPhysics.FixedJoint.Define(stage, path)
     usd_joint.CreateBody0Rel().SetTargets([body_paths[joint.parent_part]])
     usd_joint.CreateBody1Rel().SetTargets([body_paths[joint.child_part]])
 
     # Parts sit at identity, so the joint frame is the same point in both bodies. The frame's X
-    # axis is turned onto the contract's joint axis, and the joint rotates about X.
+    # axis is turned onto the contract's joint axis, and the joint rotates about, or slides
+    # along, X.
     origin = Gf.Vec3f(*(usd_length(c) for c in joint.origin_m))
     w, x, y, z = quat_between((1.0, 0.0, 0.0), joint.axis)
     rotation = Gf.Quatf(w, Gf.Vec3f(x, y, z))
@@ -387,20 +498,33 @@ def _write_joint(
     usd_joint.CreateLocalRot0Attr(rotation)
     usd_joint.CreateLocalRot1Attr(rotation)
 
-    if joint.joint_type == "revolute":
-        revolute = UsdPhysics.RevoluteJoint(usd_joint.GetPrim())
-        revolute.CreateAxisAttr(UsdPhysics.Tokens.x)
-        if joint.lower_limit is not None:  # unlimited joints wrap on a 360 degree boundary
-            revolute.CreateLowerLimitAttr(usd_angle(joint.lower_limit))
-        if joint.upper_limit is not None:
-            revolute.CreateUpperLimitAttr(usd_angle(joint.upper_limit))
-        _write_drive(usd_joint.GetPrim(), drive)
-
     prim = usd_joint.GetPrim()
+    lower, upper = (
+        setting.limits if setting and setting.limits else (joint.lower_limit, joint.upper_limit)
+    )
+    if joint.joint_type == "revolute":
+        revolute = UsdPhysics.RevoluteJoint(prim)
+        revolute.CreateAxisAttr(UsdPhysics.Tokens.x)
+        if lower is not None:  # unlimited joints wrap on a 360 degree boundary
+            revolute.CreateLowerLimitAttr(usd_angle(lower))
+        if upper is not None:
+            revolute.CreateUpperLimitAttr(usd_angle(upper))
+    elif joint.joint_type == "prismatic":
+        prismatic = UsdPhysics.PrismaticJoint(prim)
+        prismatic.CreateAxisAttr(UsdPhysics.Tokens.x)
+        if lower is not None:
+            prismatic.CreateLowerLimitAttr(usd_length(lower))
+        if upper is not None:
+            prismatic.CreateUpperLimitAttr(usd_length(upper))
+    joint_drive = _joint_drive(joint, drive, setting)
+    if joint_drive is not None:
+        _write_drive(prim, joint_drive, _drive_kind(joint))
+
     prim.SetDocumentation(
         f"{joint.joint_type.capitalize()} joint '{joint.joint_id}': "
         f"{joint.parent_part} (body0) -> {joint.child_part} (body1)."
     )
+    length, speed = ("m", "m_s") if joint.joint_type == "prismatic" else ("rad", "rad_s")
     prim.SetCustomDataByKey(
         "moonwalkers",
         _clean(
@@ -410,25 +534,167 @@ def _write_joint(
                 "result_id": result_id,
                 "axis": json.dumps(list(joint.axis)),
                 "origin_m": json.dumps(list(joint.origin_m)),
-                "lower_limit_rad": joint.lower_limit,
-                "upper_limit_rad": joint.upper_limit,
-                "max_velocity_rad_s": joint.max_velocity,
+                f"lower_limit_{length}": joint.lower_limit,
+                f"upper_limit_{length}": joint.upper_limit,
+                f"max_velocity_{speed}": joint.max_velocity,
                 "confidence": joint.confidence,
                 "citations": _citations(joint.citations),
             }
         ),
     )
+    if setting is not None:
+        if setting.start is not None:
+            set_joint_state(prim, _drive_kind(joint), _to_usd(joint, setting.start))
+        prim.SetCustomDataByKey("moonwalkers:export_settings", _describe_settings(setting))
 
 
-def _write_drive(prim: Usd.Prim, drive: DriveSettings) -> None:
-    api = UsdPhysics.DriveAPI.Apply(prim, "angular")
+def _joint_drive(
+    joint: Joint, drive: DriveSettings, setting: JointSettings | None
+) -> DriveSettings | None:
+    """The joint's own drive if it has settings; otherwise ``drive`` on a revolute joint and a
+    hold at 0 on a prismatic one. Fixed joints have none."""
+    if joint.joint_type == "fixed":
+        return None
+    if setting is not None:
+        return setting.drive
+    return drive if joint.joint_type == "revolute" else DriveSettings.hold(0.0)
+
+
+def _drive_kind(joint: Joint) -> Literal["angular", "linear"]:
+    return "linear" if joint.joint_type == "prismatic" else "angular"
+
+
+def _to_usd(joint: Joint, value: float) -> float:
+    """A position or speed in contract units (rad, m) as USD writes it (degrees, stage units)."""
+    return usd_length(value) if joint.joint_type == "prismatic" else usd_angle(value)
+
+
+def _write_drive(prim: Usd.Prim, drive: DriveSettings, kind: Literal["angular", "linear"]) -> None:
+    api = UsdPhysics.DriveAPI.Apply(prim, kind)
+    convert = usd_angle if kind == "angular" else usd_length
     api.CreateTypeAttr(drive.drive_type)
     api.CreateStiffnessAttr(drive.stiffness)
     api.CreateDampingAttr(drive.damping)
     if drive.mode == "position":
-        api.CreateTargetPositionAttr(usd_angle(drive.target))
+        api.CreateTargetPositionAttr(convert(drive.target))
     else:
-        api.CreateTargetVelocityAttr(usd_angle(drive.target))
+        api.CreateTargetVelocityAttr(convert(drive.target))
+
+
+def _describe_settings(setting: JointSettings) -> dict[str, Any]:
+    """The joint's export settings, in contract units, for its provenance."""
+    drive = setting.drive
+    coupling = setting.coupling
+    return _clean(
+        {
+            "drive": "none"
+            if drive is None
+            else json.dumps(
+                {
+                    "mode": drive.mode,
+                    "target": drive.target,
+                    "stiffness": drive.stiffness,
+                    "damping": drive.damping,
+                    "type": drive.drive_type,
+                }
+            ),
+            "limits": json.dumps(list(setting.limits)) if setting.limits else None,
+            "start": setting.start,
+            "coupling": json.dumps(
+                {
+                    "leader": coupling.leader,
+                    "ratio": coupling.ratio,
+                    "offset": coupling.offset,
+                    "method": coupling.method,
+                }
+            )
+            if coupling
+            else None,
+            "note": setting.note,
+        }
+    )
+
+
+def _write_coupling(
+    stage: Usd.Stage,
+    joints: dict[str, tuple[Joint, str]],
+    joint_paths: dict[str, Sdf.Path],
+    body_paths: dict[str, Sdf.Path],
+    follower_id: str,
+    setting: JointSettings,
+) -> None:
+    """Tie the follower to its leader (decision 0019; ``physx_schemas``). Contract units become
+    USD's: PhysX's mimic equation is "jointPosition + gearing * referenceJointPosition + offset =
+    0", so gearing = -ratio and offset = -offset, scaled to degrees for angles."""
+    coupling = setting.coupling
+    assert coupling is not None
+    follower, leader = joints[follower_id][0], joints[coupling.leader][0]
+    per_follower_unit, per_leader_unit = _to_usd(follower, 1.0), _to_usd(leader, 1.0)
+    if coupling.method == "mimic":
+        apply_mimic(
+            stage.GetPrimAtPath(joint_paths[follower_id]),
+            "rotX",  # the follower's joint axis: frames turn X onto the contract axis
+            joint_paths[coupling.leader],
+            -coupling.ratio * per_follower_unit / per_leader_unit,
+            -coupling.offset * per_follower_unit,
+        )
+        return
+    path = (
+        joint_paths[follower_id]
+        .GetParentPath()
+        .AppendChild(f"{_identifier(follower_id)}_rack_and_pinion")
+    )
+    if stage.GetPrimAtPath(path):
+        raise ExportError(f"the rack-and-pinion joint's name {path.name} is taken by a joint")
+    prim = define_rack_and_pinion(
+        stage,
+        path,
+        pinion_body=body_paths[follower.child_part],
+        rack_body=body_paths[leader.child_part],
+        hinge=joint_paths[follower_id],
+        prismatic=joint_paths[coupling.leader],
+        ratio_deg_per_distance=abs(coupling.ratio) * per_follower_unit / per_leader_unit,
+    )
+    prim.SetDocumentation(
+        f"Rack and pinion: joint '{follower_id}' turns as '{coupling.leader}' slides (speeds only)."
+    )
+    prim.SetCustomDataByKey(
+        "moonwalkers",
+        {"couples": Vt.StringArray([follower_id, coupling.leader])},
+    )
+
+
+def _with_follower_starts(
+    settings: dict[str, JointSettings], joints: dict[str, tuple[Joint, str]]
+) -> dict[str, JointSettings]:
+    """A follower without its own start begins where its coupling puts it, given its leader's."""
+    updated = dict(settings)
+    for joint_id, setting in settings.items():
+        coupling = setting.coupling
+        if coupling is None or setting.start is not None:
+            continue
+        leader_setting = settings.get(coupling.leader)
+        if leader_setting is not None and leader_setting.start is not None:
+            start = coupling.ratio * leader_setting.start + coupling.offset
+            updated[joint_id] = replace(setting, start=start)
+    return updated
+
+
+def _filter_unjoined_pairs(
+    stage: Usd.Stage, body_paths: dict[str, Sdf.Path], joints: dict[str, tuple[Joint, str]]
+) -> None:
+    """Parts that no joint connects directly do not collide (module docstring)."""
+    joined = {frozenset((joint.parent_part, joint.child_part)) for joint, _ in joints.values()}
+    part_ids = list(body_paths)
+    for i, part_id in enumerate(part_ids):
+        others = [
+            body_paths[other]
+            for other in part_ids[i + 1 :]
+            if frozenset((part_id, other)) not in joined
+        ]
+        if others:
+            body = stage.GetPrimAtPath(body_paths[part_id])
+            UsdPhysics.FilteredPairsAPI.Apply(body).CreateFilteredPairsRel().SetTargets(others)
 
 
 # --------------------------------------------------------------------------------- provenance

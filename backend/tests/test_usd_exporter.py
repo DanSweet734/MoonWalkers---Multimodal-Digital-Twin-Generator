@@ -341,7 +341,8 @@ def joint(joint_id: str, parent: str, child: str, joint_type: str = "revolute") 
 @pytest.mark.parametrize(
     ("extra_parts", "joints", "message"),
     [
-        ([], [joint("slide", "body", "spindle", "prismatic")], "prismatic"),
+        # Prismatic joints were refused here until the drill-press plan's Phase 1; they are now
+        # exported (tests/test_usd_exporter_joints.py).
         (
             ["arm"],
             [joint("a", "body", "spindle"), joint("b", "arm", "spindle")],

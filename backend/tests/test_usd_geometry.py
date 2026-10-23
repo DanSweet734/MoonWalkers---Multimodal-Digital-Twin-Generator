@@ -91,6 +91,9 @@ def test_cylinder_defaults_to_z_axis_and_32_segments() -> None:
         {"shape": "cylinder", "radius_m": 1.0, "length_m": 1.0, "axis": [0, 0, 0]},
         {"shape": "cylinder", "radius_m": 1.0, "length_m": 1.0, "segments": 2},
         {"size_m": [1, 1, 1]},
+        {"shape": "compound", "pieces": []},
+        {"shape": "compound", "pieces": [{"shape": "compound", "pieces": [BOX]}]},
+        {"shape": "compound", "pieces": [{"shape": "sphere", "radius_m": 1.0}]},
     ],
 )
 def test_bad_primitives_are_rejected(spec) -> None:
@@ -109,3 +112,18 @@ def test_bad_primitives_are_rejected(spec) -> None:
 def test_malformed_meshes_are_rejected(points, counts, indices) -> None:
     with pytest.raises(ValueError):
         MeshData(points, counts, indices)
+
+
+def test_a_compound_is_its_pieces_side_by_side() -> None:
+    """A compound (several shapes that move as one part) keeps each piece's closed mesh."""
+    box, cylinder = primitive_mesh(BOX), primitive_mesh(CYLINDER_X)
+    compound = primitive_mesh({"shape": "compound", "pieces": [BOX, CYLINDER_X]})
+    assert compound.points == box.points + cylinder.points
+    assert compound.face_vertex_counts == box.face_vertex_counts + cylinder.face_vertex_counts
+    shifted = tuple(i + len(box.points) for i in cylinder.face_vertex_indices)
+    assert compound.face_vertex_indices == box.face_vertex_indices + shifted
+    assert_closed_and_welded(compound)
+    assert compound.extent() == (
+        tuple(min(a, b) for a, b in zip(box.extent()[0], cylinder.extent()[0], strict=True)),
+        tuple(max(a, b) for a, b in zip(box.extent()[1], cylinder.extent()[1], strict=True)),
+    )

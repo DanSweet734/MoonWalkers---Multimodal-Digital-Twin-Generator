@@ -6,17 +6,22 @@ contract leaves that dictionary open; these are the shapes the exporter understa
     {"shape": "box", "size_m": [0.2, 0.16, 0.16], "center_m": [0, 0, 0.08]}
     {"shape": "cylinder", "radius_m": 0.03, "length_m": 0.06, "axis": [1, 0, 0],
      "center_m": [0.13, 0, 0.1], "segments": 32}
+    {"shape": "compound", "pieces": [{"shape": "box", ...}, {"shape": "cylinder", ...}]}
+
+A compound is several boxes and cylinders that move as one rigid part, such as the drill press's
+hub with its three handles (docs/drill-press-plan.md, Phase 1).
 
 Primitives become polygon meshes so they take the same path through the exporter as the meshes
 that Pipeline B will produce in Phase 3. Faces share their corner points (a closed, welded mesh),
 every face is wound counter-clockwise seen from outside (USD's default right-handed orientation),
-and ``face_normals`` gives the flat normal of each face for rendering.
+and ``face_normals`` gives the flat normal of each face for rendering. A compound's mesh is its
+pieces' closed meshes side by side.
 """
 
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal
 
@@ -98,11 +103,22 @@ class CylinderPrimitive(_Primitive):
         return self
 
 
-Primitive = Annotated[BoxPrimitive | CylinderPrimitive, Field(discriminator="shape")]
-_PRIMITIVE: TypeAdapter[BoxPrimitive | CylinderPrimitive] = TypeAdapter(Primitive)
+Piece = Annotated[BoxPrimitive | CylinderPrimitive, Field(discriminator="shape")]
 
 
-def parse_primitive(spec: Mapping[str, Any]) -> BoxPrimitive | CylinderPrimitive:
+class CompoundPrimitive(_Primitive):
+    """Several boxes and cylinders that move as one rigid part."""
+
+    shape: Literal["compound"]
+    pieces: tuple[Piece, ...] = Field(min_length=1)
+
+
+AnyPrimitive = BoxPrimitive | CylinderPrimitive | CompoundPrimitive
+Primitive = Annotated[AnyPrimitive, Field(discriminator="shape")]
+_PRIMITIVE: TypeAdapter[AnyPrimitive] = TypeAdapter(Primitive)
+
+
+def parse_primitive(spec: Mapping[str, Any]) -> AnyPrimitive:
     """Validate a ``Part.primitive`` dictionary. Raises ``pydantic.ValidationError``."""
     return _PRIMITIVE.validate_python(dict(spec))
 
@@ -110,9 +126,26 @@ def parse_primitive(spec: Mapping[str, Any]) -> BoxPrimitive | CylinderPrimitive
 def primitive_mesh(spec: Mapping[str, Any]) -> MeshData:
     """The mesh for a ``Part.primitive`` dictionary."""
     primitive = parse_primitive(spec)
-    if isinstance(primitive, BoxPrimitive):
-        return box_mesh(primitive)
-    return cylinder_mesh(primitive)
+    if isinstance(primitive, CompoundPrimitive):
+        return merge_meshes([_piece_mesh(piece) for piece in primitive.pieces])
+    return _piece_mesh(primitive)
+
+
+def _piece_mesh(piece: BoxPrimitive | CylinderPrimitive) -> MeshData:
+    return box_mesh(piece) if isinstance(piece, BoxPrimitive) else cylinder_mesh(piece)
+
+
+def merge_meshes(meshes: Sequence[MeshData]) -> MeshData:
+    """One mesh holding every face of ``meshes``, each piece's points and faces kept as they are."""
+    points: list[Vec3] = []
+    counts: list[int] = []
+    indices: list[int] = []
+    for mesh in meshes:
+        offset = len(points)
+        points += mesh.points
+        counts += mesh.face_vertex_counts
+        indices += [i + offset for i in mesh.face_vertex_indices]
+    return MeshData(tuple(points), tuple(counts), tuple(indices))
 
 
 # Corner signs of each box face, counter-clockwise seen from outside the box.
