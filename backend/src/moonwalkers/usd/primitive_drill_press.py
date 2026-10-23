@@ -657,7 +657,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             [result],
             args.out_dir / name,
             joint_settings=with_spring(check.settings),
-            keep_awake=True,
         )
         issues = validate_file(path)
         errors = [i for i in issues if i.severity == "error"]

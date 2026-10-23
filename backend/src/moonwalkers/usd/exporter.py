@@ -40,6 +40,9 @@ Several joints (decision 0017):
 * ``JointSettings`` gives one joint its own drive, limits (a lock or a depth stop), starting
   position or coupling to another joint (decisions 0018 and 0019). Joints without settings get
   ``drive`` (revolute) or a hold at 0 (prismatic), as before.
+* Twins stay awake (decision 0017, Daniel, 2026-10-23): the articulation root gets PhysX's
+  ``PhysxArticulationAPI`` with ``physxArticulation:sleepThreshold = 0``. Otherwise PhysX puts a
+  slowly moving twin to sleep, and its drives stop. ``keep_awake=False`` writes nothing.
 """
 
 from __future__ import annotations
@@ -180,7 +183,7 @@ def export_twin(
     data_dir: Path | None = None,
     *,
     joint_settings: Mapping[str, JointSettings] | None = None,
-    keep_awake: bool = False,
+    keep_awake: bool = True,
 ) -> Path:
     """Write the twin to ``path``; returns the path.
 
@@ -188,7 +191,8 @@ def export_twin(
     crate file, which NVIDIA's asset validator asks for once arrays pass 64 elements, as a
     generated mesh's do (decision 0012). ``data_dir`` is the project ``data/`` folder; mesh-file
     parts are relative to it (contract). ``joint_settings`` maps joint ids to their settings, and
-    ``keep_awake`` stops PhysX from putting the articulation to sleep (decision 0017).
+    ``keep_awake`` (the default) stops PhysX from putting the articulation to sleep (decision
+    0017).
     """
     path = Path(path)
     if path.suffix not in (".usda", ".usdc"):
@@ -226,7 +230,7 @@ def build_stage(
     data_dir: Path | None = None,
     *,
     joint_settings: Mapping[str, JointSettings] | None = None,
-    keep_awake: bool = False,
+    keep_awake: bool = True,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()

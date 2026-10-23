@@ -116,8 +116,12 @@ one scene, all awake, would tax a system.
   et al., https://arxiv.org/abs/2108.10470, read 2026-10-23). The cost is likely modest, but no
   source gives a number for our case.
 - **What follows:**
-  - `keep_awake` becomes the default, in a change of its own after PR #16. It changes every twin's
-    file, including the Phase 2 test twin's fixtures.
+  - `keep_awake` is the default since PR #17 (branch `feat/keep-twins-awake`).
+    - Every new export, Pipeline B build and program folder writes it; `keep_awake=False` writes
+      nothing.
+    - Twins already built are not changed, since run folders never are.
+    - Against the 2026-10-22 file of the Phase 2 test twin, the only change is the root's
+      `PhysxArticulationAPI` and its sleep threshold, both checked by tests. Both validators pass.
   - When a scene with many twins exists, its physics step time is measured awake and asleep.
   - If keeping twins awake proves costly, twins could be allowed to sleep again: all of them, or
     only the idle ones.
