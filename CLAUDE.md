@@ -34,14 +34,19 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   The fixed joint recorder then made its first recording: the handles track within 1%, and
   the spring returns in 0.83 s. Decisions 0017-0019 are accepted.
 - Every twin stays awake by default (PR #17, merged on 2026-10-23; decision 0017).
-- **Now: Phase 2**, on branch `feat/phase-2-contract-and-pipelines` (started on 2026-10-23 from
-  `main` at `ca25284`). It covers contract v0.2.0 (linked joints, joint modes) and how Pipelines A,
-  C and D run outside their tests: decisions 0020 and 0021, `docs/drill-press-plan.md`, Phase 2.
-  The contract change is discussed with Ava, Kiran and Sarkis before it is merged.
-  Decision 0020 (2026-10-23): optional `mode`, `adjustable_stop` and `follows` on `Joint`, and
-  "0.1.0" results stay valid. Daniel reviewed it; the contract part is built (v0.2.0, schema,
-  types). Next: the exporter reads the new fields, the dashboard shows them, and the drill press
-  is rewritten to use them. The `Sarkis` branch was only an access test: ignore it.
+- **Phase 2 is built and waits for review** (branch `feat/phase-2-contract-and-pipelines`, from
+  `main` at `ca25284`; its PR opened on 2026-10-23). `docs/drill-press-plan.md`, Phase 2:
+  - **Decision 0020, contract v0.2.0:** optional `mode`, `adjustable_stop` and `follows` on
+    `Joint`; "0.1.0" results stay valid. The exporter reads them, the dashboard shows them, and
+    the drill press states its joints in them (run `2026-10-23_run-003`).
+  - **Decision 0021:** the stubs run only in the tests; `add_input` refuses a document whose
+    pipeline is not in; one result per twin carries the geometry, and disagreeing facts are listed
+    for the reviewer; `python -m moonwalkers.pipelines`; the owners' guide, `docs/pipeline-guide.md`.
+  - **Before the merge:** Daniel's short re-check of run-003 (`docs/setup/isaac-sim-check.md`,
+    section 8), and both decisions discussed with Ava, Kiran and Sarkis.
+  - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
+    (decision 0018). The `Sarkis` branch was only an access test: ignore it.
+  - **Next:** Phase 3, several photos per run, from an up-to-date `main` after the merge.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

@@ -300,9 +300,13 @@ this phase's evidence.
       (Oct 23, 2026: `Pipeline.stub`, `default_pipelines()` without stubs, `stub_pipelines()` for
       the tests; the orchestrator's two rules; `add_input`'s refusal; `python -m
       moonwalkers.pipelines list | run`. 22 new tests, on fake pipelines)
-- [ ] A short guide for the pipeline owners: the contract, `create_pipeline()`, citations, tests,
+- [x] A short guide for the pipeline owners: the contract, `create_pipeline()`, citations, tests,
       and how to try a pipeline on the T33901's manual (worklog 2026-10-22, "Next step")
-- [ ] Worklog; PR
+      (Oct 23, 2026: `docs/pipeline-guide.md`. Its example Pipeline D was run through the command
+      line on the real manual)
+- [x] Worklog; PR
+      (Oct 23, 2026: worklog 2026-10-23; branch `feat/phase-2-contract-and-pipelines`. Before the
+      merge: Daniel's short re-check of run-003, and decisions 0020 and 0021 with the owners)
 
 ## Phase 3 - Several photos per run, and the mesh
 Today Pipeline B takes "exactly one machine photo" (`pipelines/b/pipeline.py`), and so do the
