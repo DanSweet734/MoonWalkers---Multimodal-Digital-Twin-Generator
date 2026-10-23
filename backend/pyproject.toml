@@ -38,6 +38,7 @@ markers = [
 dev = [
     "omniverse-asset-validator>=1.18,<2",
     "pypdf>=6.21,<7",
+    "pypdfium2>=5.14,<6",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
 ]

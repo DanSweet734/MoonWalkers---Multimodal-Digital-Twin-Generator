@@ -38,7 +38,8 @@ All sources were read on 2026-10-22 (PDT).
     itself".
 
   The backend's own `write_png` (`pipelines/b/mesh_tools.py`) could save the pages it renders.
-  Not installed: that needs Daniel's approval (CLAUDE.md rule 3). [INFERENCE] Even rendered, a
+  Not installed at first: that needs Daniel's approval (CLAUDE.md rule 3). He gave it later the
+  same day ("The exploded views, rendered", below). [INFERENCE] Even rendered, a
   pinion in an exploded view is an illustration, so a tooth count read from it would be a guess,
   not a specification.
 - **Photos.** The other figures are embedded JPEG photos. Their raw streams were saved to the
@@ -61,6 +62,47 @@ All sources were read on 2026-10-22 (PDT).
     bolt" and "Table Pivot Lock Handle" on the same page.]
   - None of the photos shows the quill at two known depths, so the handle's angle per inch cannot
     be measured from them.
+
+## The exploded views, rendered (later on 2026-10-22)
+Daniel approved a PDF renderer on 2026-10-22 and left the choice to Claude Code.
+- **Choice: pypdfium2,** added to the backend's dev dependencies (`uv add --dev "pypdfium2>=5.14,<6"`,
+  which installed 5.14.0).
+  - Its license is permissive, and it installs with `uv` and is pinned in `uv.lock`, so every
+    teammate gets the same version on any operating system.
+  - PyMuPDF was not chosen. Its PyPI page (https://pypi.org/pypi/PyMuPDF/json, read 2026-10-22)
+    says "Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License", which matters if the
+    repository goes public.
+  - poppler's `pdftoppm` was not chosen: it is a system tool outside `uv.lock`, so it would exist
+    only on Daniel's machine. It would have let the Read tool open PDF pages directly.
+- **How:** a scratch script renders a page or a crop of it in greyscale (`page.render(scale,
+  grayscale=True, crop=...)`), and saves it with `pipelines/b/mesh_tools.write_png`. No repository
+  code uses pypdfium2 yet.
+- **What p. 48 ("T33901 Main") shows,** by part number from the parts list (pp. 49-50):
+  - **The table's chain, confirmed:**
+    - the "COLUMN" (114) stands in the "COLUMN BASE" (116) on the "BASE" (117);
+    - the "RACK" (113) runs along the column, under the "COLUMN COLLAR" (103);
+    - the "COLUMN BRACKET" (106) holds the "GEAR 14T" (108), the "WORM SHAFT" (109) and the
+      "TABLE HEIGHT CRANK" (112);
+    - the "TABLE MOUNTING ARM" (121) fits a horizontal bore in the bracket, held by a "HEX BOLT
+      M16-2 X 30" (124) with a "LOCK WASHER 16MM" (123), beside the "TABLE TILT SCALE" (118). That
+      bolt is the tilt lock; the tilt procedure asks for a "Wrench or Socket 24mm" (p. 32);
+    - the "TABLE" (120) sits in the arm's vertical bore, locked by a "FOLDING HANDLE M10-1.5 X 28,
+      70L" (122): the table pivot lock handle.
+  - **One lock handle on the bracket:** "FOLDING HANDLE M12-1.75 X 50, 90L" (105). So the "table
+    lock handle" for turning around the column is the table height lock handle [INFERENCE, now
+    stronger: no other lock handle is drawn].
+  - **The downfeed handles:** three "STUD-DE M12-1.75 X 178, 15" (102), each with a "KNOB
+    M12-1.75, D35" (101), screwed into the hub on the "PINION SHAFT" (100). So a handle bar is
+    178 mm long [INFERENCE: read from a stud's size; "15" is not explained].
+  - **The pinion:** drawn with teeth at the end of the pinion shaft, but in perspective only its near
+    side shows. Its teeth cannot be counted, and an exploded view is an illustration anyway. **The
+    ratio stays not found.**
+- **The belt-speed chart is on the machine, not in the manual.** p. 30 says the speeds are set "by
+  the configuration of V-belts and pulleys located inside the belt cover (refer to the speed chart
+  located under the belt cover)". It gives one entry: "a belt combination of B-3 creates 790 RPM.
+  "B" refers to belt position between spindle and idler pulley. "3" refers to belt position between
+  idler and motor pulley". A photo of that label would give the other eleven, which is another case
+  for several images per machine.
 
 ## The web
 - **Grizzly's own pages refuse scripts.** WebFetch got HTTP 403 Forbidden from both:

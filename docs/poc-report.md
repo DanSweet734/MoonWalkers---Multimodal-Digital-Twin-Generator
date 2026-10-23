@@ -529,6 +529,8 @@ These are tasks for the team, not questions for the advisors.
     documents "front, front clockwise 90, back, front clockwise 270" (`docs/setup/generators.md`).
     Check it before putting serious work into multi-view input. CLAUDE.md says so, so every new
     conversation sees it.
+    **Checked on 2026-10-22,** when the multi-view model was installed: `left` shows the object's
+    own left side, and three views are enough (`docs/setup/generators.md`).
 17. **One license not confirmed:** that of the background-removal model `u2net.onnx`, which the
     generator's rembg package downloads. The package itself is MIT. To check before any release.
     **Researched on 2026-10-22:** U-2-Net, the project the model comes from [INFERENCE: rembg

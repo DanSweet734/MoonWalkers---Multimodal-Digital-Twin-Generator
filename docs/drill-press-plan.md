@@ -79,29 +79,39 @@ checked again when the reference facts are written (Phase 5).
   LED and laser switches.
 - **The depth stop:** "a threaded rod attached to the quill with a depth stop nut that can be
   lowered or raised against a stop bracket" (p. 31), so it is a setting within the quill's travel.
-- **From the manual's photos** (viewed on 2026-10-22):
-  - **The table's chain** (p. 32). The column bracket clamps the column. The table arm leaves it
-    through a horizontal pivot that carries the tilt scale and the tilt hex bolt. The table turns
-    on a round boss at the arm's far end, under its centre, held by the pivot lock handle. So the
-    tilt comes before the turn about the centre, and the arm is a real part between them
-    [INFERENCE: the photos matched to the page's captions].
-  - **The head:** three downfeed handles on one hub, on the right of the head (pp. 6-7). The quill
+- **From the manual's photos and its exploded view** (viewed on 2026-10-22; part numbers from
+  pp. 49-50):
+  - **The table's chain:**
+    - the "COLUMN BRACKET" (106) clamps the column and carries the height crank's worm and
+      14-tooth gear;
+    - the "TABLE MOUNTING ARM" (121) turns in a horizontal bore of the bracket: the tilt, locked
+      by a "HEX BOLT M16-2 X 30" (124), beside the "TABLE TILT SCALE" (118);
+    - the "TABLE" (120) turns in the arm's far end, under its centre, locked by a folding handle
+      (122).
+
+    So the tilt comes before the turn about the centre, and the arm is a real part between them
+    (photos p. 32; exploded view p. 48).
+  - **The head:** three downfeed handles on one hub, on the right of the head as the operator sees
+    it (photos pp. 6-7). Each handle is a "STUD-DE M12-1.75 X 178, 15" (part 102) with a "KNOB
+    M12-1.75, D35" (101), so a bar is 178 mm long [INFERENCE: read from the stud's size]. The quill
     rack and the column rack are shown in p. 36's Figure 48.
   - **The whole machine:** two studio photos, from different front angles (p. 5).
+- **The belt-speed chart is a label under the machine's belt cover,** not a page of the manual
+  (p. 30). The manual gives one entry: "a belt combination of B-3 creates 790 RPM". A photo of the
+  label would give the other eleven.
 - **Not found, in the manual or in any public source we could reach on 2026-10-22:**
   - the handle-to-quill ratio. The parts list names a "PINION SHAFT" (p. 50), but gives no tooth
-    count or pitch. Grizzly's product and parts pages refuse scripts (HTTP 403). A stand-in is
-    used until a measurement or Grizzly gives it (research note, "What would settle it");
-  - the head's size and the downfeed handles' length;
-  - the return spring's force: a "FLAT COIL SPRING" (p. 49), whose tension can be adjusted (p. 40);
-  - which belt arrangement gives which speed. p. 30 says to move the V-belts onto the desired
-    sheaves. The exploded views (pp. 48, 51) are vector drawings that cannot be viewed without a
-    PDF renderer (not installed). Whether another figure gives the belt arrangement is still to
-    check.
+    count or pitch. The exploded view draws the pinion, but only its near side shows, and a drawing
+    is not a specification. Grizzly's product and parts pages refuse scripts (HTTP 403). **A
+    labelled stand-in is used, logged as an inaccuracy** (Daniel, 2026-10-22), until a measurement
+    or Grizzly gives it (research note, "What would settle it");
+  - the head's size;
+  - the return spring's force: a "FLAT COIL SPRING" (p. 49), whose tension can be adjusted (p. 40).
 - **[INFERENCE], still to check:**
   - The "table lock handle" of "Rotating Table Around Column" (p. 32) is the table height lock
-    handle. The page's labels name only two lock handles, the "Table Height Lock Handle" and the
-    "Table Pivot Lock Handle", and the photos show one clamp handle on the column bracket.
+    handle. The page's labels name only the "Table Height Lock Handle" and the "Table Pivot Lock
+    Handle", and the exploded view draws only one lock handle on the bracket, a "FOLDING HANDLE
+    M12-1.75 X 50, 90L" (105).
   - The column rack turns with the table bracket. Assembly seats the rack "firmly between collar
     and column base" (p. 22), and turning the table means "making sure to guide column rack with
     table" (p. 32). So the rack is the part between the turn around the column and the slide up it.
@@ -131,11 +141,13 @@ reuses the stored twin and says so; the HA5C still builds and is reused as befor
 - [x] This plan, worklog, PR (Oct 22, 2026: branch `docs/drill-press-plan`, PR #15); stop for
       review
 - [x] Daniel's answers recorded, and the ratio researched (Oct 22, 2026)
+- [x] A PDF renderer and the multi-view model installed on his approval (Oct 22, 2026; "Installed
+      on Daniel's approval", below)
 
 ## Phase 1 - A box-and-cylinder drill press proves the exporter
 No generated mesh. As in the PoC's Phase 2, the test model goes down the exporter's real path.
 Its sizes are the manual's where it gives them, and made up, labelled as such, where it does not:
-the head, the handles, the rack, the bracket and the arm. The new behaviours are exporter
+the head, the hub, the rack, the bracket and the arm. The new behaviours are exporter
 settings, as `DriveSettings` is today, not contract fields. The contract changes in Phase 2, with
 this phase's evidence.
 - [ ] Research note, from primary sources, before any code:
@@ -246,11 +258,13 @@ images, and the least guessing.
     size checks;
   - how `add_input`, `request.json` and the dashboard's upload take several photos;
   - how a run records what no photo shows, so that guesses are logged.
-- [ ] The multi-view generator (Hunyuan3D-2mv). Its weights are a 4.93 GB download
-      (`docs/setup/generators.md`), asked for first. Before any serious use, check its image order
-      with the repository's example images (CLAUDE.md). It takes `front`, `left`, `back` and
-      `right` views. Whether it accepts fewer views, or corner views like the manual's, is not
-      confirmed.
+- [x] The multi-view generator (Hunyuan3D-2mv): installed, with its image order checked and one
+      run on the repository's examples (Oct 22, 2026, on Daniel's approval;
+      `docs/setup/generators.md`). `left` is the machine's own left. Three views are enough.
+- [ ] Try corner views, such as the manual's two studio photos, which no example uses
+- [ ] The belt-speed label under the belt cover, and a full stroke of the handles, are worth a
+      photo each if any source has one: they would replace a guess (the eleven missing speeds) and
+      a stand-in (the handle ratio)
 - [ ] Build it: Pipeline B, the tools and the dashboard take several photos. The HA5C's one-photo
       runs still build.
 - [ ] Generate the T33901 mesh from the best input there is, and record which sides it had to
@@ -309,8 +323,9 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
 - [ ] Decision record 0025: how `ControlBehavior` describes a manual machine:
   - the keyed switch as a `state_machine`: key in or out, switch up or down, and the motor runs
     only with the key in and the switch up (p. 6);
-  - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9), with the belt
-    arrangement for each if a figure gives it;
+  - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9). Only one belt
+    arrangement is cited ("B-3 creates 790 RPM", p. 30). The rest are on the label under the belt
+    cover, so they stay unknown until a photo of it is found;
   - the operator's drilling stroke as a program that drives the quill, as decision 0016's
     programs drive a joint.
 
@@ -365,12 +380,22 @@ test settles both.
 - Neo4j and Celery, several users, Codex, video and scenes (report, sections 7.4 and 8).
 - The lab's photos, which come later (advisors, Oct 22, 2026).
 
+## Installed on Daniel's approval (Oct 22, 2026)
+He approved a PDF renderer and the multi-view generator, and left the choice of each to Claude
+Code.
+- **pypdfium2 5.14.0,** a backend dev dependency, renders PDF pages and figures. It is permissive
+  ("BSD-3-Clause, Apache-2.0") and pinned in `uv.lock`. Why not PyMuPDF (AGPL) or poppler (a system
+  tool): research note.
+- **The multi-view model, `hunyuan3d-dit-v2-mv`** (4.93 GB, SHA-256 checked). One run through our
+  adapter on the repository's example images worked: 58.5 s, 6.09 GB of VRAM.
+- **Its image order is settled:** `left` shows the machine's own left side, and three views are
+  enough (`docs/setup/generators.md`, "Which side each image shows"). Corner views, like the
+  manual's, are untried.
+
 ## Still open
-- **The handle ratio.** Settled only by a measurement on a real T33901 (the handles' angle over the
-  full 3-1/4 in stroke), Grizzly's technical support, or photos or a video of a full stroke
-  (research note). Contacting Grizzly is Daniel's call.
-- **A PDF renderer.** It would show the exploded views and any belt-speed figure (pypdf does not
-  render). Candidate: pypdfium2 5.14.0, "BSD-3-Clause, Apache-2.0", a 3.9 MB wheel with no
-  required dependencies (PyPI, read 2026-10-22). Not installed; it is asked first, when a phase
-  needs it.
-- **The multi-view weights** (4.93 GB) are asked for in Phase 3.
+- **The handle ratio.** It can be settled only by:
+  - a measurement on a real T33901: the handles' angle over the full 3-1/4 in stroke;
+  - Grizzly's technical support (contacting them is Daniel's call);
+  - photos or a video of a full stroke (research note).
+
+  Until then, a labelled stand-in.
