@@ -43,11 +43,24 @@ Several joints (decision 0017):
 * Twins stay awake (decision 0017, Daniel, 2026-10-23): the articulation root gets PhysX's
   ``PhysxArticulationAPI`` with ``physxArticulation:sleepThreshold = 0``. Otherwise PhysX puts a
   slowly moving twin to sleep, and its drives stop. ``keep_awake=False`` writes nothing.
+
+Contract v0.2.0 (decision 0020): the contract says what the machine does, and the exporter decides
+how to simulate it (``contract_settings``):
+
+* ``driven``: the default drive, as before. ``spring_return``: a position drive towards the rest
+  position, aimed ``SPRING_PRELOAD`` past it when it is a limit. ``locked``: equal limits at the
+  position, starting there. ``free``: damping only. ``follows``: a coupling to the leader,
+  ``PhysxMimicJointAPI`` unless ``coupling_method`` says otherwise. The numbers are decision
+  0018's stand-ins.
+* An ``adjustable_stop`` replaces the limit on its side, for every joint that has one.
+* ``joint_settings`` replace what the contract asks for, joint by joint, for a check; their
+  ``limits=None`` keeps the contract's limits and stop. ``starts`` set starting positions on top.
 """
 
 from __future__ import annotations
 
 import json
+import math
 import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -56,6 +69,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pxr import Gf, Sdf, Tf, Usd, UsdGeom, UsdPhysics, Vt
+from pydantic import BaseModel
 
 from moonwalkers.contracts.pipeline_result import (
     SCHEMA_VERSION,
@@ -84,6 +98,14 @@ TIME_CODES_PER_SECOND = 60.0
 
 ROOT_PART_COLOR = (0.55, 0.57, 0.60)  # grey: the fixed base
 MOVING_PART_COLOR = (0.90, 0.45, 0.10)  # orange: parts that move
+
+# How contract modes are simulated (decision 0018): stand-ins chosen for the drill press's quill
+# and table, not facts about any machine [INFERENCE].
+SPRING_STIFFNESS, SPRING_DAMPING = 600.0, 49.0  # acceleration drive: about critically damped
+SPRING_PRELOAD = 0.03  # m (or rad) past a rest position at a limit: a wound spring's preload
+FREE_DAMPING = 2.0  # a stand-in for friction, so a pushed part comes to rest
+
+CouplingMethod = Literal["mimic", "rack_and_pinion"]
 
 
 class ExportError(ValueError):
@@ -141,14 +163,14 @@ class JointCoupling:
     ``method`` "mimic" writes PhysX's ``PhysxMimicJointAPI``, a two-way hard constraint inside the
     articulation; it worked in Isaac Sim 6.2.0 on 2026-10-23 and is the one to use.
     "rack_and_pinion" writes a ``PhysxPhysicsRackAndPinionJoint`` kept out of the articulation; it
-    ties the joints' speeds, so ``offset`` comes from their starting positions. Its first check
-    failed, and its sign is being retried.
+    ties the joints' speeds, so ``offset`` comes from their starting positions. It worked too once
+    its sign was reversed (2026-10-23), so it is the fallback if the mimic is ever dropped.
     """
 
     leader: str
     ratio: float
     offset: float = 0.0
-    method: Literal["mimic", "rack_and_pinion"] = "mimic"
+    method: CouplingMethod = "mimic"
 
 
 @dataclass(frozen=True)
@@ -175,6 +197,65 @@ class JointSettings:
             raise ValueError("a joint that follows another cannot have its own drive")
 
 
+def contract_settings(
+    joint: Joint, drive: DriveSettings | None = None, coupling_method: CouplingMethod = "mimic"
+) -> JointSettings | None:
+    """The settings a joint's ``mode`` or ``follows`` ask for (contract v0.2.0, decision 0020), or
+    None when it states neither, or is ``driven``: then it gets the default drive, as before
+    (``drive`` on a revolute joint, a hold at 0 on a prismatic one). An ``adjustable_stop`` needs
+    no setting: every joint's limits include its stop (``stopped_limits``)."""
+    if joint.joint_type == "fixed":
+        return None
+    if joint.follows is not None:
+        link = joint.follows
+        stand_in = " (a stand-in ratio)" if link.stand_in else ""
+        return JointSettings(
+            drive=None,
+            coupling=JointCoupling(link.leader, link.ratio, link.offset, method=coupling_method),
+            note=f"from the contract: follows '{link.leader}'{stand_in} (decision 0020)",
+        )
+    mode = joint.mode
+    if mode is None or mode.kind == "driven":
+        return None
+    position = mode.position if mode.position is not None else 0.0
+    if mode.kind == "locked":
+        return JointSettings(
+            drive=None,
+            limits=(position, position),
+            start=position,
+            note="from the contract: locked, by equal limits (decisions 0018, 0020)",
+        )
+    if mode.kind == "free":
+        return JointSettings(
+            drive=DriveSettings.free(FREE_DAMPING),
+            note="from the contract: free; the damping is a stand-in for friction (decision 0018)",
+        )
+    target = position  # spring_return: preloaded when it rests against a limit
+    if joint.lower_limit is not None and math.isclose(position, joint.lower_limit, abs_tol=1e-12):
+        target = position - SPRING_PRELOAD
+    elif joint.upper_limit is not None and math.isclose(position, joint.upper_limit, abs_tol=1e-12):
+        target = position + SPRING_PRELOAD
+    return JointSettings(
+        drive=DriveSettings(
+            mode="position", target=target, stiffness=SPRING_STIFFNESS, damping=SPRING_DAMPING
+        ),
+        note="from the contract: spring return; stiffness, damping and preload are stand-ins "
+        "(decision 0018)",
+    )
+
+
+def stopped_limits(joint: Joint) -> tuple[float | None, float | None]:
+    """The joint's limits, with its adjustable stop in place of the limit on the stop's side."""
+    lower, upper = joint.lower_limit, joint.upper_limit
+    stop = joint.adjustable_stop
+    if stop is not None:
+        if stop.side == "lower":
+            lower = stop.position
+        else:
+            upper = stop.position
+    return lower, upper
+
+
 def export_twin(
     twin: TwinRecord,
     results: Sequence[PipelineResult],
@@ -183,6 +264,8 @@ def export_twin(
     data_dir: Path | None = None,
     *,
     joint_settings: Mapping[str, JointSettings] | None = None,
+    starts: Mapping[str, float] | None = None,
+    coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
 ) -> Path:
     """Write the twin to ``path``; returns the path.
@@ -190,16 +273,24 @@ def export_twin(
     ``.usda`` gives text with LF line endings, readable for small twins. ``.usdc`` gives a binary
     crate file, which NVIDIA's asset validator asks for once arrays pass 64 elements, as a
     generated mesh's do (decision 0012). ``data_dir`` is the project ``data/`` folder; mesh-file
-    parts are relative to it (contract). ``joint_settings`` maps joint ids to their settings, and
-    ``keep_awake`` (the default) stops PhysX from putting the articulation to sleep (decision
-    0017).
+    parts are relative to it (contract). ``joint_settings`` maps joint ids to settings that replace
+    what the contract asks for, ``starts`` maps joint ids to starting positions, and
+    ``coupling_method`` writes the contract's links (decision 0019). ``keep_awake`` (the default)
+    stops PhysX from putting the articulation to sleep (decision 0017).
     """
     path = Path(path)
     if path.suffix not in (".usda", ".usdc"):
         raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
     # The stage owns its root layer: keep it.
     stage = build_stage(
-        twin, results, drive, data_dir, joint_settings=joint_settings, keep_awake=keep_awake
+        twin,
+        results,
+        drive,
+        data_dir,
+        joint_settings=joint_settings,
+        starts=starts,
+        coupling_method=coupling_method,
+        keep_awake=keep_awake,
     )
     return write_stage(stage, path)
 
@@ -230,11 +321,12 @@ def build_stage(
     data_dir: Path | None = None,
     *,
     joint_settings: Mapping[str, JointSettings] | None = None,
+    starts: Mapping[str, float] | None = None,
+    coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()
-    settings = dict(joint_settings or {})
     _check_results_match(twin, results)
     parts = _collect(results, "parts", "part_id")
     joints = _collect(results, "joints", "joint_id")
@@ -243,6 +335,7 @@ def build_stage(
     _check_prim_names(list(parts), reserved={JOINTS_SCOPE}, what="part")
     _check_prim_names(list(joints), reserved={WORLD_JOINT}, what="joint")
     root_part = _root_part(parts, joints)
+    settings = _joint_settings(joints, drive, joint_settings or {}, starts or {}, coupling_method)
     _check_settings(settings, joints)
     settings = _with_follower_starts(settings, joints)
 
@@ -360,13 +453,36 @@ def _root_part(parts: dict[str, tuple[Part, str]], joints: dict[str, tuple[Joint
     return roots[0]
 
 
+def _joint_settings(
+    joints: dict[str, tuple[Joint, str]],
+    drive: DriveSettings,
+    explicit: Mapping[str, JointSettings],
+    starts: Mapping[str, float],
+    coupling_method: CouplingMethod,
+) -> dict[str, JointSettings]:
+    """What the contract asks for, replaced joint by joint by ``explicit``, with ``starts`` on
+    top (module docstring)."""
+    for joint_id in [*explicit, *starts]:
+        if joint_id not in joints:
+            raise ExportError(f"settings name joint '{joint_id}', which the twin does not have")
+    settings: dict[str, JointSettings] = {}
+    for joint_id, (joint, _) in joints.items():
+        derived = contract_settings(joint, drive, coupling_method)
+        if derived is not None:
+            settings[joint_id] = derived
+    settings.update(explicit)
+    for joint_id, start in starts.items():  # a fixed joint is refused by _check_settings
+        joint = joints[joint_id][0]
+        setting = settings.get(joint_id) or JointSettings(drive=_joint_drive(joint, drive, None))
+        settings[joint_id] = replace(setting, start=start)
+    return settings
+
+
 def _check_settings(
     settings: Mapping[str, JointSettings], joints: dict[str, tuple[Joint, str]]
 ) -> None:
-    """Settings must name real joints, and fit their type; couplings must be ones PhysX takes."""
+    """Settings must fit their joint's type; couplings must be ones PhysX takes."""
     for joint_id, setting in settings.items():
-        if joint_id not in joints:
-            raise ExportError(f"settings name joint '{joint_id}', which the twin does not have")
         joint = joints[joint_id][0]
         if joint.joint_type == "fixed":
             raise ExportError(f"joint '{joint_id}' is fixed, so it takes no settings")
@@ -381,7 +497,7 @@ def _check_settings(
                 f"joint '{joint_id}' cannot follow the fixed joint '{leader.joint_id}'"
             )
         if coupling.method == "mimic" and joint.joint_type == "revolute":
-            limits = setting.limits or (joint.lower_limit, joint.upper_limit)
+            limits = setting.limits or stopped_limits(joint)
             if None in limits:
                 # PhysxMimicJointAPI supports "PhysicsRevoluteJoint (with a limit set)".
                 raise ExportError(f"joint '{joint_id}' follows by mimic, so it needs limits")
@@ -513,9 +629,7 @@ def _write_joint(
     usd_joint.CreateLocalRot1Attr(rotation)
 
     prim = usd_joint.GetPrim()
-    lower, upper = (
-        setting.limits if setting and setting.limits else (joint.lower_limit, joint.upper_limit)
-    )
+    lower, upper = setting.limits if setting and setting.limits else stopped_limits(joint)
     if joint.joint_type == "revolute":
         revolute = UsdPhysics.RevoluteJoint(prim)
         revolute.CreateAxisAttr(UsdPhysics.Tokens.x)
@@ -553,6 +667,10 @@ def _write_joint(
                 f"max_velocity_{speed}": joint.max_velocity,
                 "confidence": joint.confidence,
                 "citations": _citations(joint.citations),
+                # Contract v0.2.0 (decision 0020), with their own citations; absent when not stated.
+                "mode_json": _json_or_none(joint.mode),
+                "adjustable_stop_json": _json_or_none(joint.adjustable_stop),
+                "follows_json": _json_or_none(joint.follows),
             }
         ),
     )
@@ -820,6 +938,10 @@ def _citations(citations: Sequence[Citation]) -> list[str]:
             line += f' | "{c.quote}"'
         lines.append(line)
     return lines
+
+
+def _json_or_none(item: BaseModel | None) -> str | None:
+    return None if item is None else json.dumps(item.model_dump(mode="json"), sort_keys=True)
 
 
 def _clean(values: dict[str, Any]) -> dict[str, Any]:
