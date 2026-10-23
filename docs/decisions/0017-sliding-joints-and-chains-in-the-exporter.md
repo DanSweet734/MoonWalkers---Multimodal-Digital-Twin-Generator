@@ -96,3 +96,5 @@ record).
 ## Re-check (Daniel, 2026-10-23, run `2026-10-23_run-002`)
 - "the spindle now turns slowly all on it's own, no pushing needed", in `spindle_spin_slow` and in
   `all_motions`. Keeping the articulation awake fixed it.
+- Measured with the joint recorder in `all_motions`: the spindle turned at 30.005°/s over the last
+  second of 35, against 30°/s set.

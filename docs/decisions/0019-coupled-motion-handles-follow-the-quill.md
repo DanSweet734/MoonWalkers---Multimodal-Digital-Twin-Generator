@@ -87,3 +87,5 @@ Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
 - So the reversed sign was the cause. The rack and pinion's ratio takes the mimic gearing's sign,
   and it is a working fallback if `PhysxMimicJointAPI` is ever dropped. It ties only the speeds,
   and stays out of the articulation.
+- Measured with the joint recorder in `all_motions`: the mimic held the handles at 57.03-57.68 rad/m
+  of quill travel while it moved, against the 57.085 set, so within 1%.

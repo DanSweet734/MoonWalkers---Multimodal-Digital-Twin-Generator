@@ -279,8 +279,8 @@ To make them again (from `backend/`):
 - the rack and pinion follows the quill like the mimic (file 6);
 - the free table's height holds while it swings, tilts and turns (file 7).
 
-**Still to try: the fixed recorder.** Run-001's old copy was pasted in the re-check, and it cannot
-read the joints. Use the copy in `2026-10-23_run-002` (or later):
+**The fixed recorder works** (Daniel, 2026-10-23, `all_motions.usdc`). Run-001's old copy cannot read
+the joints, so use the copy in `2026-10-23_run-002` or later:
 1. Open any file from that folder, for example `all_motions.usdc`.
 2. Paste that folder's `record_joints.py` into Window > Script Editor and click **Run**.
 3. Press Play for a few seconds, then Stop.

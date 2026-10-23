@@ -217,7 +217,10 @@ this phase's evidence.
       item 11).
       (Oct 22, 2026: `usd/isaac_recorder.py`, copied into the run as `record_joints.py`. It reads
       `omni.physics.tensors` after each physics step and writes CSV. Its pure parts are tested;
-      it has not yet run in Isaac Sim)
+      it has not yet run in Isaac Sim.
+      Oct 23, 2026: it works in Isaac Sim 6.2.0, after a fix to how it gets its physics view. Its
+      first recording measured the handles within 1% of their ratio and the spring's 0.83 s return.
+      Using it on the HA5C's program files, item 11, is left for a later check)
 - [x] Isaac Sim 6.2.0 check by Daniel, from a checklist per file (a new section in
       `docs/setup/isaac-sim-check.md`)
       (Oct 22, 2026: the checklist is section 8, and the files are ready.
@@ -229,7 +232,7 @@ this phase's evidence.
       - the recorder wrote nothing ("Failed to get a valid attached USD stage id"), also fixed.
 
       Re-check of run-002, the same day: all three fixes work, and the rack and pinion is a working
-      fallback. The fixed recorder is still untried, because the old copy was pasted)
+      fallback. The fixed recorder then made its first recording)
 - [ ] Decision records 0017, 0018 and 0019; worklog; PR
       (Oct 23, 2026: all three hold the check and the re-check. They are accepted at the phase PR's
       review)

@@ -89,3 +89,6 @@ Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
 ## Re-check (Daniel, 2026-10-23, run `2026-10-23_run-002`)
 - `table_free`: "the table swings, tilts, and turns without the hight [sic] changing no matter how
   much I try". Equal limits hold the height, as the crank's worm does.
+- Measured with the joint recorder in `all_motions` (`2026-10-23_run-002/recordings/all_motions_2026-10-23_141658.csv`):
+  - the spring brought the quill from 82 mm down to within 1 mm of the top in 0.83 s;
+  - the four table motions locked by equal limits stayed exactly at their settings for 35 s.
