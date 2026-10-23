@@ -9,10 +9,12 @@ From ``backend/``::
 
 ``run`` builds a cited ``Source`` for each input: a file inside the data folder (its path is
 stored relative to it, with its SHA-256, and its modification time as when it was retrieved), or
-an http(s) URL. It runs the pipeline, checks the result against the contract, and writes it as
-JSON, to ``--out`` or to the screen. It stores nothing in the knowledge base: only the orchestrator
-does that (CLAUDE.md rule 6). A pipeline whose owner's ``create_pipeline()`` still returns the
-stub is not in, and is refused.
+an http(s) URL. The data folder is ``default_data_dir()``, the one a pipeline resolves a file
+source's ``uri`` against (``MOONWALKERS_DATA_DIR``, else the repository's ``data/``). It runs the
+pipeline, checks the result against the contract, and writes it as JSON, to ``--out`` or to the
+screen. It stores nothing in the knowledge base: only the orchestrator does that (CLAUDE.md rule
+6). A pipeline whose owner's ``create_pipeline()`` still returns the stub is not in, and is
+refused.
 """
 
 from __future__ import annotations
@@ -74,7 +76,6 @@ def _parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--job", default=None, help="job id (default: try-<pipeline>)")
     run.add_argument("--out", type=Path, default=None, help="JSON file to write (never replaced)")
-    run.add_argument("--data", type=Path, default=None, help="the data folder (default: data/)")
     return parser
 
 
@@ -108,7 +109,7 @@ def _run(args: argparse.Namespace, available: Mapping[PipelineId, Pipeline]) -> 
         )
     if args.out is not None and args.out.exists():
         raise UsageError(f"{args.out} exists; pick a new file (results are never replaced)")
-    data_dir = (args.data or default_data_dir()).resolve()
+    data_dir = default_data_dir()
     job_id = args.job or f"try-{pid.value.lower()}"
     sources = _sources(args.inputs, input_type, data_dir)
 

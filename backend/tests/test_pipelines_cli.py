@@ -48,7 +48,9 @@ class OwnersPipelineD(Pipeline):
 
 
 @pytest.fixture
-def manual(tmp_path: Path) -> Path:
+def manual(tmp_path: Path, monkeypatch) -> Path:
+    """A stand-in manual in a data folder that MOONWALKERS_DATA_DIR names, as a pipeline sees it."""
+    monkeypatch.setenv("MOONWALKERS_DATA_DIR", str(tmp_path / "data"))
     path = tmp_path / "data" / "machines" / "grizzly-t33901" / "inputs" / "documents" / "m.pdf"
     path.parent.mkdir(parents=True)
     path.write_bytes(b"%PDF- a stand-in for the manual")
@@ -57,8 +59,7 @@ def manual(tmp_path: Path) -> Path:
 
 def run(manual: Path, *extra: str, pipeline: Pipeline | None = None) -> int:
     pipelines = {} if pipeline is None else {PipelineId.D: pipeline}
-    data = manual.parents[4]
-    argv = ["run", "D", "--input-type", "pdf_catalog", str(manual), "--data", str(data), *extra]
+    argv = ["run", "D", "--input-type", "pdf_catalog", str(manual), *extra]
     return main(argv, pipelines=pipelines)
 
 
@@ -97,8 +98,7 @@ def test_run_prints_the_result_without_out(manual: Path, capsys) -> None:
 def test_a_url_becomes_a_url_source(manual: Path) -> None:
     pipeline = OwnersPipelineD()
     url = "https://cdn0.grizzly.com/manuals/t33901_m.pdf"
-    data = manual.parents[4]
-    argv = ["run", "D", "--input-type", "online_resource", url, "--data", str(data)]
+    argv = ["run", "D", "--input-type", "online_resource", url]
     assert main(argv, pipelines={PipelineId.D: pipeline}) == 0
     assert (pipeline.given[0].kind, pipeline.given[0].uri) == ("url", url)
 
@@ -125,15 +125,7 @@ def test_wrong_pipelines_and_input_types_are_refused(argv, message, capsys) -> N
 def test_a_file_outside_the_data_folder_is_refused(manual: Path, tmp_path, capsys) -> None:
     outside = tmp_path / "elsewhere.pdf"
     outside.write_bytes(b"%PDF-")
-    argv = [
-        "run",
-        "D",
-        "--input-type",
-        "pdf_catalog",
-        str(outside),
-        "--data",
-        str(tmp_path / "data"),
-    ]
+    argv = ["run", "D", "--input-type", "pdf_catalog", str(outside)]
     assert main(argv, pipelines={PipelineId.D: OwnersPipelineD()}) == 2
     assert "outside the data folder" in capsys.readouterr().err
 
