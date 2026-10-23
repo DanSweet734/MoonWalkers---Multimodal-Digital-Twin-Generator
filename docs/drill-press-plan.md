@@ -233,9 +233,9 @@ this phase's evidence.
 
       Re-check of run-002, the same day: all three fixes work, and the rack and pinion is a working
       fallback. The fixed recorder then made its first recording)
-- [ ] Decision records 0017, 0018 and 0019; worklog; PR
-      (Oct 23, 2026: all three hold the check and the re-check. They are accepted at the phase PR's
-      review)
+- [x] Decision records 0017, 0018 and 0019; worklog; PR
+      (Oct 23, 2026: all three hold the check and the re-check. Branch
+      `feat/phase-1-drill-press-exporter`, PR #16. The records are accepted at its review)
 
 ## Phase 2 - Contract v0.2.0, and how the teammates' pipelines run
 - [ ] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names
