@@ -1,7 +1,16 @@
 // How the dashboard words and formats what the API returns. Pure functions, tested with
 // `npm test` (Node's test runner).
 
-import type { Fact, JobStep, RunStatus, TwinVersion } from '../api/types.gen.ts'
+import type {
+  AdjustableStop,
+  Fact,
+  JobStep,
+  Joint,
+  JointLink,
+  JointMode,
+  RunStatus,
+  TwinVersion,
+} from '../api/types.gen.ts'
 
 export type Stage = RunStatus['stage']
 export type ReviewStatus = TwinVersion['review_status']
@@ -91,6 +100,47 @@ export function extents(
 
 export function triple(values: [number, number, number] | null | undefined): string {
   return values ? `(${values.map((v) => round(v, 4)).join(', ')})` : '-'
+}
+
+type JointType = Joint['joint_type']
+
+/** A joint position in its own units: metres for a sliding joint, radians (and degrees) for a
+ * turning one. */
+export function jointPosition(value: number, jointType: JointType): string {
+  if (jointType !== 'revolute') return `${round(value, 4)} m`
+  return `${round(value, 4)} rad (${round((value * 180) / Math.PI, 1)} °)`
+}
+
+/** How a joint is moved or held when nothing commands it (contract v0.2.0, decision 0020). */
+export function modeText(mode: JointMode, jointType: JointType): string {
+  const at =
+    mode.position == null
+      ? `${jointPosition(0, jointType)}, the modelled pose`
+      : jointPosition(mode.position, jointType)
+  switch (mode.kind) {
+    case 'driven':
+      return 'Driven: a motor or actuator moves it'
+    case 'spring_return':
+      return `Spring return: a spring returns it to ${at} when let go`
+    case 'locked':
+      return `Locked at ${at}`
+    case 'free':
+      return 'Free: it moves when pushed'
+  }
+}
+
+export function stopText(stop: AdjustableStop, jointType: JointType): string {
+  return `Set at ${jointPosition(stop.position, jointType)}, at the ${stop.side} end of the travel`
+}
+
+/** A link's ratio in the follower's units per leader unit, e.g. "rad per m". */
+export function linkText(link: JointLink, followerType: JointType, leaderType?: JointType): string {
+  const unit = (type?: JointType) =>
+    type === undefined ? 'leader unit' : type === 'revolute' ? 'rad' : 'm'
+  let text = `Follows ${link.leader} at ${round(link.ratio, 4)} ${unit(followerType)}`
+  text += ` per ${unit(leaderType)}`
+  if (link.offset) text += `, offset ${jointPosition(link.offset, followerType)}`
+  return link.stand_in ? `${text} (a stand-in ratio, not from a source)` : text
 }
 
 /** The message in an API error body: FastAPI sends {"detail": "..."} or a list of problems. */

@@ -8,14 +8,54 @@ import {
   fileUrl,
   formatTime,
   isOpen,
+  jointPosition,
+  linkText,
+  modeText,
   percent,
   reviewText,
   shortHash,
   speed,
   stageText,
   stepsDone,
+  stopText,
   triple,
 } from './format.ts'
+
+test('joint modes, adjustable stops and links in words (contract v0.2.0)', () => {
+  const cite = [{ source_id: 'manual' }]
+  assert.equal(jointPosition(0.0381, 'prismatic'), '0.0381 m')
+  assert.equal(jointPosition(Math.PI / 4, 'revolute'), '0.7854 rad (45 °)')
+  assert.equal(
+    modeText({ kind: 'spring_return', position: 0, citations: cite }, 'prismatic'),
+    'Spring return: a spring returns it to 0 m when let go',
+  )
+  assert.equal(
+    modeText({ kind: 'locked', position: Math.PI / 6, citations: cite }, 'revolute'),
+    'Locked at 0.5236 rad (30 °)',
+  )
+  assert.equal(
+    modeText({ kind: 'locked', citations: cite }, 'prismatic'),
+    'Locked at 0 m, the modelled pose',
+  )
+  assert.equal(
+    modeText({ kind: 'driven', citations: cite }, 'revolute'),
+    'Driven: a motor or actuator moves it',
+  )
+  assert.equal(modeText({ kind: 'free', citations: cite }, 'revolute'), 'Free: it moves when pushed')
+  assert.equal(
+    stopText({ position: 0.0381, side: 'upper', citations: cite }, 'prismatic'),
+    'Set at 0.0381 m, at the upper end of the travel',
+  )
+  const handles = { leader: 'quill_travel', ratio: 57.0852, stand_in: true, citations: cite }
+  assert.equal(
+    linkText(handles, 'revolute', 'prismatic'),
+    'Follows quill_travel at 57.0852 rad per m (a stand-in ratio, not from a source)',
+  )
+  assert.equal(
+    linkText({ leader: 'a', ratio: 2, offset: 0.1, citations: cite }, 'revolute'),
+    'Follows a at 2 rad per leader unit, offset 0.1 rad (5.7 °)',
+  )
+})
 
 test('stages and review statuses in words', () => {
   assert.equal(stageText('waiting_for_agent'), 'Waiting for the agent')
