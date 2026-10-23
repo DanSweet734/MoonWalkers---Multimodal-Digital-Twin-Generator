@@ -33,11 +33,29 @@ def stage_with(slider, **settings: JointSettings):
 # ------------------------------------------------------------------- unchanged output (Phase 2)
 @pytest.mark.parametrize("name", sorted(DRIVES))
 def test_the_phase_2_test_twin_is_unchanged(fixed_time: datetime, name: str) -> None:
-    """Built at the tests' fixed time, the box-and-cylinder test twin is byte for byte what the
-    exporter wrote before several joints were added (fixtures saved on 2026-10-22)."""
+    """Built at the tests' fixed time and not kept awake, the box-and-cylinder test twin is byte
+    for byte what the exporter wrote before several joints were added (fixtures saved on
+    2026-10-22)."""
+    twin, result = build_test_twin(fixed_time)
+    stage = build_stage(twin, [result], DRIVES[name], keep_awake=False)
+    expected = (FIXTURES / name).read_text(encoding="utf-8")  # text mode: any line endings
+    assert stage.GetRootLayer().ExportToString() == expected
+
+
+@pytest.mark.parametrize("name", sorted(DRIVES))
+def test_staying_awake_is_the_only_change_by_default(fixed_time: datetime, name: str) -> None:
+    """Twins stay awake by default (decision 0017, 2026-10-23). Against the 2026-10-22 file, that
+    adds PhysX's articulation schema to the root and its sleep threshold, set to 0, and nothing
+    else."""
     twin, result = build_test_twin(fixed_time)
     stage = build_stage(twin, [result], DRIVES[name])
-    expected = (FIXTURES / name).read_text(encoding="utf-8")  # text mode: any line endings
+    old = (FIXTURES / name).read_text(encoding="utf-8")
+    roots = 'prepend apiSchemas = ["PhysicsArticulationRootAPI"]'
+    first_part = '{\n    def Xform "body"'
+    assert old.count(roots) == 1 and old.count(first_part) == 1
+    expected = old.replace(roots, roots[:-1] + ', "PhysxArticulationAPI"]').replace(
+        first_part, '{\n    float physxArticulation:sleepThreshold = 0\n\n    def Xform "body"'
+    )
     assert stage.GetRootLayer().ExportToString() == expected
 
 
@@ -252,13 +270,13 @@ def test_settings_do_not_change_the_joint_frames(slider) -> None:
         assert arm.GetLocalPos0Attr().Get() == Gf.Vec3f(0, 0, 0.3)
 
 
-@pytest.mark.parametrize("awake", [False, True])
-def test_keep_awake_is_written_only_when_asked(slider, awake: bool) -> None:
+@pytest.mark.parametrize(("settings", "awake"), [({}, True), ({"keep_awake": False}, False)])
+def test_twins_stay_awake_by_default(slider, settings: dict, awake: bool) -> None:
     """PhysX puts a slow articulation to sleep (the drill press's spindle at 30 degrees a second,
-    2026-10-23). ``keep_awake`` turns that off; without it nothing is written, so older twins'
-    files do not change."""
+    2026-10-23), so twins stay awake unless asked not to (decision 0017, Daniel's decision on
+    review). ``keep_awake=False`` writes nothing."""
     twin, result = slider
-    stage = build_stage(twin, [result], keep_awake=awake)  # keep it: it owns its prims
+    stage = build_stage(twin, [result], **settings)  # keep it: it owns its prims
     root = stage.GetPrimAtPath(ROOT)
     assert ("PhysxArticulationAPI" in applied_schemas(root)) is awake
     threshold = root.GetAttribute("physxArticulation:sleepThreshold")

@@ -25,14 +25,17 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 - **The phase plan:** `docs/drill-press-plan.md`, written and approved on 2026-10-22 (PR #15,
   merged). Daniel's direction: several images per machine and the least guessing, with stand-ins
   (labelled, logged as inaccuracies) allowed on the way.
-- **Now: Phase 1**, on branch `feat/phase-1-drill-press-exporter`. A box-and-cylinder drill press
+- **Phase 1 is done** (PR #16, merged on 2026-10-23). A box-and-cylinder drill press
   proves the exporter before any generated mesh: sliding joints, locks, the spring, the depth
   stop, coupled handles. Built and validated on 2026-10-22, with decisions 0017-0019 proposed.
   Daniel checked it in Isaac Sim on 2026-10-23. The mimic coupling and locks by equal limits are
   kept. Three fixes went into run `2026-10-23_run-002`: keep the articulation awake, the rack and
   pinion's sign, and the free table's height. His re-check the same day confirmed all three.
   The fixed joint recorder then made its first recording: the handles track within 1%, and
-  the spring returns in 0.83 s. Next: the phase PR, then Phase 2 after it is merged.
+  the spring returns in 0.83 s. Decisions 0017-0019 are accepted.
+- **Now:** a small PR that keeps every twin awake by default (Daniel, 2026-10-23;
+  decision 0017). Then **Phase 2**: contract v0.2.0 (linked joints, joint modes) and how
+  Pipelines A, C and D run outside their tests (decisions 0020 and 0021), from an up-to-date `main`.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -112,6 +115,9 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   them. Fewer than four views work. Details: `docs/setup/generators.md`, "The multi-view model".
 - PDF pages (figures, exploded views) render with pypdfium2, a dev dependency added on
   2026-10-22, and the backend's `write_png`. The Read tool cannot render PDFs here (no poppler).
+- Twins stay awake by default: the exporter writes PhysX's `physxArticulation:sleepThreshold = 0`
+  on the articulation root (decision 0017). Without it, a slow drive stops once PhysX puts the
+  twin to sleep.
 - Pipeline B method (decision 0012): a cited `geometry_spec.json` per run folder orients, splits and
   scales the generated mesh. One run folder holds one build, and its outputs are never overwritten.
   Twins with generated meshes are written as binary `.usdc`.
