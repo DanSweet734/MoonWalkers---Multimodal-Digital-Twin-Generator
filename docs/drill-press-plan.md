@@ -220,9 +220,17 @@ this phase's evidence.
       it has not yet run in Isaac Sim)
 - [ ] Isaac Sim 6.2.0 check by Daniel, from a checklist per file (a new section in
       `docs/setup/isaac-sim-check.md`)
-      (Oct 22, 2026: the checklist is section 8, and the files are ready. Waiting for the check)
+      (Oct 22, 2026: the checklist is section 8, and the files are ready.
+      Oct 23, 2026: Daniel checked run-001 in Isaac Sim 6.2.0. Nothing shook or flew apart:
+      - the mimic coupling and the locks by equal limits work;
+      - the spring and the depth stop work, the stop to the measured 2.88 in;
+      - three problems, fixed in run-002: the slow spindle fell asleep; the rack and pinion
+        jammed, probably its sign; the free table's height sagged;
+      - the recorder wrote nothing ("Failed to get a valid attached USD stage id"), also fixed.
+
+      A short re-check of run-002 is pending: files 2, 6, 7 and 10, and one recording)
 - [ ] Decision records 0017, 0018 and 0019; worklog; PR
-      (Oct 22, 2026: all three written as proposed. Each is finished with the check's result)
+      (Oct 23, 2026: all three hold the check's results. They are finished after the re-check)
 
 ## Phase 2 - Contract v0.2.0, and how the teammates' pipelines run
 - [ ] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names

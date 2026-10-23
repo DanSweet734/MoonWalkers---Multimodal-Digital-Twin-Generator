@@ -194,3 +194,32 @@ validators:
 - **usd-core detail:** `Usd.Prim.GetAppliedSchemas()` leaves out schemas it does not define. The
   prim type info's `GetAppliedAPISchemas()` keeps them, so `physx_schemas.applied_schemas` uses
   that.
+
+## What Daniel's Isaac Sim check showed (2026-10-23)
+Isaac Sim 6.2.0 (Kit 110.4.0, build 386251), run `2026-10-22_run-001`. The full record is in its
+`RUN.md`, and decisions 0017-0019 give the results. Three lessons about Isaac Sim itself, each
+read again in its installed source on 2026-10-23:
+- **Slow articulations fall asleep.** The PhysX schema's `PhysxArticulationAPI` has
+  `float physxArticulation:sleepThreshold = 0.00005`: "Mass-normalized kinetic energy threshold
+  below which the articulation may go to sleep" ("Units: distance * distance / seconds /
+  seconds").
+  - The slow spindle (30°/s) turned only while pushed; the fast one (340 RPM) turned by itself.
+  - [INFERENCE] For a cylinder spinning on its axis the energy is about r²ω²/4: 3.3e-5 for the
+    drill press's chuck at 30°/s (asleep), and 6.2e-5 for the PoC's test spindle (awake, as in
+    Phase 2).
+  - Fix: `keep_awake` writes the threshold as 0.
+- **A tensor-API view needs the stage's id.** `omni.physics.tensors.create_simulation_view("numpy")`,
+  called from the recorder's physics-step callback, logged "Failed to get a valid attached USD
+  stage id from PhysX simulation".
+  - Isaac Sim's own `SimulationManager` passes the id: `create_simulation_view("warp",
+    stage_id=stage_id, backend=cls._engine)`, then `set_subspace_roots("/")`
+    (`exts/isaacsim.core.simulation_manager/.../impl/simulation_manager.py`).
+  - It hands its view out through `get_physics_simulation_view()`: "Physics (tensor API)
+    simulation view, or ``None`` if the physics is not initialized".
+  - The recorder now uses that view, or makes its own the same way.
+- **The rack and pinion's sign matters.** The schema's `physics:ratio` has "Range: (-inf, inf)",
+  and the joint's velocities "may otherwise have opposite signs, depending on the orientations of
+  the joint frames".
+  - With the ratio positive, the handles jammed at their limit and the quill stayed down.
+  - [INFERENCE] The sign was the wrong one for our frames. It is retried with the mimic gearing's
+    sign.

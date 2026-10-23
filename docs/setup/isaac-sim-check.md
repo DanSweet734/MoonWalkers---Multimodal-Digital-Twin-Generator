@@ -185,12 +185,19 @@ Play the output should print `first physics step at t = ... (run 2)`.
 
 Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 
+**If nothing moves on Play:**
+- If no `first physics step` line was printed, the callback did not fire. In the pasted script,
+  change `API = "auto"` near the top to `API = "omni.physx"`, run it again, and press Play.
+- If the line was printed but the spindle still does not move, copy the output, plus any red
+  errors in the console.
+
 ## 8. Drill-press plan, Phase 1: the box-and-cylinder drill press
 A stand-in for the Grizzly T33901 made of boxes and cylinders (`docs/drill-press-plan.md`,
 Phase 1). It has eight parts on seven joints, and its sizes come from the manual where it gives
-them. The files are in
-`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\moonwalkers-testdrillpress\runs\2026-10-22_run-001\`.
-Its `RUN.md` repeats what to look for in each file and has room for your notes.
+them. The current files, with the first check's fixes, are in
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\moonwalkers-testdrillpress\runs\2026-10-23_run-002\`.
+Its `RUN.md` repeats what to look for in each file and has room for your notes. The first files,
+checked on 2026-10-23, are in `...\runs\2026-10-22_run-001\`, whose `RUN.md` holds that check.
 
 To make them again (from `backend/`):
 `uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
@@ -204,6 +211,8 @@ To make them again (from `backend/`):
   - the bracket with its crank;
   - the table arm and the table.
 - The front faces +X, and the operator's right is +Y.
+- On Play, parts with a stored start, such as the quill at full depth or the raised table, jump
+  there on the first physics step. Before Play the file can only show them where they are drawn.
 
 **Two tools for every file.**
 - **Pushing a part:** while the simulation runs, hold **Shift** and drag a part with the left mouse
@@ -214,20 +223,23 @@ To make them again (from `backend/`):
   - After Play it prints `recording ... to ...\recordings\<file>_<time>.csv`. The file holds every
     joint's position over time, in radians or metres.
   - Run it again for each file you open. Please send the CSV files, or note their names.
+  - In run-001 it printed `cannot read the joints` instead and wrote nothing (fixed in run-002).
 
 **The files, one at a time** (File > Open, then Play):
 1. `spindle_spin.usdc`: the spindle turns at 340 RPM, the lowest cited speed. At 60 frames a second
    it may look slow or even backwards, because each frame is close to its 8-sided symmetry. Nothing
    else moves.
-2. `spindle_spin_slow.usdc`: the spindle turns slowly (30°/s), clockwise seen from above.
-3. `quill_spring_return.usdc`: the quill starts 3-1/4 in down and the spring returns it to the top,
-   where it stays. Then Shift+drag the quill down and let go: it springs back.
+2. `spindle_spin_slow.usdc`: the spindle turns slowly (30°/s), clockwise seen from above, without
+   a push.
+3. `quill_spring_return.usdc`: the quill jumps to 3-1/4 in down, and the spring returns it to the
+   top, where it stays.
 4. `depth_stop.usdc`: the quill is fed down and stops at a depth stop 1-1/2 in (38 mm) down, short
-   of its full travel.
-5. `handles_follow_mimic.usdc`: as file 3, and the handles turn back 270° as the quill rises. Then
-   Shift+drag a handle: the quill should move too.
-6. `handles_follow_rack_pinion.usdc`: the same coupling, written another way. Note whether the
-   handles turn, and which way compared with file 5.
+   of its full travel. At the top it already sticks 1.38 in out of the head, so it ends 2.88 in out.
+5. `handles_follow_mimic.usdc`: as file 3, and the handles turn back 270° as the quill rises.
+   Shift+drag a handle: the quill moves too. A push on the quill itself barely moves it, because
+   through the coupling the handles' lever is about 10 times stronger.
+6. `handles_follow_rack_pinion.usdc`: the same coupling, written another way. The handles should
+   turn back with the quill, the same way as in file 5.
 7. `table_free.usdc`: nothing moves on Play. Shift+drag the table:
    - it swings around the column;
    - it tilts up to 45° each way;
@@ -246,11 +258,24 @@ To make them again (from `backend/`):
 - any errors or warnings in the log, or the log's file name, so Claude Code can read it;
 - the CSV recordings.
 
-**If nothing moves on Play:**
-- If no `first physics step` line was printed, the callback did not fire. In the pasted script,
-  change `API = "auto"` near the top to `API = "omni.physx"`, run it again, and press Play.
-- If the line was printed but the spindle still does not move, copy the output, plus any red
-  errors in the console.
+**Result of the first check (run-001, Daniel, 2026-10-23).** Isaac Sim 6.2.0, Kit 110.4.0 build
+386251. Nothing shook, drifted or flew apart.
+- **As expected:** files 1, 3, 4, 5, 8, 9 and 10's table.
+  - The depth stop ended at the 2.88 in expected.
+  - The mimic moved the quill when a handle was pushed.
+  - The equal-limit lock held completely; the drive lock gave a little.
+- **Three problems, fixed in run-002:**
+  - **Files 2 and 10's slow spindle** turned only while pushed. [INFERENCE] PhysX put the
+    articulation to sleep. The files are now written with sleep turned off.
+  - **File 6's rack and pinion** jammed. The quill did not rise, and the handles moved only a
+    little. [INFERENCE] Its ratio's sign was reversed; it is written with the other sign now.
+  - **File 7's table height** sagged on Play and could be pushed. It was held by a soft drive, and
+    is now held by equal limits.
+- **The recorder** wrote nothing: "Failed to get a valid attached USD stage id from PhysX
+  simulation". It now uses Isaac Sim's own physics view.
+
+**The re-check (run-002) needs only:** files 2, 6, 7 and 10, and one recording, from any file, to
+show that `record_joints.py` now writes its CSV.
 
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are

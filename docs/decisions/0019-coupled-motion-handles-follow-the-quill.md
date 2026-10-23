@@ -1,7 +1,7 @@
 # 0019 - Coupled motion: the downfeed handles follow the quill
 
-- **Status:** proposed (Claude Code, drill-press plan Phase 1). Which coupling to keep waits for
-  Daniel's Isaac Sim check.
+- **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
+  2026-10-23: the mimic is kept. The rack and pinion failed, and is being retried as a fallback.
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 
@@ -35,7 +35,9 @@ usd-core defines none of these PhysX schemas, so 1 and 3 are written by name, wi
 types of Isaac Sim 6.2's schema file (`usd/physx_schemas.py`).
 
 ## Decision
-1 and 3 are both written for the check, and 2 and 4 are not. Kept for each:
+**1, the mimic, after the check.** 1 and 3 were both written for the check, and 2 and 4 were not.
+Only the mimic worked. The rack and pinion stays in the exporter as a fallback for the risk below.
+Its ratio's sign was reversed after it failed, and it is being checked again. Kept for each:
 - **`JointCoupling(leader, ratio, offset, method)` in `JointSettings`.**
   - The follower's position is `ratio` × the leader's + `offset`, in contract units (rad per m
     here).
@@ -54,11 +56,27 @@ types of Isaac Sim 6.2's schema file (`usd/physx_schemas.py`).
 - **The deprecation is a risk.** If a later Isaac Sim drops `PhysxMimicJointAPI` and Newton still
   refuses cross-type mimics, 3 or 4 is what remains. Then a push on the handles would turn the
   quill only with 3.
-- The rack and pinion ties only speeds, so its direction may come out reversed. Daniel's check of
-  file 6 says which way it turns.
+- The rack and pinion ties only speeds, so its direction depends on the joint frames. It came out
+  reversed in the first check (below).
 - The ratio is a stand-in until a measurement or Grizzly gives it. Every twin carries it as an
   issue.
 - Contract v0.2.0 (decision 0020) will describe linked joints, so pipelines can state couplings.
 
-## Isaac Sim check
-Not yet done. See `docs/setup/isaac-sim-check.md`, section 8, files 5, 6 and 10.
+## Isaac Sim check (Daniel, 2026-10-23)
+Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
+- **Mimic (file 5): works.**
+  - The quill started down and rose, and the handles turned with it, about 270°, counter-clockwise
+    from where Daniel watched.
+  - Pushing a handle moved the quill too; pushing the quill alone did not, as decision 0018
+    explains.
+  - The follower's limits are -0.05 to 4.76 rad, so a 270° turn fits only in the positive sense.
+    [INFERENCE] So the coupling's sign is as designed: pulling the front handle down lowers the
+    quill.
+- **Rack and pinion (file 6): did not work as written.** "the handles move a little and can be
+  moved but not easily, and the quill doesn't seem to move at all."
+  - [INFERENCE] The ratio's sign is reversed: as the quill tries to rise, the handles are driven
+    the wrong way, into their limit about 3° away, and that holds the quill down.
+  - PhysX allows a negative ratio ("Range: (-inf, inf)").
+  - The exporter now writes the ratio with the mimic gearing's sign, and run `2026-10-23_run-002`
+    retries it. If it then works, it is a ready fallback for the deprecation risk.
+- **All motions (file 10):** the quill moved only through the handles, as in file 5.

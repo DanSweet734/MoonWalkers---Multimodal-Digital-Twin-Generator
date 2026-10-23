@@ -1,7 +1,7 @@
 # 0017 - Sliding joints, other axes and a chain of joints in the exporter
 
-- **Status:** proposed (Claude Code, drill-press plan Phase 1). Waiting for Daniel's Isaac Sim check
-  of the box-and-cylinder drill press.
+- **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
+  2026-10-23: it works, with one fix (staying awake), whose re-check is pending.
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0010 (prismatic joints were refused; one drive went on every joint)
@@ -54,6 +54,12 @@ sources are quoted in `docs/research/2026-10-22-sliding-joints-locks-and-couplin
   (`backend/tests/fixtures/test_twin/`).
 - **Primitives:** a "compound" of boxes and cylinders now makes one part, such as the hub with its
   three handles (`usd/geometry.py`). It needs no contract change.
+- **Staying awake** (added after the check): `keep_awake=True` writes `PhysxArticulationAPI`, by
+  name, with `physxArticulation:sleepThreshold = 0`. The schema says an articulation "may go to
+  sleep" below a "Mass-normalized kinetic energy" of 0.00005, and a drive alone does not wake
+  it. The drill press's check files use it. It is off by default, so older twins' files do not
+  change. Whether every twin with joints should stay awake is decided when Pipeline B builds
+  several parts (plan, Phase 5).
 
 ## Consequences
 - The box-and-cylinder drill press exports with seven joints, and both validators pass its ten
@@ -71,5 +77,19 @@ sources are quoted in `docs/research/2026-10-22-sliding-joints-locks-and-couplin
 - **Reversing it:** remove `JointSettings` and the filtered pairs. Prismatic joints would then
   need refusing again.
 
-## Isaac Sim check
-Not yet done. See `docs/setup/isaac-sim-check.md`, section 8.
+## Isaac Sim check (Daniel, 2026-10-23)
+Isaac Sim 6.2.0, Kit 110.4.0 build 386251, run `2026-10-22_run-001` (its `RUN.md` holds the full
+record).
+- **The chain works.** All seven joints moved as written, and nothing shook, drifted or flew apart
+  in any of the ten files. So filtering the pairs of parts that no joint joins kept the spindle,
+  inside the head's hull, from blowing the twin apart. The prismatic quill and table height slid
+  within their limits.
+- **One problem:** at 30°/s the spindle turned only while pushed. At 340 RPM it turned by itself.
+  - [INFERENCE] PhysX put the articulation to sleep. For a cylinder spinning on its axis, the
+    mass-normalized energy is about r²ω²/4.
+    - The drill press's 22 mm chuck at 30°/s gives 3.3e-5, below 0.00005, so it sleeps.
+    - At 340 RPM it is 0.15, far above.
+    - The PoC's test spindle, 30 mm at 30°/s, gives 6.2e-5, just above, and it kept turning in
+      Phase 2.
+  - The fix is the "Staying awake" setting above. Run `2026-10-23_run-002` uses it; its re-check is
+    pending.
