@@ -20,8 +20,8 @@ class GeneratorRequest:
     ``images`` maps a view name to an image file: ``{"single": path}`` for single-image models, or
     some of ``front``, ``left``, ``back``, ``right`` for multi-view models. hy3dgen's
     ``MVImageProcessorV2`` documents the order as "front, front clockwise 90, back, front clockwise
-    270"; which side of the object ``left`` shows is not confirmed yet (check before the first
-    multi-view run).
+    270": ``left`` shows the object's own left side, front pointing to the image's left, as the
+    repository's example images show (checked 2026-10-22, ``docs/setup/generators.md``).
     """
 
     images: Mapping[str, Path]

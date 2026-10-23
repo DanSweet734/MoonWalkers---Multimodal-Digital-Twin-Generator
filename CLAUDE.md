@@ -22,7 +22,11 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - `docs/poc-report.md`, section 8, the seven decisions it needs;
   - `docs/research/2026-10-19-open-questions-research.md`, section 6, the manual's cited facts.
     The manual is in `data/machines/grizzly-t33901/inputs/`; no photo has been collected yet.
-- **First task of the phase:** write its plan, like `docs/poc-plan.md`, and stop for review.
+- **The phase plan:** `docs/drill-press-plan.md`, written on 2026-10-22 (PR #15). Daniel answered
+  its questions the same day: the goal is several images per machine and the least guessing, and
+  stand-ins (labelled, logged as inaccuracies) are allowed on the way. Once he approves the PR,
+  start with its Phase 1: a box-and-cylinder drill press that proves the exporter, before any
+  generated mesh.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -96,10 +100,12 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   adapter in `generators/`. Primary: Hunyuan3D-2mv (multi-view). Fallback, and what the PoC uses while
   there is one photo: Hunyuan3D-2 single-image (decision 0011). Setup: `docs/setup/generators.md`
   (`C:\mw-gen` on Daniel's machine, found through `MOONWALKERS_GEN_ROOT`).
-  **Before any serious work with the multi-view model**, check which side of the machine each of
-  its four images must show. hy3dgen documents "front, front clockwise 90, back, front clockwise
-  270", but which side `left` is was never confirmed. Use the repository's example images
-  (`docs/setup/generators.md`, "Adding the multi-view model later").
+  **The multi-view model is installed** (2026-10-22). Its image order was checked with the
+  repository's example images. `left` is the machine's own left: stand facing the front, walk to
+  your right, and take the photo. Manuals name sides the other way round, as the operator sees
+  them. Fewer than four views work. Details: `docs/setup/generators.md`, "The multi-view model".
+- PDF pages (figures, exploded views) render with pypdfium2, a dev dependency added on
+  2026-10-22, and the backend's `write_png`. The Read tool cannot render PDFs here (no poppler).
 - Pipeline B method (decision 0012): a cited `geometry_spec.json` per run folder orients, splits and
   scales the generated mesh. One run folder holds one build, and its outputs are never overwritten.
   Twins with generated meshes are written as binary `.usdc`.

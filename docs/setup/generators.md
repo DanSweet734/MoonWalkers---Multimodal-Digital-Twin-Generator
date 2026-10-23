@@ -13,7 +13,8 @@ approved this setup for his machine on 2026-10-17.
 - An NVIDIA GPU. The Hunyuan3D-2 README says: "It takes 6 GB VRAM for shape generation". The setup
   was tested on an RTX 4090 (24 GB), driver 617.42.
 - `uv` and `git` (`docs/setup/windows-dev-setup.md`).
-- About 12 GB of free disk space (see "Disk use" below).
+- About 12 GB of free disk space, and 4.6 GB more for the multi-view model (see "Disk use"
+  below).
 
 ## Layout
 One root folder, `C:\mw-gen` on Daniel's machine. Short paths avoid Windows path-length trouble.
@@ -23,6 +24,7 @@ C:\mw-gen\
   hunyuan3d-2\repo\     the Hunyuan3D-2 code (git clone, commit f8db630)
   hunyuan3d-2\.venv\    Python 3.12 environment
   models\tencent\Hunyuan3D-2\hunyuan3d-dit-v2-0\   config.yaml + model.fp16.safetensors
+  models\tencent\Hunyuan3D-2mv\hunyuan3d-dit-v2-mv\   the multi-view model (added 2026-10-22)
   models\u2net\         u2net.onnx, the background-removal model (downloaded on first use)
 ```
 
@@ -88,6 +90,7 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
 |---|---|
 | `hunyuan3d-2\.venv` | 7.1 GB |
 | `models\tencent` (`model.fp16.safetensors`, 4,928,151,562 bytes) | 4.6 GB |
+| `models\tencent\Hunyuan3D-2mv` (added 2026-10-22; its weights are also 4,928,151,562 bytes) | 4.6 GB more |
 | `models\u2net` | 168 MB |
 | `hunyuan3d-2\repo` | 161 MB |
 
@@ -130,10 +133,56 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
 - **Slow start.** Each run starts a fresh process, so about 14 s of every run goes to loading the
   model.
 
-## Adding the multi-view model later
-Download `tencent/Hunyuan3D-2mv` files `hunyuan3d-dit-v2-mv/config.yaml` and
-`hunyuan3d-dit-v2-mv/model.fp16.safetensors` (4.93 GB) into `C:\mw-gen\models\tencent\Hunyuan3D-2mv`,
-then use `Hunyuan3DSettings(model_repo="tencent/Hunyuan3D-2mv", subfolder="hunyuan3d-dit-v2-mv")`.
-Images are named `front`, `left`, `back` and `right`. hy3dgen documents the order as "front, front
-clockwise 90, back, front clockwise 270". Which side of the machine `left` must show is not
-confirmed: check it with the repository's example images before the first real run.
+## The multi-view model (added 2026-10-22)
+Daniel approved the download on 2026-10-22. It is the standard `hunyuan3d-dit-v2-mv`, not the
+`-fast` or `-turbo` variants in the same repository.
+- **Download** (not gated, so no login), pinned to the repository's commit of that day:
+  ```powershell
+  & C:\mw-gen\hunyuan3d-2\.venv\Scripts\hf.exe download tencent/Hunyuan3D-2mv hunyuan3d-dit-v2-mv/config.yaml hunyuan3d-dit-v2-mv/model.fp16.safetensors --revision 3a761b539b29fe4ff64714813aa9560fd66f5de0 --local-dir C:\mw-gen\models\tencent\Hunyuan3D-2mv
+  ```
+- **Checked:**
+  - `model.fp16.safetensors` is 4,928,151,562 bytes;
+  - its SHA-256, `d36f5881bcdc56726b73e517cd444c13c60732431622da7268145355c8d38e9c`, matches the
+    one Hugging Face lists (https://huggingface.co/api/models/tencent/Hunyuan3D-2mv?blobs=true,
+    read 2026-10-22);
+  - `config.yaml` is 1,608 bytes.
+- **License:** the same "TENCENT HUNYUAN 3D 2.0 COMMUNITY LICENSE AGREEMENT" as the single-image
+  model, with the same "DOES NOT APPLY IN THE EUROPEAN UNION, UNITED KINGDOM AND SOUTH KOREA"
+  (https://huggingface.co/tencent/Hunyuan3D-2mv/raw/main/LICENSE, read 2026-10-22). Its model card
+  links to Hunyuan3D-2's license file.
+- **Use:** `Hunyuan3DSettings(model_repo="tencent/Hunyuan3D-2mv", subfolder="hunyuan3d-dit-v2-mv")`,
+  with images named `front`, `left`, `back` and `right`.
+- **First run (2026-10-22).** Our adapter, on example set 1 (`front`, `left`, `back`; scratch
+  output, not a twin):
+  - status "ok" in 58.5 s: loading the model took 13.1 s, generating 37.7 s, and clean-up 7.6 s;
+  - peak VRAM 6.09 GB allocated, 7.29 GB reserved, on the RTX 4090;
+  - 631,780 faces before clean-up, 40,000 after, and the mesh is watertight;
+  - no background removal, since the example images are already cut out;
+  - the same versions as above (hy3dgen 2.0.2, torch 2.8.0+cu126).
+
+  By eye, the rendered views show the figure whole: head, pigtails, arms and legs.
+
+### Which side each image shows (checked 2026-10-22)
+hy3dgen documents the order as "front, front clockwise 90, back, front clockwise 270". The
+repository's example sets (`repo\assets\example_mv_images\1` to `14`, at commit f8db630) settle
+what that means:
+- **`left` shows the object's own left side, with its front pointing to the image's left.**
+  - In set 1 the figure faces the camera in `front.png`, with her right hand on her hip, on the
+    image's left.
+  - In `left.png` she faces the image's left, and the arm we see hangs straight: her left arm.
+  - `back.png` shows the hand on the hip on the image's right.
+  - Set 2 also faces the image's left in `left.png`.
+- That is "front clockwise 90": turn the object 90° clockwise, seen from above, and the camera sees
+  its left side. [INFERENCE] `right` is then the object's right side, with its front pointing to the
+  image's right.
+- **For a machine:** stand facing its front, then walk around to your right. The photo from there
+  is `left`. On the T33901, that is the side with the downfeed handles (the manual's photos,
+  pp. 6-7).
+- **Watch the words.** Manuals name sides as the operator sees them, the opposite of the model's
+  names. [INFERENCE] The T33901 manual's "spring housing is located on the left side" (p. 40) is
+  the side opposite the handles, so its photo is the model's `right`.
+- **Fewer views work:** the repository's own `examples/shape_gen_multiview.py` passes only `front`,
+  `left` and `back`, and all 14 example sets have only those three. Our adapter accepts any subset
+  of the four names (`generators/hunyuan3d.py`).
+- **Not yet tried:** corner views, such as the T33901 manual's two studio photos, which show the
+  machine from between two sides.

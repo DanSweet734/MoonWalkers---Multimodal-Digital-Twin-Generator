@@ -6,8 +6,8 @@ Stop at the end of each phase, open a pull request, and wait for review before s
 
 **Complete.** All phases are done, and the PoC was presented to the advisors on Oct 22, 2026, with
 positive feedback (`docs/poc-report.md`). The next phase, integration, starts with the Grizzly
-T33901 drill press, which the advisors approved. Its plan is written as that phase's first task
-(CLAUDE.md, "Current phase").
+T33901 drill press, which the advisors approved. Its plan is `docs/drill-press-plan.md` (Oct 22,
+2026).
 
 ## Success levels
 1. A scaled 3D model of the HA5C, with cited facts, that opens in Isaac Sim.
@@ -124,4 +124,5 @@ Pipeline B is used on other machines.
       turns about, and its quill slides along, a vertical axis, so it needs other axes, several
       joints and prismatic joints. Noted Oct 18, 2026, while fixing the item above; it needs its
       own decision. Not started. (Oct 19, 2026: its manual was read, and the seven decisions it
-      needs are listed in `docs/poc-report.md`, section 8.)
+      needs are listed in `docs/poc-report.md`, section 8. Oct 22, 2026: planned in
+      `docs/drill-press-plan.md`.)
