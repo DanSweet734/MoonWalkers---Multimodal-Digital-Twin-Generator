@@ -259,15 +259,21 @@ this phase's evidence.
     the only value the contract accepts today. The record decides how they keep loading and
     building.
   - Discussed with Ava, Kiran and Sarkis before it is merged (CLAUDE.md, "Who owns what").
-- [ ] Build it:
+- [x] Build it:
   - the contract, its JSON Schema (`moonwalkers.contracts.json_schema`) and the dashboard's types
     (`moonwalkers.api.typescript`);
     (Oct 23, 2026: done, with 31 new contract tests. The exporter writes each result's own
     version, and the Phase 2 test twin differs from its 2026-10-22 files only by the two
     provenance lines. The eight stored results load and the four stored twins build)
   - the exporter reading the new fields; the dashboard showing modes and links;
+    (Oct 23, 2026: done. `contract_settings`, plus `starts` and `coupling_method` for checks; 21
+    exporter tests. The dashboard shows each joint's mode, stop and link with their citations)
   - the box-and-cylinder drill press rewritten to use them; at a fixed time, its stages match
     Phase 1's.
+    (Oct 23, 2026: run `2026-10-23_run-003`. `all_motions` matches Phase 1's physics; the other
+    files differ only in three intended ways: the handles always follow the quill, the table is
+    locked by its handles, and the loosened table drops. Decision 0020, Consequences. Daniel's
+    short re-check is in `docs/setup/isaac-sim-check.md`, section 8)
 - [ ] Decision record 0021: how Pipelines A, C and D run outside their tests. It answers:
   - **Where they start.** The agent's tools build only through Pipeline B, and the dashboard takes
     only a machine photo (worklog 2026-10-22). Candidates: an MCP tool and a command line first.

@@ -143,8 +143,10 @@ Backend (run from `backend/`):
 - Write the box-and-cylinder test twin (Phase 2 check): `uv run python -m moonwalkers.usd.primitive_twin ../data/machines/moonwalkers-testindexer/runs/<run>`
 - Write the box-and-cylinder drill press (drill-press plan, Phase 1; ten check files, `RUN.md` and
   the joint recorder `record_joints.py`): `uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
-  Settings per joint (drives, locks, starts, couplings) are `JointSettings` (decisions 0017-0019).
-  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 8.
+  Its joints state their behaviour in contract v0.2.0 (mode, adjustable stop, link; decision 0020),
+  which the exporter turns into drives, locks and couplings (`contract_settings`). A check adds
+  only its scenario: contract changes, `JointSettings` (decisions 0017-0019), `starts` or
+  `coupling_method`. Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 8 (run-003).
 - Build a twin from a photo (Pipeline B): the run folder `../data/machines/<machine>/runs/<run>` holds
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's

@@ -256,18 +256,37 @@ stroke. ..."}`.
   keep-awake test checks its one difference (decision 0017). It is not loosened. Built on
   2026-10-23: both fixture tests pass for both files (`spin.usda`, `quarter_turn.usda`), and each
   line they replace is checked to occur exactly once.
-- **The exporter reads the new fields.** A joint without `JointSettings` gets its drive, limits and
-  coupling from its mode, stop and link. `JointSettings` still overrides a joint for a check.
-  - The box-and-cylinder drill press is rewritten: the result carries the modes, the stop and the
-    link, and each check file adds only its scenario.
-  - At a fixed time, its physics matches Phase 1's (plan, Phase 2). Only the provenance gains the
-    new fields.
+- **The exporter reads the new fields** (built 2026-10-23, `usd/exporter.py`, `contract_settings`).
+  - A joint gets its drive, lock and coupling from its mode and link, with the table above's
+    numbers. Every joint's limits include its adjustable stop.
+  - `JointSettings` still replace a joint for a check. Their `limits=None` keeps the contract's
+    limits and stop, so a feed past the depth stop still ends at the stop.
+  - Two export options were added for checks: `starts` (starting positions) and
+    `coupling_method` (the rack and pinion for every link).
+  - The contract fields go into each joint's provenance with their citations
+    (`mode_json`, `adjustable_stop_json`, `follows_json`).
+- **The drill press is rewritten** (`usd/primitive_drill_press.py`, run `2026-10-23_run-003`):
+  - Its result carries the quill's spring and depth stop, the handles' stand-in link, the driven
+    spindle, and the table's four locks, each citing the manual's words.
+  - Each check file adds only its scenario: a machine setting changed in the contract (the stop
+    moved, the locks loosened or set), starting positions, or a simulation choice.
+  - **Compared with Phase 1's files written at the same time:** `all_motions` has the same physics.
+    Every other difference is one of three intended changes:
+    - the handles follow the quill in every file, not only in the coupling files;
+    - the table is locked at its drawn pose by equal limits in files 1 to 6, instead of soft
+      default drives;
+    - `table_free`'s height is free (decision 0018, Daniel's direction).
+
+    That is not the plan's "its stages match Phase 1's" to the letter. The first two changes make
+    the files truer to the machine [INFERENCE], and the third was asked for. Both validators pass
+    all ten files.
 - **A driven prismatic joint gets today's hold,** which sags 0.098 m on a vertical slide (decision
   0017). No twin has one yet; its tuning is decided when one does.
 - **A turning follower needs limits for the mimic** ("PhysicsRevoluteJoint (with a limit set)",
-  research note, section 4). The contract does not require them. Today the exporter refuses a
-  follower without limits. NVIDIA's own demo gives one limits of ±1e10 instead. Which of the two
-  the exporter does is settled in the build [INFERENCE: ±1e10 is untried on our stages].
+  research note, section 4). The contract does not require them. NVIDIA's own demo gives one
+  limits of ±1e10. **Settled in the build:** the exporter keeps refusing such a follower, and says
+  that it needs limits. ±1e10 is untried on our stages, and a turning follower without limits is
+  more likely a reading the pipeline should finish [INFERENCE].
 - **There are four kinds.** A fifth, such as a brake or a detent, needs its own version bump.
 - **The knowledge graph:** a link is an edge between two joints, and a mode and a stop are a
   joint's properties. So moving to Neo4j stays a mapping (decision 0004) [INFERENCE].

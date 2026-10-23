@@ -1,4 +1,5 @@
-"""The box-and-cylinder drill press (drill-press plan, Phase 1) and its command."""
+"""The box-and-cylinder drill press (drill-press plan, Phase 1), stated in contract v0.2.0 (Phase
+2, decision 0020), and its command."""
 
 import math
 from datetime import datetime
@@ -9,17 +10,23 @@ from pxr import Usd, UsdPhysics
 
 from moonwalkers.kb import machine_key
 from moonwalkers.usd import primitive_drill_press as dp
-from moonwalkers.usd.exporter import DriveSettings, JointSettings, build_stage
+from moonwalkers.usd.exporter import contract_settings
 from moonwalkers.usd.physx_schemas import mimic_axes
 from moonwalkers.usd.validate import validate_stage
 
 INCH = 0.0254
 ROOT = "/moonwalkers_testdrillpress"
+JOINTS = f"{ROOT}/joints"
+TABLE = ("table_height", "table_around_column", "table_tilt", "table_around_center")
 
 
 @pytest.fixture
 def drill_press(fixed_time: datetime):
     return dp.build_test_drill_press(fixed_time)
+
+
+def joints_of(result) -> dict:
+    return {j.joint_id: j for j in result.joints}
 
 
 def test_the_test_model_is_labelled_and_kept_apart_from_the_real_machine(drill_press) -> None:
@@ -34,7 +41,13 @@ def test_the_test_model_is_labelled_and_kept_apart_from_the_real_machine(drill_p
 
 def test_every_part_and_joint_cites_the_manual_or_says_it_is_made_up(drill_press) -> None:
     _, result = drill_press
-    for item in [*result.parts, *result.joints]:
+    behaviours = [
+        item
+        for j in result.joints
+        for item in (j.mode, j.adjustable_stop, j.follows)
+        if item is not None
+    ]
+    for item in [*result.parts, *result.joints, *behaviours]:
         assert item.citations, item
         for citation in item.citations:
             if citation.source_id == dp.MANUAL:
@@ -44,10 +57,33 @@ def test_every_part_and_joint_cites_the_manual_or_says_it_is_made_up(drill_press
                 assert citation.source_id == dp.SYNTHETIC
 
 
-def test_the_stand_ins_are_logged_as_issues(drill_press) -> None:
+def test_the_joints_state_their_behaviour_in_contract_v0_2_0(drill_press) -> None:
+    _, result = drill_press
+    assert result.schema_version == "0.2.0"
+    joints = joints_of(result)
+    quill = joints["quill_travel"]
+    assert (quill.mode.kind, quill.mode.position) == ("spring_return", 0.0)
+    assert (quill.adjustable_stop.side, quill.adjustable_stop.position) == (
+        "upper",
+        dp.SPINDLE_TRAVEL,
+    )
+    handles = joints["downfeed_handles"].follows
+    assert (handles.leader, handles.ratio, handles.stand_in) == (
+        "quill_travel",
+        dp.HANDLE_RATIO,
+        True,
+    )
+    assert joints["spindle_rotation"].mode.kind == "driven"
+    for joint_id in TABLE:  # locked by its handle or bolt, at the modelled pose
+        assert (joints[joint_id].mode.kind, joints[joint_id].mode.position) == ("locked", None)
+
+
+def test_the_stand_ins_and_the_assumption_are_logged_as_issues(drill_press) -> None:
     _, result = drill_press
     refs = {i.ref for i in result.issues if i.message.startswith("Stand-in")}
     assert refs == {"downfeed_handles", "quill_travel"}
+    assumption = next(i for i in result.issues if i.message.startswith("Assumption"))
+    assert assumption.ref == "table_height" and "Craftsman 103.23140" in assumption.message
     assert any("do not collide" in i.message for i in result.issues)
 
 
@@ -72,57 +108,80 @@ def test_seven_joints_in_the_chains_the_manual_shows(drill_press) -> None:
     assert chain("table") == ["table", "table_arm", "table_bracket", "column_rack", "frame"]
     assert chain("spindle") == ["spindle", "quill", "frame"]
     assert chain("handle_hub") == ["handle_hub", "frame"]
-    joints = {j.joint_id: j for j in result.joints}
+    joints = joints_of(result)
     assert joints["quill_travel"].joint_type == "prismatic"
     assert math.isclose(joints["quill_travel"].upper_limit, 3.25 * INCH)
     assert math.isclose(joints["table_height"].upper_limit, 14.375 * INCH)
     assert math.isclose(joints["table_tilt"].upper_limit, math.radians(45))
 
 
-def test_the_spring_holds_the_quill_up_against_gravity() -> None:
+def test_the_spring_holds_the_quill_up_against_gravity(drill_press) -> None:
     """With an acceleration drive the preload is stiffness times the distance to the target; it
     must beat gravity, or the quill sags."""
-    assert dp.SPRING_STIFFNESS * -dp.SPRING_PRELOAD_TARGET > 9.81
+    _, result = drill_press
+    spring = contract_settings(joints_of(result)["quill_travel"]).drive
+    assert spring.target < 0 and spring.stiffness * -spring.target > 9.81
 
 
 def test_the_stand_in_ratio_turns_the_handles_270_degrees_over_the_stroke() -> None:
     assert math.isclose(dp.HANDLE_RATIO * dp.SPINDLE_TRAVEL, math.radians(270))
 
 
-def test_every_check_gets_the_spring_unless_it_sets_the_quill() -> None:
-    settings = dp.with_spring({})
-    assert settings["quill_travel"].drive.target == dp.SPRING_PRELOAD_TARGET
-    own = JointSettings(drive=DriveSettings.hold(0.01))
-    assert dp.with_spring({"quill_travel": own})["quill_travel"] is own
+@pytest.mark.parametrize("name", sorted(dp.CHECKS))
+def test_the_quill_keeps_its_spring_unless_the_check_feeds_it(drill_press, name: str) -> None:
+    stage = dp.check_stage(*drill_press, dp.CHECKS[name])
+    drive = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{JOINTS}/quill_travel"), "linear")
+    expected = dp.SPINDLE_TRAVEL if name == "depth_stop.usdc" else -0.03
+    assert math.isclose(drive.GetTargetPositionAttr().Get(), expected, rel_tol=1e-6)
 
 
 @pytest.mark.parametrize("name", sorted(dp.CHECKS))
 def test_every_check_file_validates(drill_press, name: str) -> None:
-    twin, result = drill_press
-    stage = build_stage(twin, [result], joint_settings=dp.with_spring(dp.CHECKS[name].settings))
+    stage = dp.check_stage(*drill_press, dp.CHECKS[name])
     errors = [i for i in validate_stage(stage) if i.severity == "error"]
     assert errors == []
 
 
+def test_a_check_changes_the_contract_only_for_its_machine_settings(drill_press) -> None:
+    _, result = drill_press
+    assert dp.check_result(result, dp.CHECKS["spindle_spin.usdc"]) is result
+    stopped = dp.check_result(result, dp.CHECKS["depth_stop.usdc"])
+    assert joints_of(stopped)["quill_travel"].adjustable_stop.position == dp.DEPTH_STOP
+    assert joints_of(result)["quill_travel"].adjustable_stop.position == dp.SPINDLE_TRAVEL
+
+
+def test_the_depth_stop_ends_the_feed(drill_press) -> None:
+    stage = dp.check_stage(*drill_press, dp.CHECKS["depth_stop.usdc"])
+    quill = UsdPhysics.PrismaticJoint(stage.GetPrimAtPath(f"{JOINTS}/quill_travel"))
+    assert quill.GetUpperLimitAttr().Get() == pytest.approx(dp.DEPTH_STOP)
+
+
 def test_the_coupling_files_use_the_two_methods(drill_press) -> None:
-    twin, result = drill_press
-    joints = f"{ROOT}/joints"
-    mimic = build_stage(
-        twin,
-        [result],
-        joint_settings=dp.with_spring(dp.CHECKS["handles_follow_mimic.usdc"].settings),
-    )
-    assert mimic_axes(mimic.GetPrimAtPath(f"{joints}/downfeed_handles")) == ["rotX"]
-    rack = build_stage(
-        twin,
-        [result],
-        joint_settings=dp.with_spring(dp.CHECKS["handles_follow_rack_pinion.usdc"].settings),
-    )
-    prim = rack.GetPrimAtPath(f"{joints}/downfeed_handles_rack_and_pinion")
+    mimic = dp.check_stage(*drill_press, dp.CHECKS["handles_follow_mimic.usdc"])
+    assert mimic_axes(mimic.GetPrimAtPath(f"{JOINTS}/downfeed_handles")) == ["rotX"]
+    rack = dp.check_stage(*drill_press, dp.CHECKS["handles_follow_rack_pinion.usdc"])
+    prim = rack.GetPrimAtPath(f"{JOINTS}/downfeed_handles_rack_and_pinion")
     assert prim.GetTypeName() == "PhysxPhysicsRackAndPinionJoint"
     # Same sign as the mimic's gearing: the opposite sign jammed the handles (2026-10-23).
     ratio = prim.GetAttribute("physics:ratio").Get()
     assert math.isclose(ratio, -math.degrees(dp.HANDLE_RATIO), rel_tol=1e-6)
+
+
+def test_the_loosened_table_is_free_and_its_height_drops(drill_press) -> None:
+    """Daniel, 2026-10-23: a similar drill press's table fell once its lock was loosened, so the
+    height is free too, and starts raised so the drop shows (decision 0018)."""
+    loosened = joints_of(dp.check_result(drill_press[1], dp.CHECKS["table_free.usdc"]))
+    assert all(loosened[j].mode.kind == "free" for j in TABLE)
+    stage = dp.check_stage(*drill_press, dp.CHECKS["table_free.usdc"])
+    height = stage.GetPrimAtPath(f"{JOINTS}/table_height")
+    drive = UsdPhysics.DriveAPI(height, "linear")
+    assert (drive.GetStiffnessAttr().Get(), drive.GetDampingAttr().Get()) == (0.0, 2.0)
+    slide = UsdPhysics.PrismaticJoint(height)
+    assert (slide.GetLowerLimitAttr().Get(), slide.GetUpperLimitAttr().Get()) == pytest.approx(
+        (0.0, dp.TABLE_TRAVEL)
+    )
+    start = height.GetAttribute("state:linear:physics:position").Get()
+    assert start == pytest.approx(dp.TABLE_SETTING["table_height"])
 
 
 def test_command_writes_every_check_and_run_notes(tmp_path: Path, capsys) -> None:
@@ -133,25 +192,13 @@ def test_command_writes_every_check_and_run_notes(tmp_path: Path, capsys) -> Non
     assert capsys.readouterr().out.count("0 error(s)") == len(dp.CHECKS)
 
     stage = Usd.Stage.Open(str(tmp_path / "spindle_spin.usdc"))
-    drive = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{ROOT}/joints/spindle_rotation"), "angular")
+    drive = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{JOINTS}/spindle_rotation"), "angular")
     assert math.isclose(drive.GetTargetVelocityAttr().Get(), 340 * 6.0, rel_tol=1e-6)  # deg/s
 
     notes = (tmp_path / "RUN.md").read_text(encoding="utf-8")
     assert "## Known inaccuracies and stand-ins" in notes
-    assert notes.count("- Look for:") == len(dp.CHECKS)
+    assert notes.count("- Look for:") == notes.count("- Scenario:") == len(dp.CHECKS)
     assert "Shift" in notes and "## Isaac Sim check (fill in)" in notes
-
-
-def test_the_free_table_keeps_its_height_on_the_crank() -> None:
-    """A hold drive let the free table sag and be pushed (Isaac Sim check, 2026-10-23); the crank's
-    worm holds it, so its height is locked by equal limits while the other motions are free."""
-    settings = dp.table(locked=None)
-    height = dp.TABLE_SETTING["table_height"]
-    assert settings["table_height"].limits == (height, height)
-    assert settings["table_height"].drive is None
-    for joint_id in ("table_around_column", "table_tilt", "table_around_center"):
-        assert settings[joint_id].limits is None
-        assert settings[joint_id].drive.stiffness == 0.0
 
 
 def test_the_check_files_keep_the_articulation_awake(tmp_path: Path) -> None:

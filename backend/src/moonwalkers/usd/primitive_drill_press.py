@@ -11,8 +11,11 @@ folder (for example ``../data/machines/moonwalkers-testdrillpress/runs/2026-10-2
     uv run python -m moonwalkers.usd.primitive_drill_press <run-folder>
 
 That writes one check file per behaviour (``CHECKS``), validates each, and writes ``RUN.md`` with
-what to look for in Isaac Sim. The behaviours are exporter settings (``JointSettings``); contract
-v0.2.0 will describe them (plan, Phase 2).
+what to look for in Isaac Sim. The joints state their behaviour in contract v0.2.0 (decision 0020,
+plan Phase 2): the quill's spring and depth stop, the handles' link to the quill, the driven
+spindle and the table's four locks. Each check adds only its scenario: a machine setting changed
+in the contract (the depth stop moved, the locks loosened), starting positions, or a simulation
+choice (a spin speed, the coupling method, a lock by drive).
 
 Twin frame (decision 0012): metres, +Z up, the front (where the operator stands) towards +X, the
 operator's right towards +Y, and the origin on the floor under the spindle.
@@ -26,19 +29,24 @@ import platform
 import shutil
 import sys
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from importlib.metadata import version as package_version
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
+
+from pxr import Usd
 
 from moonwalkers.clock import utc_now
 from moonwalkers.contracts.pipeline_result import (
+    AdjustableStop,
     Citation,
     Fact,
     InputType,
     Issue,
     Joint,
+    JointLink,
+    JointMode,
     MachineIdentity,
     Part,
     PipelineId,
@@ -48,7 +56,7 @@ from moonwalkers.contracts.pipeline_result import (
 )
 from moonwalkers.kb import machine_key
 
-from .exporter import DriveSettings, JointCoupling, JointSettings, export_twin
+from .exporter import CouplingMethod, DriveSettings, JointSettings, build_stage, write_stage
 from .validate import validate_file
 
 RECORDER = Path(__file__).with_name("isaac_recorder.py")
@@ -75,6 +83,12 @@ def cite(page: int, quote: str) -> Citation:
 
 
 MADE_UP = Citation(source_id=SYNTHETIC, locator="made-up size, not in the manual")
+
+
+def setting(what: str) -> Citation:
+    """A value chosen for the test model or a check, not taken from the manual."""
+    return Citation(source_id=SYNTHETIC, locator=f"setting chosen for the test model: {what}")
+
 
 # --------------------------------------------------------------------------- the manual's sizes
 SPINDLE_TRAVEL = 3.25 * INCH  # p. 8 "Spindle Travel ... 3-1/4 in."
@@ -121,12 +135,9 @@ TILT_X = COLUMN_X + 0.065  # where the arm leaves the bracket
 # -------------------------------------------------------------------- stand-in behaviour values
 # The manual gives no handle-to-quill ratio (research note). Stand-in: 270 degrees of handle turn
 # over the full stroke, so pulling the front handle down lowers the quill ("Moves spindle down
-# when pulled down", p. 7).
+# when pulled down", p. 7). The spring's numbers are the exporter's (decision 0018).
 HANDLE_RATIO = math.radians(270) / SPINDLE_TRAVEL  # rad per m
-SPRING_STIFFNESS, SPRING_DAMPING = 600.0, 49.0  # acceleration drive: about critically damped
-SPRING_PRELOAD_TARGET = -0.03  # m above the top of travel: the wound spring's preload
 LOCK_STIFFNESS, LOCK_DAMPING = 10_000.0, 200.0  # a stiff drive at the setting
-FREE_DAMPING = 2.0
 DEPTH_STOP = 1.5 * INCH  # a depth setting for the check, within the 3-1/4 in travel
 TABLE_SETTING = {  # where the locked table is set for the checks
     "table_height": 0.15,
@@ -134,6 +145,33 @@ TABLE_SETTING = {  # where the locked table is set for the checks
     "table_tilt": math.radians(30),
     "table_around_center": math.radians(45),
 }
+
+# The manual's words for each table lock (p. 7 and p. 32)
+HEIGHT_LOCK = cite(
+    7,
+    "Table Height Lock Handle: Loosens to allow adjustment of table position on column; tightens "
+    "to lock table position",
+)
+TABLE_LOCKS = {
+    "table_height": (HEIGHT_LOCK, cite(32, "then tighten table height lock handle to secure")),
+    "table_around_column": (HEIGHT_LOCK,),
+    "table_tilt": (cite(32, "Tighten hex bolt from Step 1 to secure table angle"),),
+    "table_around_center": (
+        cite(
+            7,
+            "Table Pivot Lock Handle: Loosens to allow rotation of table; tightens to lock table "
+            "rotation",
+        ),
+    ),
+}
+DEPTH_STOP_QUOTES = (
+    cite(7, "Depth Stop: Stops spindle travel at predetermined drilling depth"),
+    cite(
+        31,
+        "a threaded rod attached to the quill with a depth stop nut that can be lowered or raised "
+        "against a stop bracket",
+    ),
+)
 
 
 # ------------------------------------------------------------------------------------- parts
@@ -302,6 +340,7 @@ def joint(
     *citations: Citation,
     lower: float | None = None,
     upper: float | None = None,
+    **behaviour: Any,  # contract v0.2.0: mode, adjustable_stop, follows
 ) -> Joint:
     return Joint(
         joint_id=joint_id,
@@ -314,6 +353,25 @@ def joint(
         upper_limit=upper,
         confidence=1.0,
         citations=list(citations),
+        **behaviour,
+    )
+
+
+def locked(joint_id: str, position: float | None = None) -> JointMode:
+    """A table motion held by its lock: at the modelled pose, or at a check's setting."""
+    where = [] if position is None else [setting(f"locked at {position:.4g} for the check")]
+    return JointMode(kind="locked", position=position, citations=[*TABLE_LOCKS[joint_id], *where])
+
+
+def loosened(joint_id: str) -> JointMode:
+    """A table motion with its lock loosened. The height then drops: the manual does not say
+    whether the crank's worm holds it, and a similar drill press's table fell (decision 0018)."""
+    return JointMode(kind="free", citations=list(TABLE_LOCKS[joint_id]))
+
+
+def depth_stop(position: float, what: str) -> AdjustableStop:
+    return AdjustableStop(
+        position=position, side="upper", citations=[*DEPTH_STOP_QUOTES, setting(what)]
     )
 
 
@@ -325,40 +383,57 @@ def build_joints() -> list[Joint]:
             cite(8, "Spindle Travel ... 3-1/4 in."),
             cite(7, "Spindle Return Spring: Automatically returns quill into headstock"),
             lower=0.0, upper=SPINDLE_TRAVEL,
+            mode=JointMode(kind="spring_return", position=0.0, citations=[
+                cite(7, "Spindle Return Spring: Automatically returns quill into headstock"),
+                cite(7, "Spindle automatically returns to top position when released"),
+            ]),
+            adjustable_stop=depth_stop(SPINDLE_TRAVEL, "depth stop at full depth (no stop)"),
         ),
         joint(
             "spindle_rotation", "revolute", "quill", "spindle", (0, 0, -1), (0, 0, SPINDLE_NOSE),
             cite(9, SPEEDS_QUOTE),
+            mode=JointMode(kind="driven", citations=[
+                cite(30, "Spindle speed is controlled by the configuration of V-belts and pulleys"),
+            ]),
         ),
         joint(
             "downfeed_handles", "revolute", "frame", "handle_hub", (0, 1, 0), HUB,
             cite(7, "Moves spindle down when pulled down"),
             cite(35, "Lubricate column rack and quill rack and pinion"),
             lower=-0.05, upper=HANDLE_RATIO * SPINDLE_TRAVEL + 0.05,
+            follows=JointLink(leader="quill_travel", ratio=HANDLE_RATIO, stand_in=True, citations=[
+                cite(35, "Lubricate column rack and quill rack and pinion"),
+                Citation(source_id=SYNTHETIC, locator="stand-in ratio: 270 degrees over the "
+                         "3-1/4 in stroke (decision 0019)"),
+            ]),
         ),
         joint(
             "table_around_column", "revolute", "frame", "column_rack", (0, 0, 1),
             (COLUMN_X, 0, BASE_TOP),
             cite(9, "Table Swivel Around Column ... 360 deg."),
             cite(32, "Rotate table to desired location on column"),
+            mode=locked("table_around_column"),
         ),
         joint(
             "table_height", "prismatic", "column_rack", "table_bracket", (0, 0, 1),
             (COLUMN_X, 0, ARM_Z),
             cite(9, "Vertical Table Travel ... 14-3/8 in."),
             lower=0.0, upper=TABLE_TRAVEL,
+            mode=locked("table_height"),
         ),
         joint(
             "table_tilt", "revolute", "table_bracket", "table_arm", (1, 0, 0), pivot,
             cite(9, TILT_QUOTE),
             cite(32, "Tilt table until pointer aligns with desired angle on scale"),
             lower=-TABLE_TILT, upper=TABLE_TILT,
+            mode=locked("table_tilt"),
         ),
         joint(
             "table_around_center", "revolute", "table_arm", "table", (0, 0, 1),
             (0, 0, TABLE_LOW_TOP - TABLE_THICKNESS),
             cite(9, "Table Swivel Around Center ... 360 deg."),
             cite(32, "Rotate table to desired position"),
+            mode=locked("table_around_center"),
         ),
     ]  # fmt: skip
 
@@ -482,6 +557,13 @@ STAND_IN_ISSUES = [
     ),
     Issue(
         severity="warning",
+        ref="table_height",
+        message="Assumption: with its lock loosened, the table drops, because the crank's worm "
+        "does not hold it. The manual does not say; a similar drill press's table fell "
+        "(a 1950s Craftsman 103.23140; Daniel, 2026-10-23; decision 0018).",
+    ),
+    Issue(
+        severity="warning",
         message="The parts do not collide with each other: joints and limits stop them. A raised "
         "table can pass through the chuck, which the real one cannot.",
     ),
@@ -493,146 +575,144 @@ STAND_IN_ISSUES = [
 
 
 # ---------------------------------------------------------------------- behaviours to check
-def spring(start: float | None = None) -> JointSettings:
-    """The quill's return spring: preloaded, so it holds the quill at the top of its travel."""
-    return JointSettings(
-        drive=DriveSettings(
-            mode="position",
-            target=SPRING_PRELOAD_TARGET,
-            stiffness=SPRING_STIFFNESS,
-            damping=SPRING_DAMPING,
-        ),
-        start=start,
-        note="stand-in spring (decision 0018)",
-    )
-
-
-def handles(method: Literal["mimic", "rack_and_pinion"] = "mimic") -> JointSettings:
-    return JointSettings(
-        drive=None,
-        coupling=JointCoupling("quill_travel", HANDLE_RATIO, method=method),
-        note="stand-in ratio: 270 degrees over the full stroke (decision 0019)",
-    )
-
-
-def table(locked: str | None) -> dict[str, JointSettings]:
-    """The four table motions: free (the crank still holds the height, as the real worm does),
-    or each locked at ``TABLE_SETTING`` by a stiff drive or by equal limits (decision 0018).
-    The crank holds the free table's height by equal limits. A hold drive, tried first, let the
-    table sag and be pushed up and down (Isaac Sim check, 2026-10-23)."""
-    settings: dict[str, JointSettings] = {}
-    for joint_id, value in TABLE_SETTING.items():
-        if locked == "drive":
-            drive = DriveSettings(
-                mode="position", target=value, stiffness=LOCK_STIFFNESS, damping=LOCK_DAMPING
-            )
-            settings[joint_id] = JointSettings(drive=drive, start=value, note="locked by a drive")
-        elif locked == "limits":
-            settings[joint_id] = JointSettings(
-                drive=None, limits=(value, value), start=value, note="locked by equal limits"
-            )
-        elif joint_id == "table_height":
-            settings[joint_id] = JointSettings(
-                drive=None, limits=(value, value), start=value, note="held by the crank's worm"
-            )
-        else:
-            settings[joint_id] = JointSettings(
-                drive=DriveSettings.free(FREE_DAMPING), start=0.0, note="free: lock loosened"
-            )
-    return settings
-
-
-def with_spring(settings: Mapping[str, JointSettings]) -> dict[str, JointSettings]:
-    """A check's settings, with the quill held at the top by its spring unless the check sets
-    the quill. Without it the quill gets the default hold at 0, and on a vertical slide gravity
-    balances that 0.098 m away, past the whole stroke (research note, section 2)."""
-    return {"quill_travel": spring(), **settings}
-
-
 @dataclass(frozen=True)
 class Check:
-    settings: Mapping[str, JointSettings]  # with_spring is applied when written
+    """One check file: the test model with only this scenario added (module docstring)."""
+
     what: str  # what the file shows
     look_for: str  # what Daniel should see in Isaac Sim
+    machine: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)  # contract changes
+    settings: Mapping[str, JointSettings] = field(default_factory=dict)  # replace the contract's
+    starts: Mapping[str, float] = field(default_factory=dict)
+    coupling_method: CouplingMethod = "mimic"
+
+    def scenario(self) -> str:
+        parts = [
+            f"{j}: {', '.join(_describe(v) for v in changes.values())}"
+            for j, changes in self.machine.items()
+        ]
+        parts += [f"{j}: {s.note or 'own drive'}" for j, s in self.settings.items()]
+        parts += [f"{j} starts at {v:.4g}" for j, v in self.starts.items()]
+        if self.coupling_method != "mimic":
+            parts.append(f"links written as {self.coupling_method.replace('_', ' ')}")
+        return "; ".join(parts) or "the test model as it is"
+
+
+def _describe(value: Any) -> str:
+    """A machine setting a check changes, in words for RUN.md."""
+    if isinstance(value, JointMode):
+        at = "" if value.position is None else f" at {value.position:.4g}"
+        return f"{value.kind.replace('_', ' ')}{at}"
+    if isinstance(value, AdjustableStop):
+        return f"adjustable stop at {value.position:.4g}"
+    return str(value)
+
+
+def check_result(result: PipelineResult, check: Check) -> PipelineResult:
+    """The result with the check's machine settings changed in the contract (validated again)."""
+    if not check.machine:
+        return result
+    data = result.model_dump()
+    for joint_data in data["joints"]:
+        joint_data.update(check.machine.get(joint_data["joint_id"], {}))
+    return PipelineResult.model_validate(data)
+
+
+def check_stage(twin: TwinRecord, result: PipelineResult, check: Check) -> Usd.Stage:
+    return build_stage(
+        twin,
+        [check_result(result, check)],
+        joint_settings=check.settings,
+        starts=check.starts,
+        coupling_method=check.coupling_method,
+    )
 
 
 SPIN_SLOW = math.radians(30)
+QUILL_DOWN = {"quill_travel": SPINDLE_TRAVEL}  # the quill starts at full depth
+TABLE_LOCKED_AT_SETTING = {j: {"mode": locked(j, v)} for j, v in TABLE_SETTING.items()}
 
 CHECKS: dict[str, Check] = {
     "spindle_spin.usdc": Check(
-        {"spindle_rotation": JointSettings(drive=DriveSettings.spin(LOWEST_SPEED))},
         "the spindle turns at 340 RPM, the lowest cited speed",
         "The spindle (8-sided) turns fast; at 60 frames a second it turns 34 degrees a frame, "
         "close to its 45-degree symmetry, so it may look slow or backwards. Nothing else moves.",
+        settings={"spindle_rotation": JointSettings(drive=DriveSettings.spin(LOWEST_SPEED))},
     ),
     "spindle_spin_slow.usdc": Check(
-        {"spindle_rotation": JointSettings(drive=DriveSettings.spin(SPIN_SLOW))},
         "the spindle turns at 30 degrees a second, for the eye",
         "The spindle turns slowly, clockwise seen from above, without a push. Nothing else moves.",
+        settings={"spindle_rotation": JointSettings(drive=DriveSettings.spin(SPIN_SLOW))},
     ),
     "quill_spring_return.usdc": Check(
-        {"quill_travel": spring(start=SPINDLE_TRAVEL)},
         "the quill starts at full depth and the spring returns it",
         "On Play the quill first jumps to full depth (its stored start, applied on the first "
         "physics step), then rises 3-1/4 in to the top and stays there.",
+        starts=QUILL_DOWN,
     ),
     "depth_stop.usdc": Check(
-        {
-            "quill_travel": JointSettings(
-                drive=DriveSettings.hold(SPINDLE_TRAVEL),
-                limits=(0.0, DEPTH_STOP),
-                note="an operator's feed past a depth stop set at 1-1/2 in",
-            )
-        },
         "a feed to full depth stops at a depth stop set at 1-1/2 in",
         "On Play the quill moves down 1-1/2 in (38 mm) and stops there, short of its full "
         "3-1/4 in. It already sticks 1.38 in out of the head at the top, so it ends 2.88 in out.",
+        machine={"quill_travel": {"adjustable_stop": depth_stop(DEPTH_STOP, "1-1/2 in deep")}},
+        settings={
+            "quill_travel": JointSettings(
+                drive=DriveSettings.hold(SPINDLE_TRAVEL),
+                note="an operator's feed past a depth stop set at 1-1/2 in",
+            )
+        },
     ),
     "handles_follow_mimic.usdc": Check(
-        {"quill_travel": spring(start=SPINDLE_TRAVEL), "downfeed_handles": handles("mimic")},
         "the handles follow the quill through PhysxMimicJointAPI",
         "On Play the quill rises and the handles turn back 270 degrees with it. Shift+drag a "
         "handle: the quill moves too (the mimic is two-way). A push on the quill itself barely "
         "moves it: through the coupling, the handles' lever is about 10 times stronger.",
+        starts=QUILL_DOWN,
     ),
     "handles_follow_rack_pinion.usdc": Check(
-        {
-            "quill_travel": spring(start=SPINDLE_TRAVEL),
-            "downfeed_handles": handles("rack_and_pinion"),
-        },
         "the handles follow the quill through a rack-and-pinion joint",
         "On Play the quill rises and the handles turn back with it, the same way as in the "
-        "mimic file. (Retry: the first run, with the opposite sign, jammed the handles at "
-        "their limit.)",
+        "mimic file.",
+        starts=QUILL_DOWN,
+        coupling_method="rack_and_pinion",
     ),
     "table_free.usdc": Check(
-        table(locked=None),
-        "the table's locks loosened: it turns around the column, tilts and turns freely",
-        "Nothing moves on Play. Shift+drag the table: it swings around the column, tilts up to "
-        "45 degrees each way, and turns about its centre. Its height stays (the crank holds it).",
+        "the table's four locks loosened: it drops, then slides, swings, tilts and turns freely",
+        "The table starts 0.15 m up. On Play it drops to the bottom of its travel, as the "
+        "assumed loose height lock lets it (decision 0018). Then Shift+drag the table: it slides "
+        "up and down, swings around the column, tilts up to 45 degrees each way, and turns about "
+        "its centre.",
+        machine={j: {"mode": loosened(j)} for j in TABLE_SETTING},
+        starts={j: (v if j == "table_height" else 0.0) for j, v in TABLE_SETTING.items()},
     ),
     "table_locked_drive.usdc": Check(
-        table(locked="drive"),
         "every table motion locked by a stiff drive, at 0.15 m up, 30, 30 and 45 degrees",
         "The table starts raised, swung 30 degrees, tilted 30 degrees and turned 45 degrees, and "
         "holds there. Shift+drag it hard: note whether it gives at all.",
+        settings={
+            j: JointSettings(
+                drive=DriveSettings(
+                    mode="position", target=v, stiffness=LOCK_STIFFNESS, damping=LOCK_DAMPING
+                ),
+                start=v,
+                note="locked by a drive",
+            )
+            for j, v in TABLE_SETTING.items()
+        },
     ),
     "table_locked_limits.usdc": Check(
-        table(locked="limits"),
         "the same, locked by equal limits",
         "The same pose, held by limits. Shift+drag it: it should not move at all. Compare with "
         "the drive lock.",
+        machine=TABLE_LOCKED_AT_SETTING,
     ),
     "all_motions.usdc": Check(
-        {
-            "spindle_rotation": JointSettings(drive=DriveSettings.spin(SPIN_SLOW)),
-            "quill_travel": spring(start=SPINDLE_TRAVEL),
-            "downfeed_handles": handles("mimic"),
-            **table(locked="limits"),
-        },
         "everything at once",
         "The spindle turns slowly, the quill rises with the handles turning, and the table holds "
         "its locked pose.",
+        machine=TABLE_LOCKED_AT_SETTING,
+        settings={"spindle_rotation": JointSettings(drive=DriveSettings.spin(SPIN_SLOW))},
+        starts=QUILL_DOWN,
     ),
 }
 
@@ -652,18 +732,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     report: list[str] = []
     failed = False
     for name, check in CHECKS.items():
-        path = export_twin(
-            twin,
-            [result],
-            args.out_dir / name,
-            joint_settings=with_spring(check.settings),
-        )
+        path = write_stage(check_stage(twin, result, check), args.out_dir / name)
         issues = validate_file(path)
         errors = [i for i in issues if i.severity == "error"]
         failed = failed or bool(errors)
         status = f"{len(errors)} error(s), {len(issues) - len(errors)} other finding(s)"
         print(f"{path}: {status}")
-        report += [f"### `{name}`", f"- Shows: {check.what}.", f"- Look for: {check.look_for}"]
+        report += [
+            f"### `{name}`",
+            f"- Shows: {check.what}.",
+            f"- Scenario: {check.scenario()}.",
+            f"- Look for: {check.look_for}",
+        ]
         report.append(f"- Validation: {status}.")
         for issue in issues:
             print(f"  {issue.severity}: {issue.message} ({issue.ref or '-'})")
@@ -683,7 +763,7 @@ def _write_run_notes(
     )
     stand_ins = [f"- {i.message}" for i in result.issues]
     lines = [
-        "# Run: box-and-cylinder drill press (drill-press plan, Phase 1 exporter check)",
+        "# Run: box-and-cylinder drill press (drill-press plan; contract v0.2.0 since Phase 2)",
         "",
         f"- Created (UTC): {created_at.isoformat(timespec='seconds')}",
         f"- Command: `uv run python -m moonwalkers.usd.primitive_drill_press {out_dir.as_posix()}`",
@@ -691,6 +771,11 @@ def _write_run_notes(
         (
             "- Input: hand-written primitives. Sizes from the Grizzly T33901 manual where it "
             "gives them (cited in each part), the rest made up. No photo, no generator."
+        ),
+        (
+            "- Behaviour: the joints state it in contract v0.2.0 (decision 0020): the quill's "
+            "spring and depth stop, the handles following the quill, the driven spindle and the "
+            "table's four locks. Each file's scenario is listed with it."
         ),
         (
             "- Pushing parts: hold Shift and drag with the left mouse button while the "
@@ -709,8 +794,9 @@ def _write_run_notes(
         *report,
         "## Isaac Sim check (fill in)",
         "- Isaac Sim version/build:",
-        "- Which coupling worked (mimic, rack and pinion, both, neither):",
-        "- Which lock held (drive, limits):",
+        "- Do the handles turn with the quill in every file where the quill moves:",
+        "- `table_free`: does the table drop on Play, then slide, swing, tilt and turn if pushed:",
+        "- Does anything behave differently from the run checked before:",
         "- Reviewer notes:",
         "",
     ]
