@@ -191,6 +191,102 @@ Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 - If the line was printed but the spindle still does not move, copy the output, plus any red
   errors in the console.
 
+## 8. Drill-press plan, Phase 1: the box-and-cylinder drill press
+A stand-in for the Grizzly T33901 made of boxes and cylinders (`docs/drill-press-plan.md`,
+Phase 1). It has eight parts on seven joints, and its sizes come from the manual where it gives
+them. The current files, with the first check's fixes, are in
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\moonwalkers-testdrillpress\runs\2026-10-23_run-002\`.
+Its `RUN.md` repeats what to look for in each file and has room for your notes. The first files,
+checked on 2026-10-23, are in `...\runs\2026-10-22_run-001\`, whose `RUN.md` holds that check.
+
+To make them again (from `backend/`):
+`uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
+
+**What you will see.**
+- The grey part is the frame: base, column, and one box standing in for the head and motor.
+- The orange parts move:
+  - the quill, with the 8-sided chuck below it;
+  - the hub on the right of the head, with its three handles;
+  - the column rack and collar;
+  - the bracket with its crank;
+  - the table arm and the table.
+- The front faces +X, and the operator's right is +Y.
+- On Play, parts with a stored start, such as the quill at full depth or the raised table, jump
+  there on the first physics step. Before Play the file can only show them where they are drawn.
+
+**Two tools for every file.**
+- **Pushing a part:** while the simulation runs, hold **Shift** and drag a part with the left mouse
+  button. The Physics settings' "Mouse Interaction" section turns it on or off.
+- **Measuring:** before Play, open `record_joints.py` from the folder in a text editor, copy it
+  all, and paste it into Window > Script Editor, then click **Run**.
+  - It prints `will record /moonwalkers_testdrillpress ...`.
+  - After Play it prints `recording ... to ...\recordings\<file>_<time>.csv`. The file holds every
+    joint's position over time, in radians or metres.
+  - Run it again for each file you open. Please send the CSV files, or note their names.
+  - In run-001 it printed `cannot read the joints` instead and wrote nothing (fixed in run-002).
+
+**The files, one at a time** (File > Open, then Play):
+1. `spindle_spin.usdc`: the spindle turns at 340 RPM, the lowest cited speed. At 60 frames a second
+   it may look slow or even backwards, because each frame is close to its 8-sided symmetry. Nothing
+   else moves.
+2. `spindle_spin_slow.usdc`: the spindle turns slowly (30°/s), clockwise seen from above, without
+   a push.
+3. `quill_spring_return.usdc`: the quill jumps to 3-1/4 in down, and the spring returns it to the
+   top, where it stays.
+4. `depth_stop.usdc`: the quill is fed down and stops at a depth stop 1-1/2 in (38 mm) down, short
+   of its full travel. At the top it already sticks 1.38 in out of the head, so it ends 2.88 in out.
+5. `handles_follow_mimic.usdc`: as file 3, and the handles turn back 270° as the quill rises.
+   Shift+drag a handle: the quill moves too. A push on the quill itself barely moves it, because
+   through the coupling the handles' lever is about 10 times stronger.
+6. `handles_follow_rack_pinion.usdc`: the same coupling, written another way. The handles should
+   turn back with the quill, the same way as in file 5.
+7. `table_free.usdc`: nothing moves on Play. Shift+drag the table:
+   - it swings around the column;
+   - it tilts up to 45° each way;
+   - it turns about its centre;
+   - its height stays, because the crank holds it.
+8. `table_locked_drive.usdc`: the table starts raised 0.15 m, swung 30°, tilted 30° and turned 45°,
+   and holds there. Shift+drag it hard, and note whether it gives.
+9. `table_locked_limits.usdc`: the same pose, held by limits instead. It should not move at all.
+10. `all_motions.usdc`: all of it at once. The spindle turns, the quill rises with the handles
+    turning, and the table holds its pose.
+
+**What to send back** (or write in `RUN.md`):
+- for each file, what moved and how, and anything that shook, drifted or flew apart;
+- which coupling worked: the mimic (file 5), the rack and pinion (file 6), both or neither;
+- which lock held better (files 8 and 9);
+- any errors or warnings in the log, or the log's file name, so Claude Code can read it;
+- the CSV recordings.
+
+**Result of the first check (run-001, Daniel, 2026-10-23).** Isaac Sim 6.2.0, Kit 110.4.0 build
+386251. Nothing shook, drifted or flew apart.
+- **As expected:** files 1, 3, 4, 5, 8, 9 and 10's table.
+  - The depth stop ended at the 2.88 in expected.
+  - The mimic moved the quill when a handle was pushed.
+  - The equal-limit lock held completely; the drive lock gave a little.
+- **Three problems, fixed in run-002:**
+  - **Files 2 and 10's slow spindle** turned only while pushed. [INFERENCE] PhysX put the
+    articulation to sleep. The files are now written with sleep turned off.
+  - **File 6's rack and pinion** jammed. The quill did not rise, and the handles moved only a
+    little. [INFERENCE] Its ratio's sign was reversed; it is written with the other sign now.
+  - **File 7's table height** sagged on Play and could be pushed. It was held by a soft drive, and
+    is now held by equal limits.
+- **The recorder** wrote nothing: "Failed to get a valid attached USD stage id from PhysX
+  simulation". It now uses Isaac Sim's own physics view.
+
+**Result of the re-check (run-002, Daniel, 2026-10-23).** All three fixes work:
+- the slow spindle turns on its own (files 2 and 10);
+- the rack and pinion follows the quill like the mimic (file 6);
+- the free table's height holds while it swings, tilts and turns (file 7).
+
+**The fixed recorder works** (Daniel, 2026-10-23, `all_motions.usdc`). Run-001's old copy cannot read
+the joints, so use the copy in `2026-10-23_run-002` or later:
+1. Open any file from that folder, for example `all_motions.usdc`.
+2. Paste that folder's `record_joints.py` into Window > Script Editor and click **Run**.
+3. Press Play for a few seconds, then Stop.
+4. The output should print `recording ... to ...\recordings\all_motions_<time>.csv`, and the folder
+   should hold that file.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

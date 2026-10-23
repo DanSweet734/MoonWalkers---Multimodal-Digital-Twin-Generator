@@ -22,6 +22,7 @@ from moonwalkers.contracts.pipeline_result import (
     MachineIdentity,
     PipelineResult,
     Source,
+    TwinRecord,
 )
 from moonwalkers.generators.base import GeneratorRequest, GeneratorRun, ImageTo3DGenerator
 from moonwalkers.kb import JsonKnowledgeBase, KnowledgeBase
@@ -251,3 +252,77 @@ def test_reference() -> ReferenceFacts:
         ],
         issues=[Issue(severity="info", message="Synthetic reference facts for tests.")],
     )
+
+
+def _slider_box(part_id: str, center: tuple[float, float, float]) -> dict[str, Any]:
+    return {
+        "part_id": part_id,
+        "name": part_id,
+        "geometry_format": "primitive",
+        "primitive": {"shape": "box", "size_m": [0.05, 0.05, 0.05], "center_m": list(center)},
+        "citations": [{"source_id": "src-synthetic"}],
+    }
+
+
+def _slider_joint(
+    joint_id: str, joint_type: str, parent: str, child: str, axis, origin, **extra: Any
+) -> dict[str, Any]:
+    return {
+        "joint_id": joint_id,
+        "joint_type": joint_type,
+        "parent_part": parent,
+        "child_part": child,
+        "axis": axis,
+        "origin_m": origin,
+        "confidence": 1.0,
+        "citations": [{"source_id": "src-synthetic"}],
+        **extra,
+    }
+
+
+@pytest.fixture
+def slider() -> tuple[TwinRecord, PipelineResult]:
+    """A synthetic machine with several joints (twin ``test/slider@v1``, root prim
+    ``/test_slider``): a base with a slide going down (prismatic, 0 to 0.08 m), an arm turning on
+    the slide (a chain of two), and a wheel on the base (revolute, -0.5 to 5 rad) that can follow
+    the slide."""
+    result = PipelineResult.model_validate(
+        {
+            "result_id": "res-slider",
+            "job_id": "slider",
+            "pipeline": "C",
+            "input_types": ["schematic"],
+            "produced_at": FIXED_TIME,
+            "produced_by": "tests",
+            "sources": [
+                {
+                    "source_id": "src-synthetic",
+                    "kind": "user_input",
+                    "uri": "user",
+                    "retrieved_at": FIXED_TIME,
+                }
+            ],
+            "parts": [
+                _slider_box("base", (0, 0, 0.1)),
+                _slider_box("slide", (0, 0, 0.45)),
+                _slider_box("arm", (0.1, 0, 0.3)),
+                _slider_box("wheel", (0, 0.2, 0.6)),
+            ],
+            "joints": [
+                _slider_joint("slide_travel", "prismatic", "base", "slide", (0, 0, -1),
+                              (0, 0, 0.5), lower_limit=0.0, upper_limit=0.08),
+                _slider_joint("arm_turn", "revolute", "slide", "arm", (0, 0, 1), (0, 0, 0.3)),
+                _slider_joint("wheel_turn", "revolute", "base", "wheel", (0, 1, 0), (0, 0.2, 0.6),
+                              lower_limit=-0.5, upper_limit=5.0),
+            ],
+        }
+    )  # fmt: skip
+    twin = TwinRecord(
+        twin_id="test/slider@v1",
+        machine_key="test/slider",
+        version=1,
+        status="needs_review",
+        built_from=[result.result_id],
+        created_at=FIXED_TIME,
+    )
+    return twin, result

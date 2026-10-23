@@ -22,11 +22,17 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - `docs/poc-report.md`, section 8, the seven decisions it needs;
   - `docs/research/2026-10-19-open-questions-research.md`, section 6, the manual's cited facts.
     The manual is in `data/machines/grizzly-t33901/inputs/`; no photo has been collected yet.
-- **The phase plan:** `docs/drill-press-plan.md`, written on 2026-10-22 (PR #15). Daniel answered
-  its questions the same day: the goal is several images per machine and the least guessing, and
-  stand-ins (labelled, logged as inaccuracies) are allowed on the way. Once he approves the PR,
-  start with its Phase 1: a box-and-cylinder drill press that proves the exporter, before any
-  generated mesh.
+- **The phase plan:** `docs/drill-press-plan.md`, written and approved on 2026-10-22 (PR #15,
+  merged). Daniel's direction: several images per machine and the least guessing, with stand-ins
+  (labelled, logged as inaccuracies) allowed on the way.
+- **Now: Phase 1**, on branch `feat/phase-1-drill-press-exporter`. A box-and-cylinder drill press
+  proves the exporter before any generated mesh: sliding joints, locks, the spring, the depth
+  stop, coupled handles. Built and validated on 2026-10-22, with decisions 0017-0019 proposed.
+  Daniel checked it in Isaac Sim on 2026-10-23. The mimic coupling and locks by equal limits are
+  kept. Three fixes went into run `2026-10-23_run-002`: keep the articulation awake, the rack and
+  pinion's sign, and the free table's height. His re-check the same day confirmed all three.
+  The fixed joint recorder then made its first recording: the handles track within 1%, and
+  the spring returns in 0.83 s. Next: the phase PR, then Phase 2 after it is merged.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -122,6 +128,10 @@ Backend (run from `backend/`):
 - Lint and format: `uv run ruff check .` and `uv run ruff format .` (check only: `uv run ruff format --check .`)
 - Regenerate the contract JSON Schema after a contract change: `uv run python -m moonwalkers.contracts.json_schema`
 - Write the box-and-cylinder test twin (Phase 2 check): `uv run python -m moonwalkers.usd.primitive_twin ../data/machines/moonwalkers-testindexer/runs/<run>`
+- Write the box-and-cylinder drill press (drill-press plan, Phase 1; ten check files, `RUN.md` and
+  the joint recorder `record_joints.py`): `uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
+  Settings per joint (drives, locks, starts, couplings) are `JointSettings` (decisions 0017-0019).
+  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 8.
 - Build a twin from a photo (Pipeline B): the run folder `../data/machines/<machine>/runs/<run>` holds
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
