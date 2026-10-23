@@ -1,7 +1,7 @@
 # 0018 - Springs, stops and locks
 
-- **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
-  2026-10-23: locks by equal limits are kept.
+- **Status:** accepted (proposed by Claude Code in the drill-press plan's Phase 1; Daniel reviewed PR #16 and approved it on 2026-10-23).
+  Checked in Isaac Sim by Daniel on 2026-10-23: locks by equal limits are kept.
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 

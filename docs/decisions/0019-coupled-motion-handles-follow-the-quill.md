@@ -1,7 +1,9 @@
 # 0019 - Coupled motion: the downfeed handles follow the quill
 
-- **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
-  2026-10-23: the mimic is kept. The rack and pinion, with its sign reversed, works as a fallback.
+- **Status:** accepted (proposed by Claude Code in the drill-press plan's Phase 1; Daniel reviewed PR #16 and approved it on 2026-10-23).
+  Checked in Isaac Sim by Daniel on 2026-10-23: the mimic is kept. The rack and pinion, with its
+  sign reversed, works as a fallback. Daniel, on review: "If the mimic joint depreciates [sic] then
+  the rack and pinion works as a good fallback!"
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 

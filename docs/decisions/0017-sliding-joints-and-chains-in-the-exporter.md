@@ -1,7 +1,8 @@
 # 0017 - Sliding joints, other axes and a chain of joints in the exporter
 
-- **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
-  2026-10-23: it works, with one fix (staying awake), which the re-check confirmed.
+- **Status:** accepted (proposed by Claude Code in the drill-press plan's Phase 1; Daniel reviewed PR #16 and approved it on 2026-10-23).
+  Checked in Isaac Sim by Daniel on 2026-10-23: it works, with one fix (staying awake), which the
+  re-check confirmed.
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0010 (prismatic joints were refused; one drive went on every joint)
@@ -98,3 +99,25 @@ record).
   `all_motions`. Keeping the articulation awake fixed it.
 - Measured with the joint recorder in `all_motions`: the spindle turned at 30.005°/s over the last
   second of 35, against 30°/s set.
+
+## Update (2026-10-23): every twin stays awake by default
+**Daniel's decision, on review:** "for now every twin should be kept from falling asleep by
+default. Unless if it becomes computationally strenuous to do so." He asked whether 25 twins in
+one scene, all awake, would tax a system.
+- **What sleeping saves.** PhysX's documentation: "When an actor does not move for a period of
+  time, it is assumed that it will not move in the future either", and "Until then it is no longer
+  simulated in order to save resources"
+  (https://nvidia-omniverse.github.io/PhysX/physx/5.6.1/docs/RigidBodyDynamics.html, "Sleeping",
+  read 2026-10-23). So an awake twin costs a physics update on every step, even when nothing on it
+  moves.
+- **How much is 25** [INFERENCE: not measured]. A twin like the drill press has about ten links.
+  So 25 twins come to roughly 250 links. NVIDIA built this physics stack to "train policies for
+  wide variety of robotics tasks directly on GPU" with many robots at once (Isaac Gym, Makoviychuk
+  et al., https://arxiv.org/abs/2108.10470, read 2026-10-23). The cost is likely modest, but no
+  source gives a number for our case.
+- **What follows:**
+  - `keep_awake` becomes the default, in a change of its own after PR #16. It changes every twin's
+    file, including the Phase 2 test twin's fixtures.
+  - When a scene with many twins exists, its physics step time is measured awake and asleep.
+  - If keeping twins awake proves costly, twins could be allowed to sleep again: all of them, or
+    only the idle ones.
