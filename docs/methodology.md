@@ -19,6 +19,9 @@ This is the team's methodology for building the platform. It applies to people a
 - When sources disagree (for example, the HA5C's maximum speed is 410 °/s on the Haas UK product
   page but 330 or 320 °/s in the 2006 manual), name both, pick one, and say which and why.
 - "Not confirmed" is an acceptable answer. A guess presented as fact is not.
+- Get as close to the real machine as the sources allow, and log every known inaccuracy: as an
+  issue in the twin, in the run's `RUN.md`, and in the phase report's table of inaccuracies
+  (advisors, 2026-10-22).
 - Twins carry their own provenance: every fact, joint, and control behavior in a `PipelineResult`
   cites at least one `Source`, so users can always see where information came from.
 
@@ -32,6 +35,8 @@ This is the team's methodology for building the platform. It applies to people a
   component coverage, count accuracy, spatial-relation plausibility, placement quality, render-vs-input
   visual match, trace quality), plus a **functional-check** measure: do the joints and control logic
   behave as the sources describe?
+- The advisors set no fixed list of metrics (2026-10-22). We define our own measures, such as the
+  size checks and the functional check, and test against them.
 - For the PoC, record per run: input files, generator and version, time taken, success level reached
   (1-3), and reviewer notes.
 
