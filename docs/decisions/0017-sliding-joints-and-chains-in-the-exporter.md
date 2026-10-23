@@ -1,7 +1,7 @@
 # 0017 - Sliding joints, other axes and a chain of joints in the exporter
 
 - **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
-  2026-10-23: it works, with one fix (staying awake), whose re-check is pending.
+  2026-10-23: it works, with one fix (staying awake), which the re-check confirmed.
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0010 (prismatic joints were refused; one drive went on every joint)
@@ -91,5 +91,8 @@ record).
     - At 340 RPM it is 0.15, far above.
     - The PoC's test spindle, 30 mm at 30°/s, gives 6.2e-5, just above, and it kept turning in
       Phase 2.
-  - The fix is the "Staying awake" setting above. Run `2026-10-23_run-002` uses it; its re-check is
-    pending.
+  - The fix is the "Staying awake" setting above. Run `2026-10-23_run-002` uses it.
+
+## Re-check (Daniel, 2026-10-23, run `2026-10-23_run-002`)
+- "the spindle now turns slowly all on it's own, no pushing needed", in `spindle_spin_slow` and in
+  `all_motions`. Keeping the articulation awake fixed it.

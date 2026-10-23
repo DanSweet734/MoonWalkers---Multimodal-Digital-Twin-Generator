@@ -221,5 +221,5 @@ read again in its installed source on 2026-10-23:
   and the joint's velocities "may otherwise have opposite signs, depending on the orientations of
   the joint frames".
   - With the ratio positive, the handles jammed at their limit and the quill stayed down.
-  - [INFERENCE] The sign was the wrong one for our frames. It is retried with the mimic gearing's
-    sign.
+  - The sign was the wrong one for our frames. With the mimic gearing's sign, Daniel's re-check
+    the same day showed the handles following the quill.

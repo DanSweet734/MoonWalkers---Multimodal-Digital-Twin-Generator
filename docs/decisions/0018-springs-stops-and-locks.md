@@ -84,4 +84,8 @@ Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
   drive was stiff, but moved a little up and down when pushed. The equal limits did not move at all.
 - **Free table (file 7):** it swung, tilted and turned under a push, as intended. Its height also
   sagged and could be pushed, which was not intended; run `2026-10-23_run-002` holds it by equal
-  limits. Its re-check is pending.
+  limits.
+
+## Re-check (Daniel, 2026-10-23, run `2026-10-23_run-002`)
+- `table_free`: "the table swings, tilts, and turns without the hight [sic] changing no matter how
+  much I try". Equal limits hold the height, as the crank's worm does.

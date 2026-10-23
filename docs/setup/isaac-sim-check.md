@@ -274,8 +274,18 @@ To make them again (from `backend/`):
 - **The recorder** wrote nothing: "Failed to get a valid attached USD stage id from PhysX
   simulation". It now uses Isaac Sim's own physics view.
 
-**The re-check (run-002) needs only:** files 2, 6, 7 and 10, and one recording, from any file, to
-show that `record_joints.py` now writes its CSV.
+**Result of the re-check (run-002, Daniel, 2026-10-23).** All three fixes work:
+- the slow spindle turns on its own (files 2 and 10);
+- the rack and pinion follows the quill like the mimic (file 6);
+- the free table's height holds while it swings, tilts and turns (file 7).
+
+**Still to try: the fixed recorder.** Run-001's old copy was pasted in the re-check, and it cannot
+read the joints. Use the copy in `2026-10-23_run-002` (or later):
+1. Open any file from that folder, for example `all_motions.usdc`.
+2. Paste that folder's `record_joints.py` into Window > Script Editor and click **Run**.
+3. Press Play for a few seconds, then Stop.
+4. The output should print `recording ... to ...\recordings\all_motions_<time>.csv`, and the folder
+   should hold that file.
 
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are

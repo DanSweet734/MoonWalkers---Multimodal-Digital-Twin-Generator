@@ -30,9 +30,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   stop, coupled handles. Built and validated on 2026-10-22, with decisions 0017-0019 proposed.
   Daniel checked it in Isaac Sim on 2026-10-23. The mimic coupling and locks by equal limits are
   kept. Three fixes went into run `2026-10-23_run-002`: keep the articulation awake, the rack and
-  pinion's sign, and the free table's height. The joint recorder was fixed too. Waiting for his
-  short re-check (`docs/setup/isaac-sim-check.md`, section 8, last paragraph). Then finish the
-  decisions and open the phase PR.
+  pinion's sign, and the free table's height. His re-check the same day confirmed all three.
+  Left: one recording with the fixed joint recorder (run-002's `record_joints.py`; run-001's
+  copy is the old one). Then open the phase PR.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

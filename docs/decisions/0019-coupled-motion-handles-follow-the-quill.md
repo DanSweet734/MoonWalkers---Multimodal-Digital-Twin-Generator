@@ -1,7 +1,7 @@
 # 0019 - Coupled motion: the downfeed handles follow the quill
 
 - **Status:** proposed (Claude Code, drill-press plan Phase 1). Checked in Isaac Sim by Daniel on
-  2026-10-23: the mimic is kept. The rack and pinion failed, and is being retried as a fallback.
+  2026-10-23: the mimic is kept. The rack and pinion, with its sign reversed, works as a fallback.
 - **Date:** 2026-10-22
 - **Decided by:** team (Daniel)
 
@@ -37,7 +37,7 @@ types of Isaac Sim 6.2's schema file (`usd/physx_schemas.py`).
 ## Decision
 **1, the mimic, after the check.** 1 and 3 were both written for the check, and 2 and 4 were not.
 Only the mimic worked. The rack and pinion stays in the exporter as a fallback for the risk below.
-Its ratio's sign was reversed after it failed, and it is being checked again. Kept for each:
+Its ratio's sign was reversed after it failed, and then it worked too. Kept for each:
 - **`JointCoupling(leader, ratio, offset, method)` in `JointSettings`.**
   - The follower's position is `ratio` × the leader's + `offset`, in contract units (rad per m
     here).
@@ -80,3 +80,10 @@ Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
   - The exporter now writes the ratio with the mimic gearing's sign, and run `2026-10-23_run-002`
     retries it. If it then works, it is a ready fallback for the deprecation risk.
 - **All motions (file 10):** the quill moved only through the handles, as in file 5.
+
+## Re-check (Daniel, 2026-10-23, run `2026-10-23_run-002`)
+- `handles_follow_rack_pinion`: the handles now turn back with the rising quill, as in the mimic
+  file. Daniel confirmed "now" when asked, since his note read "not".
+- So the reversed sign was the cause. The rack and pinion's ratio takes the mimic gearing's sign,
+  and it is a working fallback if `PhysxMimicJointAPI` is ever dropped. It ties only the speeds,
+  and stays out of the articulation.
