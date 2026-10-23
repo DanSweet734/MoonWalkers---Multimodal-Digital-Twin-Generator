@@ -33,9 +33,11 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   pinion's sign, and the free table's height. His re-check the same day confirmed all three.
   The fixed joint recorder then made its first recording: the handles track within 1%, and
   the spring returns in 0.83 s. Decisions 0017-0019 are accepted.
-- **Now:** a small PR that keeps every twin awake by default (Daniel, 2026-10-23;
-  decision 0017). Then **Phase 2**: contract v0.2.0 (linked joints, joint modes) and how
-  Pipelines A, C and D run outside their tests (decisions 0020 and 0021), from an up-to-date `main`.
+- Every twin stays awake by default (PR #17, merged on 2026-10-23; decision 0017).
+- **Now: Phase 2**, on branch `feat/phase-2-contract-and-pipelines` (started on 2026-10-23 from
+  `main` at `ca25284`). It covers contract v0.2.0 (linked joints, joint modes) and how Pipelines A,
+  C and D run outside their tests: decisions 0020 and 0021, `docs/drill-press-plan.md`, Phase 2.
+  The contract change is discussed with Ava, Kiran and Sarkis before it is merged.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
