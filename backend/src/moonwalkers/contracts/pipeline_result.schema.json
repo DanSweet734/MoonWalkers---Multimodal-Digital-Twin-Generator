@@ -1,6 +1,39 @@
 {
   "PipelineResult": {
     "$defs": {
+      "AdjustableStop": {
+        "additionalProperties": false,
+        "description": "A stop a person sets inside a joint's limits, such as a drill press's depth stop (v0.2.0).",
+        "properties": {
+          "position": {
+            "title": "Position",
+            "type": "number"
+          },
+          "side": {
+            "enum": [
+              "lower",
+              "upper"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "position",
+          "side",
+          "citations"
+        ],
+        "title": "AdjustableStop",
+        "type": "object"
+      },
       "Citation": {
         "additionalProperties": false,
         "properties": {
@@ -367,6 +400,39 @@
             "minItems": 1,
             "title": "Citations",
             "type": "array"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/JointMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "adjustable_stop": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AdjustableStop"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "follows": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/JointLink"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [
@@ -380,6 +446,87 @@
           "citations"
         ],
         "title": "Joint",
+        "type": "object"
+      },
+      "JointLink": {
+        "additionalProperties": false,
+        "description": "The joint moves with ``leader``: position = ``ratio`` * leader's position + ``offset``\n(v0.2.0).\n\n``ratio`` is in the follower's units per leader unit (rad per m for a turning joint that\nfollows a sliding one), signed by each joint's own axis. ``stand_in`` marks a ratio that no\nsource gives; the result must then carry an issue on the follower.",
+        "properties": {
+          "leader": {
+            "title": "Leader",
+            "type": "string"
+          },
+          "ratio": {
+            "title": "Ratio",
+            "type": "number"
+          },
+          "offset": {
+            "default": 0.0,
+            "title": "Offset",
+            "type": "number"
+          },
+          "stand_in": {
+            "default": false,
+            "title": "Stand In",
+            "type": "boolean"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "leader",
+          "ratio",
+          "citations"
+        ],
+        "title": "JointLink",
+        "type": "object"
+      },
+      "JointMode": {
+        "additionalProperties": false,
+        "description": "How a joint is moved or held when nothing commands it (v0.2.0, decision 0020).\n\n* ``driven``: a motor or actuator moves it; a control behaviour may say how.\n* ``spring_return``: a spring returns it to ``position`` when let go.\n* ``locked``: held at ``position`` until a person changes the setting (a lock handle or bolt).\n* ``free``: it moves when pushed; nothing holds it.\n\n``position`` is in the joint's units (rad or m); None means the modelled pose, 0. Only\n``spring_return`` and ``locked`` take one.",
+        "properties": {
+          "kind": {
+            "enum": [
+              "driven",
+              "spring_return",
+              "locked",
+              "free"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Position"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/$defs/Citation"
+            },
+            "minItems": 1,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "citations"
+        ],
+        "title": "JointMode",
         "type": "object"
       },
       "MachineIdentity": {
@@ -760,8 +907,11 @@
     "additionalProperties": false,
     "properties": {
       "schema_version": {
-        "const": "0.1.0",
-        "default": "0.1.0",
+        "default": "0.2.0",
+        "enum": [
+          "0.1.0",
+          "0.2.0"
+        ],
         "title": "Schema Version",
         "type": "string"
       },

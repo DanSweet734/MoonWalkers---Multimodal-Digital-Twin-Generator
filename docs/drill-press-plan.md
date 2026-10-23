@@ -111,7 +111,12 @@ checked again when the reference facts are written (Phase 5).
   - The "table lock handle" of "Rotating Table Around Column" (p. 32) is the table height lock
     handle. The page's labels name only the "Table Height Lock Handle" and the "Table Pivot Lock
     Handle", and the exploded view draws only one lock handle on the bracket, a "FOLDING HANDLE
-    M12-1.75 X 50, 90L" (105).
+    M12-1.75 X 50, 90L" (105). **Supported on 2026-10-23:** p. 7 says the height lock handle
+    "Loosens to allow adjustment of table position on column; tightens to lock table position"
+    (`docs/research/2026-10-23-table-height-lock-and-mimic-chains.md`).
+  - Whether the crank's worm holds the table when the height lock is loose: not confirmed. The
+    manual gives no lead angle (same note). A similar drill press's table fell once its lock was
+    loosened, so the twin assumes the T33901's does too (Daniel, 2026-10-23; decision 0018).
   - The column rack turns with the table bracket. Assembly seats the rack "firmly between collar
     and column base" (p. 22), and turning the table means "making sure to guide column rack with
     table" (p. 32). So the rack is the part between the turn around the column and the slide up it.
@@ -240,6 +245,10 @@ this phase's evidence.
 ## Phase 2 - Contract v0.2.0, and how the teammates' pipelines run
 - [ ] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names
       are chosen in the record.
+      (Oct 23, 2026: written and proposed. Three optional fields on `Joint`: `mode`,
+      `adjustable_stop` and `follows`. Stored "0.1.0" results stay valid as they are. Daniel
+      reviewed it the same day: two inferences researched, links may now chain but not loop, and
+      `stop` renamed. Still to be discussed with the owners)
   - **Linked joints:** a follower joint moves with a leader at a ratio, as the handles follow the
     quill. A stand-in ratio is allowed, labelled as one.
   - **Joint modes:** driven, spring return to a rest position, locked at a setting, or free; and
@@ -253,6 +262,9 @@ this phase's evidence.
 - [ ] Build it:
   - the contract, its JSON Schema (`moonwalkers.contracts.json_schema`) and the dashboard's types
     (`moonwalkers.api.typescript`);
+    (Oct 23, 2026: done, with 31 new contract tests. The exporter writes each result's own
+    version, and the Phase 2 test twin differs from its 2026-10-22 files only by the two
+    provenance lines. The eight stored results load and the four stored twins build)
   - the exporter reading the new fields; the dashboard showing modes and links;
   - the box-and-cylinder drill press rewritten to use them; at a fixed time, its stages match
     Phase 1's.

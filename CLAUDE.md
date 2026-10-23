@@ -38,6 +38,10 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   `main` at `ca25284`). It covers contract v0.2.0 (linked joints, joint modes) and how Pipelines A,
   C and D run outside their tests: decisions 0020 and 0021, `docs/drill-press-plan.md`, Phase 2.
   The contract change is discussed with Ava, Kiran and Sarkis before it is merged.
+  Decision 0020 (2026-10-23): optional `mode`, `adjustable_stop` and `follows` on `Joint`, and
+  "0.1.0" results stay valid. Daniel reviewed it; the contract part is built (v0.2.0, schema,
+  types). Next: the exporter reads the new fields, the dashboard shows them, and the drill press
+  is rewritten to use them. The `Sarkis` branch was only an access test: ignore it.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -88,7 +92,8 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   jobs). An upload either reuses a stored twin at once or waits for the agent, which finds it with
   the `list_jobs` tool. The API never runs the generator.
 - Knowledge base: a simple JSON/SQLite store behind a `KnowledgeBase` interface; Neo4j comes later.
-- Contract: `backend/src/moonwalkers/contracts/pipeline_result.py` (Pydantic, SCHEMA_VERSION 0.1.0).
+- Contract: `backend/src/moonwalkers/contracts/pipeline_result.py` (Pydantic, SCHEMA_VERSION 0.2.0;
+  results that say 0.1.0 stay valid, and may not use 0.2.0's joint fields, decision 0020).
 - Units inside the contract are SI (m, rad, s, kg). Convert only at the USD export boundary.
 
 ## Repository layout (target)

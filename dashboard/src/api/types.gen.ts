@@ -2,6 +2,13 @@
 // (decision 0014). Do not edit: change the Pydantic models in backend/ and regenerate.
 // A field the schema does not list as required is optional (?), even if the API always sends it.
 
+/** A stop a person sets inside a joint's limits, such as a drill press's depth stop (v0.2.0). */
+export interface AdjustableStop {
+  position: number
+  side: 'lower' | 'upper'
+  citations: Citation[]
+}
+
 export interface ApiStatus {
   /** the moonwalkers package version */
   version: string
@@ -115,6 +122,25 @@ export interface Joint {
   max_velocity?: number | null
   confidence: number
   citations: Citation[]
+  mode?: JointMode | null
+  adjustable_stop?: AdjustableStop | null
+  follows?: JointLink | null
+}
+
+/** The joint moves with ``leader``: position = ``ratio`` * leader's position + ``offset`` (v0.2.0). ``ratio`` is in the follower's units per leader unit (rad per m for a turning joint that follows a sliding one), signed by each joint's own axis. ``stand_in`` marks a ratio that no source gives; the result must then carry an issue on the follower. */
+export interface JointLink {
+  leader: string
+  ratio: number
+  offset?: number
+  stand_in?: boolean
+  citations: Citation[]
+}
+
+/** How a joint is moved or held when nothing commands it (v0.2.0, decision 0020). * ``driven``: a motor or actuator moves it; a control behaviour may say how. * ``spring_return``: a spring returns it to ``position`` when let go. * ``locked``: held at ``position`` until a person changes the setting (a lock handle or bolt). * ``free``: it moves when pushed; nothing holds it. ``position`` is in the joint's units (rad or m); None means the modelled pose, 0. Only ``spring_return`` and ``locked`` take one. */
+export interface JointMode {
+  kind: 'driven' | 'spring_return' | 'locked' | 'free'
+  position?: number | null
+  citations: Citation[]
 }
 
 export interface MachineIdentity {
@@ -151,7 +177,7 @@ export interface Part {
 export type PipelineId = 'A' | 'B' | 'C' | 'D'
 
 export interface PipelineResult {
-  schema_version?: '0.1.0'
+  schema_version?: '0.1.0' | '0.2.0'
   result_id: string
   job_id: string
   pipeline: PipelineId

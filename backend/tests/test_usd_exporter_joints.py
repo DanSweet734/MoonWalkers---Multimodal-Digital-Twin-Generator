@@ -31,25 +31,40 @@ def stage_with(slider, **settings: JointSettings):
 
 
 # ------------------------------------------------------------------- unchanged output (Phase 2)
+def with_contract_v0_2_0(old: str) -> str:
+    """A 2026-10-22 fixture as contract v0.2.0 writes it (decision 0020). Two provenance lines
+    change, and nothing else: the twin's contract version, and the result's own version, which
+    is new. Each line being replaced is checked to occur exactly once."""
+    twin_version = 'string contract_schema_version = "0.1.0"'
+    produced_by = (
+        '                    string produced_by = "moonwalkers.usd.primitive_twin (synthetic test '
+        'model)"\n'
+    )
+    assert old.count(twin_version) == 1 and old.count(produced_by) == 1
+    return old.replace(twin_version, twin_version.replace("0.1.0", "0.2.0")).replace(
+        produced_by, produced_by + '                    string schema_version = "0.2.0"\n'
+    )
+
+
 @pytest.mark.parametrize("name", sorted(DRIVES))
 def test_the_phase_2_test_twin_is_unchanged(fixed_time: datetime, name: str) -> None:
     """Built at the tests' fixed time and not kept awake, the box-and-cylinder test twin is byte
     for byte what the exporter wrote before several joints were added (fixtures saved on
-    2026-10-22)."""
+    2026-10-22), apart from the two lines of contract v0.2.0's provenance."""
     twin, result = build_test_twin(fixed_time)
     stage = build_stage(twin, [result], DRIVES[name], keep_awake=False)
-    expected = (FIXTURES / name).read_text(encoding="utf-8")  # text mode: any line endings
-    assert stage.GetRootLayer().ExportToString() == expected
+    old = (FIXTURES / name).read_text(encoding="utf-8")  # text mode: any line endings
+    assert stage.GetRootLayer().ExportToString() == with_contract_v0_2_0(old)
 
 
 @pytest.mark.parametrize("name", sorted(DRIVES))
 def test_staying_awake_is_the_only_change_by_default(fixed_time: datetime, name: str) -> None:
     """Twins stay awake by default (decision 0017, 2026-10-23). Against the 2026-10-22 file, that
     adds PhysX's articulation schema to the root and its sleep threshold, set to 0, and nothing
-    else."""
+    else besides contract v0.2.0's two lines."""
     twin, result = build_test_twin(fixed_time)
     stage = build_stage(twin, [result], DRIVES[name])
-    old = (FIXTURES / name).read_text(encoding="utf-8")
+    old = with_contract_v0_2_0((FIXTURES / name).read_text(encoding="utf-8"))
     roots = 'prepend apiSchemas = ["PhysicsArticulationRootAPI"]'
     first_part = '{\n    def Xform "body"'
     assert old.count(roots) == 1 and old.count(first_part) == 1

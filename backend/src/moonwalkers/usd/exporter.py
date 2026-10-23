@@ -740,6 +740,8 @@ def _result_provenance(result: PipelineResult) -> dict[str, Any]:
         "pipeline": result.pipeline.value,
         "produced_by": result.produced_by,
         "produced_at": result.produced_at.isoformat(),
+        # The result's own contract version: a stored 0.1.0 result keeps saying so (decision 0020).
+        "schema_version": result.schema_version,
         "needs_human_review": result.needs_human_review,
         "sources": {
             s.source_id: _clean(

@@ -92,3 +92,29 @@ Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
 - Measured with the joint recorder in `all_motions` (`2026-10-23_run-002/recordings/all_motions_2026-10-23_141658.csv`):
   - the spring brought the quill from 82 mm down to within 1 mm of the top in 0.83 s;
   - the four table motions locked by equal limits stayed exactly at their settings for 35 s.
+
+## Update (2026-10-23): what holds the table's height
+Researched for decision 0020 (`docs/research/2026-10-23-table-height-lock-and-mimic-chains.md`,
+section 1).
+- **In use, the lock handle holds it.** "Table Height Lock Handle: Loosens to allow adjustment of
+  table position on column; tightens to lock table position" (manual, p. 7). The height is changed
+  by loosening that handle, turning the crank, then tightening it "to secure" (p. 32). So the
+  locked table's height, held by equal limits, matches the manual.
+- **With the lock loose, not confirmed.** The free table's height is still held by equal limits,
+  on the inference that the crank's worm holds it. The manual gives no lead angle for the worm, so
+  whether it self-locks cannot be checked. And under "shock and vibration, the friction
+  coefficient between worm and gear may suddenly drop", after which "back-driving can occur"
+  (A. V. Karvelis, *Machine Design*, 2000, quoted in the note). It stays an inference and a known
+  inaccuracy of `table_free` until a real T33901 or Grizzly settles it.
+
+**Daniel's direction, the same day.** He found that the Garage Journal thread is about a 1950s
+Craftsman drill press, model 103.23140, with a similar table mechanism, whose table fell once a lock
+was loosened. He found no T33901 page on Grizzly's site. "Other drill presses seem to show that
+behavior so it might be a safe assumption to assume the T33901 does as well unless otherwise stated
+somewhere." So, from contract v0.2.0's drill press on (decision 0020):
+- once its lock is loosened, the table's height is **free**, like its other three motions, and the
+  table drops to the bottom of its travel;
+- the check file `table_free` shows this. The equal limits that held the free height in run-002
+  are gone;
+- it is an assumption from a similar machine, logged as an inaccuracy in the twin, until a real
+  T33901 or a source settles it.
