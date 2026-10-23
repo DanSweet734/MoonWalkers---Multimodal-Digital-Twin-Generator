@@ -150,7 +150,10 @@ Its sizes are the manual's where it gives them, and made up, labelled as such, w
 the head, the hub, the rack, the bracket and the arm. The new behaviours are exporter
 settings, as `DriveSettings` is today, not contract fields. The contract changes in Phase 2, with
 this phase's evidence.
-- [ ] Research note, from primary sources, before any code:
+- [x] Research note, from primary sources, before any code
+      (Oct 22, 2026: `docs/research/2026-10-22-sliding-joints-locks-and-coupling.md`, mostly from
+      Isaac Sim 6.2's own schema files and demos. `PhysxMimicJointAPI` is deprecated, but
+      `NewtonMimicAPI` cannot tie a turning joint to a sliding one. A Shift+drag pushes a part):
   - UsdPhysics prismatic joints, linear drives and their limits;
   - the two leads for coupled motion, `PhysxMimicJointAPI` and
     `PhysxPhysicsRackAndPinionJoint`: what NVIDIA documents for Isaac Sim 6.2, which joints each
@@ -162,7 +165,10 @@ this phase's evidence.
     so the stop is written as a limit from the start;
   - how a person pushes a part during an Isaac Sim check [INFERENCE: we expect a mouse drag on a
     moving body; to confirm].
-- [ ] Exporter (`usd/exporter.py`):
+- [x] Exporter (`usd/exporter.py`)
+      (Oct 22, 2026: `JointSettings` and `JointCoupling`; PhysX schemas written by name in
+      `usd/physx_schemas.py`. Parts that no joint joins do not collide. The Phase 2 test twin is
+      byte-identical, checked by a fixture test. Decisions 0017-0019):
   - prismatic joints, with linear drives and limits in metres; today they are refused;
   - a drive per joint (spin, hold, spring return, locked, free) instead of one drive for every
     joint;
@@ -172,10 +178,15 @@ this phase's evidence.
     the fallback chosen in decision 0019;
   - unchanged output for what exists: built at a fixed time, the Phase 2 test twin comes out
     identical, and the HA5C's tests pass.
-- [ ] Primitive parts made of several shapes, such as the hub with its three handles
+- [x] Primitive parts made of several shapes, such as the hub with its three handles
       (`usd/geometry.py`). No contract change: `Part.primitive` is free-form.
-- [ ] `moonwalkers.usd.primitive_drill_press <run>`: eight parts on seven joints, as the manual's
-      photos show them:
+      (Oct 22, 2026: the "compound" shape)
+- [x] `moonwalkers.usd.primitive_drill_press <run>`: eight parts on seven joints, as the manual's
+      photos show them
+      (Oct 22, 2026: ten check files in
+      `data/machines/moonwalkers-testdrillpress/runs/2026-10-22_run-001/`. The quill gets its
+      spring in every file, because with the default drive gravity would pull it past its whole
+      stroke):
   - the parts are the frame (base, column and head), the quill, the spindle with its chuck, the
     handle hub, the column rack, the table bracket, the table arm and the table;
   - the chains are frame, quill, spindle; frame, hub; and frame, rack, bracket, arm, table;
@@ -191,16 +202,27 @@ this phase's evidence.
   - `table_free` and `table_locked`: each table motion moves within its cited range when free, and
     holds under gravity and a push when locked;
   - `all_motions`: everything in one file.
-- [ ] Validation: `moonwalkers.usd.validate` learns prismatic joints, chains, drives per joint and
+
+  As built, the coupling and the locks each got two files, one per method, so there are ten. Their
+  names are in `docs/setup/isaac-sim-check.md`, section 8.
+- [x] Validation: `moonwalkers.usd.validate` learns prismatic joints, chains, drives per joint and
       coupled joints. `omni_asset_validate` runs as well, and any finding about schemas that
       usd-core does not know is recorded.
-- [ ] A joint recorder for Isaac Sim checks: a Script Editor snippet that writes every joint's
+      (Oct 22, 2026: ours finds 0 errors in all ten files. NVIDIA's finds "No issues found." in
+      all ten, so it accepts the schemas written by name. Its one earlier warning, about
+      co-located points in the hub, was fixed)
+- [x] A joint recorder for Isaac Sim checks: a Script Editor snippet that writes every joint's
       position over time to a file. With it, the spring return, the stop and the coupling are
       measured, not only seen. It is also used on the HA5C's program files (the PoC report's
       item 11).
+      (Oct 22, 2026: `usd/isaac_recorder.py`, copied into the run as `record_joints.py`. It reads
+      `omni.physics.tensors` after each physics step and writes CSV. Its pure parts are tested;
+      it has not yet run in Isaac Sim)
 - [ ] Isaac Sim 6.2.0 check by Daniel, from a checklist per file (a new section in
       `docs/setup/isaac-sim-check.md`)
+      (Oct 22, 2026: the checklist is section 8, and the files are ready. Waiting for the check)
 - [ ] Decision records 0017, 0018 and 0019; worklog; PR
+      (Oct 22, 2026: all three written as proposed. Each is finished with the check's result)
 
 ## Phase 2 - Contract v0.2.0, and how the teammates' pipelines run
 - [ ] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names

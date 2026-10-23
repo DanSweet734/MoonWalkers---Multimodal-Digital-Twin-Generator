@@ -28,6 +28,11 @@
 - `2026-10-22-t33901-handle-ratio-and-figures.md` - planning the drill press: the search for its
   handle-to-quill ratio (not found; what would settle it), what the manual's photos show about the
   table's chain of joints, and a candidate PDF renderer (pypdfium2) for its vector drawings.
+- `2026-10-22-sliding-joints-locks-and-coupling.md` - drill-press plan, Phase 1: prismatic joints
+  and linear drives in usd-core, Isaac Sim 6.2's own PhysX and Newton schemas for coupling joints
+  (mimic, rack and pinion, why NewtonMimicAPI cannot couple a turning and a sliding joint),
+  candidate locks and springs, starting positions, pushing parts by hand, and what both validators
+  said about the exported files.
 
 Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
 Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.

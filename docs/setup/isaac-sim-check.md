@@ -185,6 +185,67 @@ Play the output should print `first physics step at t = ... (run 2)`.
 
 Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 
+## 8. Drill-press plan, Phase 1: the box-and-cylinder drill press
+A stand-in for the Grizzly T33901 made of boxes and cylinders (`docs/drill-press-plan.md`,
+Phase 1). It has eight parts on seven joints, and its sizes come from the manual where it gives
+them. The files are in
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\moonwalkers-testdrillpress\runs\2026-10-22_run-001\`.
+Its `RUN.md` repeats what to look for in each file and has room for your notes.
+
+To make them again (from `backend/`):
+`uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
+
+**What you will see.**
+- The grey part is the frame: base, column, and one box standing in for the head and motor.
+- The orange parts move:
+  - the quill, with the 8-sided chuck below it;
+  - the hub on the right of the head, with its three handles;
+  - the column rack and collar;
+  - the bracket with its crank;
+  - the table arm and the table.
+- The front faces +X, and the operator's right is +Y.
+
+**Two tools for every file.**
+- **Pushing a part:** while the simulation runs, hold **Shift** and drag a part with the left mouse
+  button. The Physics settings' "Mouse Interaction" section turns it on or off.
+- **Measuring:** before Play, open `record_joints.py` from the folder in a text editor, copy it
+  all, and paste it into Window > Script Editor, then click **Run**.
+  - It prints `will record /moonwalkers_testdrillpress ...`.
+  - After Play it prints `recording ... to ...\recordings\<file>_<time>.csv`. The file holds every
+    joint's position over time, in radians or metres.
+  - Run it again for each file you open. Please send the CSV files, or note their names.
+
+**The files, one at a time** (File > Open, then Play):
+1. `spindle_spin.usdc`: the spindle turns at 340 RPM, the lowest cited speed. At 60 frames a second
+   it may look slow or even backwards, because each frame is close to its 8-sided symmetry. Nothing
+   else moves.
+2. `spindle_spin_slow.usdc`: the spindle turns slowly (30°/s), clockwise seen from above.
+3. `quill_spring_return.usdc`: the quill starts 3-1/4 in down and the spring returns it to the top,
+   where it stays. Then Shift+drag the quill down and let go: it springs back.
+4. `depth_stop.usdc`: the quill is fed down and stops at a depth stop 1-1/2 in (38 mm) down, short
+   of its full travel.
+5. `handles_follow_mimic.usdc`: as file 3, and the handles turn back 270° as the quill rises. Then
+   Shift+drag a handle: the quill should move too.
+6. `handles_follow_rack_pinion.usdc`: the same coupling, written another way. Note whether the
+   handles turn, and which way compared with file 5.
+7. `table_free.usdc`: nothing moves on Play. Shift+drag the table:
+   - it swings around the column;
+   - it tilts up to 45° each way;
+   - it turns about its centre;
+   - its height stays, because the crank holds it.
+8. `table_locked_drive.usdc`: the table starts raised 0.15 m, swung 30°, tilted 30° and turned 45°,
+   and holds there. Shift+drag it hard, and note whether it gives.
+9. `table_locked_limits.usdc`: the same pose, held by limits instead. It should not move at all.
+10. `all_motions.usdc`: all of it at once. The spindle turns, the quill rises with the handles
+    turning, and the table holds its pose.
+
+**What to send back** (or write in `RUN.md`):
+- for each file, what moved and how, and anything that shook, drifted or flew apart;
+- which coupling worked: the mimic (file 5), the rack and pinion (file 6), both or neither;
+- which lock held better (files 8 and 9);
+- any errors or warnings in the log, or the log's file name, so Claude Code can read it;
+- the CSV recordings.
+
 **If nothing moves on Play:**
 - If no `first physics step` line was printed, the callback did not fire. In the pasted script,
   change `API = "auto"` near the top to `API = "omni.physx"`, run it again, and press Play.
