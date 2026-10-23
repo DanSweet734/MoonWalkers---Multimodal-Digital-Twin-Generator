@@ -16,7 +16,7 @@ import json
 import math
 import platform
 import shutil
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from importlib.metadata import version as package_version
 from pathlib import Path
@@ -34,7 +34,7 @@ from moonwalkers.control.program import ProgramFile, runnable_behaviors
 from moonwalkers.generators.base import ImageTo3DGenerator
 from moonwalkers.kb import KnowledgeBase
 from moonwalkers.orchestrator import JobRequest, Orchestrator
-from moonwalkers.pipelines import default_pipelines
+from moonwalkers.pipelines import Pipeline, default_pipelines
 from moonwalkers.usd.exporter import DriveSettings, ExportError, export_twin
 from moonwalkers.usd.validate import validate_file
 
@@ -68,8 +68,10 @@ def build_run(
     reference_path: Path | None,
     generator: ImageTo3DGenerator,
     kb: KnowledgeBase,
+    pipelines: Mapping[PipelineId, Pipeline] | None = None,
 ) -> BuildOutcome:
-    """Send the run's request through the orchestrator with Pipeline B.
+    """Send the run's request through the orchestrator with Pipeline B, and with the other
+    pipelines that are in (``default_pipelines()`` unless ``pipelines`` is given; decision 0021).
 
     Raises what the pipeline and the orchestrator raise, for example ``GeometrySpecMissing``
     before the spec exists, or ``RunFolderConflict`` when the run folder already holds a twin.
@@ -111,8 +113,8 @@ def build_run(
         exported.extend(p for p in written if p.is_file())
         return path.relative_to(data_dir).as_posix()
 
-    pipelines = {**default_pipelines(), PipelineId.B: pipeline_b}
-    job = Orchestrator(kb, pipelines, exporter=export).run_job(request)
+    others = default_pipelines() if pipelines is None else pipelines
+    job = Orchestrator(kb, {**others, PipelineId.B: pipeline_b}, exporter=export).run_job(request)
     write_job_result(run_dir, Path(request_path), job)
     if job.reused_existing:
         return BuildOutcome(job)

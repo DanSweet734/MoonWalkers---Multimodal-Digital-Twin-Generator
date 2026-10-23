@@ -14,7 +14,7 @@ readable message. The agent's procedure is in ``docs/agent-procedure.md``.
 import argparse
 import os
 import threading
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +33,7 @@ from moonwalkers.contracts.pipeline_result import (
     InputType,
     Issue,
     MachineIdentity,
+    PipelineId,
     Source,
     TwinRecord,
 )
@@ -62,7 +63,8 @@ from moonwalkers.orchestrator import (
     Orchestrator,
     OrchestratorError,
 )
-from moonwalkers.pipelines import default_pipelines
+from moonwalkers.orchestrator.router import ROUTES
+from moonwalkers.pipelines import OWNERS, Pipeline, default_pipelines
 from moonwalkers.pipelines.b.assemble import AxisName
 from moonwalkers.pipelines.b.build import REQUEST_FILE, build_run
 from moonwalkers.pipelines.b.inspection import inspect_mesh, preview_parts
@@ -171,12 +173,15 @@ def create_server(
     generator_factory: Callable[[], ImageTo3DGenerator] = default_generator,
     kb: KnowledgeBase | None = None,
     clock: Clock = utc_now,
+    pipelines: Mapping[PipelineId, Pipeline] | None = None,
 ) -> MCPServer:
-    """The server, with every tool bound to one data folder and knowledge base."""
+    """The server, with every tool bound to one data folder and knowledge base. ``pipelines``
+    are the input pipelines that are in besides B (default: ``default_pipelines()``)."""
     ws = workspace
     data_dir = Path(ws.data_dir).resolve()
     kb = kb or JsonKnowledgeBase(data_dir / "kb")
-    orchestrator = Orchestrator(kb, default_pipelines(), clock=clock)  # reuse rules, decision 0015
+    available = default_pipelines() if pipelines is None else dict(pipelines)
+    orchestrator = Orchestrator(kb, available, clock=clock)  # reuse rules, decision 0015
     lock = threading.Lock()  # tools run in worker threads; one at a time keeps files consistent
     server = MCPServer(SERVER_NAME, instructions=INSTRUCTIONS)
 
@@ -386,8 +391,16 @@ def create_server(
         The path is relative to the data folder (save inputs under
         machines/<machine>/inputs/ and list them in SOURCES.md first). The title should say
         where the file came from, for example the original URL. retrieved_at is when it was
-        downloaded (defaults to now). Its SHA-256 is recorded."""
+        downloaded (defaults to now). Its SHA-256 is recorded. A document goes to Pipeline A, C
+        or D by its input type, and is refused while that pipeline is not in (decision 0021)."""
         with guarded():
+            pipeline = ROUTES[input_type]
+            if pipeline != PipelineId.B and pipeline not in available:
+                raise WorkspaceError(
+                    f"Pipeline {pipeline.value} ({OWNERS[pipeline]}'s), which reads "
+                    f"{input_type.value} inputs, is not in yet (decision 0021). Cite the document "
+                    "with add_reference_source and record what it says with add_fact instead."
+                )
             run_dir = ws.run_dir(run)
             file = ws.data_file(path)
             source = Source(
@@ -797,6 +810,7 @@ def create_server(
                 run_dir / REFERENCE_FILE,
                 generator_factory(),
                 kb,
+                pipelines=available,
             )
             results = [kb.get_result(rid) for rid in outcome.job.twin.built_from]
             issues = [i for r in results if r is not None for i in r.issues]

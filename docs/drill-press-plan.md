@@ -289,7 +289,17 @@ this phase's evidence.
   - **Environment:** the backend's own, or a separate one called as a subprocess, as the
     generators are (`generators/`).
   - Agreed with the owners.
-- [ ] Build our side of what the record chooses, tested with a fake pipeline rather than the stubs
+
+  (Oct 23, 2026: written and proposed, on Daniel's word to finish Phase 2. Found while reading:
+  `add_input` already took any input type, so a drill-press document could reach a stub and get
+  HA5C facts. Chosen: a command line now, and `add_input` refusing a document whose pipeline is
+  not in; the stubs only in the tests; one result per twin carries parts and joints; disagreeing
+  facts listed for the reviewer; the backend's environment by default. Still to be agreed with the
+  owners)
+- [x] Build our side of what the record chooses, tested with a fake pipeline rather than the stubs
+      (Oct 23, 2026: `Pipeline.stub`, `default_pipelines()` without stubs, `stub_pipelines()` for
+      the tests; the orchestrator's two rules; `add_input`'s refusal; `python -m
+      moonwalkers.pipelines list | run`. 22 new tests, on fake pipelines)
 - [ ] A short guide for the pipeline owners: the contract, `create_pipeline()`, citations, tests,
       and how to try a pipeline on the T33901's manual (worklog 2026-10-22, "Next step")
 - [ ] Worklog; PR

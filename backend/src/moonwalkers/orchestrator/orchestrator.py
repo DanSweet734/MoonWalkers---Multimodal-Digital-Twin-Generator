@@ -11,6 +11,10 @@ One job (README, "Twin reuse: the request flow"; decisions 0009 and 0015):
    With an ``exporter``, the new version is written out (for example as USD) first and its file
    becomes the twin's ``usd_path``; if the export fails, nothing is stored.
 
+Several results build one version (decision 0021): at most one of them carries parts and joints,
+and facts that two results give different values are listed in the twin's notes for the
+reviewer, without picking one. An input whose pipeline is not in yet is refused.
+
 The orchestrator is the only component that writes to the knowledge base (CLAUDE.md rule 6), and
 that includes reviews. New twins always get status ``needs_review``: v1 keeps a human in the loop
 (docs/methodology.md). Only a person's review approves or rejects one (``review_twin``).
@@ -18,12 +22,14 @@ that includes reviews. New twins always get status ``needs_review``: v1 keeps a 
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from moonwalkers.clock import Clock, utc_now
 from moonwalkers.contracts.pipeline_result import (
+    Fact,
     JobResult,
     PipelineId,
     PipelineResult,
@@ -37,7 +43,7 @@ from moonwalkers.kb import (
     machine_key,
     validate_machine_key,
 )
-from moonwalkers.pipelines import Pipeline
+from moonwalkers.pipelines import OWNERS, Pipeline
 
 from .router import route
 
@@ -175,9 +181,13 @@ class Orchestrator:
             needs = "; ".join(
                 f"Pipeline {pid.value} for "
                 + ", ".join(sorted({s.input_type.value for s in routed[pid] if s.input_type}))
+                + f" ({OWNERS[pid]}'s)"
                 for pid in missing
             )
-            raise PipelineUnavailableError(f"job {request.job_id}: not available yet: {needs}")
+            raise PipelineUnavailableError(
+                f"job {request.job_id}: not available yet: {needs}. A pipeline runs once its "
+                "owner's create_pipeline() returns it instead of the stub (decision 0021)."
+            )
 
         results = []
         for pid, sources in routed.items():
@@ -198,6 +208,8 @@ class Orchestrator:
         notes: str | None,
         requested: bool,
     ) -> JobResult:
+        _check_one_geometry(results)
+        notes = " ".join(n for n in (notes, _fact_disagreements(results)) if n) or None
         previous = self.kb.get_twin(key)
         version = previous.version + 1 if previous is not None else 1
         twin = TwinRecord(
@@ -287,6 +299,52 @@ def _choose_machine_key(
         return chosen, None
     where = " (named in the request)" if hinted_key is not None else ""
     return chosen, f"Machine identity disagreement; used {chosen}{where}. {'; '.join(others)}."
+
+
+def _check_one_geometry(results: list[PipelineResult]) -> None:
+    """At most one result carries parts and joints (decision 0021): the contract keeps a joint's
+    parts in its own result, so two results' parts could not form one tree."""
+    with_geometry = [r for r in results if r.parts or r.joints]
+    if len(with_geometry) > 1:
+        raise OrchestratorError(
+            f"{_pipeline_list(with_geometry)} each carry parts or joints; one result per twin "
+            "carries the geometry (decision 0021). Nothing was stored."
+        )
+
+
+def _fact_disagreements(results: list[PipelineResult]) -> str | None:
+    """A note naming each pipeline's value for every fact the results disagree on, for the
+    reviewer to settle; none is picked (decision 0021)."""
+    by_key: dict[str, list[tuple[PipelineId, Fact]]] = {}
+    for result in results:
+        for fact in result.facts:
+            by_key.setdefault(fact.key, []).append((result.pipeline, fact))
+    disagreements = []
+    for key, given in by_key.items():
+        first = given[0][1]
+        if all(_agree(first, fact) for _, fact in given[1:]):
+            continue
+        values = ", ".join(
+            f"Pipeline {pid.value} {fact.value}{' ' + fact.unit if fact.unit else ''}"
+            for pid, fact in given
+        )
+        disagreements.append(f"{key}: {values}")
+    if not disagreements:
+        return None
+    return "Fact disagreements, for the reviewer: " + "; ".join(disagreements) + "."
+
+
+def _agree(a: Fact, b: Fact) -> bool:
+    """Numbers in the same unit within 0.5% (rounding, such as 3-1/4 in and 82.5 mm), text
+    ignoring case and outer spaces, anything else equal."""
+    if a.unit != b.unit:
+        return False
+    numbers = (int, float)
+    if all(isinstance(v, numbers) and not isinstance(v, bool) for v in (a.value, b.value)):
+        return math.isclose(a.value, b.value, rel_tol=0.005)
+    if isinstance(a.value, str) and isinstance(b.value, str):
+        return a.value.strip().casefold() == b.value.strip().casefold()
+    return a.value == b.value
 
 
 def _pipeline_list(results: list[PipelineResult]) -> str:

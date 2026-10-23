@@ -12,11 +12,12 @@ from typing import Any
 import pytest
 from mcp import Client
 
-from moonwalkers.contracts.pipeline_result import TwinRecord
+from moonwalkers.contracts.pipeline_result import PipelineId, PipelineResult, Source, TwinRecord
 from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.mcp import Workspace, create_server, default_data_dir
 from moonwalkers.mcp.server import UnconfiguredGenerator
 from moonwalkers.orchestrator import Orchestrator
+from moonwalkers.pipelines import Pipeline
 
 MACHINE = {"manufacturer": "MoonWalkers", "model": "Test Indexer"}
 SHEET = [{"source_id": "src-sheet", "locator": "p. 1", "quote": "centre height 0.1016 m"}]
@@ -404,6 +405,66 @@ async def test_without_a_generator_root_only_earlier_meshes_can_be_used(photo_ru
         run = await prepared_run(client, photo_run)
         message = await fails(client, "generate_geometry", run=run)
     assert "not configured: set MOONWALKERS_GEN_ROOT" in message
+
+
+class OwnersPipelineD(Pipeline):
+    """Stands in for Sarkis's Pipeline D once it is in; add_input only checks that it is."""
+
+    pipeline_id = PipelineId.D
+
+    def run(self, job_id: str, sources: list[Source]) -> PipelineResult:
+        raise NotImplementedError
+
+
+def write_manual(photo_run) -> str:
+    manual = photo_run.data_dir / "machines" / "moonwalkers-testindexer" / "inputs" / "manual.pdf"
+    manual.write_bytes(b"%PDF- not really a manual")
+    return manual.relative_to(photo_run.data_dir).as_posix()
+
+
+@pytest.mark.anyio
+async def test_a_document_is_refused_while_its_pipeline_is_not_in(setup, photo_run) -> None:
+    """Pipeline D's stub would answer with the HA5C's facts, so the document is refused before
+    anything is generated (decision 0021)."""
+    server, _ = setup
+    async with Client(server) as client:
+        run = (await ok(client, "start_run", **MACHINE))["run"]
+        message = await fails(
+            client,
+            "add_input",
+            run=run,
+            path=write_manual(photo_run),
+            source_id="src-manual",
+            title="Manual",
+            input_type="pdf_catalog",
+        )
+    assert "Pipeline D (Sarkis Nazaryan's)" in message and "not in yet" in message
+    assert "add_reference_source" in message
+
+
+@pytest.mark.anyio
+async def test_a_document_is_added_once_its_pipeline_is_in(
+    photo_run, fake_generator, clock
+) -> None:
+    server = create_server(
+        Workspace(photo_run.data_dir, clock),
+        fake_generator,
+        clock=clock,
+        pipelines={PipelineId.D: OwnersPipelineD()},
+    )
+    async with Client(server) as client:
+        run = (await ok(client, "start_run", **MACHINE))["run"]
+        added = await ok(
+            client,
+            "add_input",
+            run=run,
+            path=write_manual(photo_run),
+            source_id="src-manual",
+            title="Manual",
+            input_type="pdf_catalog",
+        )
+    assert added["inputs"] == ["src-manual"]
+    assert added["source"]["input_type"] == "pdf_catalog"
 
 
 def test_the_data_folder_comes_from_the_environment(monkeypatch, tmp_path: Path) -> None:

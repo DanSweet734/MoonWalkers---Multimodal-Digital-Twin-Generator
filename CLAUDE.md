@@ -151,6 +151,10 @@ Backend (run from `backend/`):
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
   facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
+- Pipelines A, C and D outside their tests (decision 0021): `uv run python -m moonwalkers.pipelines list`
+  shows which are in; `... run D --input-type pdf_catalog <file or URL>... --out <file>` runs one and
+  writes its checked result, storing nothing. Stubs run only in the tests (`stub_pipelines()`).
+  Owners' guide: `docs/pipeline-guide.md`.
 - Inspect a generated mesh, or try a spec without storing anything:
   `uv run python -m moonwalkers.pipelines.b inspect <run> --up +y --front +z`, then
   `... inspect <run> --preview --reference <facts.json>`. If the inspection warns that the tip

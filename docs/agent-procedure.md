@@ -77,6 +77,9 @@ the job is done. Otherwise the job waits for you:
    - put the photo's original URL in the title;
    - take `retrieved_at` and the license note from `SOURCES.md`.
 
+   Documents (manuals, catalogues, drawings) are not inputs while their pipeline, A, C or D, is
+   not in: `add_input` refuses them (decision 0021). Read them yourself, and cite them in step 3.
+
 ## 3. Read the documents and record cited notes
 1. **`add_reference_source`, once per document you use.**
    - For a downloaded file, use `kind="url"` with its original URL, and pass `local_copy` (the
@@ -193,6 +196,7 @@ Tool errors say what is wrong. The common ones:
 | "already built its twin" / "already assembled" / "already generated" | The run folder is fixed: start a new run (`new_version=true` for a rebuild) |
 | "the image-to-3D generator is not configured" | The person must set `MOONWALKERS_GEN_ROOT` for the server |
 | "Pipeline B (PoC) takes exactly one machine photo" | Add exactly one photo with `add_input` |
+| "Pipeline D (...) ... is not in yet" (or A, C) | The document's pipeline is not in yet: cite it with `add_reference_source` and record its facts with `add_fact` |
 
 Claude Code asks the person before each tool call unless they allow the tool. Only
 `check_knowledge_base` and `list_jobs` are read-only. `request_twin` stores nothing when it reuses a

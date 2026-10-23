@@ -1,13 +1,22 @@
-"""Pipeline stubs A, C and D return valid, clearly labelled fixture results."""
+"""Pipeline stubs A, C and D return valid, clearly labelled fixture results, and run only in the
+tests (decision 0021)."""
 
 from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from moonwalkers.contracts.pipeline_result import InputType, PipelineId
+from moonwalkers.contracts.pipeline_result import InputType, PipelineId, PipelineResult, Source
 from moonwalkers.kb import machine_key
-from moonwalkers.pipelines import default_pipelines, result_id_for
+from moonwalkers.pipelines import (
+    Pipeline,
+    a,
+    c,
+    d,
+    default_pipelines,
+    result_id_for,
+    stub_pipelines,
+)
 from moonwalkers.pipelines.fixture_stub import STUB_NOTICE, FixturePipeline
 
 STUB_INPUTS = {
@@ -17,15 +26,38 @@ STUB_INPUTS = {
 }
 
 
-def test_default_pipelines_are_the_three_stubs() -> None:
-    assert set(default_pipelines()) == {PipelineId.A, PipelineId.C, PipelineId.D}
+def test_stub_pipelines_are_the_three_stubs() -> None:
+    stubs = stub_pipelines()
+    assert set(stubs) == {PipelineId.A, PipelineId.C, PipelineId.D}
+    assert all(p.stub for p in stubs.values())
+
+
+class OwnersPipeline(Pipeline):
+    """Stands in for an owner's real pipeline, whatever the owners have merged."""
+
+    pipeline_id = PipelineId.D
+
+    def run(self, job_id: str, sources: list[Source]) -> PipelineResult:
+        raise NotImplementedError
+
+
+def test_default_pipelines_leave_the_stubs_out(monkeypatch) -> None:
+    """Each stub returns the HA5C's data for any input, so outside the tests a document for a
+    pipeline that is not in yet is refused instead (decision 0021)."""
+    stubs = stub_pipelines()
+    monkeypatch.setattr(a, "create_pipeline", lambda: stubs[PipelineId.A])
+    monkeypatch.setattr(c, "create_pipeline", lambda: stubs[PipelineId.C])
+    monkeypatch.setattr(d, "create_pipeline", OwnersPipeline)
+    pipelines = default_pipelines()
+    assert list(pipelines) == [PipelineId.D]
+    assert isinstance(pipelines[PipelineId.D], OwnersPipeline)
 
 
 @pytest.mark.parametrize("pipeline_id", sorted(STUB_INPUTS))
 def test_stub_returns_labelled_ha5c_result(pipeline_id: PipelineId, make_source) -> None:
     sources = [make_source(f"in-{t.value}", t) for t in STUB_INPUTS[pipeline_id]]
 
-    result = default_pipelines()[pipeline_id].run("job-7", sources)
+    result = stub_pipelines()[pipeline_id].run("job-7", sources)
 
     assert result.pipeline == pipeline_id
     assert result.job_id == "job-7"
