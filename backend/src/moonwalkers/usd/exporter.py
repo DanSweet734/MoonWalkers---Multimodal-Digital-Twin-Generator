@@ -67,6 +67,7 @@ from .frames import quat_between
 from .geometry import MeshData, primitive_mesh
 from .mesh_files import MESH_FILE_FORMATS, mesh_data_from_file
 from .physx_schemas import apply_mimic, define_rack_and_pinion, set_joint_state
+from .physx_schemas import keep_awake as keep_articulation_awake
 from .units import KILOGRAMS_PER_UNIT, METERS_PER_UNIT, usd_angle, usd_length
 
 WORLD_JOINT = "fixed_to_world"
@@ -135,8 +136,10 @@ class JointCoupling:
     contract's units (rad per m for a turning joint that follows a sliding one; decision 0019).
 
     ``method`` "mimic" writes PhysX's ``PhysxMimicJointAPI``, a two-way hard constraint inside the
-    articulation. "rack_and_pinion" writes a ``PhysxPhysicsRackAndPinionJoint`` kept out of the
-    articulation; it ties the joints' speeds, so ``offset`` comes from their starting positions.
+    articulation; it worked in Isaac Sim 6.2.0 on 2026-10-23 and is the one to use.
+    "rack_and_pinion" writes a ``PhysxPhysicsRackAndPinionJoint`` kept out of the articulation; it
+    ties the joints' speeds, so ``offset`` comes from their starting positions. Its first check
+    failed, and its sign is being retried.
     """
 
     leader: str
@@ -177,19 +180,23 @@ def export_twin(
     data_dir: Path | None = None,
     *,
     joint_settings: Mapping[str, JointSettings] | None = None,
+    keep_awake: bool = False,
 ) -> Path:
     """Write the twin to ``path``; returns the path.
 
     ``.usda`` gives text with LF line endings, readable for small twins. ``.usdc`` gives a binary
     crate file, which NVIDIA's asset validator asks for once arrays pass 64 elements, as a
     generated mesh's do (decision 0012). ``data_dir`` is the project ``data/`` folder; mesh-file
-    parts are relative to it (contract). ``joint_settings`` maps joint ids to their settings.
+    parts are relative to it (contract). ``joint_settings`` maps joint ids to their settings, and
+    ``keep_awake`` stops PhysX from putting the articulation to sleep (decision 0017).
     """
     path = Path(path)
     if path.suffix not in (".usda", ".usdc"):
         raise ExportError(f"export writes .usda (text) or .usdc (binary) files, not {path.name}")
     # The stage owns its root layer: keep it.
-    stage = build_stage(twin, results, drive, data_dir, joint_settings=joint_settings)
+    stage = build_stage(
+        twin, results, drive, data_dir, joint_settings=joint_settings, keep_awake=keep_awake
+    )
     return write_stage(stage, path)
 
 
@@ -219,6 +226,7 @@ def build_stage(
     data_dir: Path | None = None,
     *,
     joint_settings: Mapping[str, JointSettings] | None = None,
+    keep_awake: bool = False,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()
@@ -265,6 +273,8 @@ def build_stage(
 
     if articulated:
         UsdPhysics.ArticulationRootAPI.Apply(root)
+        if keep_awake:
+            keep_articulation_awake(root)
         scope = UsdGeom.Scope.Define(stage, root_path.AppendChild(JOINTS_SCOPE)).GetPath()
         anchor = UsdPhysics.FixedJoint.Define(stage, scope.AppendChild(WORLD_JOINT))
         anchor.CreateBody1Rel().SetTargets([body_paths[root_part]])
@@ -625,7 +635,12 @@ def _write_coupling(
 ) -> None:
     """Tie the follower to its leader (decision 0019; ``physx_schemas``). Contract units become
     USD's: PhysX's mimic equation is "jointPosition + gearing * referenceJointPosition + offset =
-    0", so gearing = -ratio and offset = -offset, scaled to degrees for angles."""
+    0", so gearing = -ratio and offset = -offset, scaled to degrees for angles.
+
+    The rack and pinion's ratio takes the same sign as the mimic's gearing. PhysX says its speeds
+    "may otherwise have opposite signs, depending on the orientations of the joint frames". With
+    the opposite sign, the drill press's handles jammed at their limit in Isaac Sim on 2026-10-23
+    [INFERENCE: one check; the sign is to be confirmed]."""
     coupling = setting.coupling
     assert coupling is not None
     follower, leader = joints[follower_id][0], joints[coupling.leader][0]
@@ -653,7 +668,7 @@ def _write_coupling(
         rack_body=body_paths[leader.child_part],
         hinge=joint_paths[follower_id],
         prismatic=joint_paths[coupling.leader],
-        ratio_deg_per_distance=abs(coupling.ratio) * per_follower_unit / per_leader_unit,
+        ratio_deg_per_distance=-coupling.ratio * per_follower_unit / per_leader_unit,
     )
     prim.SetDocumentation(
         f"Rack and pinion: joint '{follower_id}' turns as '{coupling.leader}' slides (speeds only)."

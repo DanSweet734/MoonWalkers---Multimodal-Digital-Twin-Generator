@@ -74,3 +74,12 @@ def test_joint_state_names(stage) -> None:
 def test_unknown_axes_are_refused(stage, call, message) -> None:
     with pytest.raises(ValueError, match=message):
         call(stage.DefinePrim("/joint"))
+
+
+def test_keep_awake_turns_off_articulation_sleep(stage) -> None:
+    from moonwalkers.usd.physx_schemas import keep_awake
+
+    root = stage.DefinePrim("/twin")
+    keep_awake(root)
+    assert applied_schemas(root) == ["PhysxArticulationAPI"]
+    assert root.GetAttribute("physxArticulation:sleepThreshold").Get() == 0.0

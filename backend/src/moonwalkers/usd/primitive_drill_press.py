@@ -517,7 +517,9 @@ def handles(method: Literal["mimic", "rack_and_pinion"] = "mimic") -> JointSetti
 
 def table(locked: str | None) -> dict[str, JointSettings]:
     """The four table motions: free (the crank still holds the height, as the real worm does),
-    or each locked at ``TABLE_SETTING`` by a stiff drive or by equal limits (decision 0018)."""
+    or each locked at ``TABLE_SETTING`` by a stiff drive or by equal limits (decision 0018).
+    The crank holds the free table's height by equal limits. A hold drive, tried first, let the
+    table sag and be pushed up and down (Isaac Sim check, 2026-10-23)."""
     settings: dict[str, JointSettings] = {}
     for joint_id, value in TABLE_SETTING.items():
         if locked == "drive":
@@ -531,7 +533,7 @@ def table(locked: str | None) -> dict[str, JointSettings]:
             )
         elif joint_id == "table_height":
             settings[joint_id] = JointSettings(
-                drive=DriveSettings.hold(value), start=value, note="held by the crank's worm"
+                drive=None, limits=(value, value), start=value, note="held by the crank's worm"
             )
         else:
             settings[joint_id] = JointSettings(
@@ -566,13 +568,13 @@ CHECKS: dict[str, Check] = {
     "spindle_spin_slow.usdc": Check(
         {"spindle_rotation": JointSettings(drive=DriveSettings.spin(SPIN_SLOW))},
         "the spindle turns at 30 degrees a second, for the eye",
-        "The spindle turns slowly, clockwise seen from above. Nothing else moves.",
+        "The spindle turns slowly, clockwise seen from above, without a push. Nothing else moves.",
     ),
     "quill_spring_return.usdc": Check(
         {"quill_travel": spring(start=SPINDLE_TRAVEL)},
         "the quill starts at full depth and the spring returns it",
-        "On Play the quill and chuck rise 3-1/4 in to the top and stay there. Then Shift+drag "
-        "the quill down and let go: it springs back to the top.",
+        "On Play the quill first jumps to full depth (its stored start, applied on the first "
+        "physics step), then rises 3-1/4 in to the top and stays there.",
     ),
     "depth_stop.usdc": Check(
         {
@@ -584,13 +586,14 @@ CHECKS: dict[str, Check] = {
         },
         "a feed to full depth stops at a depth stop set at 1-1/2 in",
         "On Play the quill moves down 1-1/2 in (38 mm) and stops there, short of its full "
-        "3-1/4 in.",
+        "3-1/4 in. It already sticks 1.38 in out of the head at the top, so it ends 2.88 in out.",
     ),
     "handles_follow_mimic.usdc": Check(
         {"quill_travel": spring(start=SPINDLE_TRAVEL), "downfeed_handles": handles("mimic")},
         "the handles follow the quill through PhysxMimicJointAPI",
         "On Play the quill rises and the handles turn back 270 degrees with it. Shift+drag a "
-        "handle: the quill should move too (the mimic is two-way).",
+        "handle: the quill moves too (the mimic is two-way). A push on the quill itself barely "
+        "moves it: through the coupling, the handles' lever is about 10 times stronger.",
     ),
     "handles_follow_rack_pinion.usdc": Check(
         {
@@ -598,8 +601,9 @@ CHECKS: dict[str, Check] = {
             "downfeed_handles": handles("rack_and_pinion"),
         },
         "the handles follow the quill through a rack-and-pinion joint",
-        "On Play the quill rises and the handles turn with it. Note whether they turn the same "
-        "way as in the mimic file; this joint ties only the speeds.",
+        "On Play the quill rises and the handles turn back with it, the same way as in the "
+        "mimic file. (Retry: the first run, with the opposite sign, jammed the handles at "
+        "their limit.)",
     ),
     "table_free.usdc": Check(
         table(locked=None),
@@ -649,7 +653,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     failed = False
     for name, check in CHECKS.items():
         path = export_twin(
-            twin, [result], args.out_dir / name, joint_settings=with_spring(check.settings)
+            twin,
+            [result],
+            args.out_dir / name,
+            joint_settings=with_spring(check.settings),
+            keep_awake=True,
         )
         issues = validate_file(path)
         errors = [i for i in issues if i.severity == "error"]

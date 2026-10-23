@@ -120,6 +120,9 @@ def test_the_coupling_files_use_the_two_methods(drill_press) -> None:
     )
     prim = rack.GetPrimAtPath(f"{joints}/downfeed_handles_rack_and_pinion")
     assert prim.GetTypeName() == "PhysxPhysicsRackAndPinionJoint"
+    # Same sign as the mimic's gearing: the opposite sign jammed the handles (2026-10-23).
+    ratio = prim.GetAttribute("physics:ratio").Get()
+    assert math.isclose(ratio, -math.degrees(dp.HANDLE_RATIO), rel_tol=1e-6)
 
 
 def test_command_writes_every_check_and_run_notes(tmp_path: Path, capsys) -> None:
@@ -137,3 +140,22 @@ def test_command_writes_every_check_and_run_notes(tmp_path: Path, capsys) -> Non
     assert "## Known inaccuracies and stand-ins" in notes
     assert notes.count("- Look for:") == len(dp.CHECKS)
     assert "Shift" in notes and "## Isaac Sim check (fill in)" in notes
+
+
+def test_the_free_table_keeps_its_height_on_the_crank() -> None:
+    """A hold drive let the free table sag and be pushed (Isaac Sim check, 2026-10-23); the crank's
+    worm holds it, so its height is locked by equal limits while the other motions are free."""
+    settings = dp.table(locked=None)
+    height = dp.TABLE_SETTING["table_height"]
+    assert settings["table_height"].limits == (height, height)
+    assert settings["table_height"].drive is None
+    for joint_id in ("table_around_column", "table_tilt", "table_around_center"):
+        assert settings[joint_id].limits is None
+        assert settings[joint_id].drive.stiffness == 0.0
+
+
+def test_the_check_files_keep_the_articulation_awake(tmp_path: Path) -> None:
+    assert dp.main([str(tmp_path)]) == 0
+    stage = Usd.Stage.Open(str(tmp_path / "spindle_spin_slow.usdc"))
+    threshold = stage.GetPrimAtPath(ROOT).GetAttribute("physxArticulation:sleepThreshold")
+    assert threshold.Get() == 0.0

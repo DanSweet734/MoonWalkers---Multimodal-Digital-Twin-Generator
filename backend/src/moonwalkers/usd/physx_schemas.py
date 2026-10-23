@@ -17,6 +17,7 @@ MIMIC_AXES = ("rotX", "rotY", "rotZ")  # "The allowed instance name tokens" (sch
 RACK_AND_PINION_TYPE = "PhysxPhysicsRackAndPinionJoint"
 JOINT_STATE_API = "PhysicsJointStateAPI"
 JOINT_STATE_AXES = ("angular", "linear")  # revolute and prismatic joints (schema doc)
+ARTICULATION_API = "PhysxArticulationAPI"
 
 
 def apply_mimic(
@@ -74,6 +75,15 @@ def define_rack_and_pinion(
         variability=Sdf.VariabilityUniform,
     ).Set(True)
     return prim
+
+
+def keep_awake(root: Usd.Prim) -> None:
+    """Stop the articulation at ``root`` from sleeping. PhysX puts an articulation to sleep when its
+    "Mass-normalized kinetic energy" falls below ``physxArticulation:sleepThreshold`` (0.00005 by
+    default), and a drive alone does not wake it. On 2026-10-23 the drill press's spindle stopped
+    at 30 degrees a second until pushed (decision 0017)."""
+    root.AddAppliedSchema(ARTICULATION_API)
+    _float(root, "physxArticulation:sleepThreshold", 0.0)
 
 
 def set_joint_state(prim: Usd.Prim, axis: str, position: float) -> None:

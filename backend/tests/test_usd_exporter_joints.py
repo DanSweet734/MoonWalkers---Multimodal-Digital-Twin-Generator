@@ -250,3 +250,16 @@ def test_settings_do_not_change_the_joint_frames(slider) -> None:
     for stage in (plain, locked):
         arm = UsdPhysics.RevoluteJoint(stage.GetPrimAtPath(f"{JOINTS}/arm_turn"))
         assert arm.GetLocalPos0Attr().Get() == Gf.Vec3f(0, 0, 0.3)
+
+
+@pytest.mark.parametrize("awake", [False, True])
+def test_keep_awake_is_written_only_when_asked(slider, awake: bool) -> None:
+    """PhysX puts a slow articulation to sleep (the drill press's spindle at 30 degrees a second,
+    2026-10-23). ``keep_awake`` turns that off; without it nothing is written, so older twins'
+    files do not change."""
+    twin, result = slider
+    stage = build_stage(twin, [result], keep_awake=awake)  # keep it: it owns its prims
+    root = stage.GetPrimAtPath(ROOT)
+    assert ("PhysxArticulationAPI" in applied_schemas(root)) is awake
+    threshold = root.GetAttribute("physxArticulation:sleepThreshold")
+    assert (threshold.Get() == 0.0) if awake else not threshold

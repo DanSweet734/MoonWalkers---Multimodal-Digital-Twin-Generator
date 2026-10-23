@@ -100,6 +100,41 @@ def _write(writes):
         path.write_text(text, encoding="utf-8", newline="\n")
 
 
+def dof_row(positions, count):
+    """The first articulation's joint positions from a tensor-API array. That is a NumPy array, a
+    warp array (``.numpy()``) or a torch tensor (``.cpu().numpy()``), shaped (articulations,
+    max_dofs)."""
+    if hasattr(positions, "cpu"):
+        positions = positions.cpu()
+    if hasattr(positions, "numpy"):
+        positions = positions.numpy()
+    flat = positions.reshape(-1) if hasattr(positions, "reshape") else positions
+    return [float(v) for v in list(flat)[:count]]
+
+
+def _articulation_view(root):
+    """A tensor-API view of the articulation at ``root``. It is Isaac Sim's own simulation
+    view (``SimulationManager.get_physics_simulation_view``) when there is one. Otherwise it is a
+    new view made as ``SimulationManager`` makes its own: with the open stage's id and the
+    subspace roots set. The default stage id, -1, failed in Isaac Sim 6.2.0 on 2026-10-23 with
+    "Failed to get a valid attached USD stage id from PhysX simulation"."""
+    sim_view = None
+    try:
+        from isaacsim.core.simulation_manager import SimulationManager
+
+        sim_view = SimulationManager.get_physics_simulation_view()
+    except (ImportError, AttributeError):
+        pass
+    if sim_view is None:
+        import omni.usd
+        from omni.physics import tensors
+
+        stage_id = omni.usd.get_context().get_stage_id()
+        sim_view = tensors.create_simulation_view("numpy", stage_id=stage_id)
+        sim_view.set_subspace_roots("/")
+    return sim_view, sim_view.create_articulation_view(root)
+
+
 def find_articulation(stage):
     """The path of the first prim with ``PhysicsArticulationRootAPI`` (the twin's top prim)."""
     from pxr import UsdPhysics
@@ -127,32 +162,30 @@ def start():
     started = datetime.datetime.now()
 
     def on_step(*_args):
+        t = float(timeline.get_current_time())
+        if state["last_t"] is None or t < state["last_t"]:  # a new Play: Stop ends the old view
+            state["view"], state["failed"] = None, False
+        state["last_t"] = t
         if state["failed"]:
             return
-        t = float(timeline.get_current_time())
-        if state["view"] is None or t < state["last_t"]:
-            # The physics view exists only once the simulation runs, and Stop ends it.
+        if state["view"] is None:  # the physics view exists only once the simulation runs
             try:
-                from omni.physics import tensors
-
-                sim_view = tensors.create_simulation_view("numpy")
-                view = sim_view.create_articulation_view(root)
-                meta = view.shared_metatype
-                state["view"] = (sim_view, view)
+                state["view"] = _articulation_view(root)
+                meta = state["view"][1].shared_metatype
                 if state["recorder"] is None:
                     state["recorder"] = Recorder(
                         meta.dof_names,
                         [int(k) for k in meta.dof_types],
                         lambda run: recording_path(stage_path, run, started),
                     )
-            except Exception as exc:  # noqa: BLE001 - report and stop recording
+            except Exception as exc:  # noqa: BLE001 - report, and try again on the next Play
                 state["failed"] = True
                 print(f"MoonWalkers recorder: cannot read the joints ({exc})")
                 return
-        state["last_t"] = t
         recorder = state["recorder"]
         runs = recorder.runs
-        writes = recorder.step(t, list(state["view"][1].get_dof_positions()[0]))
+        positions = dof_row(state["view"][1].get_dof_positions(), len(recorder.names))
+        writes = recorder.step(t, positions)
         _write(writes)
         if recorder.runs != runs:
             print(f"MoonWalkers recorder: recording {', '.join(recorder.names)} to {recorder.path}")

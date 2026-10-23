@@ -59,3 +59,35 @@ def test_importing_it_outside_isaac_sim_starts_nothing() -> None:
     import builtins
 
     assert getattr(builtins, rec.HANDLE, None) is None
+
+
+class _Warp:
+    """Stands in for a warp array: ``.numpy()`` gives the host copy."""
+
+    def __init__(self, values):
+        self.values = values
+
+    def numpy(self):
+        import numpy as np
+
+        return np.array(self.values)
+
+
+class _Torch(_Warp):
+    """Stands in for a torch tensor on the GPU: ``.cpu()`` first."""
+
+    def cpu(self):
+        return _Warp(self.values)
+
+
+@pytest.mark.parametrize(
+    "positions",
+    [
+        __import__("numpy").array([[0.01, 1.5, 2.0]]),  # (articulations, max_dofs), NumPy
+        _Warp([[0.01, 1.5, 2.0]]),
+        _Torch([[0.01, 1.5, 2.0]]),
+        [0.01, 1.5, 2.0],
+    ],
+)
+def test_dof_row_reads_every_tensor_frontend(positions) -> None:
+    assert rec.dof_row(positions, 2) == [0.01, 1.5]
