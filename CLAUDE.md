@@ -35,7 +35,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   the spring returns in 0.83 s. Decisions 0017-0019 are accepted.
 - Every twin stays awake by default (PR #17, merged on 2026-10-23; decision 0017).
 - **Phase 2 is built and waits for review** (branch `feat/phase-2-contract-and-pipelines`, from
-  `main` at `ca25284`; its PR opened on 2026-10-23). `docs/drill-press-plan.md`, Phase 2:
+  `main` at `ca25284`; PR #18, opened on 2026-10-23). `docs/drill-press-plan.md`, Phase 2:
   - **Decision 0020, contract v0.2.0:** optional `mode`, `adjustable_stop` and `follows` on
     `Joint`; "0.1.0" results stay valid. The exporter reads them, the dashboard shows them, and
     the drill press states its joints in them (run `2026-10-23_run-003`).

@@ -305,7 +305,7 @@ this phase's evidence.
       (Oct 23, 2026: `docs/pipeline-guide.md`. Its example Pipeline D was run through the command
       line on the real manual)
 - [x] Worklog; PR
-      (Oct 23, 2026: worklog 2026-10-23; branch `feat/phase-2-contract-and-pipelines`. Before the
+      (Oct 23, 2026: worklog 2026-10-23; branch `feat/phase-2-contract-and-pipelines`, PR #18. Before the
       merge: Daniel's short re-check of run-003, and decisions 0020 and 0021 with the owners)
 
 ## Phase 3 - Several photos per run, and the mesh
