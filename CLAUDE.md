@@ -22,9 +22,11 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - `docs/poc-report.md`, section 8, the seven decisions it needs;
   - `docs/research/2026-10-19-open-questions-research.md`, section 6, the manual's cited facts.
     The manual is in `data/machines/grizzly-t33901/inputs/`; no photo has been collected yet.
-- **The phase plan:** `docs/drill-press-plan.md`, written on 2026-10-22 and waiting for Daniel's
-  review (its open questions are at the end). Once it is approved, start with its Phase 1: a
-  box-and-cylinder drill press that proves the exporter, before any generated mesh.
+- **The phase plan:** `docs/drill-press-plan.md`, written on 2026-10-22 (PR #15). Daniel answered
+  its questions the same day: the goal is several images per machine and the least guessing, and
+  stand-ins (labelled, logged as inaccuracies) are allowed on the way. Once he approves the PR,
+  start with its Phase 1: a box-and-cylinder drill press that proves the exporter, before any
+  generated mesh.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

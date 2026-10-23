@@ -8,11 +8,44 @@
 - a way to describe a manual machine's control.
 
 **Machine:** Grizzly T33901 14" benchtop drill press, approved by the advisors on Oct 22, 2026
-(worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review.
+(worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
+the same day (below).
 
 **Status: proposed.** Nothing in it is built yet. Stop at the end of each phase, open a pull
 request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
+
+**Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
+least amount of guessing. While working on that goal stand ins may be used." Every stand-in (a
+part, a ratio, a value) is labelled as such in the twin and logged as an inaccuracy.
+
+## Decided on review (Oct 22, 2026)
+| Question | Answer |
+|---|---|
+| Contract before or after the box test? | After, unless Claude Code judged otherwise. **Claude Code's call: after** (reasons below) |
+| The handle-to-quill ratio | A stand-in if it cannot be found. Researched the same day: not found (`docs/research/2026-10-22-t33901-handle-ratio-and-figures.md`) |
+| Middle parts a photo cannot show | Stand-ins while working towards several images and the least guessing (the direction above) |
+| The joint recorder and the quote checker | Keep them if they suit the project as a whole. **Kept** (reasons below) |
+| The HA5C's acceleration and mill signals | In this plan if they fit, otherwise a plan of their own. **They fit Phase 6,** which works on control logic anyway |
+
+**Why the contract comes after the box test.**
+- Three teammates code against the contract, so it should change once, with evidence. The box
+  test shows what Isaac Sim 6.2 can do. For example, it shows whether a lock is best written as a
+  drive or as a limit, and whether mimic joints work at all.
+- v0.1.0 already describes what the teammates' pipelines produce first: sources, identity, facts,
+  prismatic joints and limits.
+- The contract comes in Phase 2, so the teammates wait for one phase only.
+
+**Why the two tools are kept.**
+- **The joint recorder** turns the functional checks into numbers: how fast the spring returns
+  the quill, where the stop ends its travel, and how closely the handles follow. The methodology
+  asks for a functional-check measure, and the advisors said we define our own measures. It also
+  answers the PoC report's item 11.
+- **The quote checker** enforces rule 1 ("Every fact needs a source") cheaply. In the PoC, a
+  one-off script compared an agent run's 26 quotes with the documents (worklog 2026-10-18). The
+  checker makes that a standing tool for every reference file. It uses pypdf, already a dev
+  dependency. If the agent's tools ever run it, pypdf moves to the main dependencies, which is
+  asked first.
 
 ## What the manual gives
 Source: the Grizzly T33901/T33902 manual,
@@ -20,8 +53,9 @@ Source: the Grizzly T33901/T33902 manual,
 https://cdn0.grizzly.com/manuals/t33901_m.pdf ("REVISED DECEMBER, 2023"). Page numbers are the
 PDF's. Pages 8-9 are the T33901's data sheet. Pages 10-11 are the floor model T33902's, which
 differs (for example "15 x 25-1/2 x 61-1/2 in."). The text was read with pypdf on 2026-10-19
-(`docs/research/2026-10-19-open-questions-research.md`, section 6), and again on 2026-10-22 for
-this plan. Every quote is checked again when the reference facts are written (Phase 4).
+(`docs/research/2026-10-19-open-questions-research.md`, section 6), and the text and photos again
+on 2026-10-22 (`docs/research/2026-10-22-t33901-handle-ratio-and-figures.md`). Every quote is
+checked again when the reference facts are written (Phase 5).
 
 | Motion | What moves | Range | Driven, held or returned by | Pages |
 |---|---|---|---|---|
@@ -30,7 +64,7 @@ this plan. Every quote is checked again when the reference facts are written (Ph
 | Downfeed handles turn | the hub and its three handles | not given | the quill's rack and pinion ("Lubricate column rack and quill rack and pinion") | 7, 18, 35 |
 | Table up and down | table bracket | "Vertical Table Travel ... 14-3/8 in." ("Floor-To-Table Height ... 9-5/8 - 24 in.") | the table height crank; the "Table Height Lock Handle" | 7, 9, 32 |
 | Table around the column | table bracket and column rack | "Table Swivel Around Column ... 360 deg." | the "table lock handle" | 9, 32 |
-| Table tilts | table | "Max. Table Tilt (Left/Right) ... 0 - 45 deg." | the tilt lock hex bolt | 9, 32 |
+| Table tilts | table arm and table | "Max. Table Tilt (Left/Right) ... 0 - 45 deg." | the tilt lock hex bolt | 9, 32 |
 | Table around its centre | table | "Table Swivel Around Center ... 360 deg." | the "table pivot lock handle" | 9, 32 |
 
 - **Sizes:**
@@ -45,26 +79,38 @@ this plan. Every quote is checked again when the reference facts are written (Ph
   LED and laser switches.
 - **The depth stop:** "a threaded rod attached to the quill with a depth stop nut that can be
   lowered or raised against a stop bracket" (p. 31), so it is a setting within the quill's travel.
-- **Not in the manual's text:**
-  - the handle-to-quill ratio: the parts list names a "PINION SHAFT" (p. 50), but no tooth count
-    or pitch;
+- **From the manual's photos** (viewed on 2026-10-22):
+  - **The table's chain** (p. 32). The column bracket clamps the column. The table arm leaves it
+    through a horizontal pivot that carries the tilt scale and the tilt hex bolt. The table turns
+    on a round boss at the arm's far end, under its centre, held by the pivot lock handle. So the
+    tilt comes before the turn about the centre, and the arm is a real part between them
+    [INFERENCE: the photos matched to the page's captions].
+  - **The head:** three downfeed handles on one hub, on the right of the head (pp. 6-7). The quill
+    rack and the column rack are shown in p. 36's Figure 48.
+  - **The whole machine:** two studio photos, from different front angles (p. 5).
+- **Not found, in the manual or in any public source we could reach on 2026-10-22:**
+  - the handle-to-quill ratio. The parts list names a "PINION SHAFT" (p. 50), but gives no tooth
+    count or pitch. Grizzly's product and parts pages refuse scripts (HTTP 403). A stand-in is
+    used until a measurement or Grizzly gives it (research note, "What would settle it");
   - the head's size and the downfeed handles' length;
   - the return spring's force: a "FLAT COIL SPRING" (p. 49), whose tension can be adjusted (p. 40);
-  - which belt arrangement gives which speed: p. 30 says to move the V-belts onto the desired
-    sheaves. Whether a figure gives the arrangement for each speed is to be checked by eye.
-- **[INFERENCE], to check against the manual's figures:**
+  - which belt arrangement gives which speed. p. 30 says to move the V-belts onto the desired
+    sheaves. The exploded views (pp. 48, 51) are vector drawings that cannot be viewed without a
+    PDF renderer (not installed). Whether another figure gives the belt arrangement is still to
+    check.
+- **[INFERENCE], still to check:**
   - The "table lock handle" of "Rotating Table Around Column" (p. 32) is the table height lock
-    handle, which "Loosens to allow adjustment of table position on column" (p. 7).
+    handle. The page's labels name only two lock handles, the "Table Height Lock Handle" and the
+    "Table Pivot Lock Handle", and the photos show one clamp handle on the column bracket.
   - The column rack turns with the table bracket. Assembly seats the rack "firmly between collar
     and column base" (p. 22), and turning the table means "making sure to guide column rack with
-    table" (p. 32). So the rack is a real part between the turn around the column and the slide up
-    it.
-  - Which comes first on the table, the tilt or the turn about its centre, is not stated.
+    table" (p. 32). So the rack is the part between the turn around the column and the slide up it.
   - "Spindle to Column" is measured to the column's surface, since the swing is 14 in.
 
 ## Success levels
 1. **A scaled model of the T33901, cut into its moving parts, with cited facts, opens in Isaac
-   Sim.** Its sizes are compared with every cited dimension, and each difference is logged.
+   Sim.** It is built from several photos where they exist. Its sizes are compared with every
+   cited dimension, and each difference, guess and stand-in is logged.
 2. **The joints move as the manual describes, in Isaac Sim:**
    - the quill slides 3-1/4 in, the spring returns it to the top, and the depth stop ends its
      travel;
@@ -82,18 +128,18 @@ reuses the stored twin and says so; the HA5C still builds and is reused as befor
 - [x] Read the record: CLAUDE.md's "Current phase", `docs/poc-report.md` sections 6-8, the
       follow-up in `docs/worklog/2026-10-22.md`, section 6 of
       `docs/research/2026-10-19-open-questions-research.md`, and the manual's pages above
-- [x] This plan, worklog, PR (Oct 22, 2026: branch `docs/drill-press-plan`); stop for review
+- [x] This plan, worklog, PR (Oct 22, 2026: branch `docs/drill-press-plan`, PR #15); stop for
+      review
+- [x] Daniel's answers recorded, and the ratio researched (Oct 22, 2026)
 
 ## Phase 1 - A box-and-cylinder drill press proves the exporter
 No generated mesh. As in the PoC's Phase 2, the test model goes down the exporter's real path.
-Its sizes are the manual's where it gives them, and made up, labelled as such, where it does not
-(the head, the handles, the rack, the bracket, the tilt piece). The new behaviours are exporter
+Its sizes are the manual's where it gives them, and made up, labelled as such, where it does not:
+the head, the handles, the rack, the bracket and the arm. The new behaviours are exporter
 settings, as `DriveSettings` is today, not contract fields. The contract changes in Phase 2, with
 this phase's evidence.
 - [ ] Research note, from primary sources, before any code:
   - UsdPhysics prismatic joints, linear drives and their limits;
-  - whether two motions between the same two visible parts need a part between them: the rack
-    between the column and the bracket, and a tilt piece between the bracket and the table;
   - the two leads for coupled motion, `PhysxMimicJointAPI` and
     `PhysxPhysicsRackAndPinionJoint`: what NVIDIA documents for Isaac Sim 6.2, which joints each
     works with, and whether usd-core, which lacks the PhysX schemas, can write them by name;
@@ -116,26 +162,30 @@ this phase's evidence.
     identical, and the HA5C's tests pass.
 - [ ] Primitive parts made of several shapes, such as the hub with its three handles
       (`usd/geometry.py`). No contract change: `Part.primitive` is free-form.
-- [ ] `moonwalkers.usd.primitive_drill_press <run>`: eight parts on seven joints. The parts are
-      the frame (base, column and head), the quill, the spindle with its chuck, the handle hub, the
-      column rack, the table bracket, a tilt piece and the table. It writes one check file per
-      behaviour, validates each, and writes `RUN.md`:
+- [ ] `moonwalkers.usd.primitive_drill_press <run>`: eight parts on seven joints, as the manual's
+      photos show them:
+  - the parts are the frame (base, column and head), the quill, the spindle with its chuck, the
+    handle hub, the column rack, the table bracket, the table arm and the table;
+  - the chains are frame, quill, spindle; frame, hub; and frame, rack, bracket, arm, table;
+  - it writes one check file per behaviour, validates each, and writes `RUN.md`.
+
+  The check files:
   - `spindle_spin`: at 340 RPM, the lowest cited speed, and at a slow speed for the eye. At 60
     frames a second, 340 RPM turns 34° a frame, close to an 8-sided cylinder's 45° symmetry, so
     it may look slow or reversed [INFERENCE];
   - `quill_stroke`: the quill is fed down, then released, and the spring returns it;
   - `depth_stop`: a feed past the stop ends at the stop;
-  - `handles_follow`: the handles turn as the quill slides, at a made-up ratio (not cited);
+  - `handles_follow`: the handles turn as the quill slides, at a stand-in ratio (not cited);
   - `table_free` and `table_locked`: each table motion moves within its cited range when free, and
     holds under gravity and a push when locked;
   - `all_motions`: everything in one file.
 - [ ] Validation: `moonwalkers.usd.validate` learns prismatic joints, chains, drives per joint and
       coupled joints. `omni_asset_validate` runs as well, and any finding about schemas that
       usd-core does not know is recorded.
-- [ ] Proposed: a joint recorder for Isaac Sim checks. A Script Editor snippet writes every
-      joint's position over time to a file, so the spring return, the stop and the coupling are
-      measured rather than only seen. It also answers the PoC report's item 11: how closely the
-      HA5C spindle follows a program, with and without the runner.
+- [ ] A joint recorder for Isaac Sim checks: a Script Editor snippet that writes every joint's
+      position over time to a file. With it, the spring return, the stop and the coupling are
+      measured, not only seen. It is also used on the HA5C's program files (the PoC report's
+      item 11).
 - [ ] Isaac Sim 6.2.0 check by Daniel, from a checklist per file (a new section in
       `docs/setup/isaac-sim-check.md`)
 - [ ] Decision records 0017, 0018 and 0019; worklog; PR
@@ -143,8 +193,8 @@ this phase's evidence.
 ## Phase 2 - Contract v0.2.0, and how the teammates' pipelines run
 - [ ] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names
       are chosen in the record.
-  - **Linked joints:** a follower joint moves with a leader at a cited ratio, as the handles
-    follow the quill.
+  - **Linked joints:** a follower joint moves with a leader at a ratio, as the handles follow the
+    quill. A stand-in ratio is allowed, labelled as one.
   - **Joint modes:** driven, spring return to a rest position, locked at a setting, or free; and
     an adjustable stop inside a joint's limits (the depth stop).
   - **Unchanged:** v0.1.0 already has prismatic joints, limits in metres, a parent and a child on
@@ -179,62 +229,84 @@ this phase's evidence.
       and how to try a pipeline on the T33901's manual (worklog 2026-10-22, "Next step")
 - [ ] Worklog; PR
 
-## Phase 3 - Photos, and a spike on cutting a model into parts
-- [ ] Collect T33901 photos from public sources into `inputs/`, logging each URL in `SOURCES.md`.
-      The Grizzly product page has not been tried (worklog 2026-10-22).
-- [ ] If there are photos from several sides, first check the multi-view model's image order with
-      the repository's example images (CLAUDE.md; `docs/setup/generators.md`, "Adding the
-      multi-view model later"). Then choose single- or multi-view for this machine.
-- [ ] Generate a mesh (Hunyuan3D-2, decision 0011)
-- [ ] **Spike, time-boxed to one session:** compare ways to cut one mesh into several parts.
-  - **Test meshes:**
-    - the box-and-cylinder drill press as one mesh, so the right part is known for every face. It
-      is the easy case [INFERENCE: a generated mesh fuses its parts into one surface; this one
-      does not];
-    - the generated T33901 mesh, judged against the manual's figures.
-  - **Methods:**
-    - (a) several cuts in the geometry spec: an ordered list of shapes (cylinder, box, plane) per
-      part, where the first match wins. It extends decision 0012 and needs no install;
-    - (b) splitting by the mesh's own shape (sharp edges, thin necks, separate pieces). It needs
-      no install [INFERENCE: likely weak where the generator fused parts];
-    - (c) a learned part-segmentation or articulation model. Project-context Topic 13 names
-      Articulate-Anything and URDF-Anything as aimed at articulation, and untested on industrial
-      machines; newer candidates come from the spike's research. Any install is asked first,
-      with its license and size, and runs in its own environment like the generators;
-    - (d) marking the parts on the photo and carrying the marks onto the mesh [INFERENCE: not
-      researched].
-  - **Measures:**
-    - the share of faces put in the right part (synthetic mesh);
-    - open edges and seams;
-    - time taken;
-    - installs and licenses;
-    - whether the result can be cited and reviewed.
-- [ ] Research note; decision record 0022; worklog; PR
+## Phase 3 - Several photos per run, and the mesh
+Today Pipeline B takes "exactly one machine photo" (`pipelines/b/pipeline.py`), and so do the
+`add_input` tool and the dashboard's upload. This phase works towards Daniel's goal: several
+images, and the least guessing.
+- [ ] Collect T33901 photos into `inputs/`, logging each in `SOURCES.md`:
+  - the manual's own: two studio photos of the whole machine (p. 5) and close-ups of the head,
+    the hub, the depth stop and the table (pp. 6-7, 31-32, 36). They are copyrighted and for
+    internal research only (`SOURCES.md`);
+  - Grizzly's product page, which refuses scripts (HTTP 403), so Daniel saves its photos in a
+    browser;
+  - others from public sources, with their URLs.
+- [ ] Decision record 0022: several photos per run. It decides:
+  - how each photo is labelled with the side it shows;
+  - which photos feed the generator and which serve as evidence for the cuts, the joints and the
+    size checks;
+  - how `add_input`, `request.json` and the dashboard's upload take several photos;
+  - how a run records what no photo shows, so that guesses are logged.
+- [ ] The multi-view generator (Hunyuan3D-2mv). Its weights are a 4.93 GB download
+      (`docs/setup/generators.md`), asked for first. Before any serious use, check its image order
+      with the repository's example images (CLAUDE.md). It takes `front`, `left`, `back` and
+      `right` views. Whether it accepts fewer views, or corner views like the manual's, is not
+      confirmed.
+- [ ] Build it: Pipeline B, the tools and the dashboard take several photos. The HA5C's one-photo
+      runs still build.
+- [ ] Generate the T33901 mesh from the best input there is, and record which sides it had to
+      guess
+- [ ] Worklog; PR
 
-## Phase 4 - Pipeline B builds several parts and joints (levels 1 and 2)
+## Phase 4 - A spike on cutting a model into parts
+Time-boxed to one session. It compares ways to cut one mesh into several parts.
+- [ ] **Test meshes:**
+  - the box-and-cylinder drill press as one mesh, so the right part is known for every face. It is
+    the easy case [INFERENCE: a generated mesh fuses its parts into one surface; this one does
+    not];
+  - the generated T33901 mesh from Phase 3, judged against the manual's photos.
+- [ ] **Methods:**
+  - (a) several cuts in the geometry spec: an ordered list of shapes (cylinder, box, plane) per
+    part, where the first match wins. It extends decision 0012 and needs no install;
+  - (b) splitting by the mesh's own shape (sharp edges, thin necks, separate pieces). It needs no
+    install [INFERENCE: likely weak where the generator fused parts];
+  - (c) a learned part-segmentation or articulation model. Project-context Topic 13 names
+    Articulate-Anything and URDF-Anything as aimed at articulation, untested on industrial
+    machines; newer candidates come from the spike's research. Any install is asked first, with
+    its license and size, and runs in its own environment, as the generators do;
+  - (d) marking the parts on the photos and carrying the marks onto the mesh. Several photos make
+    this less of a guess [INFERENCE: not researched].
+- [ ] **Measures:**
+  - the share of faces put in the right part (synthetic mesh);
+  - open edges and seams;
+  - time taken;
+  - installs and licenses;
+  - whether the result can be cited and reviewed.
+- [ ] Research note; decision record 0023; worklog; PR
+
+## Phase 5 - Pipeline B builds several parts and joints (levels 1 and 2)
 - [ ] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
       quote checked against its PDF page
-- [ ] Proposed: a quote checker. It confirms every quote in a reference file is on its cited page,
-      using the PDF's text, and runs on the HA5C's file and the T33901's.
-- [ ] Decision record 0023: facts and scale. Which cited dimension sets the scale (candidates: the
-      7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). Then
-      how the cited 108 lb is split between the parts, or whether the placeholder density stays
-      (decision 0010).
+- [ ] A quote checker: it confirms every quote in a reference file is on its cited page, using
+      the PDF's text, and runs on the HA5C's file and the T33901's
+- [ ] Decision record 0024: facts and scale. Which cited dimension sets the scale (candidates: the
+      7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
+      several photos, cited dimensions can also check one another. Then how the cited 108 lb is
+      split between the parts, or whether the placeholder density stays (decision 0010).
 - [ ] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
       (`kb/keys.py`), but the data folder is `grizzly-t33901`. Add a `grizzly` alias, with the
       source of the short name (decision 0009).
-- [ ] A geometry spec for several parts (decision 0022): each part with its cuts, and joints of any
+- [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
 - [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
 - [ ] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
       to table, spindle to base
-- [ ] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy as an
-      issue in the twin, in `RUN.md`, and in the phase report's table.
+- [ ] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
+      stand-in as an issue in the twin, in `RUN.md`, and in the phase report's table.
 - [ ] Worklog with run details (versions, time); PR
 
-## Phase 5 - Control logic for a manual machine (level 3)
-- [ ] Decision record 0024: how `ControlBehavior` describes a manual machine:
+## Phase 6 - Control logic (level 3), for the drill press and the HA5C
+- [ ] Decision record 0025: how `ControlBehavior` describes a manual machine:
   - the keyed switch as a `state_machine`: key in or out, switch up or down, and the motor runs
     only with the key in and the switch up (p. 6);
   - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9), with the belt
@@ -246,16 +318,28 @@ this phase's evidence.
   that is its own record and version bump.
 - [ ] An interpreter or runner for these behaviours, tested outside Isaac Sim. A build writes their
       program folder with the twin (decision 0016).
-- [ ] Isaac Sim check: level 3
+- [ ] Isaac Sim check of level 3 for the drill press
+- [ ] **The HA5C controller's acceleration and its signals to a mill** (advisors, Oct 22, 2026:
+      model them if possible; if not, record why and bring it back to the stakeholders).
+  - **Research first.** Look for the HA5C's values of Parameters 18 and 44 beyond the 2006 and 2012
+    manuals, which give none (`docs/research/2026-10-19-open-questions-research.md`, section 3).
+  - **Acceleration.** [INFERENCE] The manuals describe the mechanism, so it can be modelled:
+    moves speed up and slow down instead of starting at full feed. With a cited value, use it.
+    Without one, use a stand-in, labelled and logged, and bring the missing value back to the
+    stakeholders.
+  - **Mill signals.** The interpreter already logs the manual's signal codes (G86, G87, G89, G92,
+    G93) as events with no motion (decision 0016). Show them in Isaac Sim, and try one step per
+    simulated Cycle Start (decision 0016, option 2b).
+  - Decision record 0026, which amends 0016. Isaac Sim check of a program with acceleration.
 - [ ] Worklog; PR
 
-## Phase 6 - The agent builds it, and the phase report
-- [ ] A fresh Claude Code session builds the T33901 from a dashboard job through the tools,
-      following the updated procedure. A summary of its transcript goes in the worklog, and every
-      quote is checked.
+## Phase 7 - The agent builds it, and the phase report
+- [ ] A fresh Claude Code session builds the T33901 from a dashboard job with several photos,
+      through the tools and the updated procedure. A summary of its transcript goes in the
+      worklog, and the quote checker checks every quote.
 - [ ] A second request reuses the stored twin; the HA5C still builds and is reused
 - [ ] The phase report, like `docs/poc-report.md`: results per level, the decisions, the table of
-      known inaccuracies, and open questions
+      known inaccuracies and stand-ins, and open questions
 - [ ] README status; CLAUDE.md's "Current phase" points to the next step; PR
 
 ## Decision records this plan needs
@@ -263,40 +347,30 @@ They are numbered in the order the plan reaches them. The PoC report's section 8
 drill press's seven decisions, and its items 2 and 3 share one record here, because the same box
 test settles both.
 
-| No. | Title | Phase | Report, section 8 |
+| No. | Title | Phase | From |
 |---|---|---|---|
-| 0017 | Sliding joints, other axes and a chain of joints in the exporter | 1 | 2 and 3 |
-| 0018 | Springs, stops and locks | 1 | 5 |
-| 0019 | Coupled motion: the downfeed handles follow the quill | 1 | 4 |
-| 0020 | Contract v0.2.0: linked joints and joint modes | 2 | - |
-| 0021 | How Pipelines A, C and D run outside their tests | 2 | - |
-| 0022 | Several moving parts from one mesh | 3 | 1 |
-| 0023 | The drill press's facts and scale | 4 | 7 |
-| 0024 | Control logic for a manual machine | 5 | 6 |
-
-## Alongside the drill press (advisors, Oct 22, 2026)
-- **The HA5C controller's acceleration and its signals to a mill:** model them if possible; if
-  not, record why and bring it back to the stakeholders (CLAUDE.md).
-  - The manuals give no HA5C values for acceleration (Parameters 18 and 44;
-    `docs/research/2026-10-19-open-questions-research.md`, section 3).
-  - [INFERENCE] So acceleration cannot be modelled from the sources as they stand. The mill
-    signals (G86-G93, the remote Cycle Start) might be modelled as events.
-  - Proposed: a short research item in Phase 5, which works in `moonwalkers.control` anyway.
-- **How closely the HA5C spindle follows a program** (report, item 11): measured with Phase 1's
-  joint recorder, if Daniel keeps it.
+| 0017 | Sliding joints, other axes and a chain of joints in the exporter | 1 | Report section 8, items 2 and 3 |
+| 0018 | Springs, stops and locks | 1 | Item 5 |
+| 0019 | Coupled motion: the downfeed handles follow the quill | 1 | Item 4 |
+| 0020 | Contract v0.2.0: linked joints and joint modes | 2 | This plan |
+| 0021 | How Pipelines A, C and D run outside their tests | 2 | This plan |
+| 0022 | Several photos per run | 3 | Daniel's direction, Oct 22, 2026 |
+| 0023 | Several moving parts from one mesh | 4 | Item 1 |
+| 0024 | The drill press's facts and scale | 5 | Item 7 |
+| 0025 | Control logic for a manual machine | 6 | Item 6 |
+| 0026 | The HA5C controller's acceleration and mill signals (amends 0016) | 6 | Advisors, Oct 22, 2026 |
 
 ## Not in this plan
 - Pipelines A, C and D themselves: they are their owners'.
 - Neo4j and Celery, several users, Codex, video and scenes (report, sections 7.4 and 8).
 - The lab's photos, which come later (advisors, Oct 22, 2026).
 
-## Open questions for Daniel
-1. **Contract after the box test.** Contract v0.2.0 is proposed for Phase 2, after Isaac Sim shows
-   what works. Until then the teammates build on v0.1.0, which already describes everything but
-   linked joints and joint modes. Should the contract come first instead?
-2. **The handle ratio.** The manual does not give it. Use a stand-in ratio, logged as an
-   inaccuracy, until a source or a measurement gives it?
-3. **Hidden middle parts.** A photo may not show the column rack or what joins the table to its
-   bracket. Should small stand-in parts there be logged as inaccuracies?
-4. **Two proposals:** the joint recorder (Phase 1) and the quote checker (Phase 4). Keep or drop?
-5. **The HA5C acceleration item:** in this plan's Phase 5, or a plan of its own?
+## Still open
+- **The handle ratio.** Settled only by a measurement on a real T33901 (the handles' angle over the
+  full 3-1/4 in stroke), Grizzly's technical support, or photos or a video of a full stroke
+  (research note). Contacting Grizzly is Daniel's call.
+- **A PDF renderer.** It would show the exploded views and any belt-speed figure (pypdf does not
+  render). Candidate: pypdfium2 5.14.0, "BSD-3-Clause, Apache-2.0", a 3.9 MB wheel with no
+  required dependencies (PyPI, read 2026-10-22). Not installed; it is asked first, when a phase
+  needs it.
+- **The multi-view weights** (4.93 GB) are asked for in Phase 3.

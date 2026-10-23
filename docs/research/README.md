@@ -25,6 +25,9 @@
   added), generating TypeScript types (why not `openapi-typescript` or `json-schema-to-typescript`),
   Node's test runner for TypeScript, protecting a local API without a login (OWASP, the MCP
   specification on DNS rebinding, Starlette's host check), Vite's proxy, and measurements.
+- `2026-10-22-t33901-handle-ratio-and-figures.md` - planning the drill press: the search for its
+  handle-to-quill ratio (not found; what would settle it), what the manual's photos show about the
+  table's chain of joints, and a candidate PDF renderer (pypdfium2) for its vector drawings.
 
 Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
 Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.
