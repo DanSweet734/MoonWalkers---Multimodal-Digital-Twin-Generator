@@ -325,3 +325,18 @@ stroke. ..."}`.
    mimic joints, and nothing in Isaac Sim 6.2.0 refuses a chain. The rule now refuses loops only.
    No chain has been run in Isaac Sim.
 5. **The fixture test:** built as proposed. Only the two provenance lines differ (Consequences).
+
+## Isaac Sim check (Daniel, 2026-10-24, run `2026-10-23_run-003`)
+Isaac Sim 6.2.0, Kit 110.4.0 build 386251; two sessions, 0 errors. Run-003's `RUN.md` holds the
+full record.
+- **The handles follow the quill where they did not before.**
+  - In `quill_spring_return` the handles turn with the quill, and it "acted like always, the quill
+    retracts up when the handles are not being pulled down".
+  - In `depth_stop`: "it extended the quill down and the handles pulled it back up, but when
+    released it went back down". The check's feed drive replaces the spring there, as designed, and
+    the link works both ways.
+- **The loosened table drops:** "upon hitting play the table does indeed drop" (`table_free`).
+- **`all_motions` is "the same as before"**, as the comparison with Phase 1's files predicted.
+  `spindle_spin_slow` turned as before.
+- Not opened this time: `spindle_spin` and the two locked-table files, whose physics did not
+  change except for the handles.

@@ -42,8 +42,10 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Decision 0021:** the stubs run only in the tests; `add_input` refuses a document whose
     pipeline is not in; one result per twin carries the geometry, and disagreeing facts are listed
     for the reviewer; `python -m moonwalkers.pipelines`; the owners' guide, `docs/pipeline-guide.md`.
-  - **Before the merge:** Daniel's short re-check of run-003 (`docs/setup/isaac-sim-check.md`,
-    section 8), and both decisions discussed with Ava, Kiran and Sarkis.
+  - **Checked in Isaac Sim** by Daniel on 2026-10-24 (run-003): the loosened table drops, the
+    handles follow the quill in `quill_spring_return` and `depth_stop`, and `all_motions` is the
+    same as before (`docs/setup/isaac-sim-check.md`, section 8).
+  - **Before the merge:** both decisions discussed with Ava, Kiran and Sarkis.
   - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
     (decision 0018). The `Sarkis` branch was only an access test: ignore it.
   - **Next:** Phase 3, several photos per run, from an up-to-date `main` after the merge.

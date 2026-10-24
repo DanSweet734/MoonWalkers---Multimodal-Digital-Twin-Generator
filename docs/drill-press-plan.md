@@ -305,8 +305,10 @@ this phase's evidence.
       (Oct 23, 2026: `docs/pipeline-guide.md`. Its example Pipeline D was run through the command
       line on the real manual)
 - [x] Worklog; PR
-      (Oct 23, 2026: worklog 2026-10-23; branch `feat/phase-2-contract-and-pipelines`, PR #18. Before the
-      merge: Daniel's short re-check of run-003, and decisions 0020 and 0021 with the owners)
+      (Oct 23, 2026: worklog 2026-10-23; branch `feat/phase-2-contract-and-pipelines`, PR #18.
+      Oct 24, 2026: Daniel's Isaac Sim re-check of run-003 confirmed the three changes: the table
+      drops, the handles follow the quill in files 3 and 4, and `all_motions` is the same. Before
+      the merge: decisions 0020 and 0021 with the owners)
 
 ## Phase 3 - Several photos per run, and the mesh
 Today Pipeline B takes "exactly one machine photo" (`pipelines/b/pipeline.py`), and so do the

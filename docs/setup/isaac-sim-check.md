@@ -306,6 +306,19 @@ the joints, so use the copy in `2026-10-23_run-002` or later:
 - file 10 (`all_motions`): the same as in run-002;
 - one recording of file 7, if you can, to measure the drop.
 
+**Result of the run-003 re-check (Daniel, 2026-10-24).** Isaac Sim 6.2.0, Kit 110.4.0 build 386251;
+two sessions, 0 errors (`kit_20261024_010941.log`, `kit_20261024_011630.log`).
+- **File 7:** "upon hitting play the table does indeed drop".
+- **Files 3 and 4:** the handles turn with the quill.
+  - `quill_spring_return` "acted like always, the quill retracts up when the handles are not being
+    pulled down".
+  - `depth_stop`: "it extended the quill down and the handles pulled it back up, but when released
+    it went back down". That is as designed: its feed drive takes the quill to the stop in place of
+    the spring, and a handle lifts it through the two-way link.
+- **File 10:** "the same as before". File 2 turned as before.
+- Files 5 and 6 were opened too. Files 1, 8 and 9 were not, and no recording was made. Run-003's
+  `RUN.md` holds the full record.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

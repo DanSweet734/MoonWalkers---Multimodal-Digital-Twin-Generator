@@ -118,3 +118,7 @@ somewhere." So, from contract v0.2.0's drill press on (decision 0020):
   are gone;
 - it is an assumption from a similar machine, logged as an inaccuracy in the twin, until a real
   T33901 or a source settles it.
+
+**Seen in Isaac Sim (Daniel, 2026-10-24, run `2026-10-23_run-003`):** in `table_free`, "upon hitting
+play the table does indeed drop". The assumption itself, that the real T33901's table drops, is
+still not confirmed.
