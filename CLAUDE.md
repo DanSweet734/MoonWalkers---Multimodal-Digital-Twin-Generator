@@ -45,7 +45,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     its own decision record.
   - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
     (decision 0018). The `Sarkis` branch was only an access test: ignore it.
-- **Phase 3 is built, for Daniel's review** (branch `feat/phase-3-several-photos`, 2026-10-24).
+- **Phase 3 is built, for Daniel's review** (PR #19, branch `feat/phase-3-several-photos`, 2026-10-24).
   Decision 0022 (accepted by Daniel): each machine photo's view in the operator's words and its
   use (generator or evidence) live in `request.json`; `pipelines/b/photos.py` alone maps them to
   the generator's slots; one photo runs the single-image model, two to four the multi-view model,

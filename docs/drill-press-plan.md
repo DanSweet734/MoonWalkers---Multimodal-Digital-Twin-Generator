@@ -12,7 +12,7 @@
 the same day (below).
 
 **Status:** approved (PR #15). Phases 0 to 2 are done (PRs #15, #16, #18). Phase 3 is built and
-waits for Daniel's review (branch `feat/phase-3-several-photos`); Phase 4 is next. Stop at the end of each phase, open a pull request, and wait for review before
+waits for Daniel's review (PR #19); Phase 4 is next. Stop at the end of each phase, open a pull request, and wait for review before
 starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
@@ -431,7 +431,7 @@ images, and the least guessing.
       the job page lists them. 8 new API tests and 6 dashboard tests. Checked in the real app on
       a scratch data folder, `docs/setup/dashboard.md`, section 3, step 6)
 - [x] Worklog; PR
-      (Oct 24, 2026: worklog 2026-10-24; branch `feat/phase-3-several-photos`. Still open: the
+      (Oct 24, 2026: worklog 2026-10-24; branch `feat/phase-3-several-photos`, PR #19. Still open: the
       belt chart, above)
 
 ## Phase 4 - A spike on cutting a model into parts
