@@ -33,9 +33,24 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   pinion's sign, and the free table's height. His re-check the same day confirmed all three.
   The fixed joint recorder then made its first recording: the handles track within 1%, and
   the spring returns in 0.83 s. Decisions 0017-0019 are accepted.
-- **Now:** a small PR that keeps every twin awake by default (Daniel, 2026-10-23;
-  decision 0017). Then **Phase 2**: contract v0.2.0 (linked joints, joint modes) and how
-  Pipelines A, C and D run outside their tests (decisions 0020 and 0021), from an up-to-date `main`.
+- Every twin stays awake by default (PR #17, merged on 2026-10-23; decision 0017).
+- **Phase 2 is done** (PR #18, merged on 2026-10-24). Contract v0.2.0 (decision 0020): optional
+  `mode`, `adjustable_stop` and `follows` on `Joint`, read by the exporter, shown by the dashboard,
+  used by the drill press (run `2026-10-23_run-003`, checked in Isaac Sim by Daniel on
+  2026-10-24). Decision 0021: the stubs run only in the tests, `add_input` refuses a document whose
+  pipeline is not in, one result per twin carries the geometry, disagreeing facts are listed for
+  the reviewer, `python -m moonwalkers.pipelines`, and the owners' guide `docs/pipeline-guide.md`.
+  - **Both decisions are accepted by Daniel, with the pipeline owners' review still open:** Daniel
+    merged before Ava, Kiran and Sarkis could answer, to start Phase 3. A change they ask for gets
+    its own decision record.
+  - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
+    (decision 0018). The `Sarkis` branch was only an access test: ignore it.
+- **Now: Phase 3, several photos per run, and the mesh.** Due before Monday, 2026-10-26 (Daniel,
+  2026-10-24). Order: (1) the core, several photos through Pipeline B and the agent's tools
+  (decision 0022); (2) the T33901 mesh; (3) the dashboard's multi-photo upload, last. Start from
+  the hand-off in `docs/drill-press-plan.md`, Phase 3: Daniel's seven T33901 photos, how their
+  side labels read (the operator's view, facing the front), two AVIF files named `.jpeg`, and
+  their missing origins in `SOURCES.md`.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -86,7 +101,8 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
   jobs). An upload either reuses a stored twin at once or waits for the agent, which finds it with
   the `list_jobs` tool. The API never runs the generator.
 - Knowledge base: a simple JSON/SQLite store behind a `KnowledgeBase` interface; Neo4j comes later.
-- Contract: `backend/src/moonwalkers/contracts/pipeline_result.py` (Pydantic, SCHEMA_VERSION 0.1.0).
+- Contract: `backend/src/moonwalkers/contracts/pipeline_result.py` (Pydantic, SCHEMA_VERSION 0.2.0;
+  results that say 0.1.0 stay valid, and may not use 0.2.0's joint fields, decision 0020).
 - Units inside the contract are SI (m, rad, s, kg). Convert only at the USD export boundary.
 
 ## Repository layout (target)
@@ -136,12 +152,18 @@ Backend (run from `backend/`):
 - Write the box-and-cylinder test twin (Phase 2 check): `uv run python -m moonwalkers.usd.primitive_twin ../data/machines/moonwalkers-testindexer/runs/<run>`
 - Write the box-and-cylinder drill press (drill-press plan, Phase 1; ten check files, `RUN.md` and
   the joint recorder `record_joints.py`): `uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
-  Settings per joint (drives, locks, starts, couplings) are `JointSettings` (decisions 0017-0019).
-  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 8.
+  Its joints state their behaviour in contract v0.2.0 (mode, adjustable stop, link; decision 0020),
+  which the exporter turns into drives, locks and couplings (`contract_settings`). A check adds
+  only its scenario: contract changes, `JointSettings` (decisions 0017-0019), `starts` or
+  `coupling_method`. Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 8 (run-003).
 - Build a twin from a photo (Pipeline B): the run folder `../data/machines/<machine>/runs/<run>` holds
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
   facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
+- Pipelines A, C and D outside their tests (decision 0021): `uv run python -m moonwalkers.pipelines list`
+  shows which are in; `... run D --input-type pdf_catalog <file or URL>... --out <file>` runs one and
+  writes its checked result, storing nothing. Stubs run only in the tests (`stub_pipelines()`).
+  Owners' guide: `docs/pipeline-guide.md`.
 - Inspect a generated mesh, or try a spec without storing anything:
   `uv run python -m moonwalkers.pipelines.b inspect <run> --up +y --front +z`, then
   `... inspect <run> --preview --reference <facts.json>`. If the inspection warns that the tip

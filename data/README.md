@@ -27,6 +27,9 @@ data/
           request.job_result.json  # what the request returned (one per request file)
           programs/<behaviour>/    # when the control behaviour carries a program (decision 0016)
           RUN.md              # versions, settings, time taken, success level, reviewer notes
+      pipeline_tries/
+        2026-10-23_d.json     # one pipeline's result on some inputs, stored nowhere else
+                              # (python -m moonwalkers.pipelines run ... --out, decision 0021)
       programs/
         2026-10-18_ha5c-manual-example-5-subroutine_v3/   # a program run on a stored twin:
           program.usdc, run_program.py, program_native.usdc,   # python -m moonwalkers.control run

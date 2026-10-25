@@ -24,7 +24,7 @@ from moonwalkers.orchestrator import (
     TwinNotFoundError,
     UnidentifiedMachineError,
 )
-from moonwalkers.pipelines import Pipeline, default_pipelines, result_id_for
+from moonwalkers.pipelines import Pipeline, default_pipelines, result_id_for, stub_pipelines
 from moonwalkers.pipelines.fixture_stub import FixturePipeline
 
 HA5C = MachineHint(manufacturer="Haas Automation", model="HA5C")
@@ -87,7 +87,7 @@ def pipeline_b(b_fixture_path: Path, clock) -> CountingPipeline:
 
 @pytest.fixture
 def orchestrator(kb: KnowledgeBase, pipeline_b: CountingPipeline, clock) -> Orchestrator:
-    return Orchestrator(kb, {**default_pipelines(), PipelineId.B: pipeline_b}, clock=clock)
+    return Orchestrator(kb, {**stub_pipelines(), PipelineId.B: pipeline_b}, clock=clock)
 
 
 @pytest.fixture

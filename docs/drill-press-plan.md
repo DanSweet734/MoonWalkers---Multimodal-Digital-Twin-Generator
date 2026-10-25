@@ -11,8 +11,9 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status: proposed.** Nothing in it is built yet. Stop at the end of each phase, open a pull
-request, and wait for review before starting the next. The HA5C stays the reference twin: every
+**Status:** approved (PR #15). Phases 0 to 2 are done (PRs #15, #16, #18); Phase 3 is next, with
+its hand-off below. Stop at the end of each phase, open a pull request, and wait for review before
+starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
@@ -111,7 +112,12 @@ checked again when the reference facts are written (Phase 5).
   - The "table lock handle" of "Rotating Table Around Column" (p. 32) is the table height lock
     handle. The page's labels name only the "Table Height Lock Handle" and the "Table Pivot Lock
     Handle", and the exploded view draws only one lock handle on the bracket, a "FOLDING HANDLE
-    M12-1.75 X 50, 90L" (105).
+    M12-1.75 X 50, 90L" (105). **Supported on 2026-10-23:** p. 7 says the height lock handle
+    "Loosens to allow adjustment of table position on column; tightens to lock table position"
+    (`docs/research/2026-10-23-table-height-lock-and-mimic-chains.md`).
+  - Whether the crank's worm holds the table when the height lock is loose: not confirmed. The
+    manual gives no lead angle (same note). A similar drill press's table fell once its lock was
+    loosened, so the twin assumes the T33901's does too (Daniel, 2026-10-23; decision 0018).
   - The column rack turns with the table bracket. Assembly seats the rack "firmly between collar
     and column base" (p. 22), and turning the table means "making sure to guide column rack with
     table" (p. 32). So the rack is the part between the turn around the column and the slide up it.
@@ -238,8 +244,13 @@ this phase's evidence.
       `feat/phase-1-drill-press-exporter`, PR #16. The records are accepted at its review)
 
 ## Phase 2 - Contract v0.2.0, and how the teammates' pipelines run
-- [ ] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names
+- [x] Decision record 0020: contract v0.2.0, only for what v0.1.0 cannot describe. Field names
       are chosen in the record.
+      (Oct 23, 2026: written and proposed. Three optional fields on `Joint`: `mode`,
+      `adjustable_stop` and `follows`. Stored "0.1.0" results stay valid as they are. Daniel
+      reviewed it the same day: two inferences researched, links may now chain but not loop, and
+      `stop` renamed. Oct 24, 2026: accepted by Daniel and merged (PR #18); the owners' review is
+      still open)
   - **Linked joints:** a follower joint moves with a leader at a ratio, as the handles follow the
     quill. A stand-in ratio is allowed, labelled as one.
   - **Joint modes:** driven, spring return to a rest position, locked at a setting, or free; and
@@ -250,13 +261,22 @@ this phase's evidence.
     the only value the contract accepts today. The record decides how they keep loading and
     building.
   - Discussed with Ava, Kiran and Sarkis before it is merged (CLAUDE.md, "Who owns what").
-- [ ] Build it:
+- [x] Build it:
   - the contract, its JSON Schema (`moonwalkers.contracts.json_schema`) and the dashboard's types
     (`moonwalkers.api.typescript`);
+    (Oct 23, 2026: done, with 31 new contract tests. The exporter writes each result's own
+    version, and the Phase 2 test twin differs from its 2026-10-22 files only by the two
+    provenance lines. The eight stored results load and the four stored twins build)
   - the exporter reading the new fields; the dashboard showing modes and links;
+    (Oct 23, 2026: done. `contract_settings`, plus `starts` and `coupling_method` for checks; 21
+    exporter tests. The dashboard shows each joint's mode, stop and link with their citations)
   - the box-and-cylinder drill press rewritten to use them; at a fixed time, its stages match
     Phase 1's.
-- [ ] Decision record 0021: how Pipelines A, C and D run outside their tests. It answers:
+    (Oct 23, 2026: run `2026-10-23_run-003`. `all_motions` matches Phase 1's physics; the other
+    files differ only in three intended ways: the handles always follow the quill, the table is
+    locked by its handles, and the loosened table drops. Decision 0020, Consequences. Daniel's
+    short re-check is in `docs/setup/isaac-sim-check.md`, section 8)
+- [x] Decision record 0021: how Pipelines A, C and D run outside their tests. It answers:
   - **Where they start.** The agent's tools build only through Pipeline B, and the dashboard takes
     only a machine photo (worklog 2026-10-22). Candidates: an MCP tool and a command line first.
     The dashboard waits for this record.
@@ -271,24 +291,99 @@ this phase's evidence.
   - **Environment:** the backend's own, or a separate one called as a subprocess, as the
     generators are (`generators/`).
   - Agreed with the owners.
-- [ ] Build our side of what the record chooses, tested with a fake pipeline rather than the stubs
-- [ ] A short guide for the pipeline owners: the contract, `create_pipeline()`, citations, tests,
+
+  (Oct 23, 2026: written and proposed, on Daniel's word to finish Phase 2. Found while reading:
+  `add_input` already took any input type, so a drill-press document could reach a stub and get
+  HA5C facts. Chosen: a command line now, and `add_input` refusing a document whose pipeline is
+  not in; the stubs only in the tests; one result per twin carries parts and joints; disagreeing
+  facts listed for the reviewer; the backend's environment by default. Oct 24, 2026: accepted by
+  Daniel and merged (PR #18); the owners' review is still open)
+- [x] Build our side of what the record chooses, tested with a fake pipeline rather than the stubs
+      (Oct 23, 2026: `Pipeline.stub`, `default_pipelines()` without stubs, `stub_pipelines()` for
+      the tests; the orchestrator's two rules; `add_input`'s refusal; `python -m
+      moonwalkers.pipelines list | run`. 22 new tests, on fake pipelines)
+- [x] A short guide for the pipeline owners: the contract, `create_pipeline()`, citations, tests,
       and how to try a pipeline on the T33901's manual (worklog 2026-10-22, "Next step")
-- [ ] Worklog; PR
+      (Oct 23, 2026: `docs/pipeline-guide.md`. Its example Pipeline D was run through the command
+      line on the real manual)
+- [x] Worklog; PR
+      (Oct 23, 2026: worklog 2026-10-23; branch `feat/phase-2-contract-and-pipelines`, PR #18.
+      Oct 24, 2026: Daniel's Isaac Sim re-check of run-003 confirmed the three changes: the table
+      drops, the handles follow the quill in files 3 and 4, and `all_motions` is the same. Before
+      the merge: decisions 0020 and 0021 with the owners)
 
 ## Phase 3 - Several photos per run, and the mesh
 Today Pipeline B takes "exactly one machine photo" (`pipelines/b/pipeline.py`), and so do the
 `add_input` tool and the dashboard's upload. This phase works towards Daniel's goal: several
 images, and the least guessing.
+
+### Hand-off (2026-10-24, from the Phase 2 chat)
+- **Deadline:** done before Monday, 2026-10-26 (Daniel, Saturday 2026-10-24). "I think we have
+  time to do this properly, just not enough time to wait for team mates that often take the
+  weekends off."
+- **Order** (Daniel, 2026-10-24). Stop for review at the end, as in every phase.
+  1. **The core:** several photos per run through Pipeline B and the agent's tools: decision 0022,
+     `request.json`, `add_input`, Pipeline B.
+  2. **The T33901 mesh.**
+  3. **The dashboard's multi-photo upload,** last.
+- **Phase 2 is merged** (PR #18, 2026-10-24), on Daniel's word, before the pipeline owners'
+  review.
+  - Decisions 0020 and 0021 are accepted, with the owners' review still open. A change they ask
+    for gets its own record.
+  - `add_input` refuses a document whose pipeline (A, C or D) is not in. Decision 0022 keeps that
+    rule while it lets several photos in.
+- **Daniel's photos** (2026-10-24), in `data/machines/grizzly-t33901/inputs/photos/`:
+
+  | File | What it shows (as viewed on 2026-10-24) |
+  |---|---|
+  | `front_left.jpeg` | The whole machine, from the front-left corner (see the labels below) |
+  | `front_right.jpeg` | The front-right corner. An AVIF file (below) |
+  | `Underneath_behind_quill.jpeg` | Under the head, behind the quill, "some kind of opening" (Daniel). An AVIF file |
+  | `table_top.png` | The table: four slots and a centre hole |
+  | `motor_sticker.png` | The motor's plate: "3/4HP", "120V", "60Hz", "7.5A", pole "4", phase "1", R.P.M. "1720", class "B" |
+  | `top_with_cover_removed.png` | The belt cover open: three stepped pulleys, two belts. The speed chart inside the lid shows, but is unreadable at this size |
+  | `spindle_speeds.png` | The manual's own "Figure 30. Drill bit speed chart (RPMs)" (PDF p. 29) |
+
+  - **The motor plate agrees with the manual:** the data sheet (p. 8: "3/4 HP", "1720 RPM"),
+    p. 15 ("7.5 Amps"), and the machine's label (p. 54: "Motor: 3/4 HP, 120V, 1-Phase, 60 Hz
+    Full-Load Current Rating: 7.5A").
+  - **`spindle_speeds.png` is not the belt chart.** It gives speeds by bit and material, not which
+    belt positions give which speed. It is useful for control logic (Phase 6), not as a
+    substitute.
+- **The labels name sides as Daniel sees the machine, facing its front** (the operator's view).
+  - Checked on `front_left.jpeg`: the handles and the switch, on the operator's right (manual,
+    pp. 6-7), are on the image's right, and the motor's side shows.
+  - The generator's `left` is the machine's own left, which is the operator's right
+    (`docs/setup/generators.md`).
+  - So Daniel's "front_left" is the machine's own front-right corner, and "front_right" is its
+    front-left corner, the handles' side.
+- **Two files are AVIF images named `.jpeg`:** `front_right.jpeg` and
+  `Underneath_behind_quill.jpeg`, with an "ftyp avif" header.
+  - The backend has no image library that reads AVIF (no Pillow), and the Read tool cannot show
+    them.
+  - Convert them first: Daniel re-saves them as PNG, or ask him before installing anything (rule
+    3). Keep the originals.
+- **`SOURCES.md` has no origin for six of the photos yet.** Their lines say "origin URL not
+  recorded". Ask Daniel for each page's URL; on 2026-10-23 he named listings at Home Depot and
+  Lowe's.
+- **The belt chart:**
+  - only "a belt combination of B-3 creates 790 RPM" is cited (p. 30);
+  - research a readable copy before guessing, from other photos, videos or Q&A pages;
+  - pulley diameters are not confirmed anywhere yet.
+
+### Items
 - [ ] Collect T33901 photos into `inputs/`, logging each in `SOURCES.md`:
   - the manual's own: two studio photos of the whole machine (p. 5) and close-ups of the head,
     the hub, the depth stop and the table (pp. 6-7, 31-32, 36). They are copyrighted and for
-    internal research only (`SOURCES.md`);
-  - Grizzly's product page, which refuses scripts (HTTP 403), so Daniel saves its photos in a
-    browser;
+    internal research only (`SOURCES.md`). Extract them with pypdfium2;
+  - Grizzly's site has no T33901 page (Daniel, 2026-10-23); listings exist at Home Depot and
+    Lowe's;
   - others from public sources, with their URLs.
+
+  (Oct 24, 2026: Daniel collected seven (Hand-off, above). Still to do: their origins in
+  `SOURCES.md`, the AVIF conversion, and the manual's photos)
 - [ ] Decision record 0022: several photos per run. It decides:
-  - how each photo is labelled with the side it shows;
+  - how each photo is labelled with the side it shows (Daniel's labels are the operator's view);
   - which photos feed the generator and which serve as evidence for the cuts, the joints and the
     size checks;
   - how `add_input`, `request.json` and the dashboard's upload take several photos;
@@ -296,14 +391,19 @@ images, and the least guessing.
 - [x] The multi-view generator (Hunyuan3D-2mv): installed, with its image order checked and one
       run on the repository's examples (Oct 22, 2026, on Daniel's approval;
       `docs/setup/generators.md`). `left` is the machine's own left. Three views are enough.
-- [ ] Try corner views, such as the manual's two studio photos, which no example uses
+- [ ] Try corner views, such as the manual's two studio photos and Daniel's front corners, which no
+      example uses
 - [ ] The belt-speed label under the belt cover, and a full stroke of the handles, are worth a
       photo each if any source has one: they would replace a guess (the eleven missing speeds) and
       a stand-in (the handle ratio)
-- [ ] Build it: Pipeline B, the tools and the dashboard take several photos. The HA5C's one-photo
-      runs still build.
-- [ ] Generate the T33901 mesh from the best input there is, and record which sides it had to
-      guess
+      (Oct 24, 2026: `top_with_cover_removed.png` shows the label, unreadable. Research a readable
+      copy)
+- [ ] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
+      several photos. The HA5C's one-photo runs still build, and documents stay refused while
+      their pipeline is not in (decision 0021)
+- [ ] **Second:** generate the T33901 mesh from the best input there is, and record which sides it
+      had to guess
+- [ ] **Last:** the dashboard's upload takes several photos
 - [ ] Worklog; PR
 
 ## Phase 4 - A spike on cutting a model into parts
@@ -336,7 +436,9 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
 - [ ] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
       quote checked against its PDF page
 - [ ] A quote checker: it confirms every quote in a reference file is on its cited page, using
-      the PDF's text, and runs on the HA5C's file and the T33901's
+      the PDF's text, and runs on the HA5C's file and the T33901's. pypdf's text splits words at
+      line breaks with a hyphen ("prede- termined", p. 7; "con - trolled", p. 30), so the checker
+      must join them (worklog 2026-10-23)
 - [ ] Decision record 0024: facts and scale. Which cited dimension sets the scale (candidates: the
       7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
       several photos, cited dimensions can also check one another. Then how the cited 108 lb is

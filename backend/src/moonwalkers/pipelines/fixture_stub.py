@@ -21,8 +21,10 @@ class FixturePipeline(Pipeline):
 
     The fixture's facts are real and cited, but they do not come from the job's inputs, so each
     result carries an ``info`` issue saying so and always needs human review. The job id, result
-    id, timestamp and input types are filled in per run.
+    id, timestamp and input types are filled in per run. Only the tests run it (decision 0021).
     """
+
+    stub = True
 
     def __init__(self, pipeline_id: PipelineId, fixture: Path, clock: Clock = utc_now) -> None:
         self.pipeline_id = pipeline_id

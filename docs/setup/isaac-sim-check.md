@@ -191,13 +191,24 @@ Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 - If the line was printed but the spindle still does not move, copy the output, plus any red
   errors in the console.
 
-## 8. Drill-press plan, Phase 1: the box-and-cylinder drill press
+## 8. Drill-press plan, Phases 1 and 2: the box-and-cylinder drill press
 A stand-in for the Grizzly T33901 made of boxes and cylinders (`docs/drill-press-plan.md`,
 Phase 1). It has eight parts on seven joints, and its sizes come from the manual where it gives
-them. The current files, with the first check's fixes, are in
-`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\moonwalkers-testdrillpress\runs\2026-10-23_run-002\`.
-Its `RUN.md` repeats what to look for in each file and has room for your notes. The first files,
-checked on 2026-10-23, are in `...\runs\2026-10-22_run-001\`, whose `RUN.md` holds that check.
+them. Since Phase 2 its joints state their behaviour in contract v0.2.0 (decision 0020). The
+current files are in
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\moonwalkers-testdrillpress\runs\2026-10-23_run-003\`.
+Its `RUN.md` repeats what to look for in each file and has room for your notes. Earlier runs, both
+checked on 2026-10-23: `...\runs\2026-10-23_run-002\` (the first check's fixes) and
+`...\runs\2026-10-22_run-001\` (the first check).
+
+**What changed in run-003** (Phase 2). The physics was compared with run-002's, written at the
+same time: `all_motions` is the same, and every other difference is one of these three.
+- **The handles follow the quill in every file,** as on the machine. Before, they were linked only
+  in files 5 and 6. So in files 3 and 4 the handles now turn as the quill moves.
+- **The table is locked at its drawn pose in files 1 to 6,** by its lock handles, as in the
+  contract. Before, soft default drives held it, and the height could sag.
+- **In `table_free` the table drops** once its locks are loosened (your direction, 2026-10-23:
+  a similar drill press's table fell). Before, its height was held.
 
 To make them again (from `backend/`):
 `uv run python -m moonwalkers.usd.primitive_drill_press ../data/machines/moonwalkers-testdrillpress/runs/<run>`.
@@ -232,19 +243,21 @@ To make them again (from `backend/`):
 2. `spindle_spin_slow.usdc`: the spindle turns slowly (30°/s), clockwise seen from above, without
    a push.
 3. `quill_spring_return.usdc`: the quill jumps to 3-1/4 in down, and the spring returns it to the
-   top, where it stays.
+   top, where it stays. Since run-003 the handles turn back with it.
 4. `depth_stop.usdc`: the quill is fed down and stops at a depth stop 1-1/2 in (38 mm) down, short
    of its full travel. At the top it already sticks 1.38 in out of the head, so it ends 2.88 in out.
+   Since run-003 the handles turn about 124° as it goes down.
 5. `handles_follow_mimic.usdc`: as file 3, and the handles turn back 270° as the quill rises.
    Shift+drag a handle: the quill moves too. A push on the quill itself barely moves it, because
    through the coupling the handles' lever is about 10 times stronger.
 6. `handles_follow_rack_pinion.usdc`: the same coupling, written another way. The handles should
    turn back with the quill, the same way as in file 5.
-7. `table_free.usdc`: nothing moves on Play. Shift+drag the table:
+7. `table_free.usdc`: since run-003, the table starts 0.15 m up and drops to the bottom of its
+   travel on Play. Then Shift+drag the table:
+   - it slides up and down (run-002 held the height instead);
    - it swings around the column;
    - it tilts up to 45° each way;
-   - it turns about its centre;
-   - its height stays, because the crank holds it.
+   - it turns about its centre.
 8. `table_locked_drive.usdc`: the table starts raised 0.15 m, swung 30°, tilted 30° and turned 45°,
    and holds there. Shift+drag it hard, and note whether it gives.
 9. `table_locked_limits.usdc`: the same pose, held by limits instead. It should not move at all.
@@ -286,6 +299,25 @@ the joints, so use the copy in `2026-10-23_run-002` or later:
 3. Press Play for a few seconds, then Stop.
 4. The output should print `recording ... to ...\recordings\all_motions_<time>.csv`, and the folder
    should hold that file.
+
+**Re-check for run-003** (Phase 2, about ten minutes):
+- file 7 (`table_free`): the table drops on Play, then slides, swings, tilts and turns when pushed;
+- files 3 and 4: the handles turn with the quill;
+- file 10 (`all_motions`): the same as in run-002;
+- one recording of file 7, if you can, to measure the drop.
+
+**Result of the run-003 re-check (Daniel, 2026-10-24).** Isaac Sim 6.2.0, Kit 110.4.0 build 386251;
+two sessions, 0 errors (`kit_20261024_010941.log`, `kit_20261024_011630.log`).
+- **File 7:** "upon hitting play the table does indeed drop".
+- **Files 3 and 4:** the handles turn with the quill.
+  - `quill_spring_return` "acted like always, the quill retracts up when the handles are not being
+    pulled down".
+  - `depth_stop`: "it extended the quill down and the handles pulled it back up, but when released
+    it went back down". That is as designed: its feed drive takes the quill to the stop in place of
+    the spring, and a handle lifts it through the two-way link.
+- **File 10:** "the same as before". File 2 turned as before.
+- Files 5 and 6 were opened too. Files 1, 8 and 9 were not, and no recording was made. Run-003's
+  `RUN.md` holds the full record.
 
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are

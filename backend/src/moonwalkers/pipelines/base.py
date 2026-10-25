@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 from moonwalkers.contracts.pipeline_result import PipelineId, PipelineResult, Source
 
@@ -15,6 +16,9 @@ class Pipeline(ABC):
     """
 
     pipeline_id: PipelineId
+    # The PoC's stubs return the HA5C's data for any input, so the platform runs only pipelines
+    # that are not stubs; the tests build the stubs themselves (decision 0021).
+    stub: ClassVar[bool] = False
 
     @abstractmethod
     def run(self, job_id: str, sources: list[Source]) -> PipelineResult:

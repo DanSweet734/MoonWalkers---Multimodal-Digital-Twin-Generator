@@ -1,4 +1,4 @@
-"""Shared pipeline output contract (DRAFT v0.1.0).
+"""Shared pipeline output contract (DRAFT v0.2.0).
 
 Every input pipeline (A-D) returns one ``PipelineResult`` to the agent
 orchestrator. The orchestrator is the only component that writes to the
@@ -14,6 +14,15 @@ Conventions
   user can always see where information came from.
 * File paths are relative to the project ``data/`` folder; URLs are kept as-is.
 * ``needs_human_review`` defaults to True: v1 keeps a human in the loop.
+
+Versions
+--------
+* 0.1.0 (decision 0004): the first contract.
+* 0.2.0 (decision 0020): a joint may also state its ``mode``, an
+  ``adjustable_stop`` and the joint it ``follows``. All three are optional, and
+  a result that says "0.1.0" may not use them, so stored 0.1.0 results stay
+  valid as they are. The contract says what the machine does; how it is
+  simulated (stiffness, damping, mimic or rack and pinion) is the exporter's.
 """
 
 from __future__ import annotations
@@ -24,7 +33,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-SCHEMA_VERSION = "0.1.0"
+SCHEMA_VERSION = "0.2.0"  # what new results write
+SchemaVersion = Literal["0.1.0", "0.2.0"]  # what a result may say (decision 0020)
 
 Vec3 = tuple[float, float, float]
 
@@ -130,6 +140,59 @@ class ScaleCalibration(_Strict):
     citations: list[Citation] = Field(default_factory=list)
 
 
+class JointMode(_Strict):
+    """How a joint is moved or held when nothing commands it (v0.2.0, decision 0020).
+
+    * ``driven``: a motor or actuator moves it; a control behaviour may say how.
+    * ``spring_return``: a spring returns it to ``position`` when let go.
+    * ``locked``: held at ``position`` until a person changes the setting (a lock handle or bolt).
+    * ``free``: it moves when pushed; nothing holds it.
+
+    ``position`` is in the joint's units (rad or m); None means the modelled pose, 0. Only
+    ``spring_return`` and ``locked`` take one.
+    """
+
+    kind: Literal["driven", "spring_return", "locked", "free"]
+    position: float | None = None
+    citations: list[Citation] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_position(self) -> JointMode:
+        if self.position is not None and self.kind not in ("spring_return", "locked"):
+            raise ValueError(f"a '{self.kind}' joint takes no position")
+        return self
+
+
+class AdjustableStop(_Strict):
+    """A stop a person sets inside a joint's limits, such as a drill press's depth stop (v0.2.0)."""
+
+    position: float  # rad or m, within the joint's limits
+    side: Literal["lower", "upper"]  # the end of the travel it shortens
+    citations: list[Citation] = Field(min_length=1)
+
+
+class JointLink(_Strict):
+    """The joint moves with ``leader``: position = ``ratio`` * leader's position + ``offset``
+    (v0.2.0).
+
+    ``ratio`` is in the follower's units per leader unit (rad per m for a turning joint that
+    follows a sliding one), signed by each joint's own axis. ``stand_in`` marks a ratio that no
+    source gives; the result must then carry an issue on the follower.
+    """
+
+    leader: str  # joint_id
+    ratio: float
+    offset: float = 0.0  # in the follower's units
+    stand_in: bool = False
+    citations: list[Citation] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_ratio(self) -> JointLink:
+        if self.ratio == 0:
+            raise ValueError("a link with ratio 0 does not move the follower")
+        return self
+
+
 class Joint(_Strict):
     """A moving connection between two parts (parent = body0, child = body1)."""
 
@@ -144,6 +207,34 @@ class Joint(_Strict):
     max_velocity: float | None = None  # rad/s or m/s
     confidence: float = Field(ge=0.0, le=1.0)
     citations: list[Citation] = Field(min_length=1)
+    # v0.2.0 (decision 0020); None = not stated
+    mode: JointMode | None = None
+    adjustable_stop: AdjustableStop | None = None
+    follows: JointLink | None = None
+
+    @model_validator(mode="after")
+    def _check_behaviour(self) -> Joint:
+        where = f"joint '{self.joint_id}'"
+        if self.joint_type == "fixed" and (self.mode or self.adjustable_stop or self.follows):
+            raise ValueError(f"{where} is fixed, so it takes no mode, adjustable stop or link")
+        if self.follows is not None:
+            if self.follows.leader == self.joint_id:
+                raise ValueError(f"{where} cannot follow itself")
+            if self.mode is not None:
+                raise ValueError(f"{where} follows another joint, so it takes no mode")
+        if self.mode is not None and self.mode.kind in ("spring_return", "locked"):
+            position = self.mode.position if self.mode.position is not None else 0.0
+            self._check_within_limits(position, f"{where}: the {self.mode.kind} position")
+        if self.adjustable_stop is not None:
+            stop = self.adjustable_stop.position
+            self._check_within_limits(stop, f"{where}: the adjustable stop")
+        return self
+
+    def _check_within_limits(self, position: float, what: str) -> None:
+        if self.lower_limit is not None and position < self.lower_limit:
+            raise ValueError(f"{what} {position} is below the lower limit {self.lower_limit}")
+        if self.upper_limit is not None and position > self.upper_limit:
+            raise ValueError(f"{what} {position} is above the upper limit {self.upper_limit}")
 
 
 class ControlBehavior(_Strict):
@@ -169,7 +260,7 @@ class Issue(_Strict):
 # The contract itself
 # --------------------------------------------------------------------------
 class PipelineResult(_Strict):
-    schema_version: Literal["0.1.0"] = SCHEMA_VERSION
+    schema_version: SchemaVersion = SCHEMA_VERSION
     result_id: str
     job_id: str
     pipeline: PipelineId
@@ -214,12 +305,54 @@ class PipelineResult(_Strict):
             for end in (j.parent_part, j.child_part):
                 if end not in part_ids:
                     raise ValueError(f"joint '{j.joint_id}' references unknown part '{end}'")
+        self._check_joint_behaviour()
         for b in self.control:
             cited(b.citations, f"control '{b.behavior_id}'")
             for jid in b.drives_joints:
                 if jid not in joint_ids:
                     raise ValueError(f"control '{b.behavior_id}' drives unknown joint '{jid}'")
         return self
+
+    def _check_joint_behaviour(self) -> None:
+        """Modes, adjustable stops and links (v0.2.0, decision 0020)."""
+        source_ids = {s.source_id for s in self.sources}
+        joints = {j.joint_id: j for j in self.joints}
+        issue_refs = {i.ref for i in self.issues}
+        for j in self.joints:
+            where = f"joint '{j.joint_id}'"
+            stated = {
+                "mode": j.mode,
+                "adjustable_stop": j.adjustable_stop,
+                "follows": j.follows,
+            }
+            for name, item in stated.items():
+                if item is None:
+                    continue
+                if self.schema_version == "0.1.0":
+                    raise ValueError(f"{where} uses '{name}', which needs schema_version 0.2.0")
+                for c in item.citations:
+                    if c.source_id not in source_ids:
+                        unknown = c.source_id
+                        raise ValueError(f"{where}: its {name} cites unknown source '{unknown}'")
+            link = j.follows
+            if link is None:
+                continue
+            leader = joints.get(link.leader)
+            if leader is None:
+                raise ValueError(f"{where} follows unknown joint '{link.leader}'")
+            if leader.joint_type == "fixed":
+                raise ValueError(f"{where} cannot follow the fixed joint '{link.leader}'")
+            if link.stand_in and j.joint_id not in issue_refs:
+                raise ValueError(f"{where}: its ratio is a stand-in, so it needs an issue on it")
+            # Links may chain (PhysX: "no restriction on the number of mimic joints referenced by
+            # any individual joint"), but a loop would make a joint follow itself.
+            seen = {j.joint_id}
+            while link is not None:
+                if link.leader in seen:
+                    raise ValueError(f"{where}: its links loop back through '{link.leader}'")
+                seen.add(link.leader)
+                next_joint = joints.get(link.leader)  # an unknown one is reported on its own turn
+                link = next_joint.follows if next_joint else None
 
 
 # --------------------------------------------------------------------------

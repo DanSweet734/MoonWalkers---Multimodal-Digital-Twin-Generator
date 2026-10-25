@@ -11,7 +11,16 @@ import type {
   ScaleCalibration,
   Source,
 } from '../api/types.gen.ts'
-import { extents, factValue, percent, speed, triple } from '../lib/format.ts'
+import {
+  extents,
+  factValue,
+  linkText,
+  modeText,
+  percent,
+  speed,
+  stopText,
+  triple,
+} from '../lib/format.ts'
 import { Citations } from './common.tsx'
 
 type Sources = Map<string, Source>
@@ -102,6 +111,7 @@ export function PartsTable({ parts, sources }: { parts: Part[]; sources: Sources
 }
 
 export function JointsList({ joints, sources }: { joints: Joint[]; sources: Sources }) {
+  const types = new Map(joints.map((j) => [j.joint_id, j.joint_type]))
   return (
     <>
       {joints.map((joint) => (
@@ -121,6 +131,33 @@ export function JointsList({ joints, sources }: { joints: Joint[]; sources: Sour
               ? 'none (turns freely)'
               : `${joint.lower_limit ?? '-'} to ${joint.upper_limit ?? '-'}`}
           </dd>
+          {joint.mode ? (
+            <>
+              <dt>Mode</dt>
+              <dd>
+                {modeText(joint.mode, joint.joint_type)}.{' '}
+                <Citations citations={joint.mode.citations} sources={sources} />
+              </dd>
+            </>
+          ) : null}
+          {joint.adjustable_stop ? (
+            <>
+              <dt>Adjustable stop</dt>
+              <dd>
+                {stopText(joint.adjustable_stop, joint.joint_type)}.{' '}
+                <Citations citations={joint.adjustable_stop.citations} sources={sources} />
+              </dd>
+            </>
+          ) : null}
+          {joint.follows ? (
+            <>
+              <dt>Follows</dt>
+              <dd>
+                {linkText(joint.follows, joint.joint_type, types.get(joint.follows.leader))}.{' '}
+                <Citations citations={joint.follows.citations} sources={sources} />
+              </dd>
+            </>
+          ) : null}
           <dt>Top speed</dt>
           <dd>{joint.max_velocity == null ? '-' : speed(joint.max_velocity)}</dd>
           <dt>Confidence</dt>
