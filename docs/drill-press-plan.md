@@ -391,17 +391,23 @@ images, and the least guessing.
     size checks;
   - how `add_input`, `request.json` and the dashboard's upload take several photos;
   - how a run records what no photo shows, so that guesses are logged.
+
+  (Oct 24, 2026: `docs/decisions/0022-several-photos-per-run.md`, proposed, for Daniel's review)
 - [x] The multi-view generator (Hunyuan3D-2mv): installed, with its image order checked and one
       run on the repository's examples (Oct 22, 2026, on Daniel's approval;
       `docs/setup/generators.md`). `left` is the machine's own left. Three views are enough.
-- [ ] Try corner views, such as the manual's two studio photos and Daniel's front corners, which no
+- [x] Try corner views, such as the manual's two studio photos and Daniel's front corners, which no
       example uses
+      (Oct 24, 2026: four scratch runs on Daniel's two front corners. The multi-view model keeps
+      them as a grid turned 45°; the single-image model turns the machine square to an axis.
+      `docs/research/2026-10-24-several-photos-and-corner-views.md`, section 2)
 - [ ] The belt-speed label under the belt cover, and a full stroke of the handles, are worth a
       photo each if any source has one: they would replace a guess (the eleven missing speeds) and
       a stand-in (the handle ratio)
       (Oct 24, 2026: `top_with_cover_removed.png` shows the label, unreadable. The readable chart
-      Daniel found is the T33904's, which does not apply. Research a readable copy of the
-      T33901's)
+      Daniel found is the T33904's, which does not apply. Researched the same day: no readable
+      copy of the T33901's or the T33902's is reachable by script, and the manual's own photo of
+      the lid is smaller still. What is left by hand: research note, section 3)
 - [ ] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
       several photos. The HA5C's one-photo runs still build, and documents stay refused while
       their pipeline is not in (decision 0021)
