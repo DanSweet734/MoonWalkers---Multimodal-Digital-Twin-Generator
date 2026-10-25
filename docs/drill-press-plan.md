@@ -471,9 +471,11 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
       several photos, cited dimensions can also check one another. Then how the cited 108 lb is
       split between the parts, or whether the placeholder density stays (decision 0010).
-- [ ] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
+- [x] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
       (`kb/keys.py`), but the data folder is `grizzly-t33901`. Add a `grizzly` alias, with the
       source of the short name (decision 0009).
+      (Oct 24, 2026: done early, in Phase 3's PR #19, on Daniel's word. Both names now give
+      `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
 - [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
 - [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
@@ -490,7 +492,13 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     only with the key in and the switch up (p. 6);
   - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9). Only one belt
     arrangement is cited ("B-3 creates 790 RPM", p. 30). The rest are on the label under the belt
-    cover, so they stay unknown until a photo of it is found;
+    cover, so they stay unknown until a photo of it is found.
+    - **Daniel, reviewing PR #19 (2026-10-24):** "If belt positions aren't needed to work then I
+      say we leave them out, I don't think they'd be visible without the top off which isn't
+      planned". Asked to settle the choice, he also answered "Let's go stand ins rather than gaps".
+      Which one applies to belt positions is to be confirmed with him before decision 0025.
+    - If stand-ins: the T33904's order carried over, labelled, with its ambiguity logged (research
+      note 2026-10-24, section 3). The twelve speeds themselves are cited either way;
   - the operator's drilling stroke as a program that drives the quill, as decision 0016's
     programs drive a joint.
 

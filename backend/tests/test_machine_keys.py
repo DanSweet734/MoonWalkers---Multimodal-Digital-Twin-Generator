@@ -12,7 +12,10 @@ from moonwalkers.kb import InvalidMachineKeyError, machine_key, validate_machine
         ("Haas Automation, Inc.", "HA-5C", "haas/ha5c"),
         ("HAAS", "ha5c", "haas/ha5c"),
         ("  haas automation inc  ", "HA 5C", "haas/ha5c"),
-        ("Grizzly Industrial", "T33901", "grizzly-industrial/t33901"),
+        # The T33901 manual's legal name and the machine's brand give one key (alias)
+        ("Grizzly Industrial", "T33901", "grizzly/t33901"),
+        ("Grizzly Industrial, Inc.", "T33901", "grizzly/t33901"),
+        ("Grizzly", "T-33901", "grizzly/t33901"),
     ],
 )
 def test_same_machine_gives_same_key(manufacturer: str, model: str, expected: str) -> None:
