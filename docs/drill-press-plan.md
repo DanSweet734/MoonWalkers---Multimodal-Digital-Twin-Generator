@@ -332,17 +332,21 @@ images, and the least guessing.
     for gets its own record.
   - `add_input` refuses a document whose pipeline (A, C or D) is not in. Decision 0022 keeps that
     rule while it lets several photos in.
-- **Daniel's photos** (2026-10-24), in `data/machines/grizzly-t33901/inputs/photos/`:
+- **Daniel's photos** (2026-10-24), in `data/machines/grizzly-t33901/inputs/photos/`. Each has a
+  line in `inputs/SOURCES.md` with its origin and SHA-256. That file's photo section is the record,
+  and supersedes what an earlier version of this hand-off said. Daniel re-saved the AVIF and WebP
+  files as PNG and replaced the originals, and recorded every origin.
 
-  | File | What it shows (as viewed on 2026-10-24) |
-  |---|---|
-  | `front_left.jpeg` | The whole machine, from the front-left corner (see the labels below) |
-  | `front_right.jpeg` | The front-right corner. An AVIF file (below) |
-  | `Underneath_behind_quill.jpeg` | Under the head, behind the quill, "some kind of opening" (Daniel). An AVIF file |
-  | `table_top.png` | The table: four slots and a centre hole |
-  | `motor_sticker.png` | The motor's plate: "3/4HP", "120V", "60Hz", "7.5A", pole "4", phase "1", R.P.M. "1720", class "B" |
-  | `top_with_cover_removed.png` | The belt cover open: three stepped pulleys, two belts. The speed chart inside the lid shows, but is unreadable at this size |
-  | `spindle_speeds.png` | The manual's own "Figure 30. Drill bit speed chart (RPMs)" (PDF p. 29) |
+  | File | What it shows (as viewed on 2026-10-24) | From (`SOURCES.md`) |
+  |---|---|---|
+  | `front_left.jpeg` | The whole machine, from the front-left corner (see the labels below) | Home Depot's T33901 listing |
+  | `front_right.png` | The whole machine, from the front-right corner: the handle hub, the table crank and the column rack | Home Depot's T33901 listing (re-saved from AVIF) |
+  | `top_with_cover_removed.png` | The belt cover open: three stepped pulleys, two belts. The speed chart inside the lid shows, but is unreadable at this size | Home Depot's T33901 listing (re-saved from WebP) |
+  | `Underneath_behind_quill.png` | Under the head: a round light, most likely the LED work light [INFERENCE], the laser's caution label, the chuck guard and the chuck | Lowe's T33901 listing (re-saved from AVIF) |
+  | `table_top.png` | The table: four slots and a centre hole | A YouTube video of several Grizzly drill presses, its T33901 section |
+  | `motor_sticker.png` | The motor's plate: "3/4HP", "120V", "60Hz", "7.5A", pole "4", phase "1", R.P.M. "1720", class "B" | The same video |
+  | `spindle_speeds.png` | The manual's own "Figure 30. Drill bit speed chart (RPMs)" (PDF p. 29) | The manual |
+  | `spindle_speed_chart.jpg` | **The T33904's** belt chart, readable. Not the T33901's (below) | J&B Tools' T33904 page |
 
   - **The motor plate agrees with the manual:** the data sheet (p. 8: "3/4 HP", "1720 RPM"),
     p. 15 ("7.5 Amps"), and the machine's label (p. 54: "Motor: 3/4 HP, 120V, 1-Phase, 60 Hz
@@ -350,25 +354,24 @@ images, and the least guessing.
   - **`spindle_speeds.png` is not the belt chart.** It gives speeds by bit and material, not which
     belt positions give which speed. It is useful for control logic (Phase 6), not as a
     substitute.
+  - **`spindle_speed_chart.jpg` is the T33904's, not the T33901's.** The label on its head reads
+    "MODEL T33904 20" FLOOR DRILL PRESS w/LED LIGHT & LASER GUIDE". Its B-3 gives 610 RPM where
+    the T33901's gives 790 (p. 30), and only 340 of its twelve speeds is in the T33901's list
+    (p. 9), so its values do not apply. It shows the chart's format: belt positions lettered A-D
+    and numbered 1-4, which the T33901 likely shares [INFERENCE: from "B-3" on p. 30].
 - **The labels name sides as Daniel sees the machine, facing its front** (the operator's view).
-  - Checked on `front_left.jpeg`: the handles and the switch, on the operator's right (manual,
-    pp. 6-7), are on the image's right, and the motor's side shows.
+  - Checked on `front_left.jpeg`: the handles, on the operator's right (manual, pp. 6-7), reach
+    out on the image's right, and the motor's side shows.
+  - The switch is on the head's front face ("Figure 1. Power controls.", p. 6), not on its right
+    side, as an earlier version of this hand-off said (corrected on 2026-10-24, Phase 3).
   - The generator's `left` is the machine's own left, which is the operator's right
     (`docs/setup/generators.md`).
   - So Daniel's "front_left" is the machine's own front-right corner, and "front_right" is its
     front-left corner, the handles' side.
-- **Two files are AVIF images named `.jpeg`:** `front_right.jpeg` and
-  `Underneath_behind_quill.jpeg`, with an "ftyp avif" header.
-  - The backend has no image library that reads AVIF (no Pillow), and the Read tool cannot show
-    them.
-  - Convert them first: Daniel re-saves them as PNG, or ask him before installing anything (rule
-    3). Keep the originals.
-- **`SOURCES.md` has no origin for six of the photos yet.** Their lines say "origin URL not
-  recorded". Ask Daniel for each page's URL; on 2026-10-23 he named listings at Home Depot and
-  Lowe's.
 - **The belt chart:**
   - only "a belt combination of B-3 creates 790 RPM" is cited (p. 30);
-  - research a readable copy before guessing, from other photos, videos or Q&A pages;
+  - the readable chart Daniel found is the T33904's (above). Research a readable copy of the
+    T33901's own before guessing, from other photos, videos or Q&A pages;
   - pulley diameters are not confirmed anywhere yet.
 
 ### Items
@@ -380,8 +383,8 @@ images, and the least guessing.
     Lowe's;
   - others from public sources, with their URLs.
 
-  (Oct 24, 2026: Daniel collected seven (Hand-off, above). Still to do: their origins in
-  `SOURCES.md`, the AVIF conversion, and the manual's photos)
+  (Oct 24, 2026: Daniel collected eight, with their origins, and re-saved the AVIF and WebP files
+  as PNG (Hand-off, above). Still to do: the manual's photos)
 - [ ] Decision record 0022: several photos per run. It decides:
   - how each photo is labelled with the side it shows (Daniel's labels are the operator's view);
   - which photos feed the generator and which serve as evidence for the cuts, the joints and the
@@ -396,8 +399,9 @@ images, and the least guessing.
 - [ ] The belt-speed label under the belt cover, and a full stroke of the handles, are worth a
       photo each if any source has one: they would replace a guess (the eleven missing speeds) and
       a stand-in (the handle ratio)
-      (Oct 24, 2026: `top_with_cover_removed.png` shows the label, unreadable. Research a readable
-      copy)
+      (Oct 24, 2026: `top_with_cover_removed.png` shows the label, unreadable. The readable chart
+      Daniel found is the T33904's, which does not apply. Research a readable copy of the
+      T33901's)
 - [ ] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
       several photos. The HA5C's one-photo runs still build, and documents stay refused while
       their pipeline is not in (decision 0021)

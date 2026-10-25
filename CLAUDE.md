@@ -48,9 +48,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 - **Now: Phase 3, several photos per run, and the mesh.** Due before Monday, 2026-10-26 (Daniel,
   2026-10-24). Order: (1) the core, several photos through Pipeline B and the agent's tools
   (decision 0022); (2) the T33901 mesh; (3) the dashboard's multi-photo upload, last. Start from
-  the hand-off in `docs/drill-press-plan.md`, Phase 3: Daniel's seven T33901 photos, how their
-  side labels read (the operator's view, facing the front), two AVIF files named `.jpeg`, and
-  their missing origins in `SOURCES.md`.
+  the hand-off in `docs/drill-press-plan.md`, Phase 3: Daniel's eight T33901 photos and how their
+  side labels read (the operator's view, facing the front). `SOURCES.md` records every origin,
+  the AVIF and WebP files are now PNGs, and the one readable belt chart is the T33904's.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
