@@ -23,10 +23,12 @@ from pathlib import Path
 from typing import Any
 
 from moonwalkers.contracts.pipeline_result import (
+    InputType,
     Issue,
     JobResult,
     PipelineId,
     PipelineResult,
+    Source,
     TwinRecord,
 )
 from moonwalkers.control.export import write_program_folder
@@ -78,7 +80,7 @@ def build_run(
     """
     run_dir, data_dir = Path(run_dir).resolve(), Path(data_dir).resolve()
     request = JobRequest.model_validate_json(Path(request_path).read_text(encoding="utf-8"))
-    pipeline_b = PipelineB(generator, data_dir, run_dir, reference)
+    pipeline_b = PipelineB(generator, data_dir, run_dir, reference, photos=request.photos)
     findings: list[Issue] = []
     exported: list[Path] = []
 
@@ -118,7 +120,9 @@ def build_run(
     write_job_result(run_dir, Path(request_path), job)
     if job.reused_existing:
         return BuildOutcome(job)
-    _write_run_files(run_dir, kb, job, Path(request_path), reference_path, reference, findings)
+    _write_run_files(
+        run_dir, kb, job, request, Path(request_path), reference_path, reference, findings
+    )
     return BuildOutcome(job, findings, exported[0], exported[1:])
 
 
@@ -155,6 +159,7 @@ def _write_run_files(
     run_dir: Path,
     kb: KnowledgeBase,
     job: JobResult,
+    request: JobRequest,
     request_path: Path,
     reference_path: Path | None,
     reference: ReferenceFacts | None,
@@ -169,7 +174,9 @@ def _write_run_files(
         _write_json(run_dir / name, result.model_dump(mode="json"))
     record_path = run_dir / GENERATOR_DIR / GENERATOR_RECORD
     generator = json.loads(record_path.read_text(encoding="utf-8"))
-    lines = _run_notes(job, stored, generator, request_path, reference_path, reference, findings)
+    lines = _run_notes(
+        job, stored, generator, request, request_path, reference_path, reference, findings
+    )
     (run_dir / "RUN.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -177,6 +184,7 @@ def _run_notes(
     job: JobResult,
     results: list[PipelineResult],
     generator: dict[str, Any],
+    request: JobRequest,
     request_path: Path,
     reference_path: Path | None,
     reference: ReferenceFacts | None,
@@ -194,8 +202,10 @@ def _run_notes(
         if reference is not None and reference_path is not None
         else "none"
     )
+    photos = [s for s in request.sources if s.input_type == InputType.MACHINE_PHOTO]
+    count = "one photo" if len(photos) == 1 else f"{len(photos)} photos"
     lines = [
-        f"# Run: {twin.twin_id} (Pipeline B, one photo)",
+        f"# Run: {twin.twin_id} (Pipeline B, {count})",
         "",
         f"- Twin: {twin.twin_id}, status {twin.status}, USD `{twin.usd_path}`",
         f"- Created (UTC): {twin.created_at.isoformat(timespec='seconds')}",
@@ -232,6 +242,7 @@ def _run_notes(
             )
         lines += ["", f"## Issues in the Pipeline {result.pipeline.value} result", ""]
         lines += [f"- {i.severity}: {i.message}" for i in result.issues]
+    lines += _photo_table(generator.get("photos"), photos)
     lines += ["", "## Validation (moonwalkers.usd.validate)", ""]
     lines += [f"- {i.severity}: {i.message} ({i.ref or '-'})" for i in findings] or [
         "- no findings"
@@ -258,6 +269,30 @@ def _run_notes(
         "- Success level reached (1-3):",
         "- Reviewer notes:",
     ]
+    return lines
+
+
+def _photo_table(record: dict[str, Any] | None, photos: Sequence[Source]) -> list[str]:
+    """The run's photos with their views, uses and generator slots (decision 0022), from the
+    generator record; runs generated before the record kept them have no table."""
+    if record is None:
+        return []
+    files = {s.source_id: s.uri for s in photos}
+    expected = record.get("expected_turn_deg")
+    lines = [
+        "",
+        "## Photos (decision 0022)",
+        "",
+        f"- Grid: {record['grid']}"
+        + ("" if expected is None else f"; the machine's front is expected at {expected:+g} deg"),
+        "",
+        "| Source | File | View | Use | Generator slot |",
+        "|---|---|---|---|---|",
+    ]
+    rows = [(f["source_id"], f["view"] or "none", "generator", f["slot"]) for f in record["fed"]]
+    rows += [(e["source_id"], e["view"], "evidence", "-") for e in record["evidence"]]
+    for source, view, use, slot in rows:
+        lines.append(f"| {source} | `{files.get(source, '?')}` | {view} | {use} | {slot} |")
     return lines
 
 

@@ -10,6 +10,8 @@ spindle's axis is:
   round part shows up wherever it is.
 - **Circle fits at chosen x** (``circle_x``), through the round moving part, set the axis when
   they find it, instead of the tip slabs (decision 0012, "Known limitation", fixed).
+- **The base footprint's long axis** shows how far an upright mesh is turned from the axes, for
+  photos that put the machine's front between two of them (``yaw_deg``, decision 0022).
 
 The radial profile is then measured about the axis in use. ``preview_parts`` applies a draft spec
 without recording anything, so the split and the scale can be checked before a build.
@@ -32,6 +34,7 @@ from .mesh_tools import (
     ProfileSlice,
     TipSlab,
     fit_circles,
+    footprint_angle,
     load_mesh,
     orientation_matrix,
     radial_profile,
@@ -72,6 +75,8 @@ class Inspection:
     circle_scan: list[CircleFit] = field(default_factory=list)  # over the front of the mesh
     circle_fits: list[CircleFit] = field(default_factory=list)  # at the chosen circle_x
     warnings: list[str] = field(default_factory=list)
+    yaw_deg: float = 0.0  # the turn applied after up and front
+    footprint_deg: float | None = None  # the base footprint's long axis, after that turn
 
 
 @dataclass(frozen=True)
@@ -87,17 +92,21 @@ def inspect_mesh(
     front: AxisName | None = None,
     window: float | None = None,
     circle_x: Sequence[float] | None = None,
+    yaw_deg: float = 0.0,
 ) -> Inspection:
-    """Render the mesh into ``out_dir``. With ``up`` and ``front``, also measure the spindle
-    axis (tip slabs, a circle scan, and circle fits at ``circle_x`` if given) and how far the
-    surface reaches from that axis along +X (radial profile)."""
+    """Render the mesh into ``out_dir``. With ``up`` and ``front`` (and ``yaw_deg``, the turn
+    about +Z that squares a front lying between two axes), also measure the base footprint, the
+    spindle axis (tip slabs, a circle scan, and circle fits at ``circle_x`` if given) and how far
+    the surface reaches from that axis along +X (radial profile)."""
     if (up is None) != (front is None):
         raise ValueError("give both up and front, or neither")
     if circle_x is not None and up is None:
         raise ValueError("circle_x needs up and front")
+    if yaw_deg and up is None:
+        raise ValueError("yaw_deg needs up and front")
     mesh = load_mesh(mesh_path)
     if up is not None and front is not None:
-        mesh = transformed(mesh, orientation_matrix(up, front))
+        mesh = transformed(mesh, orientation_matrix(up, front, yaw_deg))
     views = render_views(mesh, out_dir)["sheet"]
     bounds = (_vec(mesh.bounds[0]), _vec(mesh.bounds[1]))
     if up is None:
@@ -134,6 +143,8 @@ def inspect_mesh(
         scan,
         fits,
         warnings,
+        yaw_deg,
+        footprint_angle(mesh),
     )
 
 
@@ -224,6 +235,12 @@ def format_inspection(inspection: Inspection) -> str:
     ]
     if inspection.axis_yz is None:
         return "\n".join(lines)
+    footprint = (
+        "no long axis (round or square)"
+        if inspection.footprint_deg is None
+        else f"{inspection.footprint_deg:+.1f} deg from +x towards +y (up to a multiple of 90)"
+    )
+    lines.append(f"turned by yaw_deg {inspection.yaw_deg:+.1f}; base footprint: {footprint}")
     lines += [f"warning: {w}" for w in inspection.warnings]
     lines.append(f"tip slabs behind the front-most point (x = {hi[0]:+.4f}):")
     for s in inspection.tip:

@@ -255,7 +255,7 @@ async def test_mistakes_come_back_as_readable_tool_errors(setup, photo_run) -> N
         assert "add a reference source first" in await fails(
             client, "add_fact", run=run, key="k", value=1, confidence=1.0, citations=SHEET
         )
-        assert "exactly one machine photo" in await fails(client, "generate_geometry", run=run)
+        assert "no photo for the generator" in await fails(client, "generate_geometry", run=run)
         assert "not inside the data folder" in await fails(
             client,
             "add_input",
@@ -476,3 +476,82 @@ def test_the_data_folder_comes_from_the_environment(monkeypatch, tmp_path: Path)
     monkeypatch.delenv("MOONWALKERS_DATA_DIR")
     monkeypatch.delenv("CLAUDE_PROJECT_DIR")
     assert default_data_dir().name == "data" and (default_data_dir() / "README.md").is_file()
+
+
+@pytest.mark.anyio
+async def test_several_photos_with_their_views_through_the_tools(setup, photo_run) -> None:
+    """Decision 0022: views in the operator's words, checked as each photo is added."""
+    server, _ = setup
+    second = Path(photo_run.photo.uri).with_name("corner.png").as_posix()
+    (photo_run.data_dir / second).write_bytes(b"another corner")
+    photo = {"title": "Test photo", "retrieved_at": "2026-10-16T12:00:00Z"}
+    async with Client(server) as client:
+        run = (await ok(client, "start_run", **MACHINE))["run"]
+        added = await ok(
+            client,
+            "add_input",
+            run=run,
+            path=photo_run.photo.uri,
+            source_id="src-ol",
+            view="front_operator_left",
+            **photo,
+        )
+        assert added["generator_input"] == (
+            "single-image model: single = src-ol; evidence: 0 photo(s)"
+        )
+        assert "have no view" in await fails(
+            client, "add_input", run=run, path=second, source_id="src-or", **photo
+        )
+        assert "machine photos only" in await fails(
+            client,
+            "add_input",
+            run=run,
+            path=second,
+            source_id="src-doc",
+            input_type="pdf_catalog",
+            view="front",
+            **photo,
+        )
+        added = await ok(
+            client,
+            "add_input",
+            run=run,
+            path=second,
+            source_id="src-or",
+            view="front_operator_right",
+            **photo,
+        )
+        assert added["generator_input"].startswith(
+            "multi-view model, corners: front = src-ol, left = src-or"
+        )
+
+        generated = await ok(client, "generate_geometry", run=run)
+        assert generated["grid"] == "corners"
+        assert generated["photos"] == [
+            "front = src-ol (front_operator_left)",
+            "left = src-or (front_operator_right)",
+        ]
+        assert generated["expected_turn_deg"] == 45.0
+        assert generated["sides_guessed"] == ["back"]
+
+        inspected = await ok(client, "inspect_geometry", run=run, up="+y", front="+z", yaw_deg=0.0)
+        assert inspected["yaw_deg"] == 0.0
+        assert abs(abs(inspected["footprint_deg"]) - 90.0) < 1.0  # the indexer is square
+        jobs = await ok(client, "list_jobs")
+        assert jobs["jobs"][0]["photos"] == 2
+        await ok(
+            client,
+            "add_joint",
+            run=run,
+            up="+y",
+            front="+z",
+            spindle_axis_yz=[0.0, 0.2],
+            spindle_radius=0.45,
+            spindle_start_x=1.0,
+            yaw_deg=45.0,
+            method="Synthetic geometry; turned as corner photos would leave it.",
+        )
+        parts = json.loads(
+            (photo_run.data_dir / run / "geometry_spec.parts.json").read_text(encoding="utf-8")
+        )
+        assert parts["joint"]["yaw_deg"] == 45.0

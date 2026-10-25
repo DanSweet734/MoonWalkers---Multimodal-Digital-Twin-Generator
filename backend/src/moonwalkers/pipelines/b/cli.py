@@ -1,11 +1,13 @@
 """Command line for Pipeline B (decision 0012). Run from ``backend/``::
 
     uv run python -m moonwalkers.pipelines.b build RUN --reference FILE
-    uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--circle-x X ...]]
+    uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--yaw DEG]
+                                                          [--circle-x X ...]]
     uv run python -m moonwalkers.pipelines.b inspect RUN --preview
 
 ``RUN`` is a run folder, ``data/machines/<machine>/runs/<run>``, holding ``request.json`` (a
-``JobRequest`` with the photo as a source). ``build`` sends the request through the orchestrator:
+``JobRequest`` with the photos as sources, and their views when there are several; decision
+0022). ``build`` sends the request through the orchestrator:
 the first time it generates the mesh and stops for the geometry spec; once
 ``geometry_spec.json`` exists, it stores the twin in ``data/kb``, exports ``twin.usdc`` (plus
 ``checks/spin.usdc`` and ``checks/quarter_turn.usdc`` for the Isaac Sim check) and writes
@@ -92,6 +94,14 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--front", choices=AXES, help="the generator axis the spindle faces")
     inspect.add_argument("--window", type=float, help="profile radius limit (model units)")
     inspect.add_argument(
+        "--yaw",
+        type=float,
+        default=0.0,
+        metavar="DEG",
+        help="where the machine's front points after --up/--front, from +x towards +y; the mesh "
+        "is turned back by it (corner photos: about 45; decision 0022)",
+    )
+    inspect.add_argument(
         "--circle-x",
         type=float,
         nargs="+",
@@ -123,8 +133,12 @@ def _inspect(args: argparse.Namespace) -> int:
         raise UsageError("give both --up and --front, or neither")
     if args.circle_x and args.up is None:
         raise UsageError("--circle-x needs --up and --front")
+    if args.yaw and args.up is None:
+        raise UsageError("--yaw needs --up and --front")
     out_dir = run_dir / ("inspect_oriented" if args.up else "inspect_raw")
-    inspection = inspect_mesh(mesh, out_dir, args.up, args.front, args.window, args.circle_x)
+    inspection = inspect_mesh(
+        mesh, out_dir, args.up, args.front, args.window, args.circle_x, args.yaw
+    )
     print(format_inspection(inspection))
     return 0
 

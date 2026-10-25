@@ -19,12 +19,21 @@ from .runs import (
     default_data_dir,
     sha256_of,
 )
-from .status import OPEN_STAGES, JobStep, RequestRecord, RunStatus, list_runs, run_status
+from .status import (
+    OPEN_STAGES,
+    JobPhoto,
+    JobStep,
+    RequestRecord,
+    RunStatus,
+    list_runs,
+    run_status,
+)
 
 __all__ = [
     "OPEN_STAGES",
     "REFERENCE_FILE",
     "SPEC_PARTS_FILE",
+    "JobPhoto",
     "JobStep",
     "RequestRecord",
     "RunFile",

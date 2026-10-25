@@ -4,7 +4,8 @@ The dashboard (through the API) and the agent's ``list_jobs`` tool both read job
 agree on a job's stage. A run folder is a job when it holds ``request.json``. The steps, and the
 file each one leaves (data/README.md):
 
-- photo: a machine photo in ``request.json`` (``add_input``, or an upload in the dashboard);
+- photo: machine photos in ``request.json`` (``add_input``, or an upload in the dashboard), each
+  with its view and use (decision 0022);
 - notes: ``reference_facts.json`` (``add_reference_source`` and the other note tools);
 - mesh: ``generator/run.json`` (``generate_geometry``);
 - spec: ``geometry_spec.json``, written once ``add_joint`` and ``set_scale`` are both done;
@@ -27,7 +28,7 @@ from pydantic import BaseModel, Field
 
 from moonwalkers.contracts.pipeline_result import InputType, JobResult, Source, TwinRecord
 from moonwalkers.kb import machine_key
-from moonwalkers.orchestrator import JobRequest
+from moonwalkers.orchestrator import JobRequest, PhotoUse, PhotoView
 from moonwalkers.pipelines.b.build import JOB_RESULT_SUFFIX, REQUEST_FILE, job_result_file
 from moonwalkers.pipelines.b.pipeline import GENERATOR_DIR, GENERATOR_RECORD, ReferenceFacts
 
@@ -59,6 +60,17 @@ class RequestRecord(BaseModel):
     result: JobResult | None
 
 
+class JobPhoto(BaseModel):
+    """One of the job's machine photos, with its view and use (decision 0022)."""
+
+    source: Source
+    view: PhotoView | None = Field(
+        description="where the camera stood, in the operator's words; None for a request's one "
+        "photo given no view, as in the PoC"
+    )
+    use: PhotoUse
+
+
 class RunStatus(BaseModel):
     """One job: a run folder and how far its steps have got."""
 
@@ -68,7 +80,8 @@ class RunStatus(BaseModel):
     job_id: str | None
     machine_key: str | None
     new_version: bool
-    photo: Source | None
+    photo: Source | None = Field(description="the first photo the generator gets, else the first")
+    photos: list[JobPhoto] = Field(default_factory=list, description="every machine photo")
     stage: Stage
     stage_label: str
     twin_id: str | None = Field(description="the twin this job built or reused")
@@ -120,16 +133,26 @@ def list_runs(ws: Workspace, machine: str | None = None) -> list[RunStatus]:
 def _status(ws: Workspace, run_dir: Path, where: dict[str, Any]) -> RunStatus:
     requests = [_request_record(run_dir, p) for p in _request_files(run_dir)]
     main, request = requests[0], ws.request(run_dir)
-    photo = next((s for s in request.sources if s.input_type == InputType.MACHINE_PHOTO), None)
+    photos = [
+        JobPhoto(
+            source=s,
+            view=request.photos[s.source_id].view if s.source_id in request.photos else None,
+            use=request.photos[s.source_id].use if s.source_id in request.photos else "generator",
+        )
+        for s in request.sources
+        if s.input_type == InputType.MACHINE_PHOTO
+    ]
+    fed = [p.source for p in photos if p.use == "generator"]
+    photo = next(iter(fed or [p.source for p in photos]), None)
     twin = _twin(run_dir / TWIN_RECORD)
     reused = main.result if main.result is not None and main.result.reused_existing else None
     spec = ws.spec_state(run_dir)
     steps = [
         JobStep(
             step="photo",
-            label="Photo added",
+            label="Photo added" if len(photos) < 2 else f"{len(photos)} photos added",
             done=photo is not None,
-            detail=photo.uri if photo else None,
+            detail=_photos_detail(photos),
         ),
         _notes_step(ws.reference(run_dir), built=twin is not None),
         _mesh_step(_read_json(run_dir / GENERATOR_DIR / GENERATOR_RECORD)),
@@ -158,12 +181,22 @@ def _status(ws: Workspace, run_dir: Path, where: dict[str, Any]) -> RunStatus:
         machine_key=main.machine_key,
         new_version=main.new_version,
         photo=photo,
+        photos=photos,
         stage=stage,
         stage_label=label,
         twin_id=twin_id,
         steps=steps,
         requests=requests,
     )
+
+
+def _photos_detail(photos: list[JobPhoto]) -> str | None:
+    """One photo's file; for several, the generator's views and how many are evidence."""
+    if len(photos) < 2:
+        return photos[0].source.uri if photos else None
+    fed = [p.view or "no view" for p in photos if p.use == "generator"]
+    evidence = len(photos) - len(fed)
+    return f"generator: {', '.join(fed) or 'none yet'}; evidence: {evidence}"
 
 
 def _request_files(run_dir: Path) -> list[Path]:

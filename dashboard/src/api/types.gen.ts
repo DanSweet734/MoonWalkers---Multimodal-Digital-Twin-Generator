@@ -94,6 +94,14 @@ export interface JobDetail {
   agent_prompt: string | null
 }
 
+/** One of the job's machine photos, with its view and use (decision 0022). */
+export interface JobPhoto {
+  source: Source
+  /** where the camera stood, in the operator's words; None for a request's one photo given no view, as in the PoC */
+  view: 'front' | 'operator_right' | 'back' | 'operator_left' | 'front_operator_left' | 'front_operator_right' | 'back_operator_right' | 'back_operator_left' | 'detail' | null
+  use: 'generator' | 'evidence'
+}
+
 /** Returned to the user/agent when a job finishes. */
 export interface JobResult {
   job_id: string
@@ -237,7 +245,10 @@ export interface RunStatus {
   job_id: string | null
   machine_key: string | null
   new_version: boolean
+  /** the first photo the generator gets, else the first */
   photo: Source | null
+  /** every machine photo */
+  photos?: JobPhoto[]
   stage: 'no_photo' | 'waiting_for_agent' | 'in_progress' | 'built' | 'reused' | 'unreadable'
   stage_label: string
   /** the twin this job built or reused */

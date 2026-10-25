@@ -74,7 +74,8 @@ class JobBrief(BaseModel):
     new_version: bool
     stage: str
     stage_label: str
-    photo: str | None = Field(description="the input photo, relative to the data folder")
+    photo: str | None = Field(description="the first input photo, relative to the data folder")
+    photos: int = Field(default=0, description="how many machine photos the request has")
     updated_at: datetime
     next_step: str
 
@@ -88,6 +89,10 @@ class SourceAdded(BaseModel):
     run: str
     source: Source
     inputs: list[str] = Field(default_factory=list, description="the request's input source ids")
+    generator_input: str | None = Field(
+        default=None,
+        description="for a machine photo: which model and slots the generator will use, so far",
+    )
 
 
 class ReferenceSummary(BaseModel):
@@ -108,6 +113,18 @@ class GenerationReport(BaseModel):
     seconds: float
     peak_vram_gb: float | None
     views: str = Field(description="PNG sheet: front, left, back / right, top, iso")
+    grid: str = Field(default="single", description="single (one photo), sides or corners")
+    photos: list[str] = Field(
+        default_factory=list, description="generator slot = source id (view), for each fed photo"
+    )
+    expected_turn_deg: float | None = Field(
+        default=None,
+        description="where the machine's front should point after orienting, from +x towards +y "
+        "(corners: +45); measure it with inspect_geometry and pass yaw_deg",
+    )
+    sides_guessed: list[str] | None = Field(
+        default=None, description="sides no fed photo shows (None: the one photo has no view)"
+    )
 
 
 class TipSlabReport(BaseModel):
@@ -150,6 +167,12 @@ class InspectionReport(BaseModel):
     axis_height_above_lowest: float | None
     window: float | None
     profile: list[ProfileSliceReport] = Field(description="about the axis in use")
+    yaw_deg: float = Field(default=0.0, description="the turn about +z applied after orienting")
+    footprint_deg: float | None = Field(
+        default=None,
+        description="the base footprint's long axis after that turn, from +x towards +y, up to a "
+        "multiple of 90 (None: round or square); near 0 or 90 once the mesh is square",
+    )
 
 
 class SpecStatus(BaseModel):

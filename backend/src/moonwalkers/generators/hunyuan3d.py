@@ -12,7 +12,9 @@ The loader looks in ``HY3DGEN_MODELS`` before downloading anything (hy3dgen/shap
 
 from __future__ import annotations
 
+import copy
 import os
+from collections.abc import Collection
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -47,15 +49,23 @@ class Hunyuan3DSettings:
         return "-mv" in self.subfolder
 
 
+# The multi-view model installed on 2026-10-22 (docs/setup/generators.md), with the same settings.
+MULTIVIEW_SETTINGS = Hunyuan3DSettings(
+    model_repo="tencent/Hunyuan3D-2mv", subfolder="hunyuan3d-dit-v2-mv"
+)
+
+
 @dataclass(frozen=True)
 class Hunyuan3DConfig:
-    """Where the generator environment and its weights are."""
+    """Where the generator environment and its weights are, and both models' settings: one photo
+    runs ``settings``, several run ``multiview_settings`` (decision 0022)."""
 
     python: Path
     models_dir: Path
     u2net_home: Path
     settings: Hunyuan3DSettings = Hunyuan3DSettings()
     timeout_s: float = 1800.0
+    multiview_settings: Hunyuan3DSettings = MULTIVIEW_SETTINGS
 
     @classmethod
     def under(cls, root: Path, settings: Hunyuan3DSettings | None = None) -> Hunyuan3DConfig:
@@ -77,12 +87,24 @@ class Hunyuan3DGenerator(ImageTo3DGenerator):
     def __init__(self, config: Hunyuan3DConfig, script: Path = DEFAULT_SCRIPT) -> None:
         self.config = config
         self.script = Path(script)
+        self.settings = config.settings  # the model this generator runs (see for_views)
 
     def fingerprint(self) -> dict[str, Any]:
-        return {"name": self.name, **asdict(self.config.settings)}
+        return {"name": self.name, **asdict(self.settings)}
+
+    def for_views(self, views: Collection[str]) -> Hunyuan3DGenerator:
+        """This generator with the single-image model for ``single``, else the multi-view one."""
+        wanted = (
+            self.config.settings if set(views) == {SINGLE_VIEW} else self.config.multiview_settings
+        )
+        if wanted == self.settings:
+            return self
+        chosen = copy.copy(self)  # keeps a subclass, such as the MCP server's unconfigured one
+        chosen.settings = wanted
+        return chosen
 
     def generate(self, request: GeneratorRequest) -> GeneratorRun:
-        settings = self.config.settings
+        settings = self.settings
         views = sorted(request.images)
         if settings.multiview:
             if not set(views) <= MULTIVIEW_KEYS:

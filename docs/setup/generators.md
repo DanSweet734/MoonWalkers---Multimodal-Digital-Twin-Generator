@@ -151,7 +151,11 @@ Daniel approved the download on 2026-10-22. It is the standard `hunyuan3d-dit-v2
   (https://huggingface.co/tencent/Hunyuan3D-2mv/raw/main/LICENSE, read 2026-10-22). Its model card
   links to Hunyuan3D-2's license file.
 - **Use:** `Hunyuan3DSettings(model_repo="tencent/Hunyuan3D-2mv", subfolder="hunyuan3d-dit-v2-mv")`,
-  with images named `front`, `left`, `back` and `right`.
+  with images named `front`, `left`, `back` and `right`. Since decision 0022 (2026-10-24) the
+  adapter carries both models (`Hunyuan3DConfig.multiview_settings`, the same settings as above)
+  and Pipeline B picks one per run: one photo, the single-image model; two to four, each with its
+  view, the multi-view model (`for_views`). People name views in the operator's words, and
+  `pipelines/b/photos.py` alone translates them to these names.
 - **First run (2026-10-22).** Our adapter, on example set 1 (`front`, `left`, `back`; scratch
   output, not a twin):
   - status "ok" in 58.5 s: loading the model took 13.1 s, generating 37.7 s, and clean-up 7.6 s;
@@ -184,5 +188,7 @@ what that means:
 - **Fewer views work:** the repository's own `examples/shape_gen_multiview.py` passes only `front`,
   `left` and `back`, and all 14 example sets have only those three. Our adapter accepts any subset
   of the four names (`generators/hunyuan3d.py`).
-- **Not yet tried:** corner views, such as the T33901 manual's two studio photos, which show the
-  machine from between two sides.
+- **Corner views, tried on 2026-10-24** (`docs/research/2026-10-24-several-photos-and-corner-views.md`):
+  given two corners 90° apart as a grid turned 45°, the multi-view model put the T33901's front
+  within 3.5° and 7.7° of where the photos imply. The single-image model, given one corner, turned
+  the machine square to an axis instead. Decision 0022 feeds corners as that grid.

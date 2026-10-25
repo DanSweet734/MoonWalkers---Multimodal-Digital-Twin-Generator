@@ -1,6 +1,7 @@
 """Pipeline B's command line: inspect a mesh, preview a spec, build and reuse a twin."""
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -57,6 +58,23 @@ def test_inspect_with_circle_x_uses_the_fitted_axis(generated, capsys) -> None:
     assert "axis in use, from the round circle fits" in out
     assert cli.main(["inspect", run_dir, "--circle-x", "1.2"]) == 1
     assert "--circle-x needs --up and --front" in capsys.readouterr().err
+
+
+def test_inspect_turns_the_mesh_by_yaw_and_reports_its_footprint(generated, capsys) -> None:
+    def footprint(out: str) -> tuple[float, float]:
+        found = re.search(r"turned by yaw_deg ([-+\d.]+); base footprint: ([-+\d.]+) deg", out)
+        assert found, out
+        return float(found[1]), float(found[2])
+
+    run_dir = str(generated.run_dir)
+    assert cli.main(["inspect", run_dir, "--up", "+y", "--front", "+z"]) == 0
+    yaw, angle = footprint(capsys.readouterr().out)
+    assert yaw == 0.0 and abs(angle - 90.0) < 1.0  # the indexer's 3-unit width along y
+    assert cli.main(["inspect", run_dir, "--up", "+y", "--front", "+z", "--yaw", "90"]) == 0
+    yaw, angle = footprint(capsys.readouterr().out)
+    assert yaw == 90.0 and abs(angle) < 1.0  # turned back by 90: the width along x
+    assert cli.main(["inspect", run_dir, "--yaw", "45"]) == 1
+    assert "--yaw needs --up and --front" in capsys.readouterr().err
 
 
 def test_preview_tries_the_spec_without_recording_it(

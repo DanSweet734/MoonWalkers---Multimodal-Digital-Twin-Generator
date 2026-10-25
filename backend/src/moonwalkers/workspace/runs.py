@@ -5,7 +5,7 @@ Every MCP tool and every API job works on one run folder,
 person can read each step and the command line works on the same folders:
 
 - ``request.json``: the ``JobRequest``, with the job id, the machine the agent named,
-  ``new_version``, and the input photo once added.
+  ``new_version``, and the input photos once added, each with its view and use (decision 0022).
 - ``reference_facts.json``: the ``ReferenceFacts`` the agent recorded from documents. The first
   reference source creates it.
 - ``geometry_spec.parts.json``: the joint and scale parts of the geometry spec, as the agent sets
@@ -28,9 +28,10 @@ from typing import Any
 from moonwalkers.clock import Clock, utc_now
 from moonwalkers.contracts.pipeline_result import Source
 from moonwalkers.kb import machine_key
-from moonwalkers.orchestrator import JobRequest, MachineHint
+from moonwalkers.orchestrator import InputPhoto, JobRequest, MachineHint
 from moonwalkers.pipelines.b.assemble import GeometrySpec
 from moonwalkers.pipelines.b.build import REQUEST_FILE
+from moonwalkers.pipelines.b.photos import check_photos
 from moonwalkers.pipelines.b.pipeline import (
     ASSEMBLY_RECORD,
     GENERATOR_DIR,
@@ -124,8 +125,15 @@ class Workspace:
     def request(self, run_dir: Path) -> JobRequest:
         return JobRequest.model_validate_json((run_dir / REQUEST_FILE).read_text(encoding="utf-8"))
 
-    def add_input(self, run_dir: Path, source: Source) -> JobRequest:
-        """Add an input source to the run's request."""
+    def add_input(
+        self, run_dir: Path, source: Source, photo: InputPhoto | None = None
+    ) -> JobRequest:
+        """Add an input source to the run's request, with a machine photo's view and use.
+
+        The run's photos are checked as a whole (decision 0022), so a second photo of a view the
+        generator already gets, or a photo without a view next to others, is refused before
+        anything is written.
+        """
         _require_unbuilt(run_dir)
         if (run_dir / GENERATOR_DIR / GENERATOR_RECORD).is_file():
             raise RunFolderConflict(
@@ -134,9 +142,13 @@ class Workspace:
         request = self.request(run_dir)
         if any(s.source_id == source.source_id for s in request.sources):
             raise WorkspaceError(f"the request already has a source {source.source_id!r}")
+        photos = dict(request.photos)
+        if photo is not None:
+            photos[source.source_id] = photo
         updated = JobRequest.model_validate(
-            {**request.model_dump(), "sources": [*request.sources, source]}
+            {**request.model_dump(), "sources": [*request.sources, source], "photos": photos}
         )
+        check_photos(updated.sources, updated.photos)
         _write_json(run_dir / REQUEST_FILE, updated.model_dump(mode="json"))
         return updated
 

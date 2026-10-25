@@ -7,6 +7,7 @@ runs along Y. ``orient`` brings a generator's mesh into this frame; the rest wor
 from __future__ import annotations
 
 import itertools
+import math
 import struct
 import zlib
 from collections.abc import Sequence
@@ -36,6 +37,10 @@ VIEWS: dict[str, tuple[tuple[float, float, float], tuple[float, float, float]]] 
     "iso": ((0.6, 0.5, 0.62), (0.0, 0.0, 1.0)),
 }
 SHEET_LAYOUT = (("front", "left", "back"), ("right", "top", "iso"))
+# The base footprint (decision 0022) [INFERENCE]: the lowest 6% of the height held the T33901
+# meshes' base plate, and a long axis under 1.1 times the short one is too round to tell a turn.
+BASE_BAND = 0.06
+FOOTPRINT_RATIO = 1.1
 
 
 def load_mesh(path: Path) -> trimesh.Trimesh:
@@ -46,15 +51,52 @@ def load_mesh(path: Path) -> trimesh.Trimesh:
     return mesh
 
 
-def orientation_matrix(up: str, front: str) -> np.ndarray:
-    """The rotation (3x3) that turns the mesh axis ``up`` into +Z and ``front`` into +X."""
+def orientation_matrix(up: str, front: str, yaw_deg: float = 0.0) -> np.ndarray:
+    """The rotation (3x3) that turns the mesh axis ``up`` into +Z and ``front`` into +X, then
+    turns the mesh about +Z by ``-yaw_deg``: a machine front that pointed ``yaw_deg`` from +X
+    towards +Y ends on +X (decision 0022, for photos that put the front between two axes)."""
     if up not in AXES or front not in AXES:
         raise ValueError(f"axes must be one of {sorted(AXES)}")
     z, x = np.array(AXES[up]), np.array(AXES[front])
     if abs(float(z @ x)) > 1e-9:
         raise ValueError(f"up ({up}) and front ({front}) must be perpendicular")
     y = np.cross(z, x)
-    return np.stack([x, y, z])  # rows: the new axes in old coordinates
+    axes = np.stack([x, y, z])  # rows: the new axes in old coordinates
+    if yaw_deg == 0.0:
+        return axes
+    turn = math.radians(-yaw_deg)
+    about_z = np.array(
+        [
+            [math.cos(turn), -math.sin(turn), 0.0],
+            [math.sin(turn), math.cos(turn), 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    return about_z @ axes
+
+
+def footprint_angle(
+    mesh: trimesh.Trimesh, band: float = BASE_BAND, samples: int = 100_000, seed: int = 0
+) -> float | None:
+    """The long axis of the mesh's base footprint, in degrees from +X towards +Y, in (-90, 90]:
+    the principal direction of the surface in the lowest ``band`` of its height. None when the
+    footprint has no long axis (round or square). It tells how far an upright mesh is turned
+    from the axes, up to a multiple of 90° (decision 0022)."""
+    points, _ = trimesh.sample.sample_surface(mesh, samples, seed=seed)
+    low, high = float(mesh.bounds[0][2]), float(mesh.bounds[1][2])
+    base = points[points[:, 2] <= low + band * (high - low)][:, :2]
+    if len(base) < 3:
+        return None
+    eigenvalues, eigenvectors = np.linalg.eigh(np.cov((base - base.mean(axis=0)).T))
+    if eigenvalues.min() <= 0 or math.sqrt(eigenvalues.max() / eigenvalues.min()) < FOOTPRINT_RATIO:
+        return None
+    major = eigenvectors[:, int(np.argmax(eigenvalues))]
+    angle = math.degrees(math.atan2(float(major[1]), float(major[0])))
+    if angle <= -90.0:
+        angle += 180.0
+    elif angle > 90.0:
+        angle -= 180.0
+    return round(angle, 1)
 
 
 def transformed(mesh: trimesh.Trimesh, matrix: np.ndarray) -> trimesh.Trimesh:

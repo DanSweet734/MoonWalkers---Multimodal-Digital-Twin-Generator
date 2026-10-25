@@ -90,6 +90,15 @@ combination of B-3 creates 790 RPM" (p. 30). Searched on 2026-10-24:
 - **Refused scripts (HTTP 403):** grizzly.com's product and parts pages (2026-10-22), J&B Tools'
   T33901 page, mowersatjacks.com, precisiontoolhouse.com, Home Depot's T33901 listing and
   toolguyd.com. Web searches for the chart, its speeds and its belt positions found no copy.
+- **A second round, after Daniel's review** (he had not found one either, and asked for an
+  independent search):
+  - searches for Amazon, eBay and Reddit posts, and for the chart's own values ("2860", "790",
+    "B-3"), found none;
+  - Leaseville's copy of the Home Depot listing
+    (https://www.leaseville.com/grizzly-industrial-14-in-12-speed-benchtop-drill-press-with-5-8-in-chuck-and-led-light-and-laser-guide.html)
+    carries only the main photo (`imageHD327863898.jpg`), not the cover-open one;
+  - Home Depot's listing blocks scripts. Getting past a site's bot check is not something we do,
+    so the larger copy of its cover-open photo stays a task for a person in a browser.
 - **What is left, by hand in a browser** (Daniel's call):
   - Home Depot's image viewer on the cover-open photo, which may serve it larger than 600 pixels;
   - the galleries of the T33901 and T33902 listings at Home Depot, Lowe's and Grizzly;
