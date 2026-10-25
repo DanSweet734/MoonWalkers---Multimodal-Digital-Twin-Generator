@@ -339,8 +339,8 @@ images, and the least guessing.
 
   | File | What it shows (as viewed on 2026-10-24) | From (`SOURCES.md`) |
   |---|---|---|
-  | `front_left.jpeg` | The whole machine, from the front-left corner (see the labels below) | Home Depot's T33901 listing |
-  | `front_right.png` | The whole machine, from the front-right corner: the handle hub, the table crank and the column rack | Home Depot's T33901 listing (re-saved from AVIF) |
+  | `front_operator_left.jpeg` (was `front_left.jpeg`) | The whole machine, from the front-left corner (see the labels below) | Home Depot's T33901 listing |
+  | `front_operator_right.png` (was `front_right.png`) | The whole machine, from the front-right corner: the handle hub, the table crank and the column rack | Home Depot's T33901 listing (re-saved from AVIF) |
   | `top_with_cover_removed.png` | The belt cover open: three stepped pulleys, two belts. The speed chart inside the lid shows, but is unreadable at this size | Home Depot's T33901 listing (re-saved from WebP) |
   | `Underneath_behind_quill.png` | Under the head: a round light, most likely the LED work light [INFERENCE], the laser's caution label, the chuck guard and the chuck | Lowe's T33901 listing (re-saved from AVIF) |
   | `table_top.png` | The table: four slots and a centre hole | A YouTube video of several Grizzly drill presses, its T33901 section |
@@ -368,6 +368,8 @@ images, and the least guessing.
     (`docs/setup/generators.md`).
   - So Daniel's "front_left" is the machine's own front-right corner, and "front_right" is its
     front-left corner, the handles' side.
+  - Renamed on 2026-10-24 to their views in decision 0022, which say whose left is meant:
+    `front_operator_left.jpeg` and `front_operator_right.png` (same bytes; Daniel allowed it).
 - **The belt chart:**
   - only "a belt combination of B-3 creates 790 RPM" is cited (p. 30);
   - the readable chart Daniel found is the T33904's (above). Research a readable copy of the
@@ -385,14 +387,14 @@ images, and the least guessing.
 
   (Oct 24, 2026: Daniel collected eight, with their origins, and re-saved the AVIF and WebP files
   as PNG (Hand-off, above). Still to do: the manual's photos)
-- [ ] Decision record 0022: several photos per run. It decides:
+- [x] Decision record 0022: several photos per run. It decides:
   - how each photo is labelled with the side it shows (Daniel's labels are the operator's view);
   - which photos feed the generator and which serve as evidence for the cuts, the joints and the
     size checks;
   - how `add_input`, `request.json` and the dashboard's upload take several photos;
   - how a run records what no photo shows, so that guesses are logged.
 
-  (Oct 24, 2026: `docs/decisions/0022-several-photos-per-run.md`, proposed, for Daniel's review)
+  (Oct 24, 2026: `docs/decisions/0022-several-photos-per-run.md`, accepted by Daniel as proposed)
 - [x] The multi-view generator (Hunyuan3D-2mv): installed, with its image order checked and one
       run on the repository's examples (Oct 22, 2026, on Daniel's approval;
       `docs/setup/generators.md`). `left` is the machine's own left. Three views are enough.

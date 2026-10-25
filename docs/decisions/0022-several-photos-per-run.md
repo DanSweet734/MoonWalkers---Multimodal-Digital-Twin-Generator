@@ -1,6 +1,8 @@
 # 0022 - Several photos per run
 
-- **Status:** proposed (by Claude Code in the drill-press plan's Phase 3, for Daniel's review)
+- **Status:** accepted (by Daniel, 2026-10-24: "I accept 0022 as proposed"). Proposed by Claude
+  Code in the drill-press plan's Phase 3. He also allowed the renaming of his two corner photos
+  and asked for an independent search for the belt chart.
 - **Date:** 2026-10-24
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0011 (the multi-view model now runs whenever a run feeds it two or more
@@ -80,7 +82,7 @@ Research for this record: `docs/research/2026-10-24-several-photos-and-corner-vi
    - (b) A fixed sentence, as now: wrong as soon as there is more than one photo.
 
 ## Decision
-1a, 2a, 3a, 4a, 5a and 6a. These are Claude Code's proposals.
+1a, 2a, 3a, 4a, 5a and 6a: Claude Code's proposals, accepted by Daniel as they stand.
 
 ### Views and uses
 | View | Where the camera stands (facing the machine's front is the operator's view) | Generator slot, sides grid | Generator slot, corners grid |
@@ -104,8 +106,8 @@ Research for this record: `docs/research/2026-10-24-several-photos-and-corner-vi
   `detail`).
 - **Daniel's file names may change to these views** (he allowed it on 2026-10-24):
   `front_left.jpeg` becomes `front_operator_left.jpeg`, and `front_right.png` becomes
-  `front_operator_right.png`. Same bytes; `SOURCES.md` keeps the old name in its note. Done after
-  this record is accepted.
+  `front_operator_right.png`. Same bytes; `SOURCES.md` keeps the old name in its note. Done on
+  2026-10-24, after this record was accepted.
 
 ### The rules a run's photos must meet
 Checked by `add_input` as each photo is added, and again by Pipeline B, with a message that
