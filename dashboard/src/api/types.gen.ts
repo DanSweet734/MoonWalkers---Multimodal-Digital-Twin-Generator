@@ -23,10 +23,15 @@ export interface ApiStatus {
 export interface Body_create_job_api_jobs_post {
   manufacturer: string
   model: string
-  photo: string
-  /** where the photo came from: a URL, or who took it, where and when */
-  origin: string
-  license_note?: string | null
+  photo: string[]
+  /** where each photo came from, in the photos' order: a URL, or who took it, where and when */
+  origin: string[]
+  /** each photo's view, in the operator's words (decision 0022); needed when there are several photos: front, operator_right, back, operator_left, front_operator_left, front_operator_right, back_operator_right, back_operator_left, detail */
+  view?: string[] | null
+  /** each photo's use: generator or evidence (default from its view) */
+  use?: string[] | null
+  /** one note for every photo, or one per photo; blank for none */
+  license_note?: string[] | null
   new_version?: boolean
 }
 

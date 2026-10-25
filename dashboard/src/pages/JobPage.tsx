@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { api } from '../api/client.ts'
 import type { JobDetail, Source } from '../api/types.gen.ts'
 import { ErrorNote, Loading, Section, StageBadge } from '../components/common.tsx'
-import { FileList, Gallery, Photo } from '../components/media.tsx'
+import { FileList, Gallery, Photo, PhotoList } from '../components/media.tsx'
 import { ControlList, FactsTable, IdentityBlock, IssueList } from '../components/notes.tsx'
 import { fileUrl, formatTime, isOpen } from '../lib/format.ts'
 import { useApi } from '../lib/hooks.ts'
@@ -82,7 +82,11 @@ function JobView({ detail, error }: { detail: JobDetail; error: string | undefin
         </p>
       </Section>
 
-      {job.photo ? (
+      {job.photos && job.photos.length > 1 ? (
+        <Section title={`Photos (${job.photos.length})`}>
+          <PhotoList photos={job.photos} />
+        </Section>
+      ) : job.photo ? (
         <Section title="Photo">
           <Photo photo={job.photo} />
         </Section>
