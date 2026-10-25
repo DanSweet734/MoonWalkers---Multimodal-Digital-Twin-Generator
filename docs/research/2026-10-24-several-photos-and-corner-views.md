@@ -107,6 +107,36 @@ combination of B-3 creates 790 RPM" (p. 30). Searched on 2026-10-24:
   - Grizzly's technical support, or the label as a replacement part.
 
   Until then, only B-3 = 790 RPM is cited, and pulley diameters are not confirmed.
+- **Could the sister model fill the gap?** (Daniel asked, after reviewing PR #19.) Tested with a
+  scratch script, on numbers already cited:
+  - **The T33904's values cannot be used.** Its B-3 is 610 RPM where the T33901's is 790 (p. 30),
+    and only 340 of its twelve speeds is in the T33901's list (p. 9).
+  - **The physics fits.** A three-pulley press runs at motor speed x (motor-idler ratio, by
+    number) x (idler-spindle ratio, by letter). The T33904's real chart fits that two-ratio
+    model to 0.73% rms (worst 1.60%) [INFERENCE: the model is ours; the numbers are the chart's].
+  - **The T33904's order does carry over.** Rank the T33904's twelve positions by speed, and give
+    the T33901's twelve cited speeds the same ranks. B-3 lands on 790, the one entry the manual
+    gives: a real check, which a random placement passes 1 time in 12. That placement fits the
+    model to 0.61% rms, as well as the real chart does:
+
+    | | 4 | 3 | 2 | 1 |
+    |---|---|---|---|---|
+    | A | 340 | 530 | 740 | - |
+    | B | 500 | **790** (cited) | - | 1680 |
+    | C | 660 | - | 1420 | 2200 |
+    | D | - | 1380 | 1860 | 2860 |
+
+  - **But it is not unique.** Of the 504 placements that keep the T33904's order along each letter
+    and number, 96 put 790 on B-3. One other fits exactly as well (0.61%): the same grid with
+    letters and numbers swapped (A for 4, B for 3, C for 2, D for 1). The speeds cannot tell the
+    two apart, and B-3 sits on the line they share. They agree on 4 positions (A-4 340, B-3 790,
+    C-2 1420, D-1 2860) and differ on the other 8. The next placements fit to 1.02%, not far from
+    the real chart's own 0.73%.
+  - **What it rests on** [INFERENCE]: the T33901 uses the same 12 of the 16 belt combinations as
+    the T33904, and in the same order. Its pulley diameters are not cited anywhere.
+  - **What the twin needs.** Level 3 asks for "a speed chosen from the twelve cited settings"
+    (plan, success levels): all twelve speeds are cited. Only the belt position that gives each
+    speed is unknown, and only a person changing belts on a real machine would use it.
 
 ## 4. The T33901's mesh (later the same day, after decision 0022 was accepted)
 Run `data/machines/grizzly-t33901/runs/2026-10-24_run-001`, made through the new code (the

@@ -98,7 +98,9 @@ Research for this record: `docs/research/2026-10-24-several-photos-and-corner-vi
 | `detail` | a close-up or part of the machine | never fed | never fed |
 
 - **The corners grid's front is the front corner on the operator's left.** That is a fixed rule
-  so a run can be repeated; E3 used it [INFERENCE: two runs do not show it is better].
+  so a run can be repeated; E3 used it [INFERENCE: two runs do not show it is better]. Daniel
+  left it to Claude Code's judgement after reviewing PR #19 (2026-10-24), and it is kept: E3 came
+  closer to its expected turn (+48.5° against +45°) than E4 (-37.3° against -45°).
 - **The expected turn** of the machine's front, after orienting (+Z up, the generator's front as
   +X): 0° for sides, +45° (towards the generator's `left`) for corners. It is recorded, not
   assumed: the agent measures the turn and writes it in the spec.
