@@ -191,6 +191,71 @@ def write_png(path: Path, image: np.ndarray) -> None:
     Path(path).write_bytes(png + chunk(b"IEND", b""))
 
 
+PNG_CHANNELS = {0: 1, 2: 3, 4: 2, 6: 4}  # colour type: grey, RGB, grey and alpha, RGBA
+
+
+def read_png(path: Path) -> np.ndarray:
+    """An 8-bit, non-interlaced PNG as an H x W x C uint8 array (C = 1, 2, 3 or 4 channels), using
+    only the standard library: the backend has no image library. It undoes the five row filters
+    of the PNG specification (https://www.w3.org/TR/png-3/, "Filtering")."""
+    data = Path(path).read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"{path} is not a PNG")
+    header, compressed, pos = None, [], 8
+    while pos < len(data):
+        length, kind = struct.unpack(">I4s", data[pos : pos + 8])
+        body = data[pos + 8 : pos + 8 + length]
+        if kind == b"IHDR":
+            header = struct.unpack(">IIBBBBB", body)
+        elif kind == b"IDAT":
+            compressed.append(body)
+        elif kind == b"IEND":
+            break
+        pos += 12 + length
+    if header is None:
+        raise ValueError(f"{path} has no header")
+    width, height, depth, colour, _, _, interlace = header
+    channels = PNG_CHANNELS.get(colour)
+    if depth != 8 or channels is None or interlace:
+        raise ValueError("read_png reads 8-bit, non-interlaced grey, RGB and RGBA PNGs")
+    stride = width * channels
+    raw = np.frombuffer(zlib.decompress(b"".join(compressed)), dtype=np.uint8)
+    raw = raw.reshape(height, 1 + stride)
+    image = np.zeros((height, stride), dtype=np.uint8)
+    above = np.zeros(stride, dtype=np.int64)
+    for y in range(height):
+        kind, line = int(raw[y, 0]), raw[y, 1:].astype(np.int64)
+        if kind == 0:
+            row = line
+        elif kind == 1:  # Sub: a running sum along the row, per channel
+            row = np.cumsum(line.reshape(width, channels), axis=0).reshape(-1) % 256
+        elif kind == 2:  # Up
+            row = (line + above) % 256
+        elif kind in (3, 4):  # Average, Paeth: each byte needs the one before it
+            row = np.array(_unfilter(kind, line.tolist(), above.tolist(), channels))
+        else:
+            raise ValueError(f"unknown PNG filter {kind}")
+        image[y] = row
+        above = row.astype(np.int64)
+    return image.reshape(height, width, channels)
+
+
+def _unfilter(kind: int, line: list[int], above: list[int], step: int) -> list[int]:
+    row = [0] * len(line)
+    for i, value in enumerate(line):
+        a = row[i - step] if i >= step else 0
+        b = above[i]
+        c = above[i - step] if i >= step else 0
+        if kind == 3:
+            row[i] = (value + (a + b) // 2) % 256
+            continue
+        p = a + b - c
+        pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+        nearest = a if pa <= pb and pa <= pc else b if pb <= pc else c
+        row[i] = (value + nearest) % 256
+    return row
+
+
 # ------------------------------------------------------------------------------------ measure
 @dataclass(frozen=True)
 class ProfileSlice:
@@ -426,3 +491,23 @@ def _faces(mesh: trimesh.Trimesh, mask: np.ndarray) -> trimesh.Trimesh:
     part = mesh.submesh([np.flatnonzero(mask)], append=True)
     part.remove_unreferenced_vertices()
     return part
+
+
+def face_groups(mesh: trimesh.Trimesh, join: np.ndarray | None = None) -> np.ndarray:
+    """A group number per face (0, 1, ...): faces reach each other across shared edges, using
+    only the ``mesh.face_adjacency`` pairs where ``join`` is true (all of them by default).
+
+    Union-find in numpy (hooking and pointer jumping), since the backend has no graph library.
+    """
+    pairs = mesh.face_adjacency if join is None else mesh.face_adjacency[np.asarray(join)]
+    label = np.arange(len(mesh.faces))
+    while True:
+        a, b = label[pairs[:, 0]], label[pairs[:, 1]]
+        hooked = label.copy()
+        np.minimum.at(hooked, a, np.minimum(a, b))
+        np.minimum.at(hooked, b, np.minimum(a, b))
+        while not np.array_equal(hooked, hooked[hooked]):
+            hooked = hooked[hooked]
+        if np.array_equal(hooked, label):
+            return np.unique(label, return_inverse=True)[1]
+        label = hooked
