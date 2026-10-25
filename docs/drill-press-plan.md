@@ -452,6 +452,24 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     The corner photos left the front turned +49.1° (decision 0022).
   - **Guessed:** the back. The front and both sides were seen only at an angle, from the two front
     corners. The tip-slab warnings are expected: the base is the front-most part.
+  - **Which way it faces once squared** (checked in the Phase 3 chat; easy to get mirrored):
+    - +X is the machine's front;
+    - +Y is the machine's own left, which is the operator's right: the side with the handle hub
+      (Fig. 3) and the table crank (Fig. 6). The handles reach out to +Y;
+    - +Z is up.
+
+    In the inspection's `views.png`, the "left" panel is the camera at +Y, so it shows the
+    handles' side (`mesh_tools.VIEWS`). The footprint angle alone cannot tell front from back:
+    +49.1° was chosen because the base reaches forward of the column, and corners give about +45°.
+  - **Squared bounds, in model units:** min (-0.6620, -0.2962, -1.0002), max (+0.5812, +0.4698,
+    +0.9949); extents 1.2431 deep, 0.7660 wide, 1.9950 tall. The data sheet's 15 x 25-1/2 x 39 in
+    (p. 8) fit those proportions within 5%. No scale is set yet: that is Phase 5 (decision 0024).
+  - **`MESH.md` is in `data/`, which is not in git.** The same facts are in
+    `docs/research/2026-10-24-several-photos-and-corner-views.md`, section 4.
+  - **The run shows as an open job,** "In progress: mesh generated" with next step "reading
+    notes", in `list_jobs` and the dashboard. That is expected. Phase 4 cuts copies of the mesh in
+    scratch folders and builds nothing; whether Phase 5 continues this run or starts a new one is
+    Phase 5's call (its photos are fixed now that its mesh exists).
 - **Evidence for the cuts:** 22 photos in the run's `request.json`, use `evidence`. The figures
   that show moving parts are:
   - Figs. 3 and 4: the head's two sides, the handle hub, the depth stop and the spring housing;
@@ -474,6 +492,23 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
   size (CLAUDE.md rule 3), and runs in its own environment, as the generators do.
 - **The MCP server** has Phase 3's tools: Daniel restarted it on 2026-10-24. The T33901's machine
   key is `grizzly/t33901` whatever the manufacturer's spelling (decision 0009's alias).
+  - A running server keeps the tools it started with. After changing the server's code, ask
+    Daniel to restart it (`/mcp`, or a new session) before testing through it.
+  - Until then, scripts can call the same code directly (`Workspace`, `PipelineB`), as Phase 3
+    did for run-001.
+- **Tools and gotchas from Phase 3:**
+  - **The manual's figures:** the photos are in `inputs/photos/manual/`, the embedded JPEGs
+    unchanged. The exploded view (p. 48) is vector art: render it with pypdfium2
+    (`page.render(scale, grayscale=True)`) and save it with `mesh_tools.write_png`. `write_png`
+    takes only a greyscale H x W uint8 array. How it was done on 2026-10-22:
+    `docs/research/2026-10-22-t33901-handle-ratio-and-figures.md`.
+  - **The Read tool** shows PNG and JPEG, not PDF.
+  - **The Phase 3 chat's scratch scripts are gone** (they lived in that session's scratch folder):
+    the corner experiments, the photo extraction, the T33901 run, and the dashboard check in
+    headless Edge. Their methods are in the worklog of 2026-10-24 and in the research note.
+- **Housekeeping:**
+  - PR #19's branch `feat/phase-3-several-photos` was kept: Daniel did not ask to delete it.
+  - Phase 3's deadline (before Monday, 2026-10-26) was met. Daniel has not given one for Phase 4.
 - [ ] **Test meshes:**
   - the box-and-cylinder drill press as one mesh, so the right part is known for every face. It is
     the easy case [INFERENCE: a generated mesh fuses its parts into one surface; this one does
