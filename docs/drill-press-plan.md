@@ -11,9 +11,9 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4 is next,
-with its hand-off below. Stop at the end of each phase, open a pull request, and wait for review before
-starting the next. The HA5C stays the reference twin: every
+**Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4's spike
+is done and waits for review (2026-10-24; decision 0023 proposed). Stop at the end of each phase,
+open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
@@ -509,12 +509,16 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
 - **Housekeeping:**
   - PR #19's branch `feat/phase-3-several-photos` was kept: Daniel did not ask to delete it.
   - Phase 3's deadline (before Monday, 2026-10-26) was met. Daniel has not given one for Phase 4.
-- [ ] **Test meshes:**
+- [x] **Test meshes:**
   - the box-and-cylinder drill press as one mesh, so the right part is known for every face. It is
     the easy case [INFERENCE: a generated mesh fuses its parts into one surface; this one does
     not];
   - the generated T33901 mesh from Phase 3, judged against the manual's photos.
-- [ ] **Methods:**
+
+  (Oct 24, 2026: `pipelines/b/synthetic_parts.py` builds the drill press separate, as here, and
+  also fused into one surface and rounded, since the separate build scores every method that
+  looks at the mesh's own shape at 1.000)
+- [x] **Methods:**
   - (a) several cuts in the geometry spec: an ordered list of shapes (cylinder, box, plane) per
     part, where the first match wins. It extends decision 0012 and needs no install;
   - (b) splitting by the mesh's own shape (sharp edges, thin necks, separate pieces). It needs no
@@ -525,13 +529,23 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     its license and size, and runs in its own environment, as the generators do;
   - (d) marking the parts on the photos and carrying the marks onto the mesh. Several photos make
     this less of a guess [INFERENCE: not researched].
-- [ ] **Measures:**
+
+  (Oct 24, 2026: (a), (b) and (d) built and run with `python -m moonwalkers.pipelines.b.part_spike`;
+  (c) researched only, by Daniel's choice: P3-SAM and PartField, with their licences and sizes)
+- [x] **Measures:**
   - the share of faces put in the right part (synthetic mesh);
   - open edges and seams;
   - time taken;
   - installs and licenses;
   - whether the result can be cited and reviewed.
-- [ ] Research note; decision record 0023; worklog; PR
+
+  (Oct 24, 2026: on the rounded synthetic mesh, (a) 0.996 of the area in the right part, (b)
+  0.733-0.923, (d) 0.947 with perfect marks from two front corners. On the T33901, (a) cut eight
+  parts in five passes; the mesh is one piece for (b); the two photos were placed on it with a
+  silhouette IoU of 0.80 for (d). Research note, section 6)
+- [x] Research note (`docs/research/2026-10-24-part-cutting-spike.md`); decision record 0023
+      (proposed: (a) cuts, with (d)'s camera fit drawing the cuts over the photos for review);
+      worklog; PR
 
 ## Phase 5 - Pipeline B builds several parts and joints (levels 1 and 2)
 - [ ] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
@@ -551,6 +565,16 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
 - [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
+  - Decision 0023 (proposed, Phase 4) makes the cuts an ordered cut list (`part_cuts`), each
+    shape with a note naming its evidence. The spike's T33901 list (`part_spike.T33901_CUTS`)
+    is a draft to start from.
+  - The inspection gains what the spike did by hand: circle fits along any axis, coloured views
+    of the parts, each part's pieces, and the cuts drawn over each fed photo.
+  - Logged for this phase (research note of 2026-10-24, section 4):
+    - the chuck hidden in its solid guard, and the rack smoothed into the column: candidates
+      for labelled stand-ins;
+    - the depth stop's fused ring, the handle fused to the wall, and the crank pointing back;
+    - spindle to column 5-6% short.
 - [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
 - [ ] Size checks against every cited dimension: width, depth, height, spindle to column, spindle

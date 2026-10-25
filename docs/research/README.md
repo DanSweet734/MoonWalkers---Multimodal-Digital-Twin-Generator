@@ -34,5 +34,10 @@
   candidate locks and springs, starting positions, pushing parts by hand, and what both validators
   said about the exported files.
 
+- `2026-10-24-part-cutting-spike.md` - drill-press plan, Phase 4: four ways to cut one generated
+  mesh into moving parts (shape cut lists, the mesh's own shape, learned segmenters, marks on
+  photos), scored on a labelled synthetic drill press and judged on the T33901's mesh; P3-SAM's
+  and PartField's licences and sizes; the T33901 mesh's errors that no cut can fix.
+
 Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
 Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.
