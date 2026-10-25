@@ -228,7 +228,7 @@ def test_machine_named_in_the_request_wins(orchestrator: Orchestrator, document_
     hint = MachineHint(manufacturer="Grizzly Industrial", model="T33901")
     job = orchestrator.run_job(JobRequest(job_id="job-1", sources=document_inputs, machine=hint))
 
-    assert job.twin.machine_key == "grizzly-industrial/t33901"
+    assert job.twin.machine_key == "grizzly/t33901"  # "Grizzly Industrial" takes the alias
     assert "(named in the request)" in job.twin.notes
     assert "Pipeline A said haas/ha5c" in job.twin.notes
 

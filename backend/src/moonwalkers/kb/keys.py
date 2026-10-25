@@ -16,8 +16,14 @@ LEGAL_SUFFIXES = frozenset(
 )
 
 # Short manufacturer names the project uses in keys and folder names (for example "haas/ha5c" in
-# the contract's JobResult example and "haas-ha5c" in data/README.md). Add entries deliberately.
-MANUFACTURER_ALIASES: dict[str, str] = {"haas-automation": "haas"}
+# the contract's JobResult example and "haas-ha5c" in data/README.md). Add entries deliberately,
+# with the source of the short name (decision 0009):
+# - "Grizzly Industrial, Inc." (T33901 manual, p. 1) is "Grizzly" on its machines: the "GRIZZLY
+#   LOGO LABEL" (part 201, manual p. 54). Data folder grizzly-t33901 (Daniel, 2026-10-24).
+MANUFACTURER_ALIASES: dict[str, str] = {
+    "haas-automation": "haas",
+    "grizzly-industrial": "grizzly",
+}
 
 MACHINE_KEY_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+")
 

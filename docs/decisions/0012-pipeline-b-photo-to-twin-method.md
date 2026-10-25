@@ -5,6 +5,7 @@
 - **Date:** 2026-10-17
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0010 (twins with generated meshes are written as binary `.usdc`)
+- **Amended by:** decision 0022 (several photos per run; the geometry spec's `yaw_deg`)
 
 ## Context
 The generator (decision 0011) returns one closed mesh with no joints, no scale and its own axes

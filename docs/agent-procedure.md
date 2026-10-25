@@ -1,9 +1,9 @@
 # Agent procedure: building a twin with the MoonWalkers tools
 
 This guide is for an AI agent (in the PoC, Claude Code; decision 0003) that is connected to the
-project's `moonwalkers` MCP server (decision 0013). It turns one machine photo into a functional
-digital twin: a body and a spindle on a revolute joint, scaled, with every fact cited. A person then
-reviews the twin. Each step below names the tool to use. The tools' own descriptions give their
+project's `moonwalkers` MCP server (decision 0013). It turns machine photos (one, or several with
+their views, decision 0022) into a functional digital twin: a body and a spindle on a revolute
+joint, scaled, with every fact cited. A person then reviews the twin. Each step below names the tool to use. The tools' own descriptions give their
 arguments.
 
 ## Rules
@@ -51,16 +51,16 @@ the job is done. Otherwise the job waits for you:
 1. **`list_jobs()`** shows open jobs, with each one's `run`, `stage` and `next_step`. The person
    may also name the run, for example "Build the twin for the dashboard job
    machines/haas-ha5c/runs/2026-10-19_run-001".
-2. **The job already has its request and photo.** The request names the machine and says whether
-   a new version was asked for. So skip `start_run` and `add_input`, and start at step 3 with that
-   `run`.
+2. **The job already has its request and photos.** The request names the machine, says whether
+   a new version was asked for, and gives each photo's view and use when there are several. So
+   skip `start_run` and `add_input`, and start at step 3 with that `run`.
 3. **The photo's provenance** is the uploader's text, in the source's title (ending "(uploaded
    through the dashboard)"), and its line in `SOURCES.md`. If the photo is unclear, or its
    provenance is missing, ask the person before building.
 4. **Carry on with steps 3 to 6.** The job's page in the dashboard shows each step as you take
    it.
 
-## 2. Start a run and add the photo
+## 2. Start a run and add the photos
 1. **The inputs must already be in the data folder,** under `data/machines/<machine>/inputs/`,
    each with a line in that folder's `SOURCES.md` (URL, date retrieved, SHA-256, license note;
    `data/README.md`). If one is missing, tell the person; downloading files is outside these
@@ -72,10 +72,28 @@ the job is done. Otherwise the job waits for you:
      in a browser. Files the page links to, such as layout drawings on another host, may still
      download normally.
 2. `start_run(manufacturer, model, new_version)` returns `run`, which every other tool takes.
-3. `add_input(run, path, source_id, title, retrieved_at, license_note)` adds the photo:
+3. `add_input(run, path, source_id, title, retrieved_at, license_note, view, use)` adds a photo:
    - the path is relative to the data folder;
    - put the photo's original URL in the title;
    - take `retrieved_at` and the license note from `SOURCES.md`.
+4. **Several photos: give each its view** (decision 0022). The view says where the camera stood,
+   in the **operator's** words, facing the machine's front: `front`, `back`, `operator_left`,
+   `operator_right`, the corners `front_operator_left`, `front_operator_right`,
+   `back_operator_left` and `back_operator_right`, or `detail` for a close-up.
+   - **Read the view from the photo, and check it against the manual.** Manuals name sides as the
+     operator does: the T33901's "Right headstock components" (p. 6) is `operator_right`. Find a
+     part whose side the manual states (a handle, a crank, a switch) and see which side of the
+     image it is on.
+   - **Never use the generator's `left` and `right`:** they are the machine's own sides, the
+     reverse. The platform translates, in one place (`pipelines/b/photos.py`).
+   - **`use`:** the generator gets whole-machine views by default (`generator`). It takes one photo
+     per view, and all sides or all corners, so mark extra photos `evidence`, such as a second
+     photo of a view, or a greyscale copy. A `detail` is always evidence: it stays in the job for
+     the reviewer and for later steps (cuts, joints, size checks).
+   - **One photo** may leave the view out, as in the PoC. Two or more each need one.
+   - `add_input` checks the photos as a whole each time, and its `generator_input` says which
+     model and slots the generator will use. A refused photo changes nothing.
+   - **A nameplate or a motor plate** is a reference source (`add_reference_source`), not an input.
 
    Documents (manuals, catalogues, drawings) are not inputs while their pipeline, A, C or D, is
    not in: `add_input` refuses them (decision 0021). Read them yourself, and cite them in step 3.
@@ -127,10 +145,22 @@ the job is done. Otherwise the job waits for you:
 
 ## 4. Generate and inspect the geometry
 1. **`generate_geometry(run)`.** It takes about a minute on the GPU the first time, and reuses the
-   run's mesh after that. Open the returned views PNG with your Read tool.
+   run's mesh after that. One photo runs the single-image model, two to four the multi-view model.
+   Open the returned views PNG with your Read tool. Its report gives the `grid` (single, sides or
+   corners), each photo's slot, `sides_guessed` and `expected_turn_deg`.
 2. **Decide the axes from the views:** which generator axis points up, and which one the spindle
    nose faces.
-3. **`inspect_geometry(run, up, front)`.** Open its views, then check:
+3. **Corner photos turn the mesh.** The multi-view model takes corners as a grid turned 45°, so
+   the machine's front points about +45° from +x, towards +y (measured: +48.5° on the T33901).
+   A single photo from a corner can also come out turned. Measure the turn:
+   - call `inspect_geometry(run, up, front)` and read `footprint_deg`, the base footprint's long
+     axis, and the top view;
+   - choose `yaw_deg`, where the machine's front points, from that angle (up to a multiple of 90°)
+     and from `expected_turn_deg`;
+   - call `inspect_geometry` again with `yaw_deg`. Once square, `footprint_deg` is near 0 or 90,
+     and the front view shows the machine's front. Pass the same `yaw_deg` to `add_joint`, and say
+     in its `method` how you measured it.
+4. **`inspect_geometry(run, up, front, yaw_deg)`.** Open its views, then check:
    - **`warnings` first.** They say when the tip slabs measured something other than the spindle.
    - **`tip_slabs`:** centres that agree across depths mean the tip is a round nose; that gives the
      spindle axis (y, z). The slabs start at the mesh's front-most point, so they find the spindle
@@ -147,11 +177,13 @@ the job is done. Otherwise the job waits for you:
    - **`profile`:** along +x it shows the body's front face (`r_max` jumps to the window), any
      flange or disc in front of it, and the nose.
    - **The base:** the lowest point should be a flat base, not a foot or a stray bit of mesh.
-4. **What turns?** If the documents do not say which front parts move with the spindle (a nose
+5. **What turns?** If the documents do not say which front parts move with the spindle (a nose
    only, or a flange too), say so, and ask the person to choose.
 
 ## 5. Define the joint and the scale
-1. **`add_joint(run, up, front, spindle_axis_yz, spindle_radius, spindle_start_x, method)`.**
+1. **`add_joint(run, up, front, spindle_axis_yz, spindle_radius, spindle_start_x, method,
+   yaw_deg)`.**
+   - `yaw_deg` is the one you inspected with (0 unless the mesh came out turned).
    - `spindle_axis_yz` is the inspection's `axis_yz`: from the slabs, or from the circle fits.
    - `spindle_radius` lies between the moving part's radius and the radius of whatever stays put.
    - `spindle_start_x` sits just in front of the face the moving part starts from.
@@ -195,7 +227,9 @@ Tool errors say what is wrong. The common ones:
 | "the geometry spec is not complete" | Call both `add_joint` and `set_scale` |
 | "already built its twin" / "already assembled" / "already generated" | The run folder is fixed: start a new run (`new_version=true` for a rebuild) |
 | "the image-to-3D generator is not configured" | The person must set `MOONWALKERS_GEN_ROOT` for the server |
-| "Pipeline B (PoC) takes exactly one machine photo" | Add exactly one photo with `add_input` |
+| "no photo for the generator" | Add a whole-machine photo with use `generator` |
+| "have no view" | With several photos, give each its `view` (start a new run if one was added without) |
+| "both show ..." / "mix sides and corners" | The generator takes one photo per view, sides or corners: add the extra photo with use `evidence` |
 | "Pipeline D (...) ... is not in yet" (or A, C) | The document's pipeline is not in yet: cite it with `add_reference_source` and record its facts with `add_fact` |
 
 Claude Code asks the person before each tool call unless they allow the tool. Only

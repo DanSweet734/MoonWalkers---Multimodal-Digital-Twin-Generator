@@ -1,7 +1,7 @@
 # Running the API and the dashboard (Phase 5)
 
-The dashboard is a web page for people: upload a machine photo, follow the job, and look at a twin
-with its sources and reviews. The API behind it (`moonwalkers.api`, decision 0014) works on the
+The dashboard is a web page for people: upload machine photos (one, or several with where each was
+taken, decision 0022), follow the job, and look at a twin with its sources and reviews. The API behind it (`moonwalkers.api`, decision 0014) works on the
 same `data/` folder as the agent's MCP server. Both run only on this computer.
 
 Prerequisites: the backend synced (`uv sync` in `backend/`) and the dashboard's packages installed
@@ -79,6 +79,24 @@ Then, in the dashboard:
    one.
 5. **Refusals.** Try uploading a PDF (pick "All files" in the file dialog): "the photo must be a
    JPEG or PNG image".
+6. **Several photos (decision 0022).** Start a job: manufacturer `Grizzly`, model `T33901`, and
+   choose four files from `data/machines/grizzly-t33901/inputs/photos/`: `front_operator_left.jpeg`,
+   `front_operator_right.png`, `table_top.png` and
+   `manual/manual_p05_studio_front-operator-left.jpg`.
+   - One row per photo appears, with a preview and a sketch of where to stand. Until each photo
+     has a view, the form says "With several photos, say where you stood for each one." and
+     "Start job" stays disabled.
+   - Choose the views: front-left corner, front-right corner, a close-up, and front-left corner
+     again. The form says two photos are both "Front-left corner (your left)": set the manual's
+     one to "Kept as evidence".
+   - Give the first photo its origin and use "Use this origin for every photo", then correct the
+     others. The form now says the 3D model "sees the front, right and left of the machine. It
+     guesses the back".
+   - Start the job. Its page lists **Photos (4)**: the two corners "Used to make the 3D model",
+     the other two "Kept as evidence", and the first step says "4 photos added".
+
+   Checked this way on 2026-10-24, with a script driving headless Edge on a scratch data folder
+   (worklog of that day).
 
 Delete the copy afterwards: `Remove-Item "$env:TEMP\mw-data-try" -Recurse`.
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -64,3 +64,8 @@ class ImageTo3DGenerator(ABC):
     def fingerprint(self) -> dict[str, Any]:
         """The name and every setting that shapes the output, as JSON values. An earlier mesh is
         reused only for the same images and the same fingerprint."""
+
+    def for_views(self, views: Collection[str]) -> ImageTo3DGenerator:
+        """The generator to use for these view names: an adapter with a single-image and a
+        multi-view model returns the one they need (decision 0022). By default, itself."""
+        return self

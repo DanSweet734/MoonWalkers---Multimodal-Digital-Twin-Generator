@@ -57,11 +57,14 @@ from moonwalkers.kb import (
     validate_machine_key,
 )
 from moonwalkers.orchestrator import (
+    InputPhoto,
     JobRequest,
     MachineHint,
     NoInputsError,
     Orchestrator,
     OrchestratorError,
+    PhotoUse,
+    PhotoView,
 )
 from moonwalkers.orchestrator.router import ROUTES
 from moonwalkers.pipelines import OWNERS, Pipeline, default_pipelines
@@ -69,6 +72,7 @@ from moonwalkers.pipelines.b.assemble import AxisName
 from moonwalkers.pipelines.b.build import REQUEST_FILE, build_run
 from moonwalkers.pipelines.b.inspection import inspect_mesh, preview_parts
 from moonwalkers.pipelines.b.mesh_tools import CircleFit, load_mesh, render_views
+from moonwalkers.pipelines.b.photos import PhotoPlan, check_photos
 from moonwalkers.pipelines.b.pipeline import (
     GENERATOR_DIR,
     GENERATOR_RECORD,
@@ -114,10 +118,11 @@ from .reports import (
 
 SERVER_NAME = "moonwalkers"
 INSTRUCTIONS = """\
-MoonWalkers platform (proof of concept): build a functional digital twin of a machine from one
-photo, with every fact cited. Follow docs/agent-procedure.md. The usual order is:
+MoonWalkers platform: build a functional digital twin of a machine from its photos, with every
+fact cited. Follow docs/agent-procedure.md. The usual order is:
 - check_knowledge_base; then request_twin if a twin exists and no rebuild was asked for;
-- start_run, then add_input (the photo). A photo uploaded in the dashboard is already a job:
+- start_run, then add_input for each machine photo, with its view in the operator's words when
+  there are several (decision 0022). Photos uploaded in the dashboard are already a job:
   list_jobs finds it, and you continue it from add_reference_source;
 - add_reference_source, identify_machine, add_fact and add_control (cited reading notes);
 - generate_geometry, then inspect_geometry (open the PNG views it returns);
@@ -138,7 +143,7 @@ EXPECTED_ERRORS: tuple[type[BaseException], ...] = (
 )
 # What an open job does next, by the first step it has not done (moonwalkers.workspace.status).
 NEXT_STEPS = {
-    "photo": "add_input with the machine photo",
+    "photo": "add_input with the machine photos (each with its view)",
     "notes": "the cited reading notes: add_reference_source, identify_machine, add_fact",
     "mesh": "generate_geometry, then inspect_geometry",
     "spec": "add_joint and set_scale",
@@ -204,6 +209,7 @@ def create_server(
             stage=status.stage,
             stage_label=status.stage_label,
             photo=status.photo.uri if status.photo else None,
+            photos=len(status.photos),
             updated_at=status.updated_at,
             next_step=next_step,
         )
@@ -386,14 +392,31 @@ def create_server(
         retrieved_at: datetime | None = None,
         license_note: str | None = None,
         input_type: InputType = InputType.MACHINE_PHOTO,
+        view: PhotoView | None = None,
+        use: PhotoUse | None = None,
     ) -> SourceAdded:
-        """Add an input file to the run's request: for Pipeline B, exactly one machine photo.
-        The path is relative to the data folder (save inputs under
+        """Add an input file to the run's request: machine photos for Pipeline B (decision
+        0022). The path is relative to the data folder (save inputs under
         machines/<machine>/inputs/ and list them in SOURCES.md first). The title should say
         where the file came from, for example the original URL. retrieved_at is when it was
-        downloaded (defaults to now). Its SHA-256 is recorded. A document goes to Pipeline A, C
-        or D by its input type, and is refused while that pipeline is not in (decision 0021)."""
+        downloaded (defaults to now). Its SHA-256 is recorded.
+        - view: where the camera stood, in the OPERATOR's words (facing the machine's front):
+          front, back, operator_left, operator_right, the corners front_operator_left,
+          front_operator_right, back_operator_left, back_operator_right, or detail (a close-up).
+          Manuals use the same words ("right headstock" = operator_right). Needed for every
+          photo once a run has two or more; one photo alone may leave it out, as in the PoC.
+        - use: generator (default for a whole-machine view) or evidence (kept for the cuts,
+          joints, size checks and the reviewer; the only use for detail). The generator takes
+          one photo per view, all sides or all corners; mark extra photos evidence.
+        A nameplate or a motor plate is a reference source (add_reference_source), not an input.
+        A document goes to Pipeline A, C or D by its input type, and is refused while that
+        pipeline is not in (decision 0021)."""
         with guarded():
+            if input_type != InputType.MACHINE_PHOTO and (view or use):
+                raise WorkspaceError("view and use are for machine photos only")
+            if use is not None and view is None:
+                raise WorkspaceError("give the photo's view along with its use")
+            photo = InputPhoto(view=view, use=use) if view is not None else None
             pipeline = ROUTES[input_type]
             if pipeline != PipelineId.B and pipeline not in available:
                 raise WorkspaceError(
@@ -413,9 +436,14 @@ def create_server(
                 retrieved_at=when(retrieved_at),
                 license_note=license_note,
             )
-            request = ws.add_input(run_dir, source)
+            request = ws.add_input(run_dir, source, photo)
+            is_photo = input_type == InputType.MACHINE_PHOTO
+            plan = check_photos(request.sources, request.photos) if is_photo else None
             return SourceAdded(
-                run=run, source=source, inputs=[s.source_id for s in request.sources]
+                run=run,
+                source=source,
+                inputs=[s.source_id for s in request.sources],
+                generator_input=generator_input(plan) if is_photo else None,
             )
 
     # -------------------------------------------------------------------- reading notes
@@ -599,16 +627,22 @@ def create_server(
     # ---------------------------------------------------------------------------- geometry
     @server.tool(annotations=LOCAL_WRITE)
     def generate_geometry(run: str) -> GenerationReport:
-        """Turn the run's photo into a mesh with the image-to-3D generator (about a minute on
-        the GPU), or reuse the mesh this run already made. Renders six views of it; open the
-        PNG to see how the generator's axes sit before calling inspect_geometry."""
+        """Turn the run's photos into a mesh with the image-to-3D generator (about a minute on
+        the GPU), or reuse the mesh this run already made. One photo runs the single-image
+        model; two to four (each with a view) run the multi-view model. Renders six views of
+        it; open the PNG to see how the generator's axes sit before calling inspect_geometry.
+        Corner photos make a mesh turned about 45 deg (expected_turn_deg): measure the turn
+        with inspect_geometry and pass it as yaw_deg there and to add_joint."""
         with guarded():
             run_dir = ws.run_dir(run)
             reused = (run_dir / GENERATOR_DIR / GENERATOR_RECORD).is_file()
-            pipeline = PipelineB(generator_factory(), data_dir, run_dir)
-            generated = pipeline.generate(ws.request(run_dir).sources)
+            request = ws.request(run_dir)
+            pipeline = PipelineB(generator_factory(), data_dir, run_dir, photos=request.photos)
+            plan = pipeline.plan(request.sources)
+            generated = pipeline.generate(request.sources)
             mesh = load_mesh(generated.mesh_path)
             views = render_views(mesh, run_dir / INSPECT_DIR)["sheet"]
+            sides = plan.sides()
             return GenerationReport(
                 run=run,
                 mesh_file=ws.relative(generated.mesh_path),
@@ -618,6 +652,10 @@ def create_server(
                 seconds=generated.seconds,
                 peak_vram_gb=generated.peak_vram_gb,
                 views=str(views),
+                grid=plan.grid,
+                photos=[f"{f.slot} = {f.source.source_id} ({f.view})" for f in plan.fed],
+                expected_turn_deg=plan.expected_turn_deg,
+                sides_guessed=None if sides is None else list(sides[2]),
             )
 
     @server.tool(annotations=LOCAL_WRITE)
@@ -627,10 +665,15 @@ def create_server(
         front: AxisName,
         window: float | None = None,
         circle_x: list[float] | None = None,
+        yaw_deg: float = 0.0,
     ) -> InspectionReport:
         """Orient the generated mesh (the generator axis that points up, and the one the spindle
-        faces) and measure it in twin axes: x front, y left, z up, in model units. Read
-        `warnings` first.
+        faces) and measure it in twin axes: x front, y left (the machine's own left), z up, in
+        model units. Read `warnings` first.
+        - yaw_deg: where the machine's front points after orienting, from +x towards +y; the
+          mesh is turned back by it. Corner photos put it near +45 (generate_geometry's
+          expected_turn_deg). footprint_deg, the base footprint's long axis, is near 0 or 90
+          once the mesh is square; check the views too, since it cannot tell front from back.
         - tip_slabs: the axis (y, z) from thin slabs behind the mesh's front-most point. Right
           only if the spindle is the front-most part (a nose, as on the HA5C).
         - circle_scan: a circle fitted to the surface in slices over the front of the mesh;
@@ -644,7 +687,13 @@ def create_server(
         with guarded():
             run_dir = ws.run_dir(run)
             result = inspect_mesh(
-                generated_mesh(run_dir), run_dir / "inspect_oriented", up, front, window, circle_x
+                generated_mesh(run_dir),
+                run_dir / "inspect_oriented",
+                up,
+                front,
+                window,
+                circle_x,
+                yaw_deg,
             )
             lowest = result.bounds[0][2]
             return InspectionReport(
@@ -676,7 +725,16 @@ def create_server(
                     ProfileSliceReport(x=s.t, r_max=s.radius, samples=s.count)
                     for s in result.profile
                 ],
+                yaw_deg=result.yaw_deg,
+                footprint_deg=result.footprint_deg,
             )
+
+    def generator_input(plan: PhotoPlan | None) -> str:
+        if plan is None:
+            return "no photo for the generator yet"
+        model = "single-image model" if plan.grid == "single" else f"multi-view model, {plan.grid}"
+        fed = ", ".join(f"{f.slot} = {f.source.source_id}" for f in plan.fed)
+        return f"{model}: {fed}; evidence: {len(plan.evidence)} photo(s)"
 
     def circle_report(fit: CircleFit) -> CircleFitReport:
         return CircleFitReport(
@@ -716,8 +774,10 @@ def create_server(
         spindle_start_x: float,
         method: str,
         decided_by: str = "Claude Code (agent)",
+        yaw_deg: float = 0.0,
     ) -> SpecStatus:
-        """Define the spindle joint, in the model units of inspect_geometry (after orienting).
+        """Define the spindle joint, in the model units of inspect_geometry (after orienting,
+        and after turning by yaw_deg, the value inspect_geometry was given).
         The spindle part is every face within spindle_radius of the axis through
         (y, z) = spindle_axis_yz and in front of x = spindle_start_x, where the joint sits.
         The joint turns about +x. `method` says how you chose these values (cite the
@@ -733,6 +793,7 @@ def create_server(
                     "spindle_axis_yz": list(spindle_axis_yz),
                     "spindle_radius": spindle_radius,
                     "spindle_start_x": spindle_start_x,
+                    "yaw_deg": yaw_deg,
                     "decided_by": decided_by,
                     "method": method,
                 },

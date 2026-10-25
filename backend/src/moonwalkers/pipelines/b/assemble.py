@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, PositiveFloat
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat
 
 from .mesh_tools import load_mesh, orientation_matrix, split_by_cylinder, transformed
 
@@ -33,6 +33,9 @@ class GeometrySpec(BaseModel):
     spindle_radius: PositiveFloat  # faces within this distance of the axis ...
     spindle_start_x: float  # ... and in front of this plane form the spindle; the joint sits here
     base_z: float | None = None  # the base plane; default: the mesh's lowest point
+    # Where the machine's front points after up and front, from +X towards +Y; the mesh is turned
+    # back by it, so photos that put the front between two axes (corners) can be squared (0022).
+    yaw_deg: float = Field(default=0.0, ge=-180.0, le=180.0)
     center_height_m: PositiveFloat  # known spindle-axis height above the base (scale reference)
     decided_by: str
     method: str
@@ -54,7 +57,7 @@ class AssembledParts:
 
 def assemble(raw_mesh: Path, spec: GeometrySpec, out_dir: Path) -> AssembledParts:
     """Write ``body.glb`` and ``spindle.glb`` (twin frame, metres) into ``out_dir``."""
-    mesh = transformed(load_mesh(raw_mesh), orientation_matrix(spec.up, spec.front))
+    mesh = transformed(load_mesh(raw_mesh), orientation_matrix(spec.up, spec.front, spec.yaw_deg))
     base_z = spec.base_z if spec.base_z is not None else float(mesh.bounds[0][2])
     axis_y, axis_z = spec.spindle_axis_yz
     height_model = axis_z - base_z

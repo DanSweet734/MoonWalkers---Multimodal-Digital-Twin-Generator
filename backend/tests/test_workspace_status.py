@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from moonwalkers.contracts.pipeline_result import JobResult, Source, TwinRecord
+from moonwalkers.orchestrator import InputPhoto
 from moonwalkers.workspace import Workspace, list_runs, run_status
 
 JOINT = {
@@ -91,6 +92,29 @@ def test_a_job_moves_through_its_steps(ws: Workspace, photo_run, fixed_time) -> 
     status = run_status(ws, run_dir)
     assert (status.stage, status.twin_id) == ("built", built.twin_id)
     assert status.requests[0].result == job and status.steps[5].detail == built.twin_id
+
+
+def test_a_job_lists_its_photos_with_their_views(ws: Workspace, photo_run) -> None:
+    run_dir = ws.start_run("MoonWalkers", "Test Indexer")
+    table = photo_run.photo.model_copy(update={"source_id": "src-table"})
+    ws.add_input(run_dir, table, InputPhoto(view="detail"))  # type: ignore[call-arg]
+    status = run_status(ws, run_dir)
+    assert status is not None and status.photo is not None  # evidence only: still a photo
+    assert status.steps[0].label == "Photo added"
+    ws.add_input(run_dir, photo_run.photo, InputPhoto(view="front_operator_left"))  # type: ignore[call-arg]
+
+    status = run_status(ws, run_dir)
+    assert status is not None
+    assert [(p.source.source_id, p.view, p.use) for p in status.photos] == [
+        ("src-table", "detail", "evidence"),
+        ("src-photo", "front_operator_left", "generator"),
+    ]
+    assert status.photo is not None and status.photo.source_id == "src-photo"  # the fed one
+    step = status.steps[0]
+    assert (step.label, step.detail) == (
+        "2 photos added",
+        "generator: front_operator_left; evidence: 1",
+    )
 
 
 def test_a_reused_job_and_extra_request_files(ws: Workspace, photo_run, fixed_time) -> None:

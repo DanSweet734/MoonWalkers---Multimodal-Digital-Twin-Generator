@@ -1,5 +1,6 @@
-import type { RunFile, Source } from '../api/types.gen.ts'
+import type { JobPhoto, RunFile, Source } from '../api/types.gen.ts'
 import { fileUrl } from '../lib/format.ts'
+import { photoUseText, viewText } from '../lib/views.ts'
 
 /** Rendered views and screenshots; each opens full size in a new tab. */
 export function Gallery({ images }: { images: RunFile[] }) {
@@ -32,6 +33,34 @@ export function Photo({ photo }: { photo: Source }) {
         {photo.license_note ? ` · ${photo.license_note}` : ''}
       </figcaption>
     </figure>
+  )
+}
+
+/** A job's photos with where each was taken and what it is used for (decision 0022): those
+ * the 3D generator gets first, then the evidence. */
+export function PhotoList({ photos }: { photos: JobPhoto[] }) {
+  const ordered = [
+    ...photos.filter((p) => p.use === 'generator'),
+    ...photos.filter((p) => p.use === 'evidence'),
+  ]
+  return (
+    <ul className="gallery">
+      {ordered.map(({ source, view, use }) => (
+        <li key={source.source_id}>
+          <figure>
+            <a href={fileUrl(source.uri)} target="_blank" rel="noreferrer">
+              <img src={fileUrl(source.uri)} alt={source.title ?? 'An input photo'} loading="lazy" />
+            </a>
+            <figcaption>
+              <strong>{viewText(view)}</strong> · {photoUseText(use)}
+              <br />
+              {source.title ?? source.uri}
+              {source.license_note ? ` · ${source.license_note}` : ''}
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
   )
 }
 

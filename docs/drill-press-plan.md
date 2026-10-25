@@ -11,14 +11,19 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 2 are done (PRs #15, #16, #18); Phase 3 is next, with
-its hand-off below. Stop at the end of each phase, open a pull request, and wait for review before
+**Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4 is next,
+with its hand-off below. Stop at the end of each phase, open a pull request, and wait for review before
 starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
 least amount of guessing. While working on that goal stand ins may be used." Every stand-in (a
 part, a ratio, a value) is labelled as such in the twin and logged as an inaccuracy.
+
+**Stand-ins, refined (Daniel, Oct 24, 2026):** a stand-in where the detail is visible in the twin
+or needed for it to work; left out where it is hidden and unused. For example, the T33901's belt
+positions sit under the closed belt cover, which the twin has no way to open, so they are left out.
+On a machine whose belts show, they would get a labelled stand-in.
 
 ## Decided on review (Oct 22, 2026)
 | Question | Answer |
@@ -332,17 +337,21 @@ images, and the least guessing.
     for gets its own record.
   - `add_input` refuses a document whose pipeline (A, C or D) is not in. Decision 0022 keeps that
     rule while it lets several photos in.
-- **Daniel's photos** (2026-10-24), in `data/machines/grizzly-t33901/inputs/photos/`:
+- **Daniel's photos** (2026-10-24), in `data/machines/grizzly-t33901/inputs/photos/`. Each has a
+  line in `inputs/SOURCES.md` with its origin and SHA-256. That file's photo section is the record,
+  and supersedes what an earlier version of this hand-off said. Daniel re-saved the AVIF and WebP
+  files as PNG and replaced the originals, and recorded every origin.
 
-  | File | What it shows (as viewed on 2026-10-24) |
-  |---|---|
-  | `front_left.jpeg` | The whole machine, from the front-left corner (see the labels below) |
-  | `front_right.jpeg` | The front-right corner. An AVIF file (below) |
-  | `Underneath_behind_quill.jpeg` | Under the head, behind the quill, "some kind of opening" (Daniel). An AVIF file |
-  | `table_top.png` | The table: four slots and a centre hole |
-  | `motor_sticker.png` | The motor's plate: "3/4HP", "120V", "60Hz", "7.5A", pole "4", phase "1", R.P.M. "1720", class "B" |
-  | `top_with_cover_removed.png` | The belt cover open: three stepped pulleys, two belts. The speed chart inside the lid shows, but is unreadable at this size |
-  | `spindle_speeds.png` | The manual's own "Figure 30. Drill bit speed chart (RPMs)" (PDF p. 29) |
+  | File | What it shows (as viewed on 2026-10-24) | From (`SOURCES.md`) |
+  |---|---|---|
+  | `front_operator_left.jpeg` (was `front_left.jpeg`) | The whole machine, from the front-left corner (see the labels below) | Home Depot's T33901 listing |
+  | `front_operator_right.png` (was `front_right.png`) | The whole machine, from the front-right corner: the handle hub, the table crank and the column rack | Home Depot's T33901 listing (re-saved from AVIF) |
+  | `top_with_cover_removed.png` | The belt cover open: three stepped pulleys, two belts. The speed chart inside the lid shows, but is unreadable at this size | Home Depot's T33901 listing (re-saved from WebP) |
+  | `Underneath_behind_quill.png` | Under the head: a round light, most likely the LED work light [INFERENCE], the laser's caution label, the chuck guard and the chuck | Lowe's T33901 listing (re-saved from AVIF) |
+  | `table_top.png` | The table: four slots and a centre hole | A YouTube video of several Grizzly drill presses, its T33901 section |
+  | `motor_sticker.png` | The motor's plate: "3/4HP", "120V", "60Hz", "7.5A", pole "4", phase "1", R.P.M. "1720", class "B" | The same video |
+  | `spindle_speeds.png` | The manual's own "Figure 30. Drill bit speed chart (RPMs)" (PDF p. 29) | The manual |
+  | `spindle_speed_chart.jpg` | **The T33904's** belt chart, readable. Not the T33901's (below) | J&B Tools' T33904 page |
 
   - **The motor plate agrees with the manual:** the data sheet (p. 8: "3/4 HP", "1720 RPM"),
     p. 15 ("7.5 Amps"), and the machine's label (p. 54: "Motor: 3/4 HP, 120V, 1-Phase, 60 Hz
@@ -350,29 +359,30 @@ images, and the least guessing.
   - **`spindle_speeds.png` is not the belt chart.** It gives speeds by bit and material, not which
     belt positions give which speed. It is useful for control logic (Phase 6), not as a
     substitute.
+  - **`spindle_speed_chart.jpg` is the T33904's, not the T33901's.** The label on its head reads
+    "MODEL T33904 20" FLOOR DRILL PRESS w/LED LIGHT & LASER GUIDE". Its B-3 gives 610 RPM where
+    the T33901's gives 790 (p. 30), and only 340 of its twelve speeds is in the T33901's list
+    (p. 9), so its values do not apply. It shows the chart's format: belt positions lettered A-D
+    and numbered 1-4, which the T33901 likely shares [INFERENCE: from "B-3" on p. 30].
 - **The labels name sides as Daniel sees the machine, facing its front** (the operator's view).
-  - Checked on `front_left.jpeg`: the handles and the switch, on the operator's right (manual,
-    pp. 6-7), are on the image's right, and the motor's side shows.
+  - Checked on `front_left.jpeg`: the handles, on the operator's right (manual, pp. 6-7), reach
+    out on the image's right, and the motor's side shows.
+  - The switch is on the head's front face ("Figure 1. Power controls.", p. 6), not on its right
+    side, as an earlier version of this hand-off said (corrected on 2026-10-24, Phase 3).
   - The generator's `left` is the machine's own left, which is the operator's right
     (`docs/setup/generators.md`).
   - So Daniel's "front_left" is the machine's own front-right corner, and "front_right" is its
     front-left corner, the handles' side.
-- **Two files are AVIF images named `.jpeg`:** `front_right.jpeg` and
-  `Underneath_behind_quill.jpeg`, with an "ftyp avif" header.
-  - The backend has no image library that reads AVIF (no Pillow), and the Read tool cannot show
-    them.
-  - Convert them first: Daniel re-saves them as PNG, or ask him before installing anything (rule
-    3). Keep the originals.
-- **`SOURCES.md` has no origin for six of the photos yet.** Their lines say "origin URL not
-  recorded". Ask Daniel for each page's URL; on 2026-10-23 he named listings at Home Depot and
-  Lowe's.
+  - Renamed on 2026-10-24 to their views in decision 0022, which say whose left is meant:
+    `front_operator_left.jpeg` and `front_operator_right.png` (same bytes; Daniel allowed it).
 - **The belt chart:**
   - only "a belt combination of B-3 creates 790 RPM" is cited (p. 30);
-  - research a readable copy before guessing, from other photos, videos or Q&A pages;
+  - the readable chart Daniel found is the T33904's (above). Research a readable copy of the
+    T33901's own before guessing, from other photos, videos or Q&A pages;
   - pulley diameters are not confirmed anywhere yet.
 
 ### Items
-- [ ] Collect T33901 photos into `inputs/`, logging each in `SOURCES.md`:
+- [x] Collect T33901 photos into `inputs/`, logging each in `SOURCES.md`:
   - the manual's own: two studio photos of the whole machine (p. 5) and close-ups of the head,
     the hub, the depth stop and the table (pp. 6-7, 31-32, 36). They are copyrighted and for
     internal research only (`SOURCES.md`). Extract them with pypdfium2;
@@ -380,34 +390,90 @@ images, and the least guessing.
     Lowe's;
   - others from public sources, with their URLs.
 
-  (Oct 24, 2026: Daniel collected seven (Hand-off, above). Still to do: their origins in
-  `SOURCES.md`, the AVIF conversion, and the manual's photos)
-- [ ] Decision record 0022: several photos per run. It decides:
+  (Oct 24, 2026: Daniel collected eight, with their origins, and re-saved the AVIF and WebP files
+  as PNG (Hand-off, above). The same day, 19 of the manual's photos were extracted unchanged with
+  pypdfium2 into `inputs/photos/manual/`: the two studio photos (p. 5) and the figures of pp. 6-7,
+  30-32 and 36. Figure 2 is the same image as Figure 33, so it is kept once. Daniel's two corner
+  photos were renamed to their views, `front_operator_left.jpeg` and `front_operator_right.png`)
+- [x] Decision record 0022: several photos per run. It decides:
   - how each photo is labelled with the side it shows (Daniel's labels are the operator's view);
   - which photos feed the generator and which serve as evidence for the cuts, the joints and the
     size checks;
   - how `add_input`, `request.json` and the dashboard's upload take several photos;
   - how a run records what no photo shows, so that guesses are logged.
+
+  (Oct 24, 2026: `docs/decisions/0022-several-photos-per-run.md`, accepted by Daniel as proposed)
 - [x] The multi-view generator (Hunyuan3D-2mv): installed, with its image order checked and one
       run on the repository's examples (Oct 22, 2026, on Daniel's approval;
       `docs/setup/generators.md`). `left` is the machine's own left. Three views are enough.
-- [ ] Try corner views, such as the manual's two studio photos and Daniel's front corners, which no
+- [x] Try corner views, such as the manual's two studio photos and Daniel's front corners, which no
       example uses
+      (Oct 24, 2026: four scratch runs on Daniel's two front corners. The multi-view model keeps
+      them as a grid turned 45°; the single-image model turns the machine square to an axis.
+      `docs/research/2026-10-24-several-photos-and-corner-views.md`, section 2)
 - [ ] The belt-speed label under the belt cover, and a full stroke of the handles, are worth a
       photo each if any source has one: they would replace a guess (the eleven missing speeds) and
       a stand-in (the handle ratio)
-      (Oct 24, 2026: `top_with_cover_removed.png` shows the label, unreadable. Research a readable
-      copy)
-- [ ] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
+      (Oct 24, 2026: `top_with_cover_removed.png` shows the label, unreadable. The readable chart
+      Daniel found is the T33904's, which does not apply. Researched the same day: no readable
+      copy of the T33901's or the T33902's is reachable by script, and the manual's own photo of
+      the lid is smaller still. What is left by hand: research note, section 3)
+- [x] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
       several photos. The HA5C's one-photo runs still build, and documents stay refused while
       their pipeline is not in (decision 0021)
-- [ ] **Second:** generate the T33901 mesh from the best input there is, and record which sides it
+      (Oct 24, 2026: the request's `photos` map, `pipelines/b/photos.py`, both models in the
+      adapter, `yaw_deg` and the footprint angle, `add_input`'s `view` and `use`, the job status's
+      photos. The four HA5C and TH240 run folders with a mesh still reuse it, unchanged. 34 new
+      backend tests)
+- [x] **Second:** generate the T33901 mesh from the best input there is, and record which sides it
       had to guess
-- [ ] **Last:** the dashboard's upload takes several photos
-- [ ] Worklog; PR
+      (Oct 24, 2026: run `grizzly-t33901/runs/2026-10-24_run-001`, the two colour corners on the
+      multi-view model, 22 photos as evidence. Guessed: the back. Front turned +49.1°, squared with
+      `--yaw 49.1`; proportions within 5% of the data sheet. Its `MESH.md` and the research note,
+      section 4. It is Phase 4's test mesh)
+- [x] **Last:** the dashboard's upload takes several photos
+      (Oct 24, 2026: each photo with its view, use and origin, checked before anything is saved;
+      the job page lists them. 8 new API tests and 6 dashboard tests. Checked in the real app on
+      a scratch data folder, `docs/setup/dashboard.md`, section 3, step 6)
+- [x] Worklog; PR
+      (Oct 24, 2026: worklog 2026-10-24; branch `feat/phase-3-several-photos`, PR #19. Still open: the
+      belt chart, above)
 
 ## Phase 4 - A spike on cutting a model into parts
 Time-boxed to one session. It compares ways to cut one mesh into several parts.
+
+### Hand-off (2026-10-24, from the Phase 3 chat)
+- **Start** from `main` after PR #19, on branch `feat/phase-4-part-cutting-spike` (created from
+  `main` the same day). Phase 4 starts in a new chat.
+- **The T33901 mesh:** `data/machines/grizzly-t33901/runs/2026-10-24_run-001/generator/mesh.glb`
+  (40,000 faces, watertight; generator axes +Y up, +Z front). Its `MESH.md` says how it was made.
+  - **To see it square:** `uv run python -m moonwalkers.pipelines.b inspect
+    ../data/machines/grizzly-t33901/runs/2026-10-24_run-001 --up +y --front +z --yaw 49.1`.
+    The corner photos left the front turned +49.1° (decision 0022).
+  - **Guessed:** the back. The front and both sides were seen only at an angle, from the two front
+    corners. The tip-slab warnings are expected: the base is the front-most part.
+- **Evidence for the cuts:** 22 photos in the run's `request.json`, use `evidence`. The figures
+  that show moving parts are:
+  - Figs. 3 and 4: the head's two sides, the handle hub, the depth stop and the spring housing;
+  - Fig. 35: the depth stop;
+  - Figs. 36-38: the table's chain (height crank, pivot lock, height lock, tilt scale, column
+    rack, tilt bolt);
+  - Figs. 46 and 48: the quill lowered, and the racks.
+
+  The parts and their order come from the exploded view (p. 48) and the parts list (pp. 49-50),
+  summarised in "What the manual gives", above.
+- **The synthetic test mesh:** the Phase 1 box-and-cylinder drill press
+  (`moonwalkers.usd.primitive_drill_press`) has the same parts as separate primitives. Fused into
+  one mesh, with each face labelled by its part, it gives the score for each method.
+- **Daniel's directions to keep:**
+  - the least guessing;
+  - no moving part is cut from the back, which the generator guessed;
+  - stand-ins only where visible or needed, and the rest left out (the rule at the top of this
+    plan).
+- **Installs:** method (c), a learned model, needs Daniel's approval first, with its license and
+  size (CLAUDE.md rule 3), and runs in its own environment, as the generators do.
+- **The MCP server** has Phase 3's tools: Daniel restarted it on 2026-10-24. The T33901's machine
+  key is `grizzly/t33901` whatever the manufacturer's spelling (decision 0009's alias).
 - [ ] **Test meshes:**
   - the box-and-cylinder drill press as one mesh, so the right part is known for every face. It is
     the easy case [INFERENCE: a generated mesh fuses its parts into one surface; this one does
@@ -443,9 +509,11 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
       several photos, cited dimensions can also check one another. Then how the cited 108 lb is
       split between the parts, or whether the placeholder density stays (decision 0010).
-- [ ] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
+- [x] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
       (`kb/keys.py`), but the data folder is `grizzly-t33901`. Add a `grizzly` alias, with the
       source of the short name (decision 0009).
+      (Oct 24, 2026: done early, in Phase 3's PR #19, on Daniel's word. Both names now give
+      `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
 - [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
 - [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
@@ -462,7 +530,13 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     only with the key in and the switch up (p. 6);
   - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9). Only one belt
     arrangement is cited ("B-3 creates 790 RPM", p. 30). The rest are on the label under the belt
-    cover, so they stay unknown until a photo of it is found;
+    cover, so they stay unknown until a photo of it is found.
+    - **Decided by Daniel (2026-10-24, review of PR #19): belt positions are left out** of the
+      T33901's twin. They are under the closed belt cover, and the twin has no way to open it. The
+      control offers the twelve cited speeds, and only B-3 = 790 RPM names its belt position.
+      Where belts are visible, on another machine, a labelled stand-in would be used (the rule
+      at the top of this plan). The T33904's order carried over, with its ambiguity, is in the
+      research note of 2026-10-24, section 3, if it is ever needed;
   - the operator's drilling stroke as a program that drives the quill, as decision 0016's
     programs drive a joint.
 

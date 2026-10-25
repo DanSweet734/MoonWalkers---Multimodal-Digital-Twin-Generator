@@ -11,16 +11,32 @@ from .orchestrator import (
     TwinNotFoundError,
     UnidentifiedMachineError,
 )
+from .photos import (
+    CORNER_VIEWS,
+    DETAIL,
+    SIDE_VIEWS,
+    VIEWS,
+    InputPhoto,
+    PhotoUse,
+    PhotoView,
+)
 from .router import ROUTES, route
 
 __all__ = [
+    "CORNER_VIEWS",
+    "DETAIL",
     "ROUTES",
+    "SIDE_VIEWS",
+    "VIEWS",
     "Exporter",
+    "InputPhoto",
     "JobRequest",
     "MachineHint",
     "NoInputsError",
     "Orchestrator",
     "OrchestratorError",
+    "PhotoUse",
+    "PhotoView",
     "PipelineUnavailableError",
     "TwinNotFoundError",
     "UnidentifiedMachineError",

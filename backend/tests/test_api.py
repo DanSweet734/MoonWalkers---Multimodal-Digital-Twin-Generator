@@ -369,3 +369,84 @@ def test_the_built_dashboard_is_served_with_a_content_security_policy(
     assert page.headers["x-frame-options"] == "DENY"
     assert client.get("/api/status").status_code == 200
     assert "content-security-policy" not in client.get("/api/status").headers
+
+
+def several(api: Api, photos: list[tuple[str, bytes]], **form: list[str]):
+    """Upload several photos in one job: form values are lists, one entry per photo."""
+    fields = {"manufacturer": "Grizzly", "model": "T33901", **form}
+    files = [("photo", (name, data, "image/png")) for name, data in photos]
+    return api.client.post("/api/jobs", data=fields, files=files)
+
+
+CORNERS = [("corner-l.png", PNG + b"l"), ("corner-r.png", PNG + b"r"), ("table.png", PNG + b"t")]
+
+
+def test_several_photos_start_one_job_with_their_views(api: Api) -> None:
+    """Decision 0022: each photo's view, use and origin, all checked before anything is saved."""
+    response = several(
+        api,
+        CORNERS,
+        origin=["https://example.com/l", "https://example.com/r", "a video, 0:42"],
+        view=["front_operator_left", "front_operator_right", "detail"],
+        use=["", "", ""],
+        license_note=["internal research only"],
+    )
+    assert response.status_code == 201, response.text
+    job = response.json()["job"]
+    assert [(p["view"], p["use"]) for p in job["photos"]] == [
+        ("front_operator_left", "generator"),
+        ("front_operator_right", "generator"),
+        ("detail", "evidence"),
+    ]
+    assert job["photos"][2]["source"]["title"] == "a video, 0:42 (uploaded through the dashboard)"
+    assert all(p["source"]["license_note"] == "internal research only" for p in job["photos"])
+    assert job["steps"][0]["detail"] == (
+        "generator: front_operator_left, front_operator_right; evidence: 1"
+    )
+    request = JobRequest.model_validate_json(
+        (api.data_dir / job["run"] / "request.json").read_text(encoding="utf-8")
+    )
+    assert [p.view for p in request.photos.values()] == [
+        "front_operator_left",
+        "front_operator_right",
+        "detail",
+    ]
+    sources = (api.data_dir / "machines/grizzly-t33901/inputs/SOURCES.md").read_text("utf-8")
+    assert sources.count("uploaded through the dashboard") == 3
+
+
+@pytest.mark.parametrize(
+    ("form", "status", "says"),
+    [
+        ({"origin": ["a", "b", "c"]}, 400, "have no view"),
+        (
+            {"origin": ["a", "b", "c"], "view": ["front", "front", "detail"]},
+            400,
+            "both show 'front'",
+        ),
+        (
+            {"origin": ["a", "b", "c"], "view": ["front", "front_operator_right", "detail"]},
+            400,
+            "mix sides and corners",
+        ),
+        ({"origin": ["a", "b", "c"], "view": ["front", "left", "detail"]}, 422, "unknown view"),
+        ({"origin": ["a", "b"], "view": ["front", "back", "detail"]}, 422, "one origin per photo"),
+        (
+            {"origin": ["a", "b", "c"], "view": ["detail", "back", "front"], "use": ["generator"]},
+            422,
+            "one view and one use per photo",
+        ),
+    ],
+)
+def test_several_photos_that_break_the_rules_save_nothing(api: Api, form, status, says) -> None:
+    response = several(api, CORNERS, **form)
+    assert response.status_code == status, response.text
+    assert says in response.json()["detail"]
+    assert list((api.data_dir / "machines").iterdir()) == []
+
+
+def test_the_same_photo_twice_is_refused(api: Api) -> None:
+    twice = [("a.png", PNG), ("b.png", PNG)]
+    response = several(api, twice, origin=["a", "b"], view=["front", "back"])
+    assert response.status_code == 422
+    assert "the same photo was chosen twice" in response.json()["detail"]

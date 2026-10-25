@@ -7,6 +7,8 @@ import pytest
 from pydantic import ValidationError
 
 from moonwalkers.contracts.pipeline_result import Citation, Fact, InputType, Source
+from moonwalkers.orchestrator import InputPhoto
+from moonwalkers.pipelines.b.photos import PhotoPlanError
 from moonwalkers.pipelines.b.pipeline import SPEC_FILE, RunFolderConflict
 from moonwalkers.workspace import SPEC_PARTS_FILE, Workspace, WorkspaceError
 
@@ -80,6 +82,27 @@ def test_inputs_are_added_once_and_fixed_after_generation(ws: Workspace, photo_r
     other = photo_run.photo.model_copy(update={"source_id": "src-photo-2"})
     with pytest.raises(RunFolderConflict, match="already generated"):
         ws.add_input(run_dir, other)
+
+
+def test_photos_are_added_with_their_views_and_checked_as_a_whole(ws: Workspace, photo_run) -> None:
+    """Decision 0022: a refused photo leaves the request as it was."""
+    run_dir = ws.start_run("MoonWalkers", "Test Indexer")
+    ws.add_input(run_dir, photo_run.photo, InputPhoto(view="front_operator_left"))  # type: ignore[call-arg]
+    second = photo_run.photo.model_copy(update={"source_id": "src-photo-2"})
+    before = (run_dir / "request.json").read_text(encoding="utf-8")
+    with pytest.raises(PhotoPlanError, match="both show 'front_operator_left'"):
+        ws.add_input(run_dir, second, InputPhoto(view="front_operator_left"))  # type: ignore[call-arg]
+    with pytest.raises(PhotoPlanError, match="have no view"):
+        ws.add_input(run_dir, second)
+    assert (run_dir / "request.json").read_text(encoding="utf-8") == before
+
+    request = ws.add_input(run_dir, second, InputPhoto(view="front_operator_right"))  # type: ignore[call-arg]
+    assert {k: (v.view, v.use) for k, v in request.photos.items()} == {
+        "src-photo": ("front_operator_left", "generator"),
+        "src-photo-2": ("front_operator_right", "generator"),
+    }
+    saved = json.loads((run_dir / "request.json").read_text(encoding="utf-8"))
+    assert saved["photos"]["src-photo-2"] == {"view": "front_operator_right", "use": "generator"}
 
 
 def test_reference_changes_are_validated_before_saving(ws: Workspace, fixed_time) -> None:

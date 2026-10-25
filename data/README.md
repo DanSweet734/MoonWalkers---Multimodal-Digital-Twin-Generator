@@ -13,7 +13,7 @@ data/
         SOURCES.md       # one line per file: filename, source URL, date retrieved, license note
       runs/
         2026-10-17_run-003/   # one build per run folder (Pipeline B, decision 0012); a job
-          request.json        # the JobRequest: the photo as a source
+          request.json        # the JobRequest: the photos as sources, with their views (0022)
           reference_facts.json      # the agent's cited reading notes (MCP builds, decision 0013)
           geometry_spec.parts.json  # the joint and scale parts of the spec, as the agent sets them
           generator/          # job.json, generator.log, result.json, mesh.glb; run.json records the run

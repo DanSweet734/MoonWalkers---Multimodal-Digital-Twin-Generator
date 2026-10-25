@@ -114,7 +114,7 @@ def test_two_pipelines_build_one_version_and_agreeing_facts_add_no_note(
         FakePipeline(PipelineId.D, fixed_time, [("spindle_travel", 0.0825, "m")]),
     )
     assert job.twin.built_from == ["res-job-1-a", "res-job-1-d"]
-    assert job.twin.machine_key == "grizzly-industrial/t33901"
+    assert job.twin.machine_key == "grizzly/t33901"  # "Grizzly Industrial" takes the alias
     assert job.twin.notes is None
     assert all(kb.get_result(r) is not None for r in job.twin.built_from)
 

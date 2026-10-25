@@ -1,8 +1,11 @@
-"""Pipeline B: one machine photo to a scaled, jointed twin geometry (decision 0012).
+"""Pipeline B: machine photos to a scaled, jointed twin geometry (decisions 0012 and 0022).
 
 In one run folder under ``data/`` (data/README.md):
 
-1. ``generator/``: the image-to-3D generator turns the photo into a mesh (recorded in ``run.json``).
+1. ``generator/``: the image-to-3D generator turns the photos into a mesh (recorded in
+   ``run.json``). One photo runs the single-image model; two to four, each with its view in the
+   request's ``photos`` map, run the multi-view model (``photos.py``). Evidence photos stay in
+   the result's sources, but the generator does not get them.
 2. ``geometry_spec.json``: the agent or a person inspects the mesh and writes down how to orient,
    split and scale it. Until that file exists, the pipeline renders views of the mesh into
    ``inspect_raw/`` and stops with ``GeometrySpecMissing``.
@@ -11,16 +14,18 @@ In one run folder under ``data/`` (data/README.md):
 4. The ``PipelineResult``: those parts, the spindle joint, the scale calibration and the reference
    facts read from documents (identity, specifications, control), all cited.
 
-A run folder never changes what it has produced. A re-run with the same photo, generator settings
+A run folder never changes what it has produced. A re-run with the same photos, generator settings
 and spec reuses the earlier output; a re-run with different ones is refused, so the files that a
 stored twin points to stay as they were. Use a new run folder instead.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import math
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -42,16 +47,13 @@ from moonwalkers.contracts.pipeline_result import (
     ScaleCalibration,
     Source,
 )
-from moonwalkers.generators.base import (
-    SINGLE_VIEW,
-    GeneratorRequest,
-    GeneratorRun,
-    ImageTo3DGenerator,
-)
+from moonwalkers.generators.base import GeneratorRequest, GeneratorRun, ImageTo3DGenerator
+from moonwalkers.orchestrator.photos import InputPhoto
 
 from ..base import Pipeline, result_id_for
 from .assemble import AssembledParts, GeometrySpec, Vec3, assemble
 from .mesh_tools import load_mesh, render_views
+from .photos import PhotoPlan, photo_issues, plan_photos
 
 VERSION = "0.1.0"
 SPEC_FILE = "geometry_spec.json"
@@ -119,7 +121,8 @@ def load_reference(path: Path) -> ReferenceFacts:
 
 
 class PipelineB(Pipeline):
-    """Pipeline B for the PoC: one machine photo per job, one run folder per build."""
+    """Pipeline B: a job's machine photos (decision 0022), one run folder per build. ``photos``
+    is the request's map of each photo's view and use."""
 
     pipeline_id = PipelineId.B
 
@@ -130,6 +133,7 @@ class PipelineB(Pipeline):
         run_dir: Path,
         reference: ReferenceFacts | None = None,
         clock: Clock = utc_now,
+        photos: Mapping[str, InputPhoto] | None = None,
     ) -> None:
         self.generator = generator
         self.data_dir = Path(data_dir).resolve()
@@ -138,9 +142,10 @@ class PipelineB(Pipeline):
             raise ValueError(f"run folder {self.run_dir} is not inside data folder {self.data_dir}")
         self.reference = reference
         self.clock = clock
+        self.photos = dict(photos or {})
 
     def run(self, job_id: str, sources: list[Source]) -> PipelineResult:
-        photo, generated = self._photo_and_mesh(sources)
+        plan, generated = self._photos_and_mesh(sources)
         spec_path = self.run_dir / SPEC_FILE
         if not spec_path.is_file():
             views = render_views(load_mesh(generated.mesh_path), self.run_dir / INSPECT_DIR)
@@ -148,51 +153,63 @@ class PipelineB(Pipeline):
         spec = GeometrySpec.model_validate_json(spec_path.read_text(encoding="utf-8"))
         self._check_scale_reference(spec)
         parts = self._assemble(generated.mesh_path, spec_path, spec)
-        return self._result(job_id, photo, generated, spec, spec_path, parts)
+        return self._result(job_id, plan, generated, spec, spec_path, parts)
 
     def generate(self, sources: list[Source]) -> GeneratorRun:
         """Step 1 alone: the job's mesh, generated now or reused from this run folder."""
-        return self._photo_and_mesh(sources)[1]
+        return self._photos_and_mesh(sources)[1]
+
+    def plan(self, sources: list[Source]) -> PhotoPlan:
+        """Which photos the generator gets, in which slot, without generating anything."""
+        return self._photos(sources)[0]
 
     # ------------------------------------------------------------------------------------ steps
-    def _photo_and_mesh(self, sources: list[Source]) -> tuple[Source, GeneratorRun]:
-        photo, photo_path = self._photo(sources)
-        return photo, self._generate(photo_path, photo.sha256 or "")
+    def _photos_and_mesh(self, sources: list[Source]) -> tuple[PhotoPlan, GeneratorRun]:
+        plan, paths = self._photos(sources)
+        return plan, self._generate(plan, paths)
 
-    def _photo(self, sources: list[Source]) -> tuple[Source, Path]:
-        """The job's one photo, with its SHA-256 filled in (checked if the request gave one)."""
+    def _photos(self, sources: list[Source]) -> tuple[PhotoPlan, dict[str, Path]]:
+        """The generator's plan for the job's machine photos, each with its SHA-256 filled in
+        (checked where the request gave one), and each photo's file by source id."""
         others = sorted(
             {s.input_type.value for s in sources if s.input_type != InputType.MACHINE_PHOTO}
         )
-        photos = [s for s in sources if s.input_type == InputType.MACHINE_PHOTO]
-        if others or len(photos) != 1:
-            raise ValueError(
-                f"Pipeline B (PoC) takes exactly one machine photo; got {len(photos)} photo(s)"
-                + (f" and {others}" if others else "")
-            )
-        photo = photos[0]
-        path = (self.data_dir / photo.uri).resolve()
-        if photo.kind != "file" or not path.is_relative_to(self.data_dir) or not path.is_file():
-            raise ValueError(
-                f"photo {photo.source_id}: {photo.uri!r} is not a file in the data folder"
-            )
-        sha256 = _sha256(path)
-        if photo.sha256 is not None and photo.sha256 != sha256:
-            raise ValueError(f"photo {photo.source_id} has changed since it was added (SHA-256)")
-        return photo.model_copy(update={"sha256": sha256}), path
+        if others:
+            raise ValueError(f"Pipeline B takes machine photos; got {others} too")
+        checked, paths = [], {}
+        for photo in sources:
+            path = (self.data_dir / photo.uri).resolve()
+            if photo.kind != "file" or not path.is_relative_to(self.data_dir) or not path.is_file():
+                raise ValueError(
+                    f"photo {photo.source_id}: {photo.uri!r} is not a file in the data folder"
+                )
+            sha256 = _sha256(path)
+            if photo.sha256 is not None and photo.sha256 != sha256:
+                raise ValueError(
+                    f"photo {photo.source_id} has changed since it was added (SHA-256)"
+                )
+            checked.append(photo.model_copy(update={"sha256": sha256}))
+            paths[photo.source_id] = path
+        return plan_photos(checked, self.photos), paths
 
-    def _generate(self, photo_path: Path, photo_sha256: str) -> GeneratorRun:
-        """Run the generator, or reuse this run folder's mesh for the same photo and settings."""
+    def _generate(self, plan: PhotoPlan, paths: Mapping[str, Path]) -> GeneratorRun:
+        """Run the generator, or reuse this run folder's mesh for the same photos and settings.
+
+        One photo keeps the PoC's key (``photo_sha256``), so earlier run folders still match."""
         out_dir = self.run_dir / GENERATOR_DIR
         record_path = out_dir / GENERATOR_RECORD
-        key = _json_values(
-            {"photo_sha256": photo_sha256, "generator": self.generator.fingerprint()}
-        )
+        images = plan.images(paths)
+        generator = self.generator.for_views(images)
+        if plan.grid == "single":
+            key = {"photo_sha256": plan.fed[0].source.sha256}
+        else:
+            key = {"photos": {f.slot: f.source.sha256 for f in plan.fed}}
+        key = _json_values({**key, "generator": generator.fingerprint()})
         if record_path.is_file():
             record = _read_json(record_path)
             if record["key"] != key:
                 raise RunFolderConflict(
-                    f"{out_dir} holds a mesh made from another photo or other generator "
+                    f"{out_dir} holds a mesh made from other photos or other generator "
                     "settings; use a new run folder"
                 )
             mesh_path = out_dir / record["mesh_file"]
@@ -206,9 +223,12 @@ class PipelineB(Pipeline):
                 log_path=out_dir / record["log_file"],
                 details=record["details"],
             )
-        run = self.generator.generate(
-            GeneratorRequest(images={SINGLE_VIEW: photo_path}, out_dir=out_dir)
-        )
+        run = generator.generate(GeneratorRequest(images=images, out_dir=out_dir))
+        # Which photo filled which slot travels with the generator into every part's provenance.
+        slots = {f.slot: f.source.source_id for f in plan.fed}
+        params = {**run.generator.params, "photos": slots}
+        generator_used = run.generator.model_copy(update={"params": params})
+        run = dataclasses.replace(run, generator=generator_used)
         _write_json(
             record_path,
             {
@@ -219,6 +239,7 @@ class PipelineB(Pipeline):
                 "seconds": run.seconds,
                 "peak_vram_gb": run.peak_vram_gb,
                 "details": run.details,
+                "photos": plan.record(),
             },
         )
         return run
@@ -263,7 +284,7 @@ class PipelineB(Pipeline):
     def _result(
         self,
         job_id: str,
-        photo: Source,
+        plan: PhotoPlan,
         generated: GeneratorRun,
         spec: GeometrySpec,
         spec_path: Path,
@@ -279,7 +300,9 @@ class PipelineB(Pipeline):
             sha256=_sha256(spec_path),
             retrieved_at=now,
         )
-        part_citations = [Citation(source_id=photo.source_id), Citation(source_id=SPEC_SOURCE_ID)]
+        photos = [f.source for f in plan.fed] + [source for source, _ in plan.evidence]
+        part_citations = [Citation(source_id=f.source.source_id) for f in plan.fed]
+        part_citations.append(Citation(source_id=SPEC_SOURCE_ID))
 
         def part(part_id: str, name: str, path: Path, bounds: tuple[Vec3, Vec3]) -> Part:
             return Part(
@@ -304,7 +327,7 @@ class PipelineB(Pipeline):
             produced_at=now,
             produced_by=f"pipeline-b {VERSION} ({generated.generator.name} "
             f"{generated.generator.version or 'version unknown'})",
-            sources=[photo, spec_source, *(ref.sources if ref else [])],
+            sources=[*photos, spec_source, *(ref.sources if ref else [])],
             identity=ref.identity if ref else None,
             facts=list(ref.facts) if ref else [],
             parts=[
@@ -350,7 +373,8 @@ class PipelineB(Pipeline):
             ],
             control=list(ref.control) if ref else [],
             issues=[
-                *_method_issues(spec),
+                *photo_issues(plan),
+                *_method_issues(spec, plan),
                 *size_checks(parts, ref),
                 *(ref.issues if ref else []),
             ],
@@ -398,14 +422,27 @@ def size_checks(parts: AssembledParts, reference: ReferenceFacts | None) -> list
     return issues
 
 
-def _method_issues(spec: GeometrySpec) -> list[Issue]:
-    """What every Pipeline B result should tell its reviewer about the method."""
+def _method_issues(spec: GeometrySpec, plan: PhotoPlan) -> list[Issue]:
+    """What every Pipeline B result should tell its reviewer about the method (the photos'
+    own issues come from ``photo_issues``)."""
+    turned = []
+    if spec.yaw_deg:
+        expected = plan.expected_turn_deg
+        expectation = (
+            "one photo, so no turn was expected"
+            if expected is None
+            else f"{expected:+g}° expected for a {plan.grid} grid"
+        )
+        turned.append(
+            Issue(
+                severity="info",
+                message=f"The mesh's front pointed {spec.yaw_deg:+g}° from the generator's front "
+                f"(measured; {expectation}), and was turned back by that much about the up axis "
+                "(geometry spec yaw_deg; decision 0022).",
+            )
+        )
     return [
-        Issue(
-            severity="info",
-            message="Made from one photo: the generator guessed every surface the photo does not "
-            "show (the back, the underside and the far side).",
-        ),
+        *turned,
         Issue(
             severity="warning",
             message="[INFERENCE] The spindle part is every face in front of the body's front face "

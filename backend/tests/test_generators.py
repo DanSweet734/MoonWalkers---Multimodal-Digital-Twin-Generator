@@ -10,6 +10,7 @@ import trimesh
 
 from moonwalkers.generators.base import GeneratorError, GeneratorRequest
 from moonwalkers.generators.hunyuan3d import (
+    MULTIVIEW_SETTINGS,
     Hunyuan3DConfig,
     Hunyuan3DGenerator,
     Hunyuan3DSettings,
@@ -144,3 +145,33 @@ def test_temporary_files_stay_in_the_run_and_are_removed(tmp_path: Path, image: 
     leftover = Path(run.details["leftover_seen"])
     assert leftover.parent == out_dir.resolve() / "tmp"  # not the user's temp folder
     assert not leftover.parent.exists()
+
+
+def test_one_photo_keeps_the_single_image_model_and_its_fingerprint(tmp_path: Path) -> None:
+    """The HA5C's run folders key their meshes to this fingerprint (decision 0022)."""
+    generator = fake_generator(tmp_path)
+    chosen = generator.for_views(["single"])
+    assert chosen is generator
+    assert chosen.fingerprint() == {"name": "hunyuan3d-2", **asdict(Hunyuan3DSettings())}
+
+
+def test_several_views_choose_the_multi_view_model(tmp_path: Path, image: Path) -> None:
+    generator = fake_generator(tmp_path)
+    chosen = generator.for_views(["front", "left"])
+    assert chosen.settings == MULTIVIEW_SETTINGS
+    assert chosen.fingerprint()["subfolder"] == "hunyuan3d-dit-v2-mv"
+    assert generator.settings == Hunyuan3DSettings()  # the original is unchanged
+    run = chosen.generate(
+        GeneratorRequest(images={"front": image, "left": image}, out_dir=tmp_path / "out")
+    )
+    assert run.generator.params["subfolder"] == "hunyuan3d-dit-v2-mv"
+    with pytest.raises(ValueError, match="takes one image"):
+        generator.generate(GeneratorRequest(images={"front": image}, out_dir=tmp_path / "o2"))
+
+
+def test_choosing_a_model_keeps_the_generators_class(tmp_path: Path) -> None:
+    class Unconfigured(Hunyuan3DGenerator):
+        pass
+
+    generator = Unconfigured(fake_generator(tmp_path).config, script=FAKE_SCRIPT)
+    assert type(generator.for_views(["front", "back"])) is Unconfigured

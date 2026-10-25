@@ -3,6 +3,11 @@
 - **Status:** accepted (proposed by Claude Code in Phase 1; Daniel reviewed and approved on 2026-10-17)
 - **Date:** 2026-10-16
 - **Decided by:** team (Daniel)
+- **Alias added:** `grizzly-industrial` to `grizzly` (2026-10-24, on Daniel's word in his review of
+  PR #19). The T33901 manual's legal name is "GRIZZLY INDUSTRIAL, INC." (p. 1); the machine
+  carries the "GRIZZLY LOGO LABEL" (part 201, p. 54). Without it, the manual's name gave
+  `grizzly-industrial/t33901` and a person typing "Grizzly" gave `grizzly/t33901`: two keys, two
+  twin histories, and no reuse between them. The data folder was already `grizzly-t33901`.
 
 ## Context
 PoC pass criterion: "a second request for the same machine reuses the stored twin and says so"

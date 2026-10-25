@@ -25,11 +25,12 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Mapping, Sequence
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from moonwalkers.clock import Clock, utc_now
 from moonwalkers.contracts.pipeline_result import (
     Fact,
+    InputType,
     JobResult,
     PipelineId,
     PipelineResult,
@@ -45,6 +46,7 @@ from moonwalkers.kb import (
 )
 from moonwalkers.pipelines import OWNERS, Pipeline
 
+from .photos import InputPhoto
 from .router import route
 
 Exporter = Callable[[TwinRecord, Sequence[PipelineResult]], str]
@@ -69,6 +71,21 @@ class JobRequest(BaseModel):
     sources: list[Source] = Field(default_factory=list)
     machine: MachineHint | None = None
     new_version: bool = False  # the user asked for a rebuild even though a twin exists
+    # Each machine photo's view and use, by source id (decision 0022). A request with one machine
+    # photo may leave it out, as the PoC's requests do.
+    photos: dict[str, InputPhoto] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _check_photos(self) -> JobRequest:
+        machine_photos = {
+            s.source_id for s in self.sources if s.input_type == InputType.MACHINE_PHOTO
+        }
+        unknown = sorted(set(self.photos) - machine_photos)
+        if unknown:
+            raise ValueError(
+                f"photos names {unknown}, which are not machine photos among the request's sources"
+            )
+        return self
 
 
 class OrchestratorError(Exception):

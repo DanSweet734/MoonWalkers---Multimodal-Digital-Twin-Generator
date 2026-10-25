@@ -7,8 +7,10 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import trimesh
 
 from moonwalkers.pipelines.b.mesh_tools import (
+    footprint_angle,
     load_mesh,
     orientation_matrix,
     radial_profile,
@@ -39,6 +41,35 @@ def test_orientation_maps_up_to_z_and_front_to_x(up, front, expect_up, expect_fr
     assert np.allclose(rotation @ np.array(expect_up), (0, 0, 1))
     assert np.allclose(rotation @ np.array(expect_front), (1, 0, 0))
     assert math.isclose(np.linalg.det(rotation), 1.0)  # a rotation, not a mirror
+
+
+@pytest.mark.parametrize("yaw", [45.0, -37.3, 90.0, 180.0])
+def test_yaw_turns_a_front_at_that_angle_back_onto_x(yaw) -> None:
+    rotation = orientation_matrix("+z", "+x", yaw)
+    front = (math.cos(math.radians(yaw)), math.sin(math.radians(yaw)), 0.0)
+    assert np.allclose(rotation @ np.array(front), (1, 0, 0))
+    assert np.allclose(rotation @ np.array((0, 0, 1)), (0, 0, 1))  # up stays up
+    assert math.isclose(np.linalg.det(rotation), 1.0)
+
+
+def test_no_yaw_leaves_the_orientation_exact() -> None:
+    assert np.array_equal(orientation_matrix("+y", "+z", 0.0), orientation_matrix("+y", "+z"))
+
+
+def test_footprint_angle_gives_the_base_long_axis(indexer) -> None:
+    mesh = indexer()  # the box is 2 deep (x) and 3 wide (y)
+    assert footprint_angle(mesh) == pytest.approx(90.0, abs=1.0)
+    for turn in (30.0, -50.0):
+        turned = mesh.copy()
+        turned.apply_transform(
+            trimesh.transformations.rotation_matrix(math.radians(turn), (0, 0, 1))
+        )
+        expected = (90.0 + turn + 90.0) % 180.0 - 90.0  # folded into (-90, 90]
+        assert footprint_angle(turned) == pytest.approx(expected, abs=1.0)
+
+
+def test_a_square_footprint_has_no_long_axis() -> None:
+    assert footprint_angle(trimesh.creation.box(extents=(2.0, 2.0, 1.0))) is None
 
 
 def test_orientation_needs_perpendicular_axes() -> None:
