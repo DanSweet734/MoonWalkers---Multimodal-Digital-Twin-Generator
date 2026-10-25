@@ -56,7 +56,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Daniel's rule for unknown details (2026-10-24):** a labelled stand-in where the detail is
     visible or needed; left out where it is hidden and unused. So the T33901's belt positions,
     under its closed belt cover, are left out; its twelve speeds are cited.
-- **Phase 4's spike is done and waits for Daniel's review** (branch
+- **Phase 4's spike is done and waits for Daniel's review** (PR #20, branch
   `feat/phase-4-part-cutting-spike`, 2026-10-24). It compared four ways to cut the T33901 mesh
   `grizzly-t33901/runs/2026-10-24_run-001` (squared with `--yaw 49.1`) into moving parts:
   `docs/research/2026-10-24-part-cutting-spike.md`, re-run with

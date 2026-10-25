@@ -12,7 +12,7 @@
 the same day (below).
 
 **Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4's spike
-is done and waits for review (2026-10-24; decision 0023 proposed). Stop at the end of each phase,
+is done and waits for review (2026-10-24, PR #20; decision 0023 proposed). Stop at the end of each phase,
 open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
