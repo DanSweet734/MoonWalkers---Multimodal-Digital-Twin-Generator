@@ -107,3 +107,26 @@ combination of B-3 creates 790 RPM" (p. 30). Searched on 2026-10-24:
   - Grizzly's technical support, or the label as a replacement part.
 
   Until then, only B-3 = 790 RPM is cited, and pulley diameters are not confirmed.
+
+## 4. The T33901's mesh (later the same day, after decision 0022 was accepted)
+Run `data/machines/grizzly-t33901/runs/2026-10-24_run-001`, made through the new code (the
+workspace's `add_input` with views, then `PipelineB.generate`). The run folder's `MESH.md` has
+the details; `data/` is not in git, so the results are repeated here.
+- **Input:** the two colour corners feed the multi-view model (`front` = the operator's front-left
+  corner, `left` = the operator's front-right). 22 photos are evidence: the manual's two studio
+  photos, three of Daniel's close-ups, and 17 of the manual's figures.
+- **Generation:** 54.0 s, peak VRAM 6.09 GB, 40,000 faces, watertight. Vertex for vertex the same
+  as scratch run E3 (same photos, settings and seed).
+- **Sides:** the front and both sides seen only at an angle; **the back guessed**; the top and the
+  underside at most at a glancing angle.
+- **The turn:** the base footprint's long axis at +49.1° (expected +45° for corners). With
+  `--yaw 49.1` it reads 0°, and the head lies within 1.5° of the base.
+- **Proportions,** with no scale applied, against "15 x 25-1/2 x 39 in." (width x depth x height,
+  p. 8): depth/height 0.623 against 0.654 (-4.7%); width/height 0.384 against 0.385 (-0.2%).
+  E4's mesh gives -2.9% and -3.1%; the single-image meshes -5.1% and -10.4% (E1) and -5.6% and
+  +1.0% (E2), squared the same way. [INFERENCE] The cited sizes are overall, handles included.
+- **By eye,** against the manual's figures: the handles on the operator's right (Figs. 3, 6), the
+  table crank on the right of the bracket (Fig. 6), the table-height lock on the left (Fig. 7), the
+  spring housing on the left of the head (Fig. 4).
+- **Why this input:** both sides of the head carry their own features, and the turn matches the
+  corner grid. E3 and E4 are equally close in size; E3 is the fixed rule of decision 0022.

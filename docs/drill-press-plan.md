@@ -11,8 +11,8 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 2 are done (PRs #15, #16, #18); Phase 3 is next, with
-its hand-off below. Stop at the end of each phase, open a pull request, and wait for review before
+**Status:** approved (PR #15). Phases 0 to 2 are done (PRs #15, #16, #18). Phase 3 is built and
+waits for Daniel's review (branch `feat/phase-3-several-photos`); Phase 4 is next. Stop at the end of each phase, open a pull request, and wait for review before
 starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
@@ -377,7 +377,7 @@ images, and the least guessing.
   - pulley diameters are not confirmed anywhere yet.
 
 ### Items
-- [ ] Collect T33901 photos into `inputs/`, logging each in `SOURCES.md`:
+- [x] Collect T33901 photos into `inputs/`, logging each in `SOURCES.md`:
   - the manual's own: two studio photos of the whole machine (p. 5) and close-ups of the head,
     the hub, the depth stop and the table (pp. 6-7, 31-32, 36). They are copyrighted and for
     internal research only (`SOURCES.md`). Extract them with pypdfium2;
@@ -386,7 +386,10 @@ images, and the least guessing.
   - others from public sources, with their URLs.
 
   (Oct 24, 2026: Daniel collected eight, with their origins, and re-saved the AVIF and WebP files
-  as PNG (Hand-off, above). Still to do: the manual's photos)
+  as PNG (Hand-off, above). The same day, 19 of the manual's photos were extracted unchanged with
+  pypdfium2 into `inputs/photos/manual/`: the two studio photos (p. 5) and the figures of pp. 6-7,
+  30-32 and 36. Figure 2 is the same image as Figure 33, so it is kept once. Daniel's two corner
+  photos were renamed to their views, `front_operator_left.jpeg` and `front_operator_right.png`)
 - [x] Decision record 0022: several photos per run. It decides:
   - how each photo is labelled with the side it shows (Daniel's labels are the operator's view);
   - which photos feed the generator and which serve as evidence for the cuts, the joints and the
@@ -410,13 +413,26 @@ images, and the least guessing.
       Daniel found is the T33904's, which does not apply. Researched the same day: no readable
       copy of the T33901's or the T33902's is reachable by script, and the manual's own photo of
       the lid is smaller still. What is left by hand: research note, section 3)
-- [ ] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
+- [x] **First, the core:** Pipeline B and the agent's tools (`add_input`, `request.json`) take
       several photos. The HA5C's one-photo runs still build, and documents stay refused while
       their pipeline is not in (decision 0021)
-- [ ] **Second:** generate the T33901 mesh from the best input there is, and record which sides it
+      (Oct 24, 2026: the request's `photos` map, `pipelines/b/photos.py`, both models in the
+      adapter, `yaw_deg` and the footprint angle, `add_input`'s `view` and `use`, the job status's
+      photos. The four HA5C and TH240 run folders with a mesh still reuse it, unchanged. 34 new
+      backend tests)
+- [x] **Second:** generate the T33901 mesh from the best input there is, and record which sides it
       had to guess
-- [ ] **Last:** the dashboard's upload takes several photos
-- [ ] Worklog; PR
+      (Oct 24, 2026: run `grizzly-t33901/runs/2026-10-24_run-001`, the two colour corners on the
+      multi-view model, 22 photos as evidence. Guessed: the back. Front turned +49.1°, squared with
+      `--yaw 49.1`; proportions within 5% of the data sheet. Its `MESH.md` and the research note,
+      section 4. It is Phase 4's test mesh)
+- [x] **Last:** the dashboard's upload takes several photos
+      (Oct 24, 2026: each photo with its view, use and origin, checked before anything is saved;
+      the job page lists them. 8 new API tests and 6 dashboard tests. Checked in the real app on
+      a scratch data folder, `docs/setup/dashboard.md`, section 3, step 6)
+- [x] Worklog; PR
+      (Oct 24, 2026: worklog 2026-10-24; branch `feat/phase-3-several-photos`. Still open: the
+      belt chart, above)
 
 ## Phase 4 - A spike on cutting a model into parts
 Time-boxed to one session. It compares ways to cut one mesh into several parts.

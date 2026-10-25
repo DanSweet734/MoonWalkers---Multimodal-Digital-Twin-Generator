@@ -45,12 +45,15 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     its own decision record.
   - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
     (decision 0018). The `Sarkis` branch was only an access test: ignore it.
-- **Now: Phase 3, several photos per run, and the mesh.** Due before Monday, 2026-10-26 (Daniel,
-  2026-10-24). Order: (1) the core, several photos through Pipeline B and the agent's tools
-  (decision 0022); (2) the T33901 mesh; (3) the dashboard's multi-photo upload, last. Start from
-  the hand-off in `docs/drill-press-plan.md`, Phase 3: Daniel's eight T33901 photos and how their
-  side labels read (the operator's view, facing the front). `SOURCES.md` records every origin,
-  the AVIF and WebP files are now PNGs, and the one readable belt chart is the T33904's.
+- **Phase 3 is built, for Daniel's review** (branch `feat/phase-3-several-photos`, 2026-10-24).
+  Decision 0022 (accepted by Daniel): each machine photo's view in the operator's words and its
+  use (generator or evidence) live in `request.json`; `pipelines/b/photos.py` alone maps them to
+  the generator's slots; one photo runs the single-image model, two to four the multi-view model,
+  and corner photos run as a grid turned 45°, squared by the spec's `yaw_deg`. The agent's
+  `add_input` and the dashboard's upload take several photos. The T33901 mesh is run
+  `grizzly-t33901/runs/2026-10-24_run-001` (its `MESH.md`): the back is guessed. The T33901's
+  belt chart is still not found (`docs/research/2026-10-24-several-photos-and-corner-views.md`).
+  **Next: Phase 4,** a spike on cutting that mesh into parts, after Daniel's review.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
