@@ -1,8 +1,10 @@
 # 0021 - How Pipelines A, C and D run outside their tests
 
-- **Status:** proposed (by Claude Code in the drill-press plan's Phase 2; Daniel left Phase 2's
-  choices to Claude Code on 2026-10-23). It is agreed with Ava, Kiran and Sarkis before it is
-  merged (plan, Phase 2; CLAUDE.md, "Who owns what").
+- **Status:** accepted (by Daniel, 2026-10-24; merged in PR #18), **with the pipeline owners'
+  review still open.** Proposed by Claude Code in the drill-press plan's Phase 2; Daniel left Phase
+  2's choices to Claude Code on 2026-10-23. The owners (Ava, Kiran, Sarkis) were away, so Daniel
+  chose to merge before their review, to start Phase 3. Any change they ask for gets its own
+  decision record.
 - **Date:** 2026-10-23
 - **Decided by:** team (Daniel, with the pipeline owners)
 - **Amends:** decision 0002 (A, C and D are stubs) and decision 0009 (merging is left open)

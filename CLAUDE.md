@@ -34,21 +34,23 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   The fixed joint recorder then made its first recording: the handles track within 1%, and
   the spring returns in 0.83 s. Decisions 0017-0019 are accepted.
 - Every twin stays awake by default (PR #17, merged on 2026-10-23; decision 0017).
-- **Phase 2 is built and waits for review** (branch `feat/phase-2-contract-and-pipelines`, from
-  `main` at `ca25284`; PR #18, opened on 2026-10-23). `docs/drill-press-plan.md`, Phase 2:
-  - **Decision 0020, contract v0.2.0:** optional `mode`, `adjustable_stop` and `follows` on
-    `Joint`; "0.1.0" results stay valid. The exporter reads them, the dashboard shows them, and
-    the drill press states its joints in them (run `2026-10-23_run-003`).
-  - **Decision 0021:** the stubs run only in the tests; `add_input` refuses a document whose
-    pipeline is not in; one result per twin carries the geometry, and disagreeing facts are listed
-    for the reviewer; `python -m moonwalkers.pipelines`; the owners' guide, `docs/pipeline-guide.md`.
-  - **Checked in Isaac Sim** by Daniel on 2026-10-24 (run-003): the loosened table drops, the
-    handles follow the quill in `quill_spring_return` and `depth_stop`, and `all_motions` is the
-    same as before (`docs/setup/isaac-sim-check.md`, section 8).
-  - **Before the merge:** both decisions discussed with Ava, Kiran and Sarkis.
+- **Phase 2 is done** (PR #18, merged on 2026-10-24). Contract v0.2.0 (decision 0020): optional
+  `mode`, `adjustable_stop` and `follows` on `Joint`, read by the exporter, shown by the dashboard,
+  used by the drill press (run `2026-10-23_run-003`, checked in Isaac Sim by Daniel on
+  2026-10-24). Decision 0021: the stubs run only in the tests, `add_input` refuses a document whose
+  pipeline is not in, one result per twin carries the geometry, disagreeing facts are listed for
+  the reviewer, `python -m moonwalkers.pipelines`, and the owners' guide `docs/pipeline-guide.md`.
+  - **Both decisions are accepted by Daniel, with the pipeline owners' review still open:** Daniel
+    merged before Ava, Kiran and Sarkis could answer, to start Phase 3. A change they ask for gets
+    its own decision record.
   - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
     (decision 0018). The `Sarkis` branch was only an access test: ignore it.
-  - **Next:** Phase 3, several photos per run, from an up-to-date `main` after the merge.
+- **Now: Phase 3, several photos per run, and the mesh.** Due before Monday, 2026-10-26 (Daniel,
+  2026-10-24). Order: (1) the core, several photos through Pipeline B and the agent's tools
+  (decision 0022); (2) the T33901 mesh; (3) the dashboard's multi-photo upload, last. Start from
+  the hand-off in `docs/drill-press-plan.md`, Phase 3: Daniel's seven T33901 photos, how their
+  side labels read (the operator's view, facing the front), two AVIF files named `.jpeg`, and
+  their missing origins in `SOURCES.md`.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

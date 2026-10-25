@@ -1,8 +1,10 @@
 # 0020 - Contract v0.2.0: linked joints and joint modes
 
-- **Status:** proposed (by Claude Code in the drill-press plan's Phase 2). Daniel reviewed it on
-  2026-10-23 and kept it, with two points researched and one name changed ("Review", below). It is
-  discussed with Ava, Kiran and Sarkis before it is merged (CLAUDE.md, "Who owns what").
+- **Status:** accepted (by Daniel, 2026-10-24; merged in PR #18), **with the pipeline owners'
+  review still open.** Proposed by Claude Code in the drill-press plan's Phase 2. Daniel reviewed
+  it on 2026-10-23 and kept it, with two points researched and one name changed ("Review",
+  below). The owners (Ava, Kiran, Sarkis) were away, so Daniel chose to merge before their review,
+  to start Phase 3. Any change they ask for gets its own decision record and version bump.
 - **Date:** 2026-10-23
 - **Decided by:** team (Daniel, with the pipeline owners)
 - **Amends:** decision 0004 (the contract, v0.1.0). Part of what decisions 0017-0019 put in the
