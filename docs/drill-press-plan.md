@@ -11,14 +11,19 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 2 are done (PRs #15, #16, #18). Phase 3 is built and
-waits for Daniel's review (PR #19); Phase 4 is next. Stop at the end of each phase, open a pull request, and wait for review before
+**Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4 is next,
+with its hand-off below. Stop at the end of each phase, open a pull request, and wait for review before
 starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
 least amount of guessing. While working on that goal stand ins may be used." Every stand-in (a
 part, a ratio, a value) is labelled as such in the twin and logged as an inaccuracy.
+
+**Stand-ins, refined (Daniel, Oct 24, 2026):** a stand-in where the detail is visible in the twin
+or needed for it to work; left out where it is hidden and unused. For example, the T33901's belt
+positions sit under the closed belt cover, which the twin has no way to open, so they are left out.
+On a machine whose belts show, they would get a labelled stand-in.
 
 ## Decided on review (Oct 22, 2026)
 | Question | Answer |
@@ -436,6 +441,39 @@ images, and the least guessing.
 
 ## Phase 4 - A spike on cutting a model into parts
 Time-boxed to one session. It compares ways to cut one mesh into several parts.
+
+### Hand-off (2026-10-24, from the Phase 3 chat)
+- **Start** from `main` after PR #19, on branch `feat/phase-4-part-cutting-spike` (created from
+  `main` the same day). Phase 4 starts in a new chat.
+- **The T33901 mesh:** `data/machines/grizzly-t33901/runs/2026-10-24_run-001/generator/mesh.glb`
+  (40,000 faces, watertight; generator axes +Y up, +Z front). Its `MESH.md` says how it was made.
+  - **To see it square:** `uv run python -m moonwalkers.pipelines.b inspect
+    ../data/machines/grizzly-t33901/runs/2026-10-24_run-001 --up +y --front +z --yaw 49.1`.
+    The corner photos left the front turned +49.1° (decision 0022).
+  - **Guessed:** the back. The front and both sides were seen only at an angle, from the two front
+    corners. The tip-slab warnings are expected: the base is the front-most part.
+- **Evidence for the cuts:** 22 photos in the run's `request.json`, use `evidence`. The figures
+  that show moving parts are:
+  - Figs. 3 and 4: the head's two sides, the handle hub, the depth stop and the spring housing;
+  - Fig. 35: the depth stop;
+  - Figs. 36-38: the table's chain (height crank, pivot lock, height lock, tilt scale, column
+    rack, tilt bolt);
+  - Figs. 46 and 48: the quill lowered, and the racks.
+
+  The parts and their order come from the exploded view (p. 48) and the parts list (pp. 49-50),
+  summarised in "What the manual gives", above.
+- **The synthetic test mesh:** the Phase 1 box-and-cylinder drill press
+  (`moonwalkers.usd.primitive_drill_press`) has the same parts as separate primitives. Fused into
+  one mesh, with each face labelled by its part, it gives the score for each method.
+- **Daniel's directions to keep:**
+  - the least guessing;
+  - no moving part is cut from the back, which the generator guessed;
+  - stand-ins only where visible or needed, and the rest left out (the rule at the top of this
+    plan).
+- **Installs:** method (c), a learned model, needs Daniel's approval first, with its license and
+  size (CLAUDE.md rule 3), and runs in its own environment, as the generators do.
+- **The MCP server** has Phase 3's tools: Daniel restarted it on 2026-10-24. The T33901's machine
+  key is `grizzly/t33901` whatever the manufacturer's spelling (decision 0009's alias).
 - [ ] **Test meshes:**
   - the box-and-cylinder drill press as one mesh, so the right part is known for every face. It is
     the easy case [INFERENCE: a generated mesh fuses its parts into one surface; this one does
@@ -493,12 +531,12 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
   - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9). Only one belt
     arrangement is cited ("B-3 creates 790 RPM", p. 30). The rest are on the label under the belt
     cover, so they stay unknown until a photo of it is found.
-    - **Daniel, reviewing PR #19 (2026-10-24):** "If belt positions aren't needed to work then I
-      say we leave them out, I don't think they'd be visible without the top off which isn't
-      planned". Asked to settle the choice, he also answered "Let's go stand ins rather than gaps".
-      Which one applies to belt positions is to be confirmed with him before decision 0025.
-    - If stand-ins: the T33904's order carried over, labelled, with its ambiguity logged (research
-      note 2026-10-24, section 3). The twelve speeds themselves are cited either way;
+    - **Decided by Daniel (2026-10-24, review of PR #19): belt positions are left out** of the
+      T33901's twin. They are under the closed belt cover, and the twin has no way to open it. The
+      control offers the twelve cited speeds, and only B-3 = 790 RPM names its belt position.
+      Where belts are visible, on another machine, a labelled stand-in would be used (the rule
+      at the top of this plan). The T33904's order carried over, with its ambiguity, is in the
+      research note of 2026-10-24, section 3, if it is ever needed;
   - the operator's drilling stroke as a program that drives the quill, as decision 0016's
     programs drive a joint.
 

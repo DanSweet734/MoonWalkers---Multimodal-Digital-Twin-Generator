@@ -21,7 +21,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   Start from:
   - `docs/poc-report.md`, section 8, the seven decisions it needs;
   - `docs/research/2026-10-19-open-questions-research.md`, section 6, the manual's cited facts.
-    The manual is in `data/machines/grizzly-t33901/inputs/`; no photo has been collected yet.
+    The manual is in `data/machines/grizzly-t33901/inputs/`, with Daniel's photos and the
+    manual's own in `inputs/photos/` (listed in `inputs/SOURCES.md`).
 - **The phase plan:** `docs/drill-press-plan.md`, written and approved on 2026-10-22 (PR #15,
   merged). Daniel's direction: several images per machine and the least guessing, with stand-ins
   (labelled, logged as inaccuracies) allowed on the way.
@@ -45,15 +46,20 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     its own decision record.
   - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
     (decision 0018). The `Sarkis` branch was only an access test: ignore it.
-- **Phase 3 is built, for Daniel's review** (PR #19, branch `feat/phase-3-several-photos`, 2026-10-24).
-  Decision 0022 (accepted by Daniel): each machine photo's view in the operator's words and its
-  use (generator or evidence) live in `request.json`; `pipelines/b/photos.py` alone maps them to
-  the generator's slots; one photo runs the single-image model, two to four the multi-view model,
-  and corner photos run as a grid turned 45°, squared by the spec's `yaw_deg`. The agent's
-  `add_input` and the dashboard's upload take several photos. The T33901 mesh is run
-  `grizzly-t33901/runs/2026-10-24_run-001` (its `MESH.md`): the back is guessed. The T33901's
-  belt chart is still not found (`docs/research/2026-10-24-several-photos-and-corner-views.md`).
-  **Next: Phase 4,** a spike on cutting that mesh into parts, after Daniel's review.
+- **Phase 3 is done** (PR #19, merged on 2026-10-24). Decision 0022 (accepted by Daniel): each
+  machine photo's view in the operator's words and its use (generator or evidence) live in
+  `request.json`; `pipelines/b/photos.py` alone maps them to the generator's slots; one photo
+  runs the single-image model, two to four the multi-view model, and corner photos run as a grid
+  turned 45°, squared by the spec's `yaw_deg`. The agent's `add_input` and the dashboard's upload
+  take several photos. "Grizzly Industrial, Inc." and "Grizzly" give one key, `grizzly/t33901`
+  (decision 0009's alias).
+  - **Daniel's rule for unknown details (2026-10-24):** a labelled stand-in where the detail is
+    visible or needed; left out where it is hidden and unused. So the T33901's belt positions,
+    under its closed belt cover, are left out; its twelve speeds are cited.
+- **Now: Phase 4, a spike on cutting the T33901 mesh into parts** (branch
+  `feat/phase-4-part-cutting-spike`). Start from the hand-off in `docs/drill-press-plan.md`, Phase
+  4: the mesh `grizzly-t33901/runs/2026-10-24_run-001` (squared with `--yaw 49.1`; its back is
+  guessed), the manual's figures as evidence, and the synthetic drill press for scoring.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
