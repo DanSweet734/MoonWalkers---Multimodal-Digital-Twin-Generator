@@ -8,7 +8,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
+import trimesh
 from pydantic import ValidationError
 
 from moonwalkers.contracts.pipeline_result import Citation, Fact, Joint, MachineIdentity, Source
@@ -16,8 +18,19 @@ from moonwalkers.orchestrator import JobRequest
 from moonwalkers.pipelines.b import build
 from moonwalkers.pipelines.b.mesh_tools import load_mesh
 from moonwalkers.pipelines.b.part_spike import SYNTHETIC_CUTS
-from moonwalkers.pipelines.b.parts_spec import PartsSpec, assemble_parts
-from moonwalkers.pipelines.b.pipeline import GeometrySpecMissing, PipelineB, read_spec
+from moonwalkers.pipelines.b.parts_spec import (
+    PartsSpec,
+    assemble_parts,
+    boundary_loops,
+    patch_hole,
+    simple_loops,
+)
+from moonwalkers.pipelines.b.pipeline import (
+    GeometrySpecMissing,
+    PipelineB,
+    parts_issues,
+    read_spec,
+)
 from moonwalkers.pipelines.b.synthetic_parts import drill_press
 from moonwalkers.usd import primitive_drill_press as dp
 from moonwalkers.usd.validate import validate_file
@@ -163,6 +176,10 @@ def test_a_spec_with_parts_is_read_as_several_parts(tmp_path: Path, write_spec) 
         (lambda s: s["joints"][0].update(child=REMOVED_TABLE), "not a twin part"),
         (lambda s: s["joints"].append(dict(s["joints"][0])), "duplicate joint ids"),
         (lambda s: s["joints"][0].update(axis=[0, 0, 0]), "no axis"),
+        (
+            lambda s: s["parts"][-1].update(patches=[{"near": [0, 0, 0], "note": "t"}]),
+            "only a cut part",
+        ),
     ],
 )
 def test_a_spec_that_cannot_be_built_is_refused(change, message: str) -> None:
@@ -193,6 +210,78 @@ def test_assembly_cuts_places_stand_ins_and_scales(tmp_path: Path) -> None:
     assert teeth.bounds[0][0] == pytest.approx(2 * dp.COLUMN_X - 0.005, abs=1e-6)
     origins = {j.joint_id: j.origin_m for j in model.joints}
     assert origins["quill_travel"] == pytest.approx((0.0, 0.0, 2 * dp.HEAD_BOTTOM))
+
+
+# ---------------------------------------------------------------------------------- patches
+def open_box() -> trimesh.Trimesh:
+    """A unit cube, subdivided, without its top: one square hole at z = 0.5."""
+    cube = trimesh.creation.box(extents=(1.0, 1.0, 1.0)).subdivide().subdivide()
+    sides = np.flatnonzero(cube.face_normals[:, 2] < 0.9)
+    return cube.submesh([sides], append=True)
+
+
+def test_a_patch_closes_the_open_loop_nearest_its_point() -> None:
+    mesh = open_box()
+    loops = boundary_loops(mesh)
+    assert len(loops) == 1 and len(loops[0]) == 16  # four edges per side after two subdivisions
+    patched = patch_hole(mesh, (0.0, 0.0, 0.49))
+    assert patched.is_watertight and patched.is_winding_consistent
+    assert patched.volume == pytest.approx(1.0)  # flat over the hole, and facing out
+    with pytest.raises(ValueError, match="no open edge loop within"):
+        patch_hole(mesh, (0.0, 0.0, -0.5))
+    with pytest.raises(ValueError, match="no open edge loop to patch"):
+        patch_hole(patched, (0.0, 0.0, 0.5))
+
+
+def test_a_loop_through_one_vertex_twice_is_split_at_it() -> None:
+    loops = simple_loops(np.array([1, 2, 3, 1, 4, 5]))
+    assert [loop.tolist() for loop in loops] == [[1, 2, 3], [1, 4, 5]]
+    # a back-and-forth (1 -> 2 -> 1) encloses nothing, so it is not fanned
+    assert [loop.tolist() for loop in simple_loops(np.array([1, 2, 1, 3, 4]))] == [[1, 3, 4]]
+
+
+def test_two_holes_touching_at_a_point_are_patched_without_a_non_manifold_edge() -> None:
+    cube = trimesh.creation.box(extents=(0.1, 0.1, 0.1)).subdivide().subdivide()
+    top = np.flatnonzero(cube.face_normals[:, 2] > 0.9)
+    first = top[0]
+    second = next(f for f in top if len(set(cube.faces[f]) & set(cube.faces[first])) == 1)
+    shared = (set(cube.faces[first]) & set(cube.faces[second])).pop()
+    keep = np.setdiff1d(np.arange(len(cube.faces)), [first, second])
+    mesh = cube.submesh([keep], append=True)
+    point = tuple(cube.vertices[shared])
+    while boundary_loops(mesh):  # one loop through the shared point, or two, by walking order
+        mesh = patch_hole(mesh, point)
+    assert mesh.is_watertight and mesh.is_winding_consistent
+    _, faces_per_edge = np.unique(mesh.edges_sorted, axis=0, return_counts=True)
+    assert faces_per_edge.max() == 2
+
+
+def test_a_cut_part_is_patched_where_a_removed_part_met_it(tmp_path: Path) -> None:
+    mesh_path = tmp_path / "mesh.glb"
+    trimesh.creation.box(extents=(1.0, 1.0, 1.0)).subdivide().subdivide().export(mesh_path)
+    cited = [{"source_id": dp.SYNTHETIC, "locator": "test"}]
+    spec = PartsSpec.model_validate(
+        {"up": "+z", "front": "+x", "origin_xy": [0.0, 0.0],
+         "scale": {"fact": "overall_height", "how": "the mesh's height"},
+         "fixed_part": "frame",
+         "cuts": [{"part": "lid", "note": "the top",
+                   "shapes": [{"shape": "box", "min": [-1, -1, 0.45], "max": [1, 1, 1]}]}],
+         "parts": [
+             {"part_id": "frame", "name": "frame", "kind": "cut", "note": "the rest",
+              "patches": [{"near": [0.0, 0.0, 0.5], "note": "where the lid was"}]},
+             {"part_id": "lid", "name": "lid", "kind": "removed", "note": "cut out"},
+             {"part_id": "cap", "name": "Stand-in: cap", "kind": "stand_in", "at": [0, 0, 0.5],
+              "note": "test", "citations": cited,
+              "shape": {"kind": "solids", "pieces": [{"shape": "box", "size_m": [1, 1, 0.1]}]}},
+         ],
+         "joints": [], "decided_by": "test", "method": "test"}
+    )  # fmt: skip
+    model = assemble_parts(mesh_path, spec, 1.0, tmp_path / "out")
+    frame = load_mesh(next(p.path for p in model.parts if p.part_id == "frame"))
+    assert frame.is_watertight
+    patched = [i for i in parts_issues(spec, model) if i.message.startswith("Patched")]
+    assert len(patched) == 1 and patched[0].severity == "warning" and patched[0].ref == "frame"
+    assert "where the lid was" in patched[0].message
 
 
 # ------------------------------------------------------------------------------ the pipeline

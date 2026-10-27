@@ -660,6 +660,17 @@ def parts_issues(spec: PartsSpec, model: AssembledModel) -> list[Issue]:
             )
         if part.inaccuracy:
             issues.append(Issue(severity="warning", ref=part.part_id, message=part.inaccuracy))
+        if part.patches:
+            notes = "; ".join(p.note for p in part.patches)
+            issues.append(
+                Issue(
+                    severity="warning",
+                    ref=part.part_id,
+                    message=f"Patched: {len(part.patches)} hole(s) in '{part.part_id}' where "
+                    f"faces cut out of the twin met it, closed flat, since the surface under them "
+                    f"is not known: {notes}.",
+                )
+            )
     issues += [
         Issue(severity="warning", ref=j.joint_id, message=j.inaccuracy)
         for j in spec.joints

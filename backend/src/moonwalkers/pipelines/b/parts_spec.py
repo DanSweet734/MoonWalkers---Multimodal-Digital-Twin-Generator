@@ -16,6 +16,8 @@ Decision 0012's spec splits one spindle off with one cylinder. This one, ``Parts
   measured in model units. For ``overall_depth``, ``overall_width`` and ``overall_height`` the
   pipeline measures the oriented mesh itself.
 - **Size checks:** other cited lengths with the inspector's measurement and how it was taken.
+- **Patches** (decision 0027, update of 2026-10-27): a hole that a removed part leaves in a cut
+  part, where no stand-in covers it, closed flat. Each names a point near the hole and why.
 
 The twin frame is decision 0012's: metres, +Z up, the front towards +X, the origin on the base
 plane under ``origin_xy`` (the spindle's axis on a drill press).
@@ -40,10 +42,20 @@ from .stand_ins import Shape, placed, shape_mesh
 
 # A scale fact the pipeline can measure on the oriented mesh: fact key -> axis of its extent.
 EXTENT_FACTS = {"overall_depth": 0, "overall_width": 1, "overall_height": 2}
+# How far a patch's point may be from the centre of the hole it closes, in model units.
+PATCH_REACH = 0.02
 
 
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class HolePatch(_Model):
+    """A hole in a cut part, closed flat: the part's open edge loop whose centre is nearest
+    ``near`` (model units, after orienting; within ``PATCH_REACH``)."""
+
+    near: Vec3
+    note: str  # where the hole is, and why nothing else covers it
 
 
 class SpecPart(_Model):
@@ -58,6 +70,7 @@ class SpecPart(_Model):
     turn_deg: float = 0.0
     replaces: str | None = None  # the removed part a stand-in takes the place of
     citations: list[Citation] = Field(default_factory=list)  # cited sizes, matched photos
+    patches: list[HolePatch] = Field(default_factory=list)  # a cut part's holes, closed flat
 
     @model_validator(mode="after")
     def _check(self) -> SpecPart:
@@ -68,6 +81,8 @@ class SpecPart(_Model):
                 raise ValueError(f"stand-in '{self.part_id}' needs citations for its sizes")
         elif self.shape is not None or self.at is not None or self.replaces is not None:
             raise ValueError(f"only a stand-in takes a shape, 'at' or 'replaces' ({self.part_id})")
+        if self.patches and self.kind != "cut":
+            raise ValueError(f"only a cut part has holes to patch ({self.part_id})")
         return self
 
 
@@ -218,11 +233,7 @@ def assemble_parts(
     meshes: list[trimesh.Trimesh] = []
     for part in spec.twin_parts:
         if part.kind == "cut":
-            faces = np.flatnonzero(labels == part.part_id)
-            if not len(faces):
-                raise ValueError(f"the cut list gives part '{part.part_id}' no faces")
-            piece = mesh.submesh([faces], append=True)
-            piece.remove_unreferenced_vertices()
+            piece = cut_part_mesh(mesh, labels, part)
             piece.apply_transform(placement)
         else:
             assert part.shape is not None and part.at is not None
@@ -263,6 +274,86 @@ def assemble_parts(
         seams=seams(mesh, list(labels)),
         removed_faces={r: int((labels == r).sum()) for r in removed},
     )
+
+
+def cut_part_mesh(mesh: trimesh.Trimesh, labels: np.ndarray, part: SpecPart) -> trimesh.Trimesh:
+    """A cut part's faces of the oriented mesh, in model units, with its holes patched."""
+    faces = np.flatnonzero(labels == part.part_id)
+    if not len(faces):
+        raise ValueError(f"the cut list gives part '{part.part_id}' no faces")
+    piece = mesh.submesh([faces], append=True)
+    piece.remove_unreferenced_vertices()
+    for patch in part.patches:
+        piece = patch_hole(piece, patch.near, part.part_id)
+    return piece
+
+
+def boundary_loops(mesh: trimesh.Trimesh) -> list[np.ndarray]:
+    """The mesh's open edge loops, each as its vertex indices in order. An open edge runs the way
+    its one face winds; a chain of open edges that does not close is left out."""
+    open_edges = mesh.edges[trimesh.grouping.group_rows(mesh.edges_sorted, require_count=1)]
+    following: dict[int, list[int]] = {}
+    for a, b in open_edges:
+        following.setdefault(int(a), []).append(int(b))
+    loops = []
+    while following:
+        start = current = next(iter(following))
+        loop = [start]
+        while current in following:
+            ahead = following[current].pop()
+            if not following[current]:
+                del following[current]
+            if ahead == start:
+                loops.append(np.array(loop))
+                break
+            loop.append(ahead)
+            current = ahead
+    return loops
+
+
+def simple_loops(loop: np.ndarray) -> list[np.ndarray]:
+    """A loop that passes a vertex twice, two holes touching at a point, as loops that do not.
+    Fanning such a loop from one centre would give the spoke to that vertex four faces, a
+    non-manifold edge (NVIDIA's asset validator on the T33901's table arm, 2026-10-27)."""
+    stack: list[int] = []
+    seen: dict[int, int] = {}
+    loops = []
+    for vertex in map(int, loop):
+        if vertex in seen:  # the loop came back to it: what it went round since is one loop
+            start = seen[vertex]
+            loops.append(np.array(stack[start:]))
+            for passed in stack[start + 1 :]:
+                del seen[passed]
+            del stack[start + 1 :]
+        else:
+            seen[vertex] = len(stack)
+            stack.append(vertex)
+    loops.append(np.array(stack))
+    return [simple for simple in loops if len(simple) >= 3]
+
+
+def patch_hole(mesh: trimesh.Trimesh, near: Vec3, part_id: str = "") -> trimesh.Trimesh:
+    """``mesh`` with the open edge loop nearest ``near`` closed by fans of triangles, one from
+    the centre of each simple loop in it (``simple_loops``). Each open edge a -> b belongs to a
+    face that runs a -> b; its patch triangle runs b -> a, so the patch winds the same way as the
+    faces around it."""
+    loops = boundary_loops(mesh)
+    if not loops:
+        raise ValueError(f"part '{part_id}' has no open edge loop to patch")
+    centres = np.array([mesh.vertices[loop].mean(axis=0) for loop in loops])
+    distances = np.linalg.norm(centres - np.asarray(near), axis=1)
+    nearest = int(np.argmin(distances))
+    if distances[nearest] > PATCH_REACH:
+        raise ValueError(
+            f"part '{part_id}' has no open edge loop within {PATCH_REACH} model units of "
+            f"{tuple(near)}; the nearest is centred at {tuple(np.round(centres[nearest], 3))}"
+        )
+    vertices, faces = [mesh.vertices], [mesh.faces]
+    for number, loop in enumerate(simple_loops(loops[nearest])):
+        centre = len(mesh.vertices) + number
+        vertices.append(mesh.vertices[loop].mean(axis=0, keepdims=True))
+        faces.append(np.column_stack([np.roll(loop, -1), loop, np.full(len(loop), centre)]))
+    return trimesh.Trimesh(np.vstack(vertices), np.vstack(faces), process=False)
 
 
 def _vec(values: np.ndarray) -> Vec3:

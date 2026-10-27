@@ -21,7 +21,7 @@ import trimesh
 
 from . import photo_marks
 from .mesh_tools import VIEWS, read_png
-from .parts_spec import PartsSpec, face_parts
+from .parts_spec import PartsSpec, cut_part_mesh, face_parts
 from .stand_ins import placed, shape_mesh
 
 # Where each generator slot's camera stands once the mesh is oriented, before the yaw: degrees
@@ -156,18 +156,20 @@ def twin_scene(
     mesh: trimesh.Trimesh, spec: PartsSpec, scale: float
 ) -> tuple[trimesh.Trimesh, np.ndarray]:
     """The twin's parts in the oriented mesh's model units, for views and overlays: the cut
-    parts' faces (removed ones left out) and the stand-ins, with each face's part."""
+    parts' faces with their holes patched (removed ones left out) and the stand-ins, with each
+    face's part."""
     labels = face_parts(mesh, spec)
-    keep = np.isin(labels, [p.part_id for p in spec.parts if p.kind == "cut"])
-    pieces = [mesh.submesh([np.flatnonzero(keep)], append=True)]
-    names = [labels[keep]]
+    pieces, names = [], []
     for part in spec.parts:
-        if part.kind != "stand_in":
+        if part.kind == "cut":
+            piece = cut_part_mesh(mesh, labels, part)
+        elif part.kind == "stand_in":
+            assert part.shape is not None and part.at is not None
+            local = shape_mesh(part.shape)
+            local.apply_scale(1.0 / scale)
+            piece = placed(local, part.at, part.turn_deg)
+        else:
             continue
-        assert part.shape is not None and part.at is not None
-        local = shape_mesh(part.shape)
-        local.apply_scale(1.0 / scale)
-        piece = placed(local, part.at, part.turn_deg)
         pieces.append(piece)
         names.append(np.full(len(piece.faces), part.part_id, dtype=object))
     return trimesh.util.concatenate(pieces), np.concatenate(names)
