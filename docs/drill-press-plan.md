@@ -684,12 +684,20 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
   - **PNGs in the PR: approved.** "Yes let's upload a few small PNGs under docs in the private
     repo" (an exception to CLAUDE.md rule 5, for review images only).
 - **So the second session first builds v2,** then does steps 6-7:
-  1. a balanced stand-in for the downfeed hub and its three handles (decision 0027, update),
-     replacing the generated hub, in `compose_spec.py`;
+  1. in `compose_spec.py` (decision 0027, updates; run-001's `RUN.md`, "Daniel's follow-up"):
+     - a balanced stand-in for the downfeed hub and its three handles, replacing the generated
+       hub and its stray faces;
+     - the rest of the generated table height crank cut out: its arm lies at y 0.10-0.12, behind
+       the column's back, and Daniel's screenshot shows two cranks;
+     - a stand-in table pivot lock handle (the cited "FOLDING HANDLE M10-1.5 X 28, 70L"),
+       replacing the generated arm's two prongs;
+     - the head wall's holes where the hub was cut, covered by the stand-in hub or logged;
+     - look at every `part_<id>.png`, not only `parts.png`, before building;
   2. a new run folder `2026-10-27_run-002` (or the day's date) with run-001's `request.json` and
      `generator/`, the new spec, built as `new_version`; check that both validators are clean;
-  3. if the joint recorder shows the quill still sagging, the spring's stand-in values or the
-     masses (decision 0024, update);
+  3. if the joint recorder shows the quill still sagging (v1: about 20 mm, ringing for about
+     4 s, in Daniel's recording of `twin.usdc`), the spring's stand-in values or the masses
+     (decision 0024, update);
   4. Daniel's Isaac Sim re-check of v2, with `adjustable_stop.usdc` and `all_motions.usdc`, which
      he has not opened yet;
   5. then the MCP tools, the agent procedure, the PR with a few PNGs of v2's views under `docs/`.

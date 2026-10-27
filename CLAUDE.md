@@ -80,8 +80,12 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     mass) and 0027 (joints and stand-ins in the geometry spec) are accepted.
   - **Daniel's Isaac Sim check (2026-10-27):** the table "looks fantastic" and its locks work;
     the quill sags below the top, and the downfeed handles (he called them "the crank") are
-    "very noticeably wrong". So v2 gets a balanced stand-in hub with three handles from the
-    cited stud and knob (decisions 0024 and 0027, updates). A few PNGs of the views may go
+    "very noticeably wrong". His recording: the quill rests about 20 mm low. His screenshots:
+    two table height cranks (the cut list missed the generated arm) and two prongs under the
+    table where the photos show one pivot lock handle. So v2 gets a balanced stand-in hub with
+    three handles from the cited stud and knob, the generated crank's arm cut out, and a
+    stand-in pivot lock handle (decisions 0024 and 0027, updates). Daniel's term: "downfeed
+    handles", not "the crank". A few PNGs of the views may go
     under `docs/` for the PR (Daniel's exception to rule 5, review images only).
   - **Second session:** start from the plan's Phase 5 "Hand-off (2026-10-27, from the first
     Phase 5 chat to the second)", including Daniel's review: build v2 for his re-check, then

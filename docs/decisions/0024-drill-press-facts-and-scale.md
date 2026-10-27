@@ -122,3 +122,10 @@ All are under 10%, so each is an info issue in the twin.
   update), which puts its weight on its axis. If the quill still sags, the spring's stand-in
   values (decision 0018) or the masses come back to this record. Masses stay placeholders until
   then.
+- **Measured the same day** (Daniel's recording of `twin.usdc`, run-001's `RUN.md`): the quill
+  settles about 20 mm below the top and rings for about 4 s; the handles turn with it, 1.14 rad at
+  rest. [INFERENCE] The handles turning does not alone prove the hub causes the sag, since the link
+  moves them either way. But the quill's spring held the Phase 1 quill at the top with a balanced
+  hub, and the acceleration drive covers the quill's own subtree (the guard and the chuck), so
+  the hub is the one load it does not cover. v2's recording settles it: with a balanced hub the
+  quill should rest at 0.

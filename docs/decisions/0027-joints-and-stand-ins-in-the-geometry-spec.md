@@ -162,8 +162,8 @@ Reported in chat; recorded in the run's `RUN.md`. Files opened: `twin.usdc`, `sp
 - **The downfeed handles** are "very noticeably wrong": "three handles that all connect to a
   central joint that is then connected to the main body. The shape looks like it is almost
   connected to the depth stop ring. It looked far more accurate on the low poly test model we
-  made." (Daniel called them "the crank". Read as the downfeed handles, since the table's crank
-  has one handle; to confirm with him.) The generated hub is the one decision 0023 logged: one
+  made." (Daniel called them "the crank"; he confirmed they are the downfeed handles, the name
+  to use from now on.) The generated hub is the one decision 0023 logged: one
   handle's root fused to the head's wall, in front of the depth stop's ring as seen from the front.
 - **The fixed joints** raised no problem in the files he opened.
 - **Success level:** 1. Level 2 waits for the quill to stay up.
@@ -177,3 +177,23 @@ its three handles join the stand-ins, in the next version:
 - the hub's size from the photos (Figs. 3, 48), against a cited size;
 - at the measured pinion axis, the handles at the generated handles' angles;
 - balanced, so its weight sits on its axis (decision 0024's update).
+
+### Update: his follow-up the same day (recording and screenshots in run-001)
+- **Isaac Sim Full 6.2.0.**
+- **The recording** (`twin.usdc`): the quill settles about 20 mm (0.79 in) below the top, after
+  ringing for about 4 s, and the handles follow it within 0.1% of the link's ratio (decision 0024,
+  update).
+- **Two more things the mesh gets wrong,** from his screenshots:
+  - **two table height cranks:** the stand-in, and the generated arm that the cut list missed
+    (it lies almost in the bracket's side plane, at y 0.10-0.12, where the removal box began at
+    0.11). A cut list fix, not a new stand-in: a removal box behind the column's back
+    (x below -0.235), from y 0.09, z -0.66 to -0.33, checked in `part_table_bracket.png`;
+  - **two prongs under the table,** where the photos show one table pivot lock handle. Under
+    Daniel's rule, a stand-in: the parts list's "FOLDING HANDLE M10-1.5 X 28, 70L" (part 122,
+    p. 50), a lever about 70 mm long [INFERENCE: read from "70L"], held to the table arm by a
+    fixed joint and shaped from Fig. 36 and the colour photo.
+- **The head's wall** shows black holes where the generated hub's faces were cut out. With the
+  hub a stand-in, its disc covers the holes around the pinion's axis; any left, such as the fused
+  handle's root, are patched or logged in v2.
+- **Process:** each part's own view (`views/part_<id>.png`) is looked at before a build, not only
+  `parts.png`. The bracket's view showed the leftover arm.
