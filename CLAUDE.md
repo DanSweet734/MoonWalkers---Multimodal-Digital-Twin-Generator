@@ -56,19 +56,23 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Daniel's rule for unknown details (2026-10-24):** a labelled stand-in where the detail is
     visible or needed; left out where it is hidden and unused. So the T33901's belt positions,
     under its closed belt cover, are left out; its twelve speeds are cited.
-- **Phase 4's spike is done and waits for Daniel's review** (PR #20, branch
-  `feat/phase-4-part-cutting-spike`, 2026-10-24). It compared four ways to cut the T33901 mesh
-  `grizzly-t33901/runs/2026-10-24_run-001` (squared with `--yaw 49.1`) into moving parts:
-  `docs/research/2026-10-24-part-cutting-spike.md`, re-run with
+- **Phase 4's spike is done** (PR #20, branch `feat/phase-4-part-cutting-spike`, 2026-10-24),
+  reviewed by Daniel on 2026-10-26. PR #20 waits for his word to merge. It compared four ways to
+  cut the T33901 mesh `grizzly-t33901/runs/2026-10-24_run-001` (squared with `--yaw 49.1`) into
+  moving parts: `docs/research/2026-10-24-part-cutting-spike.md`, re-run with
   `uv run python -m moonwalkers.pipelines.b.part_spike <out> --t33901 <run>`.
-  - **Decision 0023 (proposed):** an ordered cut list of cited shapes per part (`part_cuts`),
-    with each fed photo placed on the mesh by its silhouette (`photo_marks.fit_camera`) so a
-    reviewer sees the cuts drawn over it. Nothing was installed. Daniel chose to research
-    learned segmenters only (P3-SAM, PartField).
-  - **Open for Daniel:** stand-ins for the chuck (hidden in its guard, which the generator made
-    solid) and the column rack (smoothed into the column); the depth stop's fused ring; the
-    crank's pose; more photos.
-  - **Next, after review:** Phase 5, Pipeline B building several parts and joints.
+  - **Decision 0023 (accepted by Daniel, 2026-10-26):** an ordered cut list of cited shapes per
+    part (`part_cuts`), with each fed photo placed on the mesh by its silhouette
+    (`photo_marks.fit_camera`) so a reviewer sees the cuts drawn over it. Nothing was installed.
+    Daniel chose to research learned segmenters only (P3-SAM, PartField).
+  - **Daniel's answers (2026-10-26):**
+    - labelled stand-ins for the chuck (hidden in the guard the generator made solid), and for
+      the table and the crank, which the generator got wrong: "We should definitely match it to
+      the photos". The column rack gets one by his rule, unless he says otherwise (asked);
+    - the depth stop's fused ring stays with the head "for now";
+    - the back stays guessed: no photo of it exists, and there is no T33901 to photograph.
+  - **Next, after the merge:** Phase 5, Pipeline B building several parts and joints, with these
+    stand-ins (`docs/drill-press-plan.md`, Phase 5), in a new chat.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

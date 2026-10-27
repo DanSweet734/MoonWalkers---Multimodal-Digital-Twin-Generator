@@ -1,6 +1,8 @@
 # 0023 - Several moving parts from one mesh
 
-- **Status:** proposed (by Claude Code, drill-press plan Phase 4, 2026-10-24), for Daniel's review
+- **Status:** accepted (by Daniel, 2026-10-26, review of PR #20: "For decision 0023 I agree with
+  the methodology and I am willing to accept as proposed."). Proposed by Claude Code in the
+  drill-press plan's Phase 4. His answers to the open questions are at the end.
 - **Date:** 2026-10-24
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0012 (the geometry spec's one spindle cylinder becomes a cut list of any
@@ -97,7 +99,31 @@ The spike, its numbers and its sources: `docs/research/2026-10-24-part-cutting-s
     forward.
 
   Each is logged as an inaccuracy. Under Daniel's rule (a labelled stand-in where the detail is
-  visible or needed), the chuck and the rack are candidates for stand-ins in Phase 5.
+  visible or needed), the chuck and the rack are candidates for stand-ins in Phase 5. After his
+  review, so are the table and the crank (below).
 - **Seams stay open,** as with decision 0012's spindle. They show when a part moves.
 - **Reversing it:** the cut list is a spec field and three modules; dropping it returns to
   decision 0012's single spindle.
+
+## Daniel's answers (2026-10-26, review of PR #20)
+- **The chuck:** "If the chuck needs a stand in then yes that sounds like a plan." It does: the
+  generator made its clear guard solid, so a labelled stand-in chuck goes inside the guard in
+  Phase 5.
+- **The depth stop's ring:** "the depth stop ring can stay in the head for now." As cut: the
+  bracket is right, the nut does not ride on the rod. Logged.
+- **The crank and the table:** "The crank according to the photos looks all wrong, maybe I have
+  the wrong impression but it doesn't even look like one piece. The table too, it's supposed to
+  be symmetrical. We should definitely match it to the photos."
+  - Checked the same day (research note, section 8). In the mesh the crank is joined to the
+    bracket, but its shape is wrong: its arm curves down and back to a round knob, where Fig. 36
+    shows a flat S-shaped arm with the handle pointing out, down and to the front.
+  - The table's top is 0.586 by 0.614 model units, a skewed four-sided shape, centred 0.055 off
+    the spindle. The manual gives a square "11-1/4 in." by "11-1/4 in." (p. 9). The photos show it
+    square with rounded corners (`table_top.png`, Fig. 36).
+  - So both get labelled stand-ins matched to the photos in Phase 5: Daniel's rule for unknown
+    details, extended to details the generator got wrong. The table takes its cited sizes; the
+    crank has none cited.
+- **The back:** "I can't find anything of the back and we don't have a T33901 to take one
+  ourselves unfortuntately." It stays guessed, and is logged as such.
+- **The column rack** was not answered. It is visible in Figs. 36, 37 and 48, so under Daniel's
+  rule it gets a labelled stand-in too, unless he says otherwise (asked on 2026-10-26).

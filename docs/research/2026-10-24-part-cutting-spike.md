@@ -306,3 +306,46 @@ All read on 2026-10-24. The quotes are as the pages returned them through the fe
     the photos (a stand-in pose)?
   - **More photos:** a back or side photo would remove the guessed back, and a third or fourth
     view helps (d).
+
+  Daniel answered on 2026-10-26 (section 8).
+
+## 8. Daniel's review, and the table and the crank checked (2026-10-26)
+Daniel accepted decision 0023 and answered section 7's questions. His words are in the decision
+record. In short:
+- a stand-in chuck: yes;
+- the depth stop's ring stays with the head for now;
+- the crank "looks all wrong" and the table "is supposed to be symmetrical", so both are to match
+  the photos;
+- no photo of the back exists that he can find, and there is no T33901 to photograph.
+
+The table and the crank were then measured on the squared mesh with the cut list of section 4.
+These were read-only scratch scripts; the views were looked at and not kept.
+- **The table's top** (its 572 faces looking up, at z ≈ -0.231):
+  - **not square:** 0.586 deep (x) by 0.614 wide (y). At the column's 0.501 m per unit that is
+    about 11.6 by 12.1 in, where the manual gives "11-1/4 in." by "11-1/4 in." (p. 9);
+  - **off centre:** its centre is at (0.260, +0.033), 0.055 in y from the spindle's axis
+    (0.277, -0.022) [INFERENCE: the real table's centre hole sits under the spindle, as in
+    `table_top.png`];
+  - **uneven corners:** near the -Y edge (y -0.244) the table spans 0.357 in x, and near the +Y
+    edge (y +0.310) 0.460. Its outline mirrored left to right lies a median 0.007 units from
+    itself, and up to 0.056 (about 3 cm);
+  - seen from above, it is a skewed four-sided shape with four slot openings. The photos show a
+    square with rounded corners, a raised rim, and a plate with four slots in an X around a
+    centre hole (`table_top.png`; Fig. 36, p. 32).
+- **The crank** is joined to the bracket: the table bracket is one piece after the cut (section
+  4). Its shape is wrong, though:
+  - it is a round hub with an arm that curves down and back, to a knob at x -0.39 behind the
+    column;
+  - Fig. 36 and the colour photos show a flat S-shaped arm, with the handle pointing out, down
+    and to the front.
+- **What the stand-ins can rest on:**
+  - the table: its cited sizes, "11-1/4 in." square and "1-1/16 in." thick (p. 9), and the
+    photos for its rim, slots and centre hole;
+  - the chuck: the data sheet gives its type and capacity, "Drill Chuck Type ... JT3 Key Chuck"
+    and "Drill Chuck Size ... 1/8 - 5/8 in.", with "Spindle Taper ... MT#2" (PDF p. 8, read with
+    pypdf on 2026-10-26). None of these is its outer size, so the body's size comes from the
+    photos (Figs. 4, 46, 48) [INFERENCE];
+  - the crank: no size is cited, so its proportions come from the photos, scaled by cited sizes
+    [INFERENCE].
+- **The column rack** was not answered. It is visible (Figs. 36, 37, 48), so under Daniel's rule it
+  gets a stand-in too, unless he says otherwise.

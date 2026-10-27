@@ -12,7 +12,8 @@
 the same day (below).
 
 **Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4's spike
-is done and waits for review (2026-10-24, PR #20; decision 0023 proposed). Stop at the end of each phase,
+is done (2026-10-24, PR #20). Daniel reviewed it on 2026-10-26 and accepted decision 0023. PR #20
+waits for his word to merge, and Phase 5 is next. Stop at the end of each phase,
 open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
@@ -544,8 +545,8 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
   parts in five passes; the mesh is one piece for (b); the two photos were placed on it with a
   silhouette IoU of 0.80 for (d). Research note, section 6)
 - [x] Research note (`docs/research/2026-10-24-part-cutting-spike.md`); decision record 0023
-      (proposed: (a) cuts, with (d)'s camera fit drawing the cuts over the photos for review);
-      worklog; PR
+      ((a) cuts, with (d)'s camera fit drawing the cuts over the photos for review; accepted by
+      Daniel on 2026-10-26, with his answers on stand-ins); worklog; PR #20
 
 ## Phase 5 - Pipeline B builds several parts and joints (levels 1 and 2)
 - [ ] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
@@ -565,16 +566,30 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
 - [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
-  - Decision 0023 (proposed, Phase 4) makes the cuts an ordered cut list (`part_cuts`), each
-    shape with a note naming its evidence. The spike's T33901 list (`part_spike.T33901_CUTS`)
-    is a draft to start from.
+  - Decision 0023 (accepted by Daniel on 2026-10-26) makes the cuts an ordered cut list
+    (`part_cuts`), each shape with a note naming its evidence. The spike's T33901 list
+    (`part_spike.T33901_CUTS`) is a draft to start from.
   - The inspection gains what the spike did by hand: circle fits along any axis, coloured views
     of the parts, each part's pieces, and the cuts drawn over each fed photo.
-  - Logged for this phase (research note of 2026-10-24, section 4):
-    - the chuck hidden in its solid guard, and the rack smoothed into the column: candidates
-      for labelled stand-ins;
-    - the depth stop's fused ring, the handle fused to the wall, and the crank pointing back;
-    - spindle to column 5-6% short.
+  - Logged for this phase (research note of 2026-10-24, sections 4 and 8): the handle fused to
+    the wall; spindle to column 5-6% short; the spindle 1.4 cm off the column's plane.
+- [ ] **Labelled stand-ins** where the mesh hides or gets wrong a part that shows (Daniel,
+      2026-10-26, review of PR #20; decision 0023, "Daniel's answers"). Each is cited and
+      logged as an inaccuracy. How a stand-in takes a cut part's place in the spec is decided
+      in this phase.
+  - **The chuck,** inside the guard the generator made solid. The data sheet gives "JT3 Key
+    Chuck" and "1/8 - 5/8 in." (p. 8), not its outer size, which comes from Figs. 4, 46 and 48.
+  - **The table,** to match the photos: "11-1/4 in." square and "1-1/16 in." thick (p. 9), centred
+    under the spindle, with the rim, the four slots in an X and the centre hole of `table_top.png`
+    and Fig. 36. The generated one is 0.586 by 0.614 units, skewed, and 0.055 off the spindle.
+  - **The crank,** to match Fig. 36 and the colour photos: a flat S-shaped arm with its handle
+    pointing out, down and to the front. No size is cited.
+  - **The column rack,** visible in Figs. 36, 37 and 48, under Daniel's rule. He has not answered
+    this one: confirm.
+- [ ] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
+      ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
+      guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
+      no T33901 to photograph (Daniel, 2026-10-26).
 - [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
 - [ ] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
