@@ -78,6 +78,7 @@ A spec with `parts` is this kind; any other is decision 0012's single spindle, w
 
 A stand-in also has `shape` (`stand_ins.py`), `at`, `turn_deg` (about +Z), `replaces` (the removed
 part) and `citations` (its cited sizes and the photos it is matched to); it must have citations.
+A cut part may have `patches` (added on 2026-10-27, "Update: v2 and v3" below).
 
 ### What a build makes of it
 - **Parts:** one GLB per twin part in `meshes/`. A cut part cites the fed photos and the spec. A
@@ -197,3 +198,59 @@ its three handles join the stand-ins, in the next version:
   handle's root, are patched or logged in v2.
 - **Process:** each part's own view (`views/part_<id>.png`) is looked at before a build, not only
   `parts.png`. The bracket's view showed the leftover arm.
+
+## Update: v2 and v3 (2026-10-27, the second Phase 5 session)
+The four fixes above went into the spec (`compose_spec.py` in
+`data/machines/grizzly-t33901/part_cutting/2026-10-27_spec/`). Each part's own view was looked at
+before the build, and a dry run in a scratch copy of the data folder came before the real one.
+
+### What the spec gained
+| Part | Kind | From |
+|---|---|---|
+| `generated_handles` | removed | v1's cut part `handle_hub`: one generated handle points straight out along +Y to y 0.47, one's root is fused to the wall |
+| `handle_hub` | stand-in, replaces `generated_handles` | three handles at 120 degrees, each the cited "STUD-DE M12-1.75 X 178, 15" (read as 15 mm threaded into the hub and the knob [INFERENCE]) with a "KNOB M12-1.75, D35", on a hub on the "PINION SHAFT" (p. 50). From `front_operator_right.png` against the cited column (41 px for 3-1/8 in): the hub 60 mm across and 30 mm thick on a 40 mm boss, its face 70 mm off the wall; the knobs 35 mm at their ends (the cited D35, 16-20 px), 26 mm at their roots, 80 mm long. The angles 58, 178 and 298 degrees from the front towards up and a splay of 20 degrees out from the head, from an orthographic fit of the photo's three handle vectors (rms 3 px; camera azimuth 42 degrees, against the silhouette fit's 43.9; splay 23) and of Fig. 46's (splay 18, handles turned 30 degrees mod 120 by the lowered quill) |
+| `generated_pivot_lock` | removed | the arm's two prongs, and the outer one's back, a flap beside the collar |
+| `table_pivot_lock` | stand-in, fixed to the arm | the cited "FOLDING HANDLE M10-1.5 X 28, 70L" (p. 50) in the clamp's ears at the front of the arm's end collar (round about x 0.2815, y 0.008, r 0.082): a 10 mm screw 28 mm long, the handle's head on +Y, a lever about 70 mm long [INFERENCE: "70L"] hanging down; the ears 24 by 30 by 26 mm from Fig. 36 against the column |
+
+- **The handles' axis** moved to the pinion between its two round ends in the mesh: the spring
+  housing on -Y (x 0.252, z 0.482) and the round bar where the generated handles leave the +Y wall
+  (x 0.273, z 0.478), so (0.262, 0.480), 3.7 cm from v1's point nearest the generated handles'
+  lines. The hub's centre is 55 mm out from the wall (y 0.171).
+- **The head's wall** stays in `frame`, by a cut list entry before the handles' removal: up to
+  y 0.090 behind x 0.30 and 0.068 in front of it. v1's boxes took wall faces from y 0.07.
+- **The crank's arm** lies at x -0.38 to -0.34, y 0.03 to 0.09, down to z -0.65 (not y 0.10-0.12,
+  as v1's follow-up guessed). A cylinder r 0.128 keeps the bracket's round body, then a box behind
+  x -0.235 takes the arm.
+- **The overlay check** (`views/on_left_photo.png`): the stand-in's handles point as the photo's do
+  (up about 10 degrees toward the front, back nearly level, down vertical). The hub lands about 30
+  px low and to the front of the photo's hub, as v1's generated hub did: the fit's misfit nearest
+  the camera (decision 0023), not the stand-in's place on the mesh.
+
+### Patches: holes closed flat (`HolePatch`)
+- **Why:** a removed part leaves a hole where its faces met a cut part. Where no stand-in covers
+  it, Isaac Sim shows it black (Daniel's screenshots of v1). Options: (a) log the holes;
+  (b) a stand-in plate over each, a part of its own; (c) **close the hole in the cut part itself.**
+  Chosen: (c), since a hole is not a part, and (a) leaves what Daniel saw.
+- **How:** a cut part's `patches` each name a point near a hole (model units) and a note. The
+  pipeline closes the part's open edge loop whose centre is within 0.02 model units of the point
+  by a fan of triangles from the loop's centre, wound as the faces around it
+  (`parts_spec.patch_hole`). A loop that passes one point twice (two openings touching there) is
+  split there first (`simple_loops`): fanned from one centre, the spoke to that point had four
+  faces, a non-manifold edge in NVIDIA's validator (v2, below). Each patched part gets a warning
+  ("Patched: ..."), since the surface under the faces is not known.
+- **Used on the T33901:** the fused handle root on the head's wall; the bracket's boss face under
+  the crank (v1's dark ring round the crank's hub), its back where the crank's arm left it, and a
+  slit at its top front; the arm's top under the table (open in v1). The generated handles' root
+  at the pinion is inside the stand-in's boss.
+- **What it cannot fix:** two sheets of a part touching at one point (a "bowtie" vertex). The cut
+  list must not make one: the prongs' removal box at y 0.055 made two, at 0.05 none.
+
+### The builds
+- **v2** (run `2026-10-27_run-001`): ours 0 errors and 0 warnings; NVIDIA's 0 errors and 2 warnings
+  in every file, a non-manifold edge and points in the table arm, from the fan above. Superseded,
+  not for the Isaac Sim check; it stays as built (decision 0012).
+- **v3** (run `2026-10-27_run-002`): 12 parts (6 stand-ins), 11 joints (4 fixed). **Both
+  validators clean** in `twin.usdc` and the six check files (NVIDIA's: "No issues found.").
+  The stand-in hub's surface centroid is on the handles' axis (v1's generated hub: 0.047 m off).
+  Size checks: width -7.0% and depth -6.0% (v1: +1.6% and -4.7%, stretched by the generated handle
+  that pointed out along +Y); the others as v1. Daniel's Isaac Sim re-check is next.

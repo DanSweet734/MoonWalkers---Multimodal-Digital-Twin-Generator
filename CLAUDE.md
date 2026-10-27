@@ -87,9 +87,18 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     stand-in pivot lock handle (decisions 0024 and 0027, updates). Daniel's term: "downfeed
     handles", not "the crank". A few PNGs of the views may go
     under `docs/` for the PR (Daniel's exception to rule 5, review images only).
-  - **Second session:** start from the plan's Phase 5 "Hand-off (2026-10-27, from the first
-    Phase 5 chat to the second)", including Daniel's review: build v2 for his re-check, then
-    the MCP tools for a several-part spec, the agent procedure, and the PR.
+  - **Second session (2026-10-27):** from the plan's Phase 5 "Hand-off (2026-10-27, from the
+    first Phase 5 chat to the second)". **`grizzly/t33901@v3`** built in run
+    `2026-10-27_run-002`, both validators clean: a balanced stand-in downfeed hub with three
+    handles (cited stud and knob, angles and splay fitted to the photos), a stand-in table pivot
+    lock handle, the crank's leftover arm cut out, the head's wall kept whole, and holes closed
+    flat by the spec's new `patches` (decision 0027, "Update: v2 and v3"). v2 (run
+    `2026-10-27_run-001`) is superseded: NVIDIA's validator warned about the table arm. Build in a
+    scratch copy of `data/` first (`build --data`) and validate before the real build: a real
+    build stores a version for good.
+  - **Waiting for Daniel's Isaac Sim re-check of v3** with a joint recording (does the quill now
+    rest at the top). Then the MCP tools for a several-part spec, the agent procedure, and the PR
+    with a few small PNGs of v3's views under `docs/`.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

@@ -129,3 +129,7 @@ All are under 10%, so each is an info issue in the twin.
   hub, and the acceleration drive covers the quill's own subtree (the guard and the chuck), so
   the hub is the one load it does not cover. v2's recording settles it: with a balanced hub the
   quill should rest at 0.
+- **v3 has the balanced hub** (run `2026-10-27_run-002`, decision 0027, "Update: v2 and v3"): the
+  stand-in's surface centroid is on the handles' axis, against v1's 0.047 m in front of it. The
+  spring's stand-in values and the masses are unchanged. Daniel's recording of v3 settles whether
+  the quill now rests at 0.
