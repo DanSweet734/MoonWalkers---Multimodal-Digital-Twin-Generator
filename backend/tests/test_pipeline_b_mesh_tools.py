@@ -10,10 +10,12 @@ import pytest
 import trimesh
 
 from moonwalkers.pipelines.b.mesh_tools import (
+    face_groups,
     footprint_angle,
     load_mesh,
     orientation_matrix,
     radial_profile,
+    read_png,
     render_views,
     split_by_cylinder,
     tip_slabs,
@@ -129,3 +131,80 @@ def test_tip_slabs_find_the_spindle_axis(indexer) -> None:
         assert slab.axis_yz == pytest.approx((0.0, 0.2), abs=1e-9)
         assert slab.radius == pytest.approx(0.4, abs=1e-9)
     assert slabs[0].count > 0 and slabs[0].depth == 0.01
+
+
+# ---------------------------------------------------------------- face groups (drill-press Phase 4)
+def test_face_groups_finds_separate_pieces(indexer) -> None:
+    mesh = indexer()  # a box and a cylinder, side by side
+    groups = face_groups(mesh)
+    assert groups.max() == 1
+    assert len(set(groups[:12])) == 1  # the box's 12 triangles are one piece
+
+
+def test_face_groups_uses_only_the_joined_edges() -> None:
+    box = trimesh.creation.box()
+    assert len(set(face_groups(box))) == 1
+    alone = face_groups(box, np.zeros(len(box.face_adjacency), dtype=bool))
+    assert len(set(alone)) == len(box.faces)
+
+
+# ------------------------------------------------------------------------------- reading PNGs
+def _png(width: int, height: int, colour: int, rows: list[bytes]) -> bytes:
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+        )
+
+    header = struct.pack(">IIBBBBB", width, height, 8, colour, 0, 0, 0)
+    body = zlib.compress(b"".join(rows))
+    return (
+        b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", body) + chunk(b"IEND", b"")
+    )
+
+
+def _filtered(kind: int, row: np.ndarray, above: np.ndarray, step: int) -> bytes:
+    """``row`` encoded with PNG filter ``kind`` (the inverse of what read_png undoes)."""
+    out = []
+    for i, value in enumerate(row.tolist()):
+        a = int(row[i - step]) if i >= step else 0
+        b = int(above[i])
+        c = int(above[i - step]) if i >= step else 0
+        if kind == 0:
+            predicted = 0
+        elif kind == 1:
+            predicted = a
+        elif kind == 2:
+            predicted = b
+        elif kind == 3:
+            predicted = (a + b) // 2
+        else:
+            p = a + b - c
+            pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+            predicted = a if pa <= pb and pa <= pc else b if pb <= pc else c
+        out.append((value - predicted) % 256)
+    return bytes([kind, *out])
+
+
+def test_read_png_undoes_every_row_filter(tmp_path: Path) -> None:
+    rng = np.random.default_rng(1)
+    image = rng.integers(0, 256, size=(10, 7, 4), dtype=np.uint8)
+    flat = image.reshape(10, -1)
+    rows, above = [], np.zeros(flat.shape[1], dtype=np.uint8)
+    for y in range(10):
+        rows.append(_filtered(y % 5, flat[y], above, 4))  # filters 0-4 in turn
+        above = flat[y]
+    path = tmp_path / "filtered.png"
+    path.write_bytes(_png(7, 10, 6, rows))
+    assert np.array_equal(read_png(path), image)
+
+
+def test_read_png_reads_what_write_png_writes(tmp_path: Path) -> None:
+    image = np.arange(48, dtype=np.uint8).reshape(6, 8)
+    write_png(tmp_path / "grey.png", image)
+    assert np.array_equal(read_png(tmp_path / "grey.png")[..., 0], image)
+
+
+def test_read_png_refuses_other_files(tmp_path: Path) -> None:
+    (tmp_path / "x.png").write_bytes(b"not a png")
+    with pytest.raises(ValueError, match="not a PNG"):
+        read_png(tmp_path / "x.png")

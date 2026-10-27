@@ -30,6 +30,10 @@ data/
       pipeline_tries/
         2026-10-23_d.json     # one pipeline's result on some inputs, stored nowhere else
                               # (python -m moonwalkers.pipelines run ... --out, decision 0021)
+      part_cutting/
+        2026-10-24_spike/     # the drill-press plan's Phase 4 spike on cutting a mesh into parts
+                              # (python -m moonwalkers.pipelines.b.part_spike): report.md,
+                              # results.json, coloured views, the cuts drawn over the photos
       programs/
         2026-10-18_ha5c-manual-example-5-subroutine_v3/   # a program run on a stored twin:
           program.usdc, run_program.py, program_native.usdc,   # python -m moonwalkers.control run
