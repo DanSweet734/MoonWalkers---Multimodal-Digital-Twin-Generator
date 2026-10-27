@@ -213,9 +213,10 @@ def check_files(results: Sequence[PipelineResult]) -> list[CheckFile]:
             CheckFile(
                 "unlocked.usdc",
                 f"the locked joints ({_names(locked)}) loosened",
-                "On Play anything gravity can move under a loosened lock moves (a slide up a "
-                "column drops to its lowest point; decision 0018). Then Shift+drag each loosened "
-                "part: it moves freely within its limits.",
+                "On Play gravity moves what a loosened lock no longer holds: a slide up a column "
+                "drops to its lowest point (decision 0018), and a part whose weight sits off a "
+                "loosened turning axis swings to its limit. Then Shift+drag each loosened part: "
+                "it moves freely within its limits.",
                 machine={
                     j.joint_id: {"mode": JointMode(kind="free", citations=j.mode.citations)}
                     for j in locked

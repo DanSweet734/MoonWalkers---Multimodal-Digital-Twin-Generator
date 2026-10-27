@@ -117,16 +117,30 @@ def shape_mesh(shape: Solids | SlottedTable) -> trimesh.Trimesh:
     if isinstance(shape, SlottedTable):
         return table_mesh(shape)
     meshes = []
-    for piece in shape.pieces:
+    for index, piece in enumerate(shape.pieces):
         for i in range(piece.repeat):
             offset = np.asarray(piece.step_m) * i
-            meshes.append(_piece_mesh(piece, offset))
-    mesh = trimesh.util.concatenate(meshes)
-    # Pieces that meet end to end (a stack of cylinders) would leave points on top of each
-    # other; NVIDIA's asset validator warns about those, so they are welded.
-    mesh.merge_vertices()
+            meshes.append((index, _piece_mesh(piece, offset)))
+    _check_no_shared_points(meshes)
+    mesh = trimesh.util.concatenate([m for _, m in meshes])
     mesh.metadata = {}
     return mesh
+
+
+def _check_no_shared_points(meshes: list[tuple[int, trimesh.Trimesh]]) -> None:
+    """Pieces that meet exactly end to end (a stack of cylinders) leave points on top of each
+    other, which NVIDIA's asset validator warns about; welding them instead leaves non-manifold
+    points, a warning too (worklog 2026-10-27). So the pieces must overlap."""
+    seen: dict[tuple[float, float, float], int] = {}
+    for index, mesh in meshes:
+        mine = {tuple(v) for v in np.round(mesh.vertices, 7)}
+        for point in mine:
+            other = seen.setdefault(point, index)
+            if other != index:
+                raise ValueError(
+                    f"pieces {other} and {index} share the point {point}: let them overlap "
+                    "instead of meeting end to end"
+                )
 
 
 def placed(mesh: trimesh.Trimesh, at_m: Vec3, turn_deg: float) -> trimesh.Trimesh:

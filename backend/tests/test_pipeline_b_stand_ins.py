@@ -53,14 +53,18 @@ def test_a_cylinder_lies_along_its_axis() -> None:
     assert down.extents == pytest.approx([0.02, 0.02, 0.1], abs=1e-9)
 
 
-def test_pieces_that_meet_end_to_end_share_no_points() -> None:
-    """NVIDIA's asset validator warns about points on top of each other (worklog 2026-10-27)."""
+def test_pieces_must_overlap_rather_than_meet_end_to_end() -> None:
+    """Points on top of each other are an asset-validator warning, and welding them leaves
+    non-manifold points, another (worklog 2026-10-27); overlapping pieces leave neither."""
     stack = [
         CylinderPiece(radius_m=0.02, length_m=0.05, center_m=(0, 0, 0.025)),
         CylinderPiece(radius_m=0.03, length_m=0.05, center_m=(0, 0, 0.075)),
     ]
-    mesh = shape_mesh(Solids(pieces=stack))
-    rounded = np.round(mesh.vertices, 9)
+    with pytest.raises(ValueError, match="pieces 0 and 1 share the point"):
+        shape_mesh(Solids(pieces=stack))
+    overlapping = [stack[0], stack[1].model_copy(update={"center_m": (0, 0, 0.0745)})]
+    mesh = shape_mesh(Solids(pieces=overlapping))
+    rounded = np.round(mesh.vertices, 7)
     assert len(np.unique(rounded, axis=0)) == len(rounded)
 
 
