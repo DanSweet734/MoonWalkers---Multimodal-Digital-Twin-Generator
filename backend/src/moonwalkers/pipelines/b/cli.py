@@ -3,7 +3,10 @@
     uv run python -m moonwalkers.pipelines.b build RUN --reference FILE
     uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--yaw DEG]
                                                           [--circle-x X ...]]
-    uv run python -m moonwalkers.pipelines.b inspect RUN --preview
+    uv run python -m moonwalkers.pipelines.b inspect RUN --up +y --front +z [--yaw DEG]
+                                                      --circles-along z --at Z ...
+    uv run python -m moonwalkers.pipelines.b inspect RUN --preview [--spec FILE]
+                                                      [--reference FILE] [--no-photos]
 
 ``RUN`` is a run folder, ``data/machines/<machine>/runs/<run>``, holding ``request.json`` (a
 ``JobRequest`` with the photos as sources, and their views when there are several; decision
@@ -13,9 +16,11 @@ the first time it generates the mesh and stops for the geometry spec; once
 ``checks/spin.usdc`` and ``checks/quarter_turn.usdc`` for the Isaac Sim check) and writes
 ``RUN.md``. One run folder holds one built twin: build a new version in a new run folder.
 ``inspect`` renders and measures the generated mesh, and ``--preview`` tries the spec without
-storing anything. The generator environment is found through ``--gen-root`` or the
-``MOONWALKERS_GEN_ROOT`` environment variable (docs/setup/generators.md). The MCP server
-(``moonwalkers.mcp``) offers the same steps as tools.
+storing anything. A several-part spec (decisions 0023 and 0027) is previewed into
+``RUN/preview_parts/``: the coloured views of the cuts and the parts, each part alone, and the
+parts drawn over each fed photo, with the scale and the size checks. The generator environment
+is found through ``--gen-root`` or the ``MOONWALKERS_GEN_ROOT`` environment variable
+(docs/setup/generators.md). The MCP server (``moonwalkers.mcp``) offers the same steps as tools.
 """
 
 from __future__ import annotations
@@ -32,16 +37,28 @@ from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.orchestrator import OrchestratorError
 from moonwalkers.usd.exporter import ExportError
 
-from .assemble import GeometrySpec
 from .build import REQUEST_FILE, build_run
-from .inspection import format_inspection, format_preview, inspect_mesh, preview_parts
+from .inspection import (
+    format_inspection,
+    format_parts_preview,
+    format_preview,
+    inspect_mesh,
+    preview_parts,
+    preview_parts_spec,
+)
+from .mesh_tools import fit_circles_along, load_mesh, orientation_matrix, transformed
+from .parts_spec import PartsSpec
 from .pipeline import (
+    GENERATOR_DIR,
     SPEC_FILE,
     GeometrySpecMissing,
     RunFolderConflict,
     generated_mesh,
     load_reference,
+    read_spec,
 )
+
+PARTS_PREVIEW_DIR = "preview_parts"
 
 AXES = ("+x", "-x", "+y", "-y", "+z", "-z")
 
@@ -110,7 +127,22 @@ def _parser() -> argparse.ArgumentParser:
         "as the axis (when the spindle is not the front-most part)",
     )
     inspect.add_argument(
+        "--circles-along",
+        choices=("x", "y", "z"),
+        help="fit circles in slices across this axis instead (the column and the quill stand "
+        "along z), at the positions given with --at",
+    )
+    inspect.add_argument("--at", type=float, nargs="+", metavar="POS", help="slice positions")
+    inspect.add_argument(
         "--preview", action="store_true", help=f"try RUN/{SPEC_FILE} without storing anything"
+    )
+    inspect.add_argument(
+        "--spec", type=Path, help=f"with --preview: a draft spec, not RUN/{SPEC_FILE}"
+    )
+    inspect.add_argument(
+        "--no-photos",
+        action="store_true",
+        help="with --preview of several parts: skip placing the fed photos (about a minute each)",
     )
     inspect.add_argument("--reference", type=Path, help="reference facts, for size checks")
     inspect.set_defaults(command=_inspect)
@@ -122,12 +154,35 @@ def _inspect(args: argparse.Namespace) -> int:
     run_dir = args.run_dir
     mesh = generated_mesh(run_dir)
     if args.preview:
-        spec_path = run_dir / SPEC_FILE
+        spec_path = args.spec or run_dir / SPEC_FILE
         if not spec_path.is_file():
             raise FileNotFoundError(f"--preview needs {spec_path}")
-        spec = GeometrySpec.model_validate_json(spec_path.read_text(encoding="utf-8"))
+        spec = read_spec(spec_path)
         reference = load_reference(args.reference) if args.reference else None
+        if isinstance(spec, PartsSpec):
+            prepared = None if args.no_photos else run_dir / GENERATOR_DIR / "prepared"
+            preview = preview_parts_spec(
+                mesh, spec, reference, run_dir / PARTS_PREVIEW_DIR, prepared
+            )
+            print(format_parts_preview(preview))
+            return 0
         print(format_preview(preview_parts(mesh, spec, run_dir / "preview"), reference))
+        return 0
+    if args.circles_along:
+        if args.up is None or not args.at:
+            raise UsageError("--circles-along needs --up, --front and --at")
+        oriented = transformed(load_mesh(mesh), orientation_matrix(args.up, args.front, args.yaw))
+        for fit, centre in fit_circles_along(oriented, args.circles_along, args.at):
+            where = (
+                "no circle"
+                if centre is None
+                else (
+                    f"centre ({centre[0]:+.4f}, {centre[1]:+.4f}, {centre[2]:+.4f}), radius "
+                    f"{fit.radius:.4f}, rms {fit.rms or 0:.4f}, coverage {fit.coverage:.0%}"
+                    f"{', round' if fit.round else ''}"
+                )
+            )
+            print(f"{args.circles_along} = {fit.x:+.3f}: {where} ({fit.samples} samples)")
         return 0
     if (args.up is None) != (args.front is None):
         raise UsageError("give both --up and --front, or neither")

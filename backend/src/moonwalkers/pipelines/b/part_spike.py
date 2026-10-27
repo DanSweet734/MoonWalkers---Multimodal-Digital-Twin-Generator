@@ -24,10 +24,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import struct
 import sys
 import time
-import zlib
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -39,8 +37,13 @@ import trimesh
 from moonwalkers.usd.primitive_drill_press import COLUMN_X, HUB
 
 from . import mesh_segments, photo_marks, synthetic_parts
-from .mesh_tools import VIEWS, load_mesh, orientation_matrix, read_png, transformed
+from .mesh_tools import load_mesh, orientation_matrix, read_png, transformed
 from .part_cuts import BoxCut, CylinderCut, PartCut, assign, seams
+from .part_views import (  # moved there in Phase 5; kept importable from here
+    SLOT_AZIMUTHS,
+    photo_overlay,
+    render_parts,
+)
 
 Z = (0.0, 0.0, 1.0)
 
@@ -153,10 +156,6 @@ VIEW_SETS: dict[str, list[tuple[float, float]]] = {
     "four sides and the top": [(0.0, 0.0), (90.0, 0.0), (180.0, 0.0), (-90.0, 0.0), (0.0, 89.0)],
 }
 SHARP_ANGLES = (20.0, 30.0, 45.0)
-# Where each generator slot's camera stands once the mesh is oriented, before the yaw: degrees
-# from +X towards +Y (decision 0022: `left` is the machine's own left, +Y). A corners grid then
-# turns by -yaw_deg.
-SLOT_AZIMUTHS = {"front": 0.0, "left": 90.0}
 
 
 @dataclass
@@ -337,112 +336,6 @@ def _part_meshes(mesh: trimesh.Trimesh, parts: Sequence) -> dict[str, trimesh.Tr
         piece = mesh.submesh([np.flatnonzero(parts == name)], append=True)
         meshes[str(name)] = piece
     return meshes
-
-
-# ------------------------------------------------------------------------- coloured views
-PALETTE = np.array(
-    [
-        (190, 190, 190),  # the first part (frame, or the largest segment): grey
-        (230, 97, 1),
-        (94, 60, 153),
-        (27, 158, 119),
-        (231, 41, 138),
-        (31, 120, 180),
-        (227, 26, 28),
-        (255, 191, 0),
-        (166, 86, 40),
-        (0, 158, 199),
-        (152, 78, 163),
-        (102, 166, 30),
-    ],
-    dtype=float,
-)
-
-
-def part_colours(mesh: trimesh.Trimesh, parts: Sequence) -> tuple[np.ndarray, list[str]]:
-    """A colour per face (N x 3) by its part or segment, and the legend: the fixed part (or the
-    largest segment) grey, the others in ``PALETTE``'s colours."""
-    parts = np.asarray(parts)
-    names, index = np.unique(parts.astype(str), return_inverse=True)
-    if "frame" in names:  # the fixed part grey, the moving parts in colour
-        order = np.r_[np.flatnonzero(names == "frame"), np.flatnonzero(names != "frame")]
-    else:  # segments: the largest grey
-        order = np.argsort(-np.bincount(index, weights=mesh.area_faces))
-    colour_of = np.empty(len(names), dtype=int)
-    colour_of[order] = np.arange(len(names)) % len(PALETTE)
-    if len(names) > len(PALETTE):  # many segments: repeat colours, seeded
-        colour_of = np.random.default_rng(0).integers(1, len(PALETTE), len(names))
-        colour_of[order[0]] = 0
-    legend = [f"{names[i]}: rgb{tuple(int(c) for c in PALETTE[colour_of[i]])}" for i in order]
-    return PALETTE[colour_of[index]], legend
-
-
-def render_parts(mesh: trimesh.Trimesh, parts: Sequence, out: Path, size: int = 400) -> Path:
-    """The six inspection views (``mesh_tools.VIEWS``), each face coloured by its part or
-    segment and shaded by its slope, as ``out``.png; the parts' colours as ``out``.txt."""
-    colours, legend = part_colours(mesh, parts)
-    centre = mesh.bounds.mean(axis=0)
-    radius = float(np.linalg.norm(mesh.extents)) / 2.0
-    images = {}
-    for view, (toward, up) in VIEWS.items():
-        camera = photo_marks.Camera(toward, up, tuple(centre), radius, size)
-        face, _ = photo_marks.render(mesh, camera)
-        image = np.full((size, size, 3), 255.0)
-        hit = face >= 0
-        d = np.asarray(toward) / np.linalg.norm(toward)
-        shade = 0.35 + 0.65 * np.clip(mesh.face_normals[face[hit]] @ d, 0.0, 1.0)
-        image[hit] = colours[face[hit]] * shade[:, None]
-        images[view] = image.astype(np.uint8)
-    rows = [
-        np.hstack([images[v] for v in row])
-        for row in (("front", "left", "back"), ("right", "top", "iso"))
-    ]
-    out.parent.mkdir(parents=True, exist_ok=True)
-    path = out.with_suffix(".png")
-    write_rgb_png(path, np.vstack(rows))
-    if len(legend) <= 40:
-        out.with_suffix(".txt").write_text("\n".join(legend) + "\n", encoding="utf-8")
-    return path
-
-
-def photo_overlay(
-    mesh: trimesh.Trimesh, parts: Sequence, photo: np.ndarray, fit: photo_marks.PhotoFit, out: Path
-) -> Path:
-    """The photo in grey with the moving parts' colours over it where the fitted camera sees
-    them, and the mesh's outline in magenta: a reviewer's check of the cuts against the photo.
-    ``photo`` is RGBA, as the generator's prepared inputs are: its alpha is the machine's mask."""
-    if photo.ndim != 3 or photo.shape[2] != 4:
-        raise ValueError("photo_overlay needs an RGBA photo, whose alpha masks the machine")
-    mask = photo[..., 3] > 127
-    grey = photo[..., :3].mean(axis=2)
-    image = np.repeat(grey[..., None], 3, axis=2)
-    faces = photo_marks.in_photo(mesh, mask, fit)
-    colours, _ = part_colours(mesh, parts)
-    moving = (faces >= 0) & (np.asarray(parts, dtype=object)[np.maximum(faces, 0)] != "frame")
-    image[moving] = 0.45 * image[moving] + 0.55 * colours[faces[moving]]
-    seen = faces >= 0
-    outline = (seen != np.roll(seen, 1, axis=0)) | (seen != np.roll(seen, 1, axis=1))
-    image[outline] = (255, 0, 255)
-    path = out.with_suffix(".png")
-    write_rgb_png(path, image.clip(0, 255).astype(np.uint8))
-    return path
-
-
-def write_rgb_png(path: Path, image: np.ndarray) -> None:
-    """Write an 8-bit colour image (H x W x 3, uint8) as PNG using only the standard library."""
-    if image.dtype != np.uint8 or image.ndim != 3 or image.shape[2] != 3:
-        raise ValueError("write_rgb_png expects an H x W x 3 uint8 array")
-    height, width, _ = image.shape
-    raw = b"".join(b"\x00" + image[row].tobytes() for row in range(height))
-
-    def chunk(kind: bytes, data: bytes) -> bytes:
-        return (
-            struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
-        )
-
-    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(raw, 9))
-    Path(path).write_bytes(png + chunk(b"IEND", b""))
 
 
 # ---------------------------------------------------------------------------------- report

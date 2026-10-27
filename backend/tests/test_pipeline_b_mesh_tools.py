@@ -11,6 +11,7 @@ import trimesh
 
 from moonwalkers.pipelines.b.mesh_tools import (
     face_groups,
+    fit_circles_along,
     footprint_angle,
     load_mesh,
     orientation_matrix,
@@ -208,3 +209,20 @@ def test_read_png_refuses_other_files(tmp_path: Path) -> None:
     (tmp_path / "x.png").write_bytes(b"not a png")
     with pytest.raises(ValueError, match="not a PNG"):
         read_png(tmp_path / "x.png")
+
+
+@pytest.mark.parametrize("axis", ["x", "y", "z"])
+def test_circles_are_fitted_across_any_axis(axis: str) -> None:
+    """The drill press's column and quill stand along z (drill-press plan, Phase 5)."""
+    rod = trimesh.creation.cylinder(radius=0.3, height=2.0, sections=64)  # along z
+    turn = {"x": ((0, 1, 0), math.pi / 2), "y": ((1, 0, 0), math.pi / 2), "z": ((0, 0, 1), 0.0)}
+    direction, angle = turn[axis]
+    rod.apply_transform(trimesh.transformations.rotation_matrix(angle, direction))
+    rod.apply_translation((0.1, -0.2, 0.3))
+    index = "xyz".index(axis)
+    position = (0.1, -0.2, 0.3)[index] + 0.5
+    ((fit, centre),) = fit_circles_along(rod, axis, [position])
+    assert fit.round and fit.radius == pytest.approx(0.3, abs=0.01)
+    expected = [0.1, -0.2, 0.3]
+    expected[index] = position
+    assert centre == pytest.approx(expected, abs=0.01)

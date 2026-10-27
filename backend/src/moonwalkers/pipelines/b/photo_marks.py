@@ -172,11 +172,23 @@ def fit_camera(
     return best
 
 
-def in_photo(mesh: trimesh.Trimesh, mask: np.ndarray, fit: PhotoFit, size: int = 600) -> np.ndarray:
-    """The face the fitted camera sees at every pixel of the photo (``UNMARKED`` where none)."""
+def in_photo(
+    mesh: trimesh.Trimesh,
+    mask: np.ndarray,
+    fit: PhotoFit,
+    size: int = 600,
+    scene: trimesh.Trimesh | None = None,
+) -> np.ndarray:
+    """The face the fitted camera sees at every pixel of the photo (``UNMARKED`` where none).
+
+    With ``scene``, another mesh in the same frame (the twin's parts, stand-ins included), its
+    faces are drawn instead, through the camera and the alignment fitted to ``mesh``."""
     camera = Camera.around(mesh, fit.azimuth_deg, fit.elevation_deg, size)
     faces, _ = render(mesh, camera, samples=2_000_000)
-    return _onto(faces, mask)
+    if scene is None:
+        return _onto(faces, mask)
+    drawn, _ = render(scene, camera, samples=2_000_000)
+    return _onto(drawn, mask, faces >= 0)
 
 
 def _overlap(
@@ -189,10 +201,11 @@ def _overlap(
     return PhotoFit(float(azimuth), float(elevation), float((seen & mask).sum() / union))
 
 
-def _onto(faces: np.ndarray, mask: np.ndarray) -> np.ndarray:
-    """A render's face numbers moved onto the photo's pixels, its silhouette's bounding box
-    centred on the mask's and scaled to the same height (nearest pixel)."""
-    hit = faces >= 0
+def _onto(faces: np.ndarray, mask: np.ndarray, hit: np.ndarray | None = None) -> np.ndarray:
+    """A render's face numbers moved onto the photo's pixels, its silhouette's bounding box (or
+    ``hit``'s, the fitted mesh's) centred on the mask's and scaled to the same height (nearest
+    pixel)."""
+    hit = faces >= 0 if hit is None else hit
     if not hit.any() or not mask.any():
         return np.full(mask.shape, UNMARKED)
     (r0, r1), (c0, c1) = _extent(hit)

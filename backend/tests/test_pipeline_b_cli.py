@@ -92,6 +92,59 @@ def test_preview_tries_the_spec_without_recording_it(
     assert not (generated.run_dir / "meshes").exists()  # nothing a build would reuse
 
 
+def test_inspect_fits_circles_along_any_axis(generated, capsys) -> None:
+    run_dir = str(generated.run_dir)
+    oriented = ["inspect", run_dir, "--up", "+y", "--front", "+z"]
+    assert cli.main([*oriented, "--circles-along", "x", "--at", "1.3"]) == 0
+    out = capsys.readouterr().out
+    assert "x = +1.300: centre (+1.3000, +0.0000, +0.2000), radius 0.39" in out
+    assert cli.main(["inspect", run_dir, "--circles-along", "z", "--at", "0"]) == 1
+    assert "--circles-along needs --up, --front and --at" in capsys.readouterr().err
+
+
+def test_preview_of_several_parts_writes_the_reviewers_views(
+    generated, test_reference, tmp_path, capsys
+) -> None:
+    spec = {
+        "up": "+y",
+        "front": "+z",
+        "origin_xy": [1.0, 0.0],
+        "scale": {"fact": "overall_width", "how": "the mesh's width"},
+        "fixed_part": "body",
+        "cuts": [
+            {
+                "part": "spindle",
+                "shapes": [{"shape": "cylinder", "point": [1.0, 0.0, 0.2], "axis": [1, 0, 0],
+                            "radius": 0.45, "start": 0.0}],
+            }
+        ],
+        "parts": [
+            {"part_id": "body", "name": "body", "kind": "cut", "note": "the box"},
+            {"part_id": "spindle", "name": "spindle", "kind": "cut", "note": "the cylinder"},
+        ],
+        "joints": [
+            {"joint_id": "spindle_rotation", "joint_type": "revolute", "parent": "body",
+             "child": "spindle", "axis": [1, 0, 0], "point": [1.0, 0.0, 0.2], "note": "its axis",
+             "citations": [{"source_id": "src-test-sheet"}]}
+        ],
+        "decided_by": "test",
+        "method": "test",
+    }  # fmt: skip
+    draft = tmp_path / "draft_spec.json"
+    draft.write_text(json.dumps(spec), encoding="utf-8")
+    reference = tmp_path / "reference.json"
+    reference.write_text(test_reference.model_dump_json(), encoding="utf-8")
+    args = ["inspect", str(generated.run_dir), "--preview", "--spec", str(draft)]
+    assert cli.main([*args, "--reference", str(reference), "--no-photos"]) == 0
+    out = capsys.readouterr().out
+    assert "scale: 0.084667 m per model unit (3.0000 model units)" in out  # 0.254 m / 3 units
+    assert "spindle (cut):" in out and "spindle_rotation: axis (+1.0000" in out
+    preview = generated.run_dir / "preview_parts"
+    assert (preview / "parts.png").is_file() and (preview / "part_spindle.png").is_file()
+    assert not (generated.run_dir / "meshes").exists()  # nothing a build would reuse
+    assert not (generated.run_dir / "geometry_spec.json").exists()
+
+
 def test_inspect_needs_a_generated_mesh(photo_run, capsys) -> None:
     assert cli.main(["inspect", str(photo_run.run_dir)]) == 1
     assert "no generated mesh" in capsys.readouterr().err
