@@ -72,11 +72,16 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     - the depth stop's fused ring stays with the head "for now";
     - the back stays guessed: no photo of it exists, and there is no T33901 to photograph.
 - **Now: Phase 5, Pipeline B builds several parts and joints** (branch
-  `feat/phase-5-several-parts-and-joints`, from `main` after PR #20). Start from the hand-off in
-  `docs/drill-press-plan.md`, Phase 5: what Phase 4 left in code and what to do with each module,
-  the T33901's measurements and frame, the two cited sizes that already agree on the scale, the
-  stand-ins and how the exporter can take them, and the environment's gaps (numpy and trimesh
-  only).
+  `feat/phase-5-several-parts-and-joints`, from `main` after PR #20).
+  - **First session done (2026-10-26/27):** `grizzly/t33901@v1` built in run
+    `2026-10-24_run-001`: 11 parts, four of them labelled stand-ins matched to the photos (the
+    chuck, the table, the crank, the column rack), on 10 joints, scaled by the cited 39 in height.
+    The coloured views and photo overlays are in the run's `views/`. Decisions 0024 (scale and
+    mass) and 0027 (joints and stand-ins in the geometry spec) are proposed. **Daniel's Isaac
+    Sim check is pending.**
+  - **Second session:** start from the plan's Phase 5 "Hand-off (2026-10-27, from the first
+    Phase 5 chat to the second)": the MCP tools for a several-part spec, the agent procedure,
+    then the PR.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

@@ -12,7 +12,8 @@
 the same day (below).
 
 **Status:** approved (PR #15). Phases 0 to 4 are done (PRs #15, #16, #18, #19, #20; PR #20
-merged on 2026-10-26 with decision 0023 accepted). Phase 5 is next, with its hand-off below. Stop
+merged on 2026-10-26 with decision 0023 accepted). Phase 5 is under way: its first session built
+`grizzly/t33901@v1` for Daniel's Isaac Sim check, and its second session has a hand-off below. Stop
 at the end of each phase, open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
@@ -639,24 +640,69 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
 - **Housekeeping:** PR #20's branch `feat/phase-4-part-cutting-spike` was kept, since Daniel did
   not ask to delete it. No deadline was given for Phase 5.
 
+### Hand-off (2026-10-27, from the first Phase 5 chat to the second)
+- **Done in the first session** (worklog 2026-10-27; commits on this branch): steps 1-5 of the
+  order of work Daniel was given.
+  - The T33901's reference facts and the quote checker.
+  - Decisions 0024 (the scale is the overall height; masses stay placeholders) and 0027 (joints
+    and stand-ins in the spec), both **proposed**, for Daniel's review.
+  - The several-part spec, stand-ins, views, check files and size checks in Pipeline B.
+  - **`grizzly/t33901@v1` built** in run `2026-10-24_run-001`: 11 parts (4 stand-ins), 10 joints
+    (3 fixed), six check files, `views/`, `record_joints.py`. Its `RUN.md` lists what to look for
+    in each file. **Daniel's Isaac Sim check is pending.**
+- **Told Daniel in the first report:** his "Yes let's merge PR #20" was read as a yes to the column
+  rack's stand-in too.
+- **Left for the second session** (steps 6-7):
+  - **The MCP tools** (item below). Today `add_joint` and `set_scale` write decision 0012's spec
+    parts (`workspace/runs.py`, `set_spec_part`, `spec_state`), `preview_twin` calls the
+    single-spindle preview, and `inspect_geometry` fits circles across x only. The pipeline, the
+    CLI and the views already take a `PartsSpec` (`pipelines/b/parts_spec.py`), so the tools need
+    to write one: the cut list, parts (cut, stand-in, removed), joints and the scale fact, then
+    preview it with `inspection.preview_parts_spec`. Old runs must keep working.
+  - `docs/agent-procedure.md`, the README status, CLAUDE.md, then the PR. The PR describes the
+    views; they are in `data/` (not in git), and the overlays hold copyrighted photos.
+- **The T33901's spec:** `data/machines/grizzly-t33901/part_cutting/2026-10-27_spec/`.
+  `compose_spec.py` writes it from cited inches and measured model units, and
+  `geometry_spec_next.json` is its current output. It differs from v1 only where stand-in pieces
+  met end to end; they now overlap. A next version goes in a new run folder: copy `request.json`
+  and `generator/` from run-001, so the mesh is reused by its key and not regenerated.
+- **NVIDIA's validator on v1:** 0 errors, 3 warnings (non-manifold points in the chuck and the
+  crank). Fixed in the code and the next spec; a dry run of the next spec gave "No issues found."
+  (worklog 2026-10-27).
+- **Time:** a build takes about 2.5 min, most of it placing the two fed photos for the overlays
+  (about a minute each). A preview with `--no-photos` takes about 40 s.
+- **Still true from the hand-off above:** the MCP server keeps the tools it started with; ask
+  Daniel to restart it (`/mcp`) before testing changed tools through it. Write `gh pr create`
+  bodies to a file (`--body-file`).
+
 ### Items
-- [ ] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
+- [x] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
       quote checked against its PDF page
-- [ ] A quote checker: it confirms every quote in a reference file is on its cited page, using
+      (Oct 27, 2026: `pipelines/b/grizzly_t33901.reference.json`, 36 facts; 42 of 42 quotes on
+      their cited pages)
+- [x] A quote checker: it confirms every quote in a reference file is on its cited page, using
       the PDF's text, and runs on the HA5C's file and the T33901's. pypdf's text splits words at
       line breaks with a hyphen ("prede- termined", p. 7; "con - trolled", p. 30), so the checker
       must join them (worklog 2026-10-23)
-- [ ] Decision record 0024: facts and scale. Which cited dimension sets the scale (candidates: the
+      (Oct 27, 2026: `python -m moonwalkers.pipelines.b.quotes`. The HA5C's: 15 of 16 checkable
+      quotes; the miss is the drawing's stacked fraction, which pypdf cannot read as written)
+- [x] Decision record 0024: facts and scale. Which cited dimension sets the scale (candidates: the
       7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
       several photos, cited dimensions can also check one another. Then how the cited 108 lb is
       split between the parts, or whether the placeholder density stays (decision 0010).
+      (Oct 27, 2026: proposed. The overall height, 0.496536 m per model unit; the column's
+      diameter agrees within 0.8%. Masses stay placeholders: nothing at levels 1-2 depends on
+      them, and no source splits the weight)
 - [x] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
       (`kb/keys.py`), but the data folder is `grizzly-t33901`. Add a `grizzly` alias, with the
       source of the short name (decision 0009).
       (Oct 24, 2026: done early, in Phase 3's PR #19, on Daniel's word. Both names now give
       `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
-- [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
+- [x] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
+      (Oct 27, 2026: `pipelines/b/parts_spec.py`, decision 0027, proposed. The inspection's views,
+      pieces, overlays and circle fits along any axis are in `part_views.py` and `inspect
+      --preview --spec`, `--circles-along`)
   - Decision 0023 (accepted by Daniel on 2026-10-26) makes the cuts an ordered cut list
     (`part_cuts`), each shape with a note naming its evidence. The spike's T33901 list
     (`part_spike.T33901_CUTS`) is a draft to start from.
@@ -664,7 +710,7 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     of the parts, each part's pieces, and the cuts drawn over each fed photo.
   - Logged for this phase (research note of 2026-10-24, sections 4 and 8): the handle fused to
     the wall; spindle to column 5-6% short; the spindle 1.4 cm off the column's plane.
-- [ ] **Labelled stand-ins** where the mesh hides or gets wrong a part that shows (Daniel,
+- [x] **Labelled stand-ins** where the mesh hides or gets wrong a part that shows (Daniel,
       2026-10-26, review of PR #20; decision 0023, "Daniel's answers"). Each is cited and
       logged as an inaccuracy. How a stand-in takes a cut part's place in the spec is decided
       in this phase.
@@ -677,16 +723,26 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     pointing out, down and to the front. No size is cited.
   - **The column rack,** visible in Figs. 36, 37 and 48, under Daniel's rule. His "Yes let's merge
     PR #20" is read as a yes to this too (hand-off above): say so in the first report.
-- [ ] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
+
+  (Oct 27, 2026: all four, matched to the photos against cited sizes, each its own part named
+  "Stand-in: ...", with a warning; the generated table, crank and chuck end are cut out. The
+  chuck guard is its own part, fixed to the quill, so it can be hidden to see the chuck. Said in
+  the first report: the rack read as a yes)
+- [x] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
       ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
       guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
       no T33901 to photograph (Daniel, 2026-10-26).
 - [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
-- [ ] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
+- [x] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
       to table, spindle to base
+      (Oct 27, 2026: width, depth, height, column, spindle to column, base length and width, all
+      within 6%. Spindle to table and to base cannot be measured: the spindle's end is inside
+      the guard the generator made solid; decision 0024)
 - [ ] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
       stand-in as an issue in the twin, in `RUN.md`, and in the phase report's table.
+      (Oct 27, 2026: built in run-001 and logged in the twin and `RUN.md`. Both validators: 0
+      errors. **Isaac Sim check pending**)
 - [ ] Worklog with run details (versions, time); PR
 
 ## Phase 6 - Control logic (level 3), for the drill press and the HA5C
