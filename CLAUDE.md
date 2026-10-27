@@ -56,10 +56,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Daniel's rule for unknown details (2026-10-24):** a labelled stand-in where the detail is
     visible or needed; left out where it is hidden and unused. So the T33901's belt positions,
     under its closed belt cover, are left out; its twelve speeds are cited.
-- **Phase 4's spike is done** (PR #20, branch `feat/phase-4-part-cutting-spike`, 2026-10-24),
-  reviewed by Daniel on 2026-10-26. PR #20 waits for his word to merge. It compared four ways to
-  cut the T33901 mesh `grizzly-t33901/runs/2026-10-24_run-001` (squared with `--yaw 49.1`) into
-  moving parts: `docs/research/2026-10-24-part-cutting-spike.md`, re-run with
+- **Phase 4 is done** (PR #20, merged on 2026-10-26). Its spike compared four ways to cut the
+  T33901 mesh `grizzly-t33901/runs/2026-10-24_run-001` (squared with `--yaw 49.1`) into moving
+  parts: `docs/research/2026-10-24-part-cutting-spike.md`, re-run with
   `uv run python -m moonwalkers.pipelines.b.part_spike <out> --t33901 <run>`.
   - **Decision 0023 (accepted by Daniel, 2026-10-26):** an ordered cut list of cited shapes per
     part (`part_cuts`), with each fed photo placed on the mesh by its silhouette
@@ -68,11 +67,16 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Daniel's answers (2026-10-26):**
     - labelled stand-ins for the chuck (hidden in the guard the generator made solid), and for
       the table and the crank, which the generator got wrong: "We should definitely match it to
-      the photos". The column rack gets one by his rule, unless he says otherwise (asked);
+      the photos". The column rack too: his "Yes let's merge PR #20" is read as a yes to that
+      question as well, to be mentioned in Phase 5's first report;
     - the depth stop's fused ring stays with the head "for now";
     - the back stays guessed: no photo of it exists, and there is no T33901 to photograph.
-  - **Next, after the merge:** Phase 5, Pipeline B building several parts and joints, with these
-    stand-ins (`docs/drill-press-plan.md`, Phase 5), in a new chat.
+- **Now: Phase 5, Pipeline B builds several parts and joints** (branch
+  `feat/phase-5-several-parts-and-joints`, from `main` after PR #20). Start from the hand-off in
+  `docs/drill-press-plan.md`, Phase 5: what Phase 4 left in code and what to do with each module,
+  the T33901's measurements and frame, the two cited sizes that already agree on the scale, the
+  stand-ins and how the exporter can take them, and the environment's gaps (numpy and trimesh
+  only).
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

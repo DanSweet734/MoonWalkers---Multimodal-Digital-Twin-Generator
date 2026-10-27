@@ -34,6 +34,12 @@
   candidate locks and springs, starting positions, pushing parts by hand, and what both validators
   said about the exported files.
 
+- `2026-10-23-table-height-lock-and-mimic-chains.md` - drill-press plan, Phase 2 review: what holds
+  the T33901's table up (the height lock handle, p. 7; whether the crank's worm does is not
+  confirmed), and whether PhysX takes a mimic joint whose leader is itself a mimic.
+- `2026-10-24-several-photos-and-corner-views.md` - drill-press plan, Phase 3: which side each
+  T33901 photo shows, checked against the manual; corner photos on both Hunyuan3D-2 models; the
+  search for the belt-speed chart; the T33901's first mesh.
 - `2026-10-24-part-cutting-spike.md` - drill-press plan, Phase 4: four ways to cut one generated
   mesh into moving parts (shape cut lists, the mesh's own shape, learned segmenters, marks on
   photos), scored on a labelled synthetic drill press and judged on the T33901's mesh; P3-SAM's
