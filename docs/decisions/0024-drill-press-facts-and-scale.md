@@ -1,6 +1,8 @@
 # 0024 - The drill press's facts and scale
 
-- **Status:** proposed (by Claude Code, drill-press plan Phase 5, 2026-10-27), for Daniel's review
+- **Status:** accepted (by Daniel, 2026-10-27: "Decisions 0024 and 0027 look good."),
+  with an update the same day on mass (below). Proposed by Claude Code in the drill-press plan's
+  Phase 5.
 - **Date:** 2026-10-27
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0012 (the scale may come from any cited length, not only a centre height)
@@ -101,3 +103,22 @@ All are under 10%, so each is an info issue in the twin.
 - **Masses are wrong,** and the twin says so. A pushed part's response in Isaac Sim depends on
   them; the behaviours checked at levels 1 and 2 do not.
 - **Reversing it:** another `scale.fact` in a new run folder's spec, built as a new version.
+
+## Update: mass does matter, through a link (Daniel's Isaac Sim check, 2026-10-27)
+- **What Daniel saw** on `grizzly/t33901@v1`: in `twin.usdc`, `checks/spin.usdc`,
+  `checks/spring_return.usdc` and `checks/locked_at_setting.usdc` the quill does not stay at the top
+  of its travel: "there's a noticeable gap", "the weight of the piece weighs it down".
+- **The likely cause [INFERENCE, to be measured with the joint recorder]:**
+  - the generated handle hub's weight sits 0.046 m in front of the pinion's axis, since one of its
+    handles broke off at the head's wall (decision 0023);
+  - gravity turns the hub, and its link to the quill (57 rad per m, decision 0019) pushes the quill
+    down against the spring. With the hub's placeholder mass of a few kilograms, that is tens of
+    newtons at the quill;
+  - the spring is an acceleration drive on the quill alone (decision 0018), so it does not grow
+    with the load that the link adds.
+- **So "nothing in levels 1 and 2 depends on mass" does not hold** for a joint that another joint
+  follows through a lever. It held for the Phase 1 drill press, whose three handles were balanced.
+- **What changes:** the next version gives the downfeed hub a balanced stand-in (decision 0027,
+  update), which puts its weight on its axis. If the quill still sags, the spring's stand-in
+  values (decision 0018) or the masses come back to this record. Masses stay placeholders until
+  then.

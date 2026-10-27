@@ -1,6 +1,7 @@
 # 0027 - Joints and stand-ins in the geometry spec
 
-- **Status:** proposed (by Claude Code, drill-press plan Phase 5, 2026-10-27), for Daniel's review
+- **Status:** accepted (by Daniel, 2026-10-27: "Decisions 0024 and 0027 look good."). Proposed by
+  Claude Code in the drill-press plan's Phase 5.
 - **Date:** 2026-10-27
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0012 (the geometry spec), with decision 0023 (its cut list)
@@ -149,3 +150,30 @@ read from photos are scaled by a cited size in the same photo.
   warning about points on top of each other. The pieces now overlap and the weld is gone, so the
   next version is clean of both (dry run of 2026-10-27). They are render meshes only: colliders are
   convex hulls. v1 stands, since run folders are never changed (decision 0012).
+
+## Isaac Sim check of `grizzly/t33901@v1` (Daniel, 2026-10-27)
+Reported in chat; recorded in the run's `RUN.md`. Files opened: `twin.usdc`, `spin.usdc`,
+`spring_return.usdc`, `unlocked.usdc`, `locked_at_setting.usdc`.
+- **The table** "looks fantastic". Locked, it could not be moved at all; loosened, it "fell and
+  tilted to the side due to it's weight", as decision 0018 and the check's look-for expect.
+- **The chuck** turns with "the three pieces on the end", its jaws.
+- **The quill sags:** it does not return "flush" to the top. Its likely cause and what changes are
+  in decision 0024's update.
+- **The downfeed handles** are "very noticeably wrong": "three handles that all connect to a
+  central joint that is then connected to the main body. The shape looks like it is almost
+  connected to the depth stop ring. It looked far more accurate on the low poly test model we
+  made." (Daniel called them "the crank". Read as the downfeed handles, since the table's crank
+  has one handle; to confirm with him.) The generated hub is the one decision 0023 logged: one
+  handle's root fused to the head's wall, in front of the depth stop's ring as seen from the front.
+- **The fixed joints** raised no problem in the files he opened.
+- **Success level:** 1. Level 2 waits for the quill to stay up.
+
+### Update: the downfeed handles get a stand-in
+Under Daniel's rule (a labelled stand-in where the mesh gets wrong a part that shows), the hub and
+its three handles join the stand-ins, in the next version:
+- each handle from the parts list: "STUD-DE M12-1.75 X 178, 15" (a 12 mm bar, 178 mm long
+  [INFERENCE: read from the stud's size]) with a "KNOB M12-1.75, D35" (p. 50), three at 120 deg
+  on a hub, as Phase 1's box model had them;
+- the hub's size from the photos (Figs. 3, 48), against a cited size;
+- at the measured pinion axis, the handles at the generated handles' angles;
+- balanced, so its weight sits on its axis (decision 0024's update).

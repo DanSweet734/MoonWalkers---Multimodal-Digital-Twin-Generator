@@ -77,11 +77,15 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     `2026-10-24_run-001`: 11 parts, four of them labelled stand-ins matched to the photos (the
     chuck, the table, the crank, the column rack), on 10 joints, scaled by the cited 39 in height.
     The coloured views and photo overlays are in the run's `views/`. Decisions 0024 (scale and
-    mass) and 0027 (joints and stand-ins in the geometry spec) are proposed. **Daniel's Isaac
-    Sim check is pending.**
+    mass) and 0027 (joints and stand-ins in the geometry spec) are accepted.
+  - **Daniel's Isaac Sim check (2026-10-27):** the table "looks fantastic" and its locks work;
+    the quill sags below the top, and the downfeed handles (he called them "the crank") are
+    "very noticeably wrong". So v2 gets a balanced stand-in hub with three handles from the
+    cited stud and knob (decisions 0024 and 0027, updates). A few PNGs of the views may go
+    under `docs/` for the PR (Daniel's exception to rule 5, review images only).
   - **Second session:** start from the plan's Phase 5 "Hand-off (2026-10-27, from the first
-    Phase 5 chat to the second)": the MCP tools for a several-part spec, the agent procedure,
-    then the PR.
+    Phase 5 chat to the second)", including Daniel's review: build v2 for his re-check, then
+    the MCP tools for a several-part spec, the agent procedure, and the PR.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

@@ -674,6 +674,25 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
 - **Still true from the hand-off above:** the MCP server keeps the tools it started with; ask
   Daniel to restart it (`/mcp`) before testing changed tools through it. Write `gh pr create`
   bodies to a file (`--body-file`).
+- **Daniel's review and Isaac Sim check of v1 (2026-10-27,** recorded in run-001's `RUN.md`):
+  - decisions 0024 and 0027 accepted ("look good");
+  - the table "looks fantastic", its locks hold, and loosened it drops and tilts, as expected;
+  - **the quill sags** below the top in every file he opened ("a noticeable gap");
+  - **the downfeed handles are "very noticeably wrong"** (he called them "the crank": "three
+    handles that all connect to a central joint"); the Phase 1 box model's were "far more
+    accurate";
+  - **PNGs in the PR: approved.** "Yes let's upload a few small PNGs under docs in the private
+    repo" (an exception to CLAUDE.md rule 5, for review images only).
+- **So the second session first builds v2,** then does steps 6-7:
+  1. a balanced stand-in for the downfeed hub and its three handles (decision 0027, update),
+     replacing the generated hub, in `compose_spec.py`;
+  2. a new run folder `2026-10-27_run-002` (or the day's date) with run-001's `request.json` and
+     `generator/`, the new spec, built as `new_version`; check that both validators are clean;
+  3. if the joint recorder shows the quill still sagging, the spring's stand-in values or the
+     masses (decision 0024, update);
+  4. Daniel's Isaac Sim re-check of v2, with `adjustable_stop.usdc` and `all_motions.usdc`, which
+     he has not opened yet;
+  5. then the MCP tools, the agent procedure, the PR with a few PNGs of v2's views under `docs/`.
 
 ### Items
 - [x] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
@@ -728,6 +747,10 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
   "Stand-in: ...", with a warning; the generated table, crank and chuck end are cut out. The
   chuck guard is its own part, fixed to the quill, so it can be hidden to see the chuck. Said in
   the first report: the rack read as a yes)
+  - **The downfeed hub and its three handles** (added after Daniel's Isaac Sim check, 2026-10-27):
+    the generated hub is "very noticeably wrong", and its weight off its axis likely makes the
+    quill sag. A balanced stand-in from the cited stud and knob (p. 50) in v2 (decision 0027,
+    update).
 - [x] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
       ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
       guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
@@ -742,7 +765,8 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
 - [ ] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
       stand-in as an issue in the twin, in `RUN.md`, and in the phase report's table.
       (Oct 27, 2026: built in run-001 and logged in the twin and `RUN.md`. Both validators: 0
-      errors. **Isaac Sim check pending**)
+      errors. Daniel's Isaac Sim check the same day: level 1; the table and its locks as
+      expected; the quill sags and the downfeed handles are wrong, so **v2 follows**)
 - [ ] Worklog with run details (versions, time); PR
 
 ## Phase 6 - Control logic (level 3), for the drill press and the HA5C
