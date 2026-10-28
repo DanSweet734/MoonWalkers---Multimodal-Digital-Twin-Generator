@@ -253,7 +253,7 @@ before the build, and a dry run in a scratch copy of the data folder came before
   validators clean** in `twin.usdc` and the six check files (NVIDIA's: "No issues found.").
   The stand-in hub's surface centroid is on the handles' axis (v1's generated hub: 0.047 m off).
   Size checks: width -7.0% and depth -6.0% (v1: +1.6% and -4.7%, stretched by the generated handle
-  that pointed out along +Y); the others as v1. Daniel's Isaac Sim re-check is next.
+  that pointed out along +Y); the others as v1. Daniel re-checked it on 2026-10-28 (below).
 
 ## Update: v4 (2026-10-28, after Daniel's re-check of v3)
 Daniel's re-check of v3 (run `2026-10-27_run-002`, its `RUN.md`): the quill rests at the top,

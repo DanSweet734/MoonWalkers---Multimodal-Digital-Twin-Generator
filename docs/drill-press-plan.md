@@ -717,9 +717,12 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
       several photos, cited dimensions can also check one another. Then how the cited 108 lb is
       split between the parts, or whether the placeholder density stays (decision 0010).
-      (Oct 27, 2026: proposed. The overall height, 0.496536 m per model unit; the column's
-      diameter agrees within 0.8%. Masses stay placeholders: nothing at levels 1-2 depends on
-      them, and no source splits the weight)
+      (Oct 27, 2026: proposed, and accepted by Daniel the same day. The overall height,
+      0.496536 m per model unit; the column's diameter agrees within 0.8%. Masses stay
+      placeholders, since no source splits the weight. That nothing at levels 1-2 depends on them
+      was corrected the same day: the unbalanced downfeed hub sagged the quill through its link
+      (decision 0024, updates). Oct 28: real masses asked for and not built, for the reasons
+      in its last update)
 - [x] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
       (`kb/keys.py`), but the data folder is `grizzly-t33901`. Add a `grizzly` alias, with the
       source of the short name (decision 0009).
@@ -727,7 +730,8 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
 - [x] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
-      (Oct 27, 2026: `pipelines/b/parts_spec.py`, decision 0027, proposed. The inspection's views,
+      (Oct 27, 2026: `pipelines/b/parts_spec.py`, decision 0027, accepted by Daniel the same day.
+      The inspection's views,
       pieces, overlays and circle fits along any axis are in `part_views.py` and `inspect
       --preview --spec`, `--circles-along`)
   - Decision 0023 (accepted by Daniel on 2026-10-26) makes the cuts an ordered cut list
@@ -771,6 +775,9 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
       guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
       no T33901 to photograph (Daniel, 2026-10-26).
+      (Oct 28, 2026: the ring no longer stays: in v5 it is cut out, the nut a stand-in riding on
+      the rod and the stop bracket a stand-in on the head, on Daniel's word. The back stays
+      guessed)
 - [x] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
       (Oct 28, 2026: decision 0028, accepted by Daniel the same day. Seven tools set a several-part spec piece by piece,
@@ -781,8 +788,12 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       (Oct 27, 2026: width, depth, height, column, spindle to column, base length and width, all
       within 6%. Spindle to table and to base cannot be measured: the spindle's end is inside
       the guard the generator made solid; decision 0024)
-- [ ] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
+      (Oct 27-28, 2026, v3 to v6: width -7.0% and depth -6.0%, since v1's generated handle that
+      pointed out along +Y had stretched both; the others as v1. All under 10%)
+- [x] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
       stand-in as an issue in the twin, in `RUN.md`, and in the phase report's table.
+      (Levels 1 and 2 reached by v4 and v5, below; every inaccuracy and stand-in is an issue in
+      each twin and in its `RUN.md`. The phase report's table is Phase 7's)
       (Oct 27, 2026: built in run-001 and logged in the twin and `RUN.md`. Both validators: 0
       errors. Daniel's Isaac Sim check the same day: level 1; the table and its locks as
       expected; the quill sags and the downfeed handles are wrong, so **v2 follows**)
@@ -897,3 +908,10 @@ Code.
 - **The back of the T33901.** No photo of it exists in any source found, and there is no T33901
   to photograph (Daniel, 2026-10-26). The generator's guess stays, logged as such, until the lab's
   photos come or a source turns up.
+- **The parts' masses.** The manual gives only the total, 108 lb; authoring per-part estimates
+  needs a contract change, discussed with the pipeline owners first. Left until the stakeholders
+  ask or Phase 6 needs forces (Daniel, 2026-10-28; decision 0024, update). Meanwhile the spring
+  return bounces before resting.
+- **The depth stop nut's place in a check file.** It sits at the twin's stop, the full stroke; in
+  `checks/adjustable_stop.usdc` the stop is half way and the nut stays put (decision 0027,
+  "Update: v5").

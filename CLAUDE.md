@@ -71,8 +71,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
       question as well, to be mentioned in Phase 5's first report;
     - the depth stop's fused ring stays with the head "for now";
     - the back stays guessed: no photo of it exists, and there is no T33901 to photograph.
-- **Now: Phase 5, Pipeline B builds several parts and joints** (branch
-  `feat/phase-5-several-parts-and-joints`, from `main` after PR #20).
+- **Phase 5, Pipeline B builds several parts and joints, is complete** (Daniel, 2026-10-28:
+  "it's safe to say Phase 5 is complete!"; branch `feat/phase-5-several-parts-and-joints`,
+  PR #21).
   - **First session done (2026-10-26/27):** `grizzly/t33901@v1` built in run
     `2026-10-24_run-001`: 11 parts, four of them labelled stand-ins matched to the photos (the
     chuck, the table, the crank, the column rack), on 10 joints, scaled by the cited 39 in height.
@@ -111,13 +112,14 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Daniel's check of v5 (2026-10-28), with recordings:** "all looks really great" (level 2).
     **`grizzly/t33901@v6`** (run `2026-10-28_run-003`, both validators clean) is v5 with parts
     held to the frame by fixed joints coloured grey like it (`exporter.fixed_with_root`).
-  - **MCP tools for a several-part spec** (decision 0028, accepted 2026-10-28): seven tools set the spec
-    piece by piece, `fit_circles` measures along any axis, `preview_twin` previews either kind
-    and lists the holes to patch; the procedure's section 5b. `add_joint` and `set_scale` are
-    unchanged.
-  - **PR #21** is open for Daniel's review of Phase 5 (review PNGs in
-    `docs/images/2026-10-28-t33901-v5/`; its open questions list what is left to decide).
-    Daniel's Isaac Sim check of v5 is next.
+  - **MCP tools for a several-part spec** (decision 0028, accepted 2026-10-28): seven tools set
+    the spec piece by piece, `fit_circles` measures along any axis, `preview_twin` previews
+    either kind and lists the holes to patch; the procedure's section 5b. `add_joint` and
+    `set_scale` are unchanged.
+  - **PR #21** holds the phase (review PNGs in `docs/images/2026-10-28-t33901-v5/`). Left open
+    for later: the parts' masses (decision 0024, update) and the depth stop nut's place in
+    `checks/adjustable_stop.usdc` (decision 0027, "Update: v5"). Next: Phase 6, control logic
+    (`docs/drill-press-plan.md`).
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
