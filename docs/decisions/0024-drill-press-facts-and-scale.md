@@ -133,3 +133,14 @@ All are under 10%, so each is an info issue in the twin.
   stand-in's surface centroid is on the handles' axis, against v1's 0.047 m in front of it. The
   spring's stand-in values and the masses are unchanged. Daniel's recording of v3 settles whether
   the quill now rests at 0.
+- **Settled by Daniel's recordings of v3 (2026-10-28,** run `2026-10-27_run-002`, its `RUN.md`):
+  the quill rests at 0.000 mm in `twin.usdc`, and in `spring_return.usdc` it is back at the top
+  0.47 s after leaving the bottom and rests there after about 3.4 s. "The quill does indeed rest at
+  the top like we want!" So the unbalanced hub was the cause, as inferred above, and the spring's
+  stand-in values and the masses stay as they are.
+- **One difference from Phase 1:** v3's quill bounces off its top stop four times (20, 10, 4.5
+  and 1 mm) before resting; Phase 1's box model returned in 0.83 s. [INFERENCE] The stand-in
+  hub's convex hull spans its three splayed handles, so at the placeholder density its inertia,
+  multiplied through the link (57 rad per m), keeps the quill moving at the stop. Daniel saw no
+  gap; nothing at levels 1 and 2 needs a change. Authored masses (options b and c above) would
+  change it, and wait for a source or a need (Phase 6's forces).

@@ -96,9 +96,15 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     `2026-10-27_run-001`) is superseded: NVIDIA's validator warned about the table arm. Build in a
     scratch copy of `data/` first (`build --data`) and validate before the real build: a real
     build stores a version for good.
-  - **Waiting for Daniel's Isaac Sim re-check of v3** with a joint recording (does the quill now
-    rest at the top). Then the MCP tools for a several-part spec, the agent procedure, and the PR
-    with a few small PNGs of v3's views under `docs/`.
+  - **Daniel's re-check of v3 (2026-10-28), with recordings:** the quill rests at the top
+    (0.000 mm), the handles "look a lot better", "almost no holes" (decisions 0024 and 0027,
+    updates). His two leftovers, the crank's nub behind the bracket and the gap behind the depth
+    stop's rod, are fixed in **`grizzly/t33901@v4`** (run `2026-10-28_run-001`, both validators
+    clean): a stand-in M12 rod through the head's ring, the nub cut out. Not opened yet:
+    `adjustable_stop.usdc`, `all_motions.usdc`. v2: rejecting it is recommended, in the
+    dashboard by Daniel (decision 0015: people review, the agent never does).
+  - **Next:** the MCP tools for a several-part spec, the agent procedure, and the PR with a few
+    small PNGs of v4's views under `docs/`.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

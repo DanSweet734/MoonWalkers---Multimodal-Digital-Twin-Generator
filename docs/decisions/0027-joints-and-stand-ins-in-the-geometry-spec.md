@@ -254,3 +254,23 @@ before the build, and a dry run in a scratch copy of the data folder came before
   The stand-in hub's surface centroid is on the handles' axis (v1's generated hub: 0.047 m off).
   Size checks: width -7.0% and depth -6.0% (v1: +1.6% and -4.7%, stretched by the generated handle
   that pointed out along +Y); the others as v1. Daniel's Isaac Sim re-check is next.
+
+## Update: v4 (2026-10-28, after Daniel's re-check of v3)
+Daniel's re-check of v3 (run `2026-10-27_run-002`, its `RUN.md`): the quill rests at the top,
+the handles "look a lot better", the pivot lock handle "looks clean", "almost no holes". Two
+things left, both fixed in **`grizzly/t33901@v4`** (run `2026-10-28_run-001`, both validators
+clean after a dry run):
+- **The depth stop's rod.** Generated, it was a cut piece of the quill, fused to the head's
+  corner along its height and missing inside the ring (the stop bracket and nut, fused, kept with
+  the head; decision 0023). Lowered, it showed holes in the head and a gap in the rod. Now
+  `generated_depth_rod` is removed and `depth_rod` is a stand-in held to the quill: one rod 12 mm
+  across (the thread of the cited "DEPTH STOP NUT M12-1.75", p. 49, part 48 [INFERENCE]; the
+  generated rod is 14 mm) from the guard collar's arm through the ring to the generated rod's top,
+  its axis from round fits of the generated rod, as Fig. 35 and `front_operator_left.jpeg` show
+  it. Three patches close the head: the ring's bottom and top and a slot behind the rod. At the
+  full stroke the rod's top goes into the ring, since the nut stays fused in it (logged).
+- **The crank's nub:** the generated arm's root behind the bracket (y 0.00 to 0.04, below where
+  the v3 box began) is cut out, and the bracket's back patched.
+- **The views' palette** grows from 12 to 20 colours: v4's 13 parts made the views fall back to
+  random colours, three pairs alike in `views/parts.png`. Later builds get a colour per part.
+- v4: 13 parts (7 stand-ins), 12 joints (5 fixed).
