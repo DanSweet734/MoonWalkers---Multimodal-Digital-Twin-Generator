@@ -103,8 +103,16 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
         "add_issue",
         "generate_geometry",
         "inspect_geometry",
+        "fit_circles",
         "add_joint",
         "set_scale",
+        "set_spec_frame",
+        "set_cut_list",
+        "set_spec_part",
+        "set_spec_joint",
+        "remove_spec_entry",
+        "set_scale_length",
+        "set_size_checks",
         "preview_twin",
         "submit_twin",
     ]
@@ -161,7 +169,7 @@ async def test_an_agent_builds_a_twin_then_a_second_request_reuses_it(setup, pho
         scaled = await ok(client, "set_scale", run=run)
         assert scaled["complete"] and scaled["spec"]["center_height_m"] == 0.1016
 
-        preview = await ok(client, "preview_twin", run=run)
+        preview = (await ok(client, "preview_twin", run=run))["result"]
         assert preview["scale_m_per_unit"] == pytest.approx(SCALE)
         assert all(Path(p).is_file() for p in preview["views"].values())
 
@@ -349,7 +357,7 @@ async def test_when_feet_reach_past_the_spindle_circle_x_gives_the_axis(
             method="Axis from circle fits through the platter; the feet reach past it.",
         )
         await ok(client, "set_scale", run=run)
-        preview = await ok(client, "preview_twin", run=run)
+        preview = (await ok(client, "preview_twin", run=run))["result"]
     low, high = preview["spindle_bounds_m"]
     platter = 1.2 * 0.1016 / second["axis_height_above_lowest"]  # 1.2 units across, scaled
     assert high[1] - low[1] == pytest.approx(platter, rel=0.01)  # the platter alone: no feet
@@ -555,3 +563,153 @@ async def test_several_photos_with_their_views_through_the_tools(setup, photo_ru
             (photo_run.data_dir / run / "geometry_spec.parts.json").read_text(encoding="utf-8")
         )
         assert parts["joint"]["yaw_deg"] == 45.0
+
+
+@pytest.fixture
+def drill_press_server(photo_run, generator_for, clock):
+    """The Phase 1 drill press as the generated mesh (decision 0028's tests)."""
+    from moonwalkers.pipelines.b.synthetic_parts import drill_press
+
+    generator = generator_for(lambda: drill_press("separate").mesh)
+    return create_server(Workspace(photo_run.data_dir, clock), lambda: generator, clock=clock)
+
+
+async def several_parts_run(client: Client, photo_run) -> tuple[str, dict[str, Any]]:
+    """A drill press run with its photo, notes and mesh, and the spec of
+    test_pipeline_b_parts_spec set through the several-part spec tools."""
+    from test_pipeline_b_parts_spec import drill_press_spec
+
+    from moonwalkers.usd import primitive_drill_press as dp
+
+    machine = {"manufacturer": dp.MANUFACTURER, "model": dp.MODEL}
+    cite = [{"source_id": dp.SYNTHETIC, "locator": "test"}]
+    spec = drill_press_spec()
+    run = (await ok(client, "start_run", **machine))["run"]
+    await ok(
+        client,
+        "add_input",
+        run=run,
+        path=photo_run.photo.uri,
+        source_id="src-photo",
+        title="Test photo (synthetic)",
+        retrieved_at="2026-10-16T12:00:00Z",
+    )
+    for source_id in (dp.SYNTHETIC, dp.MANUAL):
+        await ok(
+            client,
+            "add_reference_source",
+            run=run,
+            source_id=source_id,
+            kind="user_input",
+            uri="user",
+            title=f"Synthetic source {source_id}",
+        )
+    await ok(client, "identify_machine", run=run, **machine, confidence=1.0, citations=cite)
+    for key, value, unit in (
+        ("overall_height", dp.OVERALL_HEIGHT, "m"),
+        ("column_diameter", 2 * dp.COLUMN_RADIUS, "m"),
+        ("max_spindle_speed", 300.0, "rad/s"),
+    ):
+        await ok(
+            client,
+            "add_fact",
+            run=run,
+            key=key,
+            value=value,
+            unit=unit,
+            original=f"{value} {unit}",
+            confidence=1.0,
+            citations=cite,
+        )
+    await ok(client, "generate_geometry", run=run)
+    await ok(
+        client,
+        "set_spec_frame",
+        run=run,
+        up="+y",
+        front="+z",
+        origin_xy=[0.0, 0.0],
+        fixed_part="frame",
+        method="the Phase 1 drill press, cut by the spike's synthetic cut list",
+    )
+    await ok(client, "set_cut_list", run=run, cuts=spec["cuts"])
+    for part in spec["parts"]:
+        await ok(client, "set_spec_part", run=run, part=part)
+    for joint in spec["joints"]:
+        await ok(client, "set_spec_joint", run=run, joint=joint)
+    await ok(client, "set_scale_length", run=run, fact="overall_height", how="the height")
+    await ok(client, "set_size_checks", run=run, checks=spec["size_checks"])
+    return run, spec
+
+
+@pytest.mark.anyio
+async def test_a_spec_of_several_parts_is_set_piece_by_piece(drill_press_server, photo_run) -> None:
+    from moonwalkers.usd import primitive_drill_press as dp
+
+    async with Client(drill_press_server) as client:
+        run, spec = await several_parts_run(client, photo_run)
+        status = await ok(client, "remove_spec_entry", run=run, piece="parts", entry_id="table")
+        assert not status["complete"] and "table" in status["problem"]
+        assert "not complete" in await fails(client, "preview_twin", run=run)
+        assert "not complete" in await fails(client, "submit_twin", run=run)
+        status = await ok(client, "set_spec_part", run=run, part=spec["parts"][-2])
+        assert status["complete"] and status["kind"] == "parts"
+        assert status["parts"]["table"] == "stand_in" and len(status["joints"]) == 8
+        assert "give measured_model_units" in await fails(
+            client, "set_scale_length", run=run, fact="column_diameter", how="by eye"
+        )
+        assert "add_fact" in await fails(
+            client, "set_scale_length", run=run, fact="nothing", how="?", measured_model_units=1
+        )
+        assert "single spindle" in await fails(
+            client,
+            "add_joint",
+            run=run,
+            up="+y",
+            front="+z",
+            spindle_axis_yz=[0.0, 0.2],
+            spindle_radius=0.1,
+            spindle_start_x=0.0,
+            method="wrong kind",
+        )
+        # A round part along z: the column, as decision 0024 measured the T33901's.
+        circles = await ok(
+            client, "fit_circles", run=run, up="+y", front="+z", along="z", at=[0.1, 0.15]
+        )
+    column = [f for f in circles["fits"] if f["round"]]
+    assert column and all(
+        f["centre"][0] == pytest.approx(dp.COLUMN_X, abs=0.003)
+        and f["radius"] == pytest.approx(dp.COLUMN_RADIUS, abs=0.003)
+        for f in column
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.anyio
+async def test_an_agent_builds_a_twin_of_several_parts_through_the_tools(
+    drill_press_server, photo_run
+) -> None:
+    """Previewed, patched where the preview finds holes, and built (about 90 s)."""
+    async with Client(drill_press_server) as client:
+        run, spec = await several_parts_run(client, photo_run)
+        preview = (await ok(client, "preview_twin", run=run))["result"]
+        kinds = {p["part_id"]: p["kind"] for p in preview["parts"]}
+        assert kinds["table"] == "stand_in" and kinds["frame"] == "cut"
+        assert preview["removed_faces"]["generated_table"] > 0
+        assert {"cuts", "parts", "part_table"} <= set(preview["views"])
+        # The synthetic cut list's table box takes faces of the boxes under it: holes across
+        # the removed table, which patches on those parts close.
+        holes = preview["holes"]
+        assert holes and all(h["across"] == ["generated_table"] for h in holes)
+        for part in spec["parts"]:
+            mine = [h for h in holes if h["part"] == part["part_id"]]
+            if mine:
+                patches = [{"near": h["centre"], "note": "under the table"} for h in mine]
+                await ok(client, "set_spec_part", run=run, part=dict(part, patches=patches))
+        preview = (await ok(client, "preview_twin", run=run))["result"]
+        assert preview["holes"] == []
+        assert any(i["message"].startswith("Patched") for i in preview["issues"])
+        submitted = await ok(client, "submit_twin", run=run)
+    assert submitted["twin"]["version"] == 1
+    assert not [i for i in submitted["validation"] if i["severity"] == "error"]
+    assert any(i["message"].startswith("Stand-in: a test stand-in") for i in submitted["issues"])

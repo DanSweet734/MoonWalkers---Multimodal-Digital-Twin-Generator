@@ -46,7 +46,14 @@ from .mesh_tools import (
     transformed,
 )
 from .part_views import FittedPhoto, fit_fed_photos, write_spec_views
-from .parts_spec import AssembledModel, PartsSpec, assemble_parts, oriented_mesh
+from .parts_spec import (
+    AssembledModel,
+    OpenLoop,
+    PartsSpec,
+    assemble_parts,
+    open_loops,
+    oriented_mesh,
+)
 from .pipeline import (
     ReferenceFacts,
     cited_length,
@@ -241,6 +248,7 @@ class PartsPreview:
     photos: list[FittedPhoto]
     size_checks: list[Issue]
     issues: list[Issue]  # stand-ins, removed parts, inaccuracies, pieces, seams
+    holes: list[OpenLoop]  # open loops across a removed part: patch them, or cover them
 
 
 def preview_parts_spec(
@@ -264,7 +272,9 @@ def preview_parts_spec(
         *size_checks(model, reference),
         *spec_size_checks(spec, model.scale_factor, reference),
     ]
-    return PartsPreview(model, views, fitted, checks, parts_issues(spec, model))
+    removed = {p.part_id for p in spec.parts if p.kind == "removed"}
+    holes = [loop for loop in open_loops(mesh, spec) if removed & set(loop.across)]
+    return PartsPreview(model, views, fitted, checks, parts_issues(spec, model), holes)
 
 
 def format_parts_preview(preview: PartsPreview) -> str:
@@ -300,6 +310,11 @@ def format_parts_preview(preview: PartsPreview) -> str:
         )
     lines += [f"{i.severity}: {i.message}" for i in preview.size_checks]
     lines += [f"{i.severity} ({i.ref or '-'}): {i.message}" for i in preview.issues]
+    lines += [
+        f"hole in {h.part} across {', '.join(h.across)}: centre {_fmt(h.centre)}, size "
+        f"{_fmt(h.size)}, {h.edges} edges (patch it, or check that a stand-in covers it)"
+        for h in preview.holes
+    ]
     lines += [f"views ({name}): {path}" for name, path in preview.views.items()]
     return "\n".join(lines)
 

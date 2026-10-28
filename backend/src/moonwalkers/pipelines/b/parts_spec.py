@@ -288,6 +288,46 @@ def cut_part_mesh(mesh: trimesh.Trimesh, labels: np.ndarray, part: SpecPart) -> 
     return piece
 
 
+@dataclass(frozen=True)
+class OpenLoop:
+    """An open edge loop of a cut part, after its patches: where it was cut from its
+    neighbours, or where the generated mesh itself is open."""
+
+    part: str
+    centre: Vec3  # model units, after orienting: a patch's ``near``
+    size: Vec3
+    edges: int
+    across: tuple[str, ...]  # the parts that share its points; none: open in the mesh
+
+
+def open_loops(mesh: trimesh.Trimesh, spec: PartsSpec) -> list[OpenLoop]:
+    """Every cut part's open edge loops, found as the patches find them, with the parts on the
+    other side. One across a removed part is a hole that only a patch or a stand-in fills."""
+    labels = face_parts(mesh, spec)
+    owners: dict[tuple[float, ...], set[str]] = {}
+    for face, label in zip(mesh.faces, labels, strict=True):
+        for vertex in face:
+            owners.setdefault(tuple(mesh.vertices[vertex]), set()).add(str(label))
+    loops = []
+    for part in spec.parts:
+        if part.kind != "cut":
+            continue
+        piece = cut_part_mesh(mesh, labels, part)
+        for loop in boundary_loops(piece):
+            points = piece.vertices[loop]
+            across = set().union(*(owners.get(tuple(p), set()) for p in points))
+            loops.append(
+                OpenLoop(
+                    part.part_id,
+                    _vec(points.mean(axis=0)),
+                    _vec(np.ptp(points, axis=0)),
+                    len(loop),
+                    tuple(sorted(across - {part.part_id})),
+                )
+            )
+    return loops
+
+
 def boundary_loops(mesh: trimesh.Trimesh) -> list[np.ndarray]:
     """The mesh's open edge loops, each as its vertex indices in order. An open edge runs the way
     its one face winds; a chain of open edges that does not close is left out."""

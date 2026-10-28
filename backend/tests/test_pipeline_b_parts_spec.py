@@ -22,6 +22,8 @@ from moonwalkers.pipelines.b.parts_spec import (
     PartsSpec,
     assemble_parts,
     boundary_loops,
+    open_loops,
+    oriented_mesh,
     patch_hole,
     simple_loops,
 )
@@ -279,6 +281,14 @@ def test_a_cut_part_is_patched_where_a_removed_part_met_it(tmp_path: Path) -> No
     model = assemble_parts(mesh_path, spec, 1.0, tmp_path / "out")
     frame = load_mesh(next(p.path for p in model.parts if p.part_id == "frame"))
     assert frame.is_watertight
+    mesh = oriented_mesh(mesh_path, spec)
+    assert open_loops(mesh, spec) == []  # the patch closed the only one
+    unpatched = PartsSpec.model_validate(
+        spec.model_dump() | {"parts": [p.model_copy(update={"patches": []}) for p in spec.parts]}
+    )
+    (hole,) = open_loops(mesh, unpatched)
+    assert hole.part == "frame" and hole.across == ("lid",) and hole.edges == 16
+    assert hole.centre == pytest.approx((0.0, 0.0, 0.5))  # the lid's rim, which the patch closed
     patched = [i for i in parts_issues(spec, model) if i.message.startswith("Patched")]
     assert len(patched) == 1 and patched[0].severity == "warning" and patched[0].ref == "frame"
     assert "where the lid was" in patched[0].message

@@ -8,8 +8,15 @@ person can read each step and the command line works on the same folders:
   ``new_version``, and the input photos once added, each with its view and use (decision 0022).
 - ``reference_facts.json``: the ``ReferenceFacts`` the agent recorded from documents. The first
   reference source creates it.
-- ``geometry_spec.parts.json``: the joint and scale parts of the geometry spec, as the agent sets
-  them. ``geometry_spec.json`` is written once both are there.
+- ``geometry_spec.parts.json``: the geometry spec as the agent sets it, piece by piece, in one of
+  two kinds (decision 0028):
+  - decision 0012's single spindle: ``joint`` and ``scale``;
+  - several parts (decision 0027): ``frame``, ``scale_length``, ``cuts``, ``parts`` and ``joints``
+    (by id), and ``size_checks``. Each piece is checked as it is set, the whole spec once the
+    required pieces are there.
+
+  ``geometry_spec.json`` is there only while the pieces make a valid spec, so a spec that a later
+  change broke cannot be built.
 
 A run folder never changes what it has produced (decision 0012). Inputs are fixed once the mesh is
 generated, the spec once the parts are assembled, and everything once the twin is built.
@@ -25,12 +32,22 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
+
 from moonwalkers.clock import Clock, utc_now
 from moonwalkers.contracts.pipeline_result import Source
 from moonwalkers.kb import machine_key
 from moonwalkers.orchestrator import InputPhoto, JobRequest, MachineHint
-from moonwalkers.pipelines.b.assemble import GeometrySpec
+from moonwalkers.pipelines.b.assemble import AxisName, GeometrySpec
 from moonwalkers.pipelines.b.build import REQUEST_FILE
+from moonwalkers.pipelines.b.part_cuts import PartCut
+from moonwalkers.pipelines.b.parts_spec import (
+    PartsSpec,
+    ScaleReference,
+    SizeCheck,
+    SpecJoint,
+    SpecPart,
+)
 from moonwalkers.pipelines.b.photos import check_photos
 from moonwalkers.pipelines.b.pipeline import (
     ASSEMBLY_RECORD,
@@ -40,21 +57,44 @@ from moonwalkers.pipelines.b.pipeline import (
     SPEC_FILE,
     ReferenceFacts,
     RunFolderConflict,
+    read_spec,
 )
 
 REFERENCE_FILE = "reference_facts.json"
 SPEC_PARTS_FILE = "geometry_spec.parts.json"
 SPEC_PARTS = ("joint", "scale")
+# A several-part spec's pieces: the required ones, then the ones it may leave out.
+PARTS_REQUIRED = ("frame", "scale_length", "cuts", "parts")
+PARTS_PIECES = (*PARTS_REQUIRED, "joints", "size_checks")
+PARTS_ENTRIES = {"parts": "part_id", "joints": "joint_id"}  # pieces kept by id
 
 
 class WorkspaceError(ValueError):
     """The request cannot be applied to the run folder as asked."""
 
 
+class PartsFrame(BaseModel):
+    """A several-part spec's frame: how the mesh is turned into the twin's axes, where the twin's
+    origin is, which part stays fixed, and who decided it how (``PartsSpec``'s own fields)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    up: AxisName
+    front: AxisName
+    yaw_deg: float = Field(default=0.0, ge=-180.0, le=180.0)
+    origin_xy: tuple[float, float]
+    base_z: float | None = None
+    fixed_part: str
+    decided_by: str
+    method: str
+
+
 @dataclass(frozen=True)
 class SpecState:
-    parts: tuple[str, ...]  # which of SPEC_PARTS are set
-    spec: GeometrySpec | None  # the complete spec, once both parts are set
+    parts: tuple[str, ...]  # the pieces set, of either kind
+    spec: GeometrySpec | PartsSpec | None  # the complete spec, while the pieces make one
+    kind: str | None = None  # "spindle" (decision 0012) or "parts" (decision 0027)
+    problem: str | None = None  # why the pieces do not make a spec yet
 
 
 @dataclass(frozen=True)
@@ -177,16 +217,19 @@ class Workspace:
 
     # ---------------------------------------------------------------------------- spec parts
     def spec_state(self, run_dir: Path) -> SpecState:
-        parts = (
+        """The pieces set, and the spec they make, of either kind. A spec written by hand (the
+        command line) counts too."""
+        pieces = (
             _read_json(run_dir / SPEC_PARTS_FILE) if (run_dir / SPEC_PARTS_FILE).is_file() else {}
         )
         spec_path = run_dir / SPEC_FILE
-        spec = (
-            GeometrySpec.model_validate_json(spec_path.read_text(encoding="utf-8"))
-            if spec_path.is_file()
-            else None
-        )
-        return SpecState(tuple(p for p in SPEC_PARTS if p in parts), spec)
+        spec = read_spec(spec_path) if spec_path.is_file() else None
+        if any(p in pieces for p in PARTS_PIECES) or isinstance(spec, PartsSpec):
+            kind = "parts"
+            problem = None if spec is not None else _parts_problem(pieces)
+            return SpecState(tuple(p for p in PARTS_PIECES if p in pieces), spec, kind, problem)
+        kind = "spindle" if pieces or spec is not None else None
+        return SpecState(tuple(p for p in SPEC_PARTS if p in pieces), spec, kind)
 
     def set_spec_part(self, run_dir: Path, part: str, values: dict[str, Any]) -> SpecState:
         """Save one part of the spec; with both parts set, write ``geometry_spec.json``.
@@ -196,13 +239,13 @@ class Workspace:
         """
         if part not in SPEC_PARTS:
             raise WorkspaceError(f"unknown spec part {part!r}")
-        _require_unbuilt(run_dir)
-        if (run_dir / MESHES_DIR / ASSEMBLY_RECORD).is_file():
-            raise RunFolderConflict(
-                "this run's parts are already assembled from its spec; start a new run to change it"
-            )
-        path = run_dir / SPEC_PARTS_FILE
+        path = _changeable_spec(run_dir)
         parts = _read_json(path) if path.is_file() else {}
+        if any(p in parts for p in PARTS_PIECES):
+            raise WorkspaceError(
+                "this run's spec has several parts (set_spec_frame and the others); a single "
+                "spindle's joint and scale cannot be added to it"
+            )
         parts[part] = values
         spec = None
         if all(p in parts for p in SPEC_PARTS):
@@ -214,7 +257,36 @@ class Workspace:
         _write_json(path, parts)
         if spec is not None:
             _write_json(run_dir / SPEC_FILE, spec.model_dump(mode="json"))
-        return SpecState(tuple(p for p in SPEC_PARTS if p in parts), spec)
+        return SpecState(tuple(p for p in SPEC_PARTS if p in parts), spec, "spindle")
+
+    # ----------------------------------------------------------------- a several-part spec
+    def set_parts_piece(self, run_dir: Path, piece: str, value: Any) -> SpecState:
+        """Set one piece of a several-part spec (decisions 0027, 0028): ``frame``,
+        ``scale_length``, ``cuts`` or ``size_checks`` replaced whole; a part or a joint added,
+        or replaced by its id. The piece is checked first, so a bad one is refused."""
+        checked = _check_piece(piece, value)
+        path = _changeable_spec(run_dir)
+        pieces = _parts_pieces(path)
+        if piece in PARTS_ENTRIES:
+            pieces.setdefault(piece, {})[checked[PARTS_ENTRIES[piece]]] = checked
+        else:
+            pieces[piece] = checked
+        return _save_parts_pieces(run_dir, path, pieces)
+
+    def parts_pieces(self, run_dir: Path) -> dict[str, Any]:
+        """A several-part spec's pieces as set so far (JSON values; parts and joints by id)."""
+        return _parts_pieces(run_dir / SPEC_PARTS_FILE)
+
+    def remove_parts_entry(self, run_dir: Path, piece: str, entry_id: str) -> SpecState:
+        """Take a part or a joint out of a several-part spec, by its id."""
+        if piece not in PARTS_ENTRIES:
+            raise WorkspaceError(f"only {' and '.join(PARTS_ENTRIES)} are removed by id")
+        path = _changeable_spec(run_dir)
+        pieces = _parts_pieces(path)
+        if entry_id not in pieces.get(piece, {}):
+            raise WorkspaceError(f"the spec has no {piece[:-1]} {entry_id!r}")
+        del pieces[piece][entry_id]
+        return _save_parts_pieces(run_dir, path, pieces)
 
 
 def default_data_dir() -> Path:
@@ -229,6 +301,83 @@ def default_data_dir() -> Path:
 
 def sha256_of(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+_PIECE_MODELS: dict[str, TypeAdapter[Any]] = {
+    "frame": TypeAdapter(PartsFrame),
+    "scale_length": TypeAdapter(ScaleReference),
+    "cuts": TypeAdapter(list[PartCut]),
+    "parts": TypeAdapter(SpecPart),
+    "joints": TypeAdapter(SpecJoint),
+    "size_checks": TypeAdapter(list[SizeCheck]),
+}
+
+
+def _check_piece(piece: str, value: Any) -> Any:
+    """The piece as JSON values, once its own model accepts it."""
+    if piece not in _PIECE_MODELS:
+        raise WorkspaceError(f"unknown piece {piece!r} of a several-part spec")
+    adapter = _PIECE_MODELS[piece]
+    return adapter.dump_python(adapter.validate_python(value), mode="json")
+
+
+def _changeable_spec(run_dir: Path) -> Path:
+    """The draft's path, once the run may still change its spec."""
+    _require_unbuilt(run_dir)
+    if (run_dir / MESHES_DIR / ASSEMBLY_RECORD).is_file():
+        raise RunFolderConflict(
+            "this run's parts are already assembled from its spec; start a new run to change it"
+        )
+    return run_dir / SPEC_PARTS_FILE
+
+
+def _parts_pieces(path: Path) -> dict[str, Any]:
+    pieces = _read_json(path) if path.is_file() else {}
+    if any(p in pieces for p in SPEC_PARTS):
+        raise WorkspaceError(
+            "this run's spec is a single spindle's (add_joint and set_scale); start a new run for "
+            "a spec of several parts"
+        )
+    return pieces
+
+
+def _parts_spec(pieces: dict[str, Any]) -> PartsSpec:
+    """The spec the pieces make; ``ValidationError`` if they do not make one."""
+    return PartsSpec.model_validate(
+        {
+            **pieces["frame"],
+            "scale": pieces["scale_length"],
+            "cuts": pieces["cuts"],
+            "parts": list(pieces["parts"].values()),
+            "joints": list(pieces.get("joints", {}).values()),
+            "size_checks": pieces.get("size_checks", []),
+        }
+    )
+
+
+def _parts_problem(pieces: dict[str, Any]) -> str | None:
+    missing = [p for p in PARTS_REQUIRED if p not in pieces]
+    if missing:
+        return f"still to set: {', '.join(missing)}"
+    try:
+        _parts_spec(pieces)
+    except ValidationError as error:
+        return "; ".join(e["msg"] for e in error.errors())
+    return None
+
+
+def _save_parts_pieces(run_dir: Path, path: Path, pieces: dict[str, Any]) -> SpecState:
+    """Save the pieces; write ``geometry_spec.json`` while they make a valid spec, and remove it
+    while they do not, so only a valid spec is ever built."""
+    _write_json(path, pieces)
+    spec_path = run_dir / SPEC_FILE
+    problem = _parts_problem(pieces)
+    spec = None if problem else _parts_spec(pieces)
+    if spec is None:
+        spec_path.unlink(missing_ok=True)
+    else:
+        _write_json(spec_path, spec.model_dump(mode="json"))
+    return SpecState(tuple(p for p in PARTS_PIECES if p in pieces), spec, "parts", problem)
 
 
 def _require_unbuilt(run_dir: Path) -> None:

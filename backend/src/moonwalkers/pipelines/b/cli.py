@@ -50,6 +50,7 @@ from .mesh_tools import fit_circles_along, load_mesh, orientation_matrix, transf
 from .parts_spec import PartsSpec
 from .pipeline import (
     GENERATOR_DIR,
+    PARTS_PREVIEW_DIR,
     SPEC_FILE,
     GeometrySpecMissing,
     RunFolderConflict,
@@ -57,8 +58,6 @@ from .pipeline import (
     load_reference,
     read_spec,
 )
-
-PARTS_PREVIEW_DIR = "preview_parts"
 
 AXES = ("+x", "-x", "+y", "-y", "+z", "-z")
 

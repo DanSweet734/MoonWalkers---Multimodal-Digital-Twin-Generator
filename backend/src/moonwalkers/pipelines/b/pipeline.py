@@ -63,6 +63,7 @@ GENERATOR_RECORD = "run.json"
 MESHES_DIR = "meshes"
 ASSEMBLY_RECORD = "assembly.json"
 INSPECT_DIR = "inspect_raw"
+PARTS_PREVIEW_DIR = "preview_parts"  # a several-part spec's preview: views and meshes
 
 SPEC_SOURCE_ID = "src-geometry-spec"
 JOINT_ID = "spindle_rotation"
