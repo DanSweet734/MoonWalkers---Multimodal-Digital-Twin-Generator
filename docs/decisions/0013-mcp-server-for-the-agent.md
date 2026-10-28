@@ -153,3 +153,8 @@ The facts below are quoted, with access dates, in
   [INFERENCE: at 4 characters per token]. The growth comes from `list_jobs`, the review status,
   and `inspect_geometry`'s warnings and circle fits. One `inspect_geometry` result on the TH240
   mesh is about 7,100-7,350 characters.
+
+## Amended by decision 0028 (2026-10-28)
+A spec of several parts and joints is set piece by piece through seven more tools, with
+`fit_circles` to measure round parts along any axis and `preview_twin` for either kind. The
+single-spindle tools are unchanged.

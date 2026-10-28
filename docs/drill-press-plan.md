@@ -769,8 +769,11 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
       guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
       no T33901 to photograph (Daniel, 2026-10-26).
-- [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
+- [x] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
+      (Oct 28, 2026: decision 0028, proposed. Seven tools set a several-part spec piece by piece,
+      `fit_circles` measures along any axis, `preview_twin` previews either kind and lists the
+      holes to patch. `add_joint` and `set_scale` are unchanged. The procedure's section 5b)
 - [x] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
       to table, spindle to base
       (Oct 27, 2026: width, depth, height, column, spindle to column, base length and width, all
@@ -853,6 +856,8 @@ test settles both.
 | 0024 | The drill press's facts and scale | 5 | Item 7 |
 | 0025 | Control logic for a manual machine | 6 | Item 6 |
 | 0026 | The HA5C controller's acceleration and mill signals (amends 0016) | 6 | Advisors, Oct 22, 2026 |
+| 0027 | Joints and stand-ins in the geometry spec | 5 | This plan |
+| 0028 | MCP tools for a several-part spec | 5 | This plan |
 
 ## Not in this plan
 - Pipelines A, C and D themselves: they are their owners'.
