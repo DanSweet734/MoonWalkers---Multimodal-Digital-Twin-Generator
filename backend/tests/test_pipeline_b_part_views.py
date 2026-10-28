@@ -38,6 +38,15 @@ def test_the_fixed_part_is_grey_and_the_others_are_coloured() -> None:
     assert legend[0].startswith("body:")
 
 
+def test_a_twin_of_twenty_parts_gets_a_colour_each() -> None:
+    mesh = trimesh.creation.icosphere(subdivisions=2)  # 320 faces, 16 per part
+    parts = ["frame"] + [f"part_{i:02d}" for i in range(19)]
+    labels = [parts[i % 20] for i in range(len(mesh.faces))]
+    _, legend = part_colours(mesh, labels, fixed="frame")
+    colours = [line.split(": ")[1] for line in legend]
+    assert len(legend) == 20 and len(set(colours)) == 20
+
+
 def two_boxes_spec() -> PartsSpec:
     """A 'mesh' of two boxes: the left one stays, the right one is cut out and replaced by a
     stand-in rod at x = 2."""
