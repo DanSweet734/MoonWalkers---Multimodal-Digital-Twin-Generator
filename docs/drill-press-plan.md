@@ -793,7 +793,8 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       handles. His two leftovers, the crank's nub and the gap behind the depth stop's rod, are
       fixed in **`grizzly/t33901@v4`**, run `2026-10-28_run-001`, both validators clean.
       Not opened yet: `adjustable_stop.usdc`, `all_motions.usdc`)
-- [ ] Worklog with run details (versions, time); PR
+- [x] Worklog with run details (versions, time); PR
+      (Oct 28, 2026: worklogs 2026-10-26 to 10-28; PR #21, for Daniel's review of the phase)
 
 ## Phase 6 - Control logic (level 3), for the drill press and the HA5C
 - [ ] Decision record 0025: how `ControlBehavior` describes a manual machine:

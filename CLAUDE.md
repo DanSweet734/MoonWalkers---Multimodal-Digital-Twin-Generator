@@ -107,8 +107,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     piece by piece, `fit_circles` measures along any axis, `preview_twin` previews either kind
     and lists the holes to patch; the procedure's section 5b. `add_joint` and `set_scale` are
     unchanged.
-  - **Next:** the Phase 5 PR (review PNGs in `docs/images/2026-10-28-t33901-v4/`), then
-    Daniel's review of the phase.
+  - **PR #21** is open for Daniel's review of Phase 5 (review PNGs in
+    `docs/images/2026-10-28-t33901-v4/`; its open questions list what is left to decide).
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
