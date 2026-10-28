@@ -108,6 +108,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     with its bracket (decision 0027, "Update: v5"). Masses: asked for, not built: no source gives
     the parts' masses, and they need a contract change (decision 0024, update). The table is
     locked in every file but `checks/unlocked.usdc`, by design (the manual's locks).
+  - **Daniel's check of v5 (2026-10-28), with recordings:** "all looks really great" (level 2).
+    **`grizzly/t33901@v6`** (run `2026-10-28_run-003`, both validators clean) is v5 with parts
+    held to the frame by fixed joints coloured grey like it (`exporter.fixed_with_root`).
   - **MCP tools for a several-part spec** (decision 0028, accepted 2026-10-28): seven tools set the spec
     piece by piece, `fit_circles` measures along any axis, `preview_twin` previews either kind
     and lists the holes to patch; the procedure's section 5b. `add_joint` and `set_scale` are

@@ -299,3 +299,14 @@ a depth stop nut on the rod sounds like a good addition!" **`grizzly/t33901@v5`*
 - **The seam where the quill's collar met the head** (an open question of PR #21) is closed: the
   head's underside and the collar's top are patched, and the stand-in quill fills the space
   between them when the quill is lowered.
+
+## Update: v5 checked, and v6's colours (2026-10-28)
+- **Daniel's check of v5** with recordings (run `2026-10-28_run-002`, its `RUN.md`): the quill
+  returns with the stand-in quill below the head, the table holds at its settings, and loosened
+  it drops to its bottom stop and moves through all of its cited travel. Level 2.
+- **Colours:** "That fill in specifically is orange like our moving parts though? ... should we
+  segment that as gray to match the rest of the drill press?" Until then the exporter coloured the
+  root part grey and every other part orange. A part held to the root through fixed joints only
+  never moves, so it is now grey too (`usd/exporter.py`, `fixed_with_root`): on the T33901 the
+  stand-in column section and the stand-in depth stop bracket. **`grizzly/t33901@v6`** (run
+  `2026-10-28_run-003`) is v5's spec with these colours, both validators clean after a dry run.

@@ -800,6 +800,9 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       their settings: **level 2**. His two gaps when parts move, below the head and in the column,
       and the depth stop nut on the rod are in **`grizzly/t33901@v5`**, run `2026-10-28_run-002`,
       both validators clean. Masses: asked for, not built (decision 0024, update))
+      (Oct 28, 2026: Daniel's check of v5 with recordings: level 2, the table loosened moving
+      through all its cited travel. **`grizzly/t33901@v6`**, run `2026-10-28_run-003`: v5 with the
+      parts fixed to the frame grey, as he asked; both validators clean)
 - [x] Worklog with run details (versions, time); PR
       (Oct 28, 2026: worklogs 2026-10-26 to 10-28; PR #21, for Daniel's review of the phase)
 
