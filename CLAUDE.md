@@ -69,57 +69,34 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
       the table and the crank, which the generator got wrong: "We should definitely match it to
       the photos". The column rack too: his "Yes let's merge PR #20" is read as a yes to that
       question as well, to be mentioned in Phase 5's first report;
-    - the depth stop's fused ring stays with the head "for now";
+    - the depth stop's fused ring stays with the head "for now" (replaced by stand-ins in
+      Phase 5's v5, on his word);
     - the back stays guessed: no photo of it exists, and there is no T33901 to photograph.
-- **Phase 5, Pipeline B builds several parts and joints, is complete** (Daniel, 2026-10-28:
-  "it's safe to say Phase 5 is complete!"; branch `feat/phase-5-several-parts-and-joints`,
-  PR #21).
-  - **First session done (2026-10-26/27):** `grizzly/t33901@v1` built in run
-    `2026-10-24_run-001`: 11 parts, four of them labelled stand-ins matched to the photos (the
-    chuck, the table, the crank, the column rack), on 10 joints, scaled by the cited 39 in height.
-    The coloured views and photo overlays are in the run's `views/`. Decisions 0024 (scale and
-    mass) and 0027 (joints and stand-ins in the geometry spec) are accepted.
-  - **Daniel's Isaac Sim check (2026-10-27):** the table "looks fantastic" and its locks work;
-    the quill sags below the top, and the downfeed handles (he called them "the crank") are
-    "very noticeably wrong". His recording: the quill rests about 20 mm low. His screenshots:
-    two table height cranks (the cut list missed the generated arm) and two prongs under the
-    table where the photos show one pivot lock handle. So v2 gets a balanced stand-in hub with
-    three handles from the cited stud and knob, the generated crank's arm cut out, and a
-    stand-in pivot lock handle (decisions 0024 and 0027, updates). Daniel's term: "downfeed
-    handles", not "the crank". A few PNGs of the views may go
-    under `docs/` for the PR (Daniel's exception to rule 5, review images only).
-  - **Second session (2026-10-27):** from the plan's Phase 5 "Hand-off (2026-10-27, from the
-    first Phase 5 chat to the second)". **`grizzly/t33901@v3`** built in run
-    `2026-10-27_run-002`, both validators clean: a balanced stand-in downfeed hub with three
-    handles (cited stud and knob, angles and splay fitted to the photos), a stand-in table pivot
-    lock handle, the crank's leftover arm cut out, the head's wall kept whole, and holes closed
-    flat by the spec's new `patches` (decision 0027, "Update: v2 and v3"). v2 (run
-    `2026-10-27_run-001`) is superseded: NVIDIA's validator warned about the table arm. Build in a
-    scratch copy of `data/` first (`build --data`) and validate before the real build: a real
-    build stores a version for good.
-  - **Daniel's re-check of v3 (2026-10-28), with recordings:** the quill rests at the top
-    (0.000 mm), the handles "look a lot better", "almost no holes" (decisions 0024 and 0027,
-    updates). His two leftovers, the crank's nub behind the bracket and the gap behind the depth
-    stop's rod, are fixed in **`grizzly/t33901@v4`** (run `2026-10-28_run-001`, both validators
-    clean): a stand-in M12 rod through the head's ring, the nub cut out. v2 rejected by Daniel.
-  - **Daniel's check of v4 (2026-10-28), with recordings:** the depth stop, the spring and the
-    table's locks work (level 2). **`grizzly/t33901@v5`** (run `2026-10-28_run-002`, both
-    validators clean) adds stand-ins for the quill (no gap below the head when lowered), the
-    column inside the bracket (no gap when the table moves) and the depth stop nut on the rod
-    with its bracket (decision 0027, "Update: v5"). Masses: asked for, not built: no source gives
-    the parts' masses, and they need a contract change (decision 0024, update). The table is
-    locked in every file but `checks/unlocked.usdc`, by design (the manual's locks).
-  - **Daniel's check of v5 (2026-10-28), with recordings:** "all looks really great" (level 2).
-    **`grizzly/t33901@v6`** (run `2026-10-28_run-003`, both validators clean) is v5 with parts
-    held to the frame by fixed joints coloured grey like it (`exporter.fixed_with_root`).
-  - **MCP tools for a several-part spec** (decision 0028, accepted 2026-10-28): seven tools set
-    the spec piece by piece, `fit_circles` measures along any axis, `preview_twin` previews
-    either kind and lists the holes to patch; the procedure's section 5b. `add_joint` and
-    `set_scale` are unchanged.
-  - **PR #21** holds the phase (review PNGs in `docs/images/2026-10-28-t33901-v5/`). Left open
-    for later: the parts' masses (decision 0024, update) and the depth stop nut's place in
-    `checks/adjustable_stop.usdc` (decision 0027, "Update: v5"). Next: Phase 6, control logic
-    (`docs/drill-press-plan.md`).
+- **Phase 5 is done** (PR #21, merged on 2026-10-28). Pipeline B builds the T33901 as several
+  parts on several joints, with labelled stand-ins where the mesh hides or gets wrong a part that
+  shows (decisions 0024, 0027 and 0028, accepted).
+  - **`grizzly/t33901@v6`** (run `2026-10-28_run-003`; spec
+    `part_cutting/2026-10-27_spec/geometry_spec_v5.json`, written by `compose_spec.py` there): 17
+    parts (11 stand-ins, among them the balanced downfeed hub and handles, the quill, the depth
+    stop's rod, nut and bracket, the table, the chuck), 16 joints (9 fixed), scaled by the cited
+    39 in height. Both validators clean. Daniel's Isaac Sim checks of v4 and v5 with recordings:
+    level 2. v2 rejected by Daniel; the others are not reviewed, so requests reuse v6.
+  - Cut parts' holes are closed by the spec's `patches`; parts fixed to the frame are grey. The
+    agent's MCP tools set a several-part spec piece by piece (decision 0028; procedure section
+    5b).
+  - **Build in a scratch copy of `data/` first** (`build --data`) and run both validators before
+    the real build: a real build stores a version for good (v2's lesson).
+  - Masses stay placeholders: the manual gives only the 108 lb total, and per-part masses need a
+    contract change discussed with the pipeline owners first (decision 0024, update). The table
+    is locked in every file but `checks/unlocked.usdc`, by design. Daniel's term: "downfeed
+    handles". Review PNGs went under `docs/images/` by his exception to rule 5 (2026-10-27,
+    review images only).
+- **Now: Phase 6, control logic (level 3), for the drill press and the HA5C** (branch
+  `feat/phase-6-control-logic`, from `main` after PR #21). Start from the plan's Phase 6
+  "Hand-off (2026-10-28, from the Phase 5 chat)": decision 0025 (the T33901's keyed switch,
+  twelve speeds and drilling stroke), a runner tested outside Isaac Sim (today's program runner
+  drives revolute joints only), the Isaac Sim check of level 3, and decision 0026 (the HA5C's
+  acceleration and mill signals).
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
