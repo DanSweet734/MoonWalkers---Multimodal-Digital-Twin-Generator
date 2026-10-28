@@ -274,3 +274,28 @@ clean after a dry run):
 - **The views' palette** grows from 12 to 20 colours: v4's 13 parts made the views fall back to
   random colours, three pairs alike in `views/parts.png`. Later builds get a colour per part.
 - v4: 13 parts (7 stand-ins), 12 joints (5 fixed).
+
+## Update: v5 (2026-10-28, after Daniel's check of v4)
+Daniel's check of v4 with recordings (run `2026-10-28_run-001`, its `RUN.md`): the depth stop
+stops the quill where its check file sets it, the spring returns it, the table's locks hold.
+Two gaps when parts move: below the head when the quill is lowered, and in the column where the
+bracket was when the table is raised. His answers: "Let's close that seam in v5, is ther a stand
+in we can put for when the quill is lowered so it isn't only supported by the guide?" and "Sure
+a depth stop nut on the rod sounds like a good addition!" **`grizzly/t33901@v5`** (run
+`2026-10-28_run-002`, both validators clean after a dry run): 17 parts (11 stand-ins), 16 joints
+(9 fixed).
+
+| Part | Kind | From |
+|---|---|---|
+| `quill_tube` | stand-in, fixed to the quill | the cited "Quill Diameter ... 1.85 in." (p. 9), from inside the collar up into the head by the cited 3-1/4 in stroke and 1 in more [INFERENCE: its length inside the head], as Fig. 46 shows the lowered quill. The head's underside and the collar's top are patched round it |
+| `column_section` | stand-in, fixed to the frame | the cited "Column Diameter ... 3-1/8 in." (p. 9), from z -0.52 to -0.264 about the column's axis, where the bracket hid the column and the mesh has none |
+| `generated_depth_stop_nut` | removed | the ring round the rod (z 0.555-0.625, r 0.036-0.040), a separate piece of the mesh, which v1-v4 kept fixed in the head. At the nut's place in `front_operator_left.jpeg`, so the nut, not the bracket |
+| `depth_stop_nut` | stand-in, fixed to the rod | "DEPTH STOP NUT M12-1.75" and "QUICK-RELEASE BUTTON" (p. 49, parts 48 and 50): 36 mm across (the ring) and 26 mm tall (the photo, against the rod's length on the mesh), the button to the front [INFERENCE]. Set 3-1/4 in above the bracket, the twin's stop; the photos show about 2 in |
+| `depth_stop_bracket` | stand-in, fixed to the frame | "DEPTH STOP BRACKET" (p. 49, part 54), at the head's bottom corner where the photo and Fig. 35 show it (z 0.41-0.47 along the rod): 18 by 27 mm, reaching 12 mm into the head |
+
+- **The stop and the nut agree only at the full stroke:** `checks/adjustable_stop.usdc` sets the
+  stop half way, and the nut stays where the twin's stop is. A check file that moved a stand-in
+  would need the exporter to know which part shows a stop; not done.
+- **The seam where the quill's collar met the head** (an open question of PR #21) is closed: the
+  head's underside and the collar's top are patched, and the stand-in quill fills the space
+  between them when the quill is lowered.

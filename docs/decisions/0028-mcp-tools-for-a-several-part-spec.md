@@ -1,7 +1,7 @@
 # 0028 - MCP tools for a several-part spec: set piece by piece, built only while valid
 
-- **Status:** proposed (by Claude Code in the drill-press plan's Phase 5, 2026-10-28), for
-  Daniel's review with the phase.
+- **Status:** accepted (by Daniel, 2026-10-28: "Decision 0028 looks good, I approve as it is
+  proposed."). Proposed by Claude Code in the drill-press plan's Phase 5.
 - **Date:** 2026-10-28
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0013 (the MCP server: one tool per platform action, state in the run folder)

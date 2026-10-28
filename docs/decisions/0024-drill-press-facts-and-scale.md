@@ -144,3 +144,22 @@ All are under 10%, so each is an info issue in the twin.
   multiplied through the link (57 rad per m), keeps the quill moving at the stop. Daniel saw no
   gap; nothing at levels 1 and 2 needs a change. Authored masses (options b and c above) would
   change it, and wait for a source or a need (Phase 6's forces).
+
+## Update: real masses, asked for and not built (2026-10-28)
+Daniel: "Let's attempt a version with real masses if possible. If it proves to be too much trouble
+then let's avoid it for now unless instructed by our stake holders."
+- **What the sources give:** the total, "Weight ... 108 lbs." (p. 8). The parts list (pp. 49-50)
+  names the parts without weights, and no other source found gives one. So the parts' real masses
+  are not known; what could be built is an estimate per part (a stand-in's volume, which is known,
+  times a material's density, which would need its own source; a cut part's volume, which its
+  open, cut mesh does not have), labelled as such.
+- **What it would take:** the contract has no mass on a `Part`. Authoring masses means a contract
+  change (an optional mass with its citations, schema 0.3.0, a decision record), which CLAUDE.md
+  asks to discuss with the pipeline owners first, then the exporter writing `MassAPI` masses, and
+  Pipeline B computing the estimates.
+- **So, under Daniel's condition, it is not built now.** Masses stay placeholders. It comes back
+  if the stakeholders ask, or when Phase 6's drilling stroke needs forces; the first step would be
+  the contract proposal to the pipeline owners.
+- **The cost of leaving it:** the stand-in handles' convex hull is large, so their placeholder
+  inertia makes the spring return bounce (v3: settled in 3.9 s; v4: 5.7 s; Phase 1: 0.83 s).
+  Nothing at levels 1 and 2 fails because of it.

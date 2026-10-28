@@ -765,13 +765,15 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     one handle): the cited "FOLDING HANDLE M10-1.5 X 28, 70L" (p. 50) in v3.
   - **The depth stop's rod** (Daniel's re-check of v3: a gap behind it when the quill moves
     down): one M12 rod through the head's ring in v4 (decision 0027, "Update: v4").
+  - **The quill, the column inside the bracket, the depth stop nut and its bracket** (Daniel's
+    check of v4): in v5 (decision 0027, "Update: v5").
 - [x] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
       ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
       guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
       no T33901 to photograph (Daniel, 2026-10-26).
 - [x] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
-      (Oct 28, 2026: decision 0028, proposed. Seven tools set a several-part spec piece by piece,
+      (Oct 28, 2026: decision 0028, accepted by Daniel the same day. Seven tools set a several-part spec piece by piece,
       `fit_circles` measures along any axis, `preview_twin` previews either kind and lists the
       holes to patch. `add_joint` and `set_scale` are unchanged. The procedure's section 5b)
 - [x] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
@@ -793,6 +795,11 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       handles. His two leftovers, the crank's nub and the gap behind the depth stop's rod, are
       fixed in **`grizzly/t33901@v4`**, run `2026-10-28_run-001`, both validators clean.
       Not opened yet: `adjustable_stop.usdc`, `all_motions.usdc`)
+      (Oct 28, 2026: Daniel's check of v4 with recordings: the depth stop stops the quill at
+      41.3 mm where its check file sets it, the spring returns it, the table's locks hold at
+      their settings: **level 2**. His two gaps when parts move, below the head and in the column,
+      and the depth stop nut on the rod are in **`grizzly/t33901@v5`**, run `2026-10-28_run-002`,
+      both validators clean. Masses: asked for, not built (decision 0024, update))
 - [x] Worklog with run details (versions, time); PR
       (Oct 28, 2026: worklogs 2026-10-26 to 10-28; PR #21, for Daniel's review of the phase)
 

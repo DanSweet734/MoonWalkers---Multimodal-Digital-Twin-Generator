@@ -100,15 +100,21 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     (0.000 mm), the handles "look a lot better", "almost no holes" (decisions 0024 and 0027,
     updates). His two leftovers, the crank's nub behind the bracket and the gap behind the depth
     stop's rod, are fixed in **`grizzly/t33901@v4`** (run `2026-10-28_run-001`, both validators
-    clean): a stand-in M12 rod through the head's ring, the nub cut out. Not opened yet:
-    `adjustable_stop.usdc`, `all_motions.usdc`. v2: rejecting it is recommended, in the
-    dashboard by Daniel (decision 0015: people review, the agent never does).
-  - **MCP tools for a several-part spec** (decision 0028, proposed): seven tools set the spec
+    clean): a stand-in M12 rod through the head's ring, the nub cut out. v2 rejected by Daniel.
+  - **Daniel's check of v4 (2026-10-28), with recordings:** the depth stop, the spring and the
+    table's locks work (level 2). **`grizzly/t33901@v5`** (run `2026-10-28_run-002`, both
+    validators clean) adds stand-ins for the quill (no gap below the head when lowered), the
+    column inside the bracket (no gap when the table moves) and the depth stop nut on the rod
+    with its bracket (decision 0027, "Update: v5"). Masses: asked for, not built: no source gives
+    the parts' masses, and they need a contract change (decision 0024, update). The table is
+    locked in every file but `checks/unlocked.usdc`, by design (the manual's locks).
+  - **MCP tools for a several-part spec** (decision 0028, accepted 2026-10-28): seven tools set the spec
     piece by piece, `fit_circles` measures along any axis, `preview_twin` previews either kind
     and lists the holes to patch; the procedure's section 5b. `add_joint` and `set_scale` are
     unchanged.
   - **PR #21** is open for Daniel's review of Phase 5 (review PNGs in
-    `docs/images/2026-10-28-t33901-v4/`; its open questions list what is left to decide).
+    `docs/images/2026-10-28-t33901-v5/`; its open questions list what is left to decide).
+    Daniel's Isaac Sim check of v5 is next.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
