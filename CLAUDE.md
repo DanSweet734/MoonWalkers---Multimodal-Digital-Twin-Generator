@@ -103,8 +103,12 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     clean): a stand-in M12 rod through the head's ring, the nub cut out. Not opened yet:
     `adjustable_stop.usdc`, `all_motions.usdc`. v2: rejecting it is recommended, in the
     dashboard by Daniel (decision 0015: people review, the agent never does).
-  - **Next:** the MCP tools for a several-part spec, the agent procedure, and the PR with a few
-    small PNGs of v4's views under `docs/`.
+  - **MCP tools for a several-part spec** (decision 0028, proposed): seven tools set the spec
+    piece by piece, `fit_circles` measures along any axis, `preview_twin` previews either kind
+    and lists the holes to patch; the procedure's section 5b. `add_joint` and `set_scale` are
+    unchanged.
+  - **Next:** the Phase 5 PR (review PNGs in `docs/images/2026-10-28-t33901-v4/`), then
+    Daniel's review of the phase.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
