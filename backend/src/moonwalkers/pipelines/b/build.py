@@ -6,8 +6,10 @@ a twin is built the same way whoever asks for it:
 - Pipeline B runs on the run's request: it generates the mesh, or stops with
   ``GeometrySpecMissing`` until the spec exists, then assembles the parts.
 - The orchestrator stores the result, or reuses a stored twin, following decision 0009.
-- A new twin is exported first, as ``twin.usdc`` plus the two check files, and validated. The
-  run folder then gets copies of the stored records and ``RUN.md``.
+- A new twin is exported first, as ``twin.usdc`` plus its check files (``check_files``), and
+  validated. The run folder then gets copies of the stored records and ``RUN.md``; a twin of
+  several parts also gets the coloured views and the photo overlays (``views/``) and the joint
+  recorder (``record_joints.py``).
 """
 
 from __future__ import annotations
@@ -23,9 +25,12 @@ from pathlib import Path
 from typing import Any
 
 from moonwalkers.contracts.pipeline_result import (
+    Citation,
     InputType,
     Issue,
     JobResult,
+    Joint,
+    JointMode,
     PipelineId,
     PipelineResult,
     Source,
@@ -37,21 +42,246 @@ from moonwalkers.generators.base import ImageTo3DGenerator
 from moonwalkers.kb import KnowledgeBase
 from moonwalkers.orchestrator import JobRequest, Orchestrator
 from moonwalkers.pipelines import Pipeline, default_pipelines
-from moonwalkers.usd.exporter import DriveSettings, ExportError, export_twin
+from moonwalkers.usd.exporter import (
+    DriveSettings,
+    ExportError,
+    JointSettings,
+    export_twin,
+    stopped_limits,
+)
 from moonwalkers.usd.validate import validate_file
 
-from .pipeline import GENERATOR_DIR, GENERATOR_RECORD, PipelineB, ReferenceFacts, RunFolderConflict
+from .part_views import fit_fed_photos, write_spec_views
+from .parts_spec import PartsSpec, oriented_mesh
+from .pipeline import (
+    GENERATOR_DIR,
+    GENERATOR_RECORD,
+    SPEC_FILE,
+    SPEC_SOURCE_ID,
+    PipelineB,
+    ReferenceFacts,
+    RunFolderConflict,
+    generated_mesh,
+    read_spec,
+)
+
+RECORDER = Path(__file__).parents[2] / "usd" / "isaac_recorder.py"
 
 REQUEST_FILE = "request.json"
 JOB_RESULT_SUFFIX = ".job_result.json"
 TWIN_FILE = "twin.usdc"  # binary: a generated mesh is too big for text USD (decision 0012)
 CHECKS_DIR = "checks"
 PROGRAMS_DIR = "programs"  # one folder per control behaviour with a program (decision 0016)
-# Drives for the hand check in Isaac Sim, as in Phase 2; chosen by us, not machine facts.
-CHECK_DRIVES = {
-    "spin.usdc": DriveSettings.spin(math.radians(30.0)),
-    "quarter_turn.usdc": DriveSettings.hold(math.radians(90.0)),
-}
+VIEWS_DIR = "views"  # coloured views and photo overlays of a several-part twin (decision 0023)
+RECORDER_FILE = "record_joints.py"  # the joint recorder for the Isaac Sim check (Phase 1)
+SLOW_SPIN = math.radians(30.0)  # for the eye; chosen by us, not a machine fact
+SETTING_TURN = math.radians(30.0)  # where a check locks a turning joint, within its limits
+
+
+@dataclass(frozen=True)
+class CheckFile:
+    """One file for the Isaac Sim check: the twin with only this scenario added, as the Phase 1
+    drill press's checks are (``usd.primitive_drill_press.Check``). ``machine`` changes the
+    contract (a lock loosened, a stop moved); ``settings`` and ``starts`` are simulation choices.
+    Every value here is chosen for the check, not a fact about the machine."""
+
+    name: str
+    shows: str
+    look_for: str
+    drive: DriveSettings = field(default_factory=lambda: DriveSettings.hold(0.0))
+    machine: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
+    settings: Mapping[str, JointSettings] = field(default_factory=dict)
+    starts: Mapping[str, float] = field(default_factory=dict)
+
+    def results(self, results: Sequence[PipelineResult]) -> list[PipelineResult]:
+        """The results with this check's machine changes, validated again."""
+        if not self.machine:
+            return list(results)
+        changed = []
+        for result in results:
+            data = result.model_dump()
+            for joint in data["joints"]:
+                joint.update(self.machine.get(joint["joint_id"], {}))
+            changed.append(PipelineResult.model_validate(data))
+        return changed
+
+
+def check_files(results: Sequence[PipelineResult]) -> list[CheckFile]:
+    """The check files for a twin. A twin whose joints state no v0.2.0 behaviour (the HA5C, the
+    TH240) gets the PoC's two: a spin and a quarter turn of every joint. Otherwise there is a
+    file per behaviour its joints state, as the Phase 1 drill press had (decision 0020)."""
+    joints = [j for r in results for j in r.joints]
+    if not any(j.mode or j.follows or j.adjustable_stop for j in joints):
+        return [
+            CheckFile(
+                "spin.usdc", "the spindle turns at 30 deg/s", "", DriveSettings.spin(SLOW_SPIN)
+            ),
+            CheckFile(
+                "quarter_turn.usdc",
+                "the spindle turns to 90 deg and holds",
+                "",
+                DriveSettings.hold(math.radians(90.0)),
+            ),
+        ]
+    # A value chosen for a check cites the geometry spec, when the joint's result has one.
+    with_spec = {
+        j.joint_id
+        for r in results
+        if SPEC_SOURCE_ID in {source.source_id for source in r.sources}
+        for j in r.joints
+    }
+
+    def chosen(joint: Joint) -> list[Citation]:
+        if joint.joint_id not in with_spec:
+            return []
+        return [
+            Citation(source_id=SPEC_SOURCE_ID, locator="set for the Isaac Sim check, not a fact")
+        ]
+
+    def kind(j: Joint, name: str) -> bool:
+        return j.mode is not None and j.mode.kind == name
+
+    driven = [j for j in joints if kind(j, "driven") and j.joint_type == "revolute"]
+    springs = [j for j in joints if kind(j, "spring_return")]
+    stops = [j for j in joints if j.adjustable_stop is not None and j.lower_limit is not None]
+    locked = [j for j in joints if kind(j, "locked")]
+    followers = ", ".join(f"'{j.joint_id}'" for j in joints if j.follows) or "nothing"
+    spin = {j.joint_id: JointSettings(drive=DriveSettings.spin(SLOW_SPIN)) for j in driven}
+    far = {j.joint_id: _far_end(j) for j in springs}
+    settings = {j.joint_id: _lock_setting(j) for j in locked}
+    at_setting = {
+        j.joint_id: {
+            "mode": JointMode(
+                kind="locked",
+                position=settings[j.joint_id],
+                citations=[*j.mode.citations, *chosen(j)],
+            )
+        }
+        for j in locked
+        if j.mode is not None
+    }
+    checks = []
+    if driven:
+        checks.append(
+            CheckFile(
+                "spin.usdc",
+                f"the driven joints ({_names(driven)}) turn at 30 deg/s, for the eye",
+                "They turn slowly and steadily; nothing else moves.",
+                settings=spin,
+            )
+        )
+    if springs:
+        checks.append(
+            CheckFile(
+                "spring_return.usdc",
+                f"the spring-return joints ({_names(springs)}) start at the far end of travel",
+                "On Play "
+                + "; ".join(
+                    f"'{j.joint_id}' jumps to {_amount(j, far[j.joint_id])}" for j in springs
+                )
+                + f"; then the spring returns it to its rest position. Following: {followers}.",
+                starts=far,
+            )
+        )
+    for j in stops:
+        middle = (j.lower_limit + _far_end(j)) / 2
+        stop = j.adjustable_stop
+        assert stop is not None
+        checks.append(
+            CheckFile(
+                "adjustable_stop.usdc",
+                f"'{j.joint_id}' is fed past its adjustable stop, set half way",
+                f"On Play '{j.joint_id}' moves to {_amount(j, middle)} and stops there, short of "
+                f"its full {_amount(j, _far_end(j))}.",
+                machine={
+                    j.joint_id: {
+                        "adjustable_stop": stop.model_copy(
+                            update={"position": middle, "citations": [*stop.citations, *chosen(j)]}
+                        )
+                    }
+                },
+                settings={
+                    j.joint_id: JointSettings(
+                        drive=DriveSettings.hold(_far_end(j)), note="a feed past the stop"
+                    )
+                },
+            )
+        )
+        break  # one stop file; a machine with several gets one check of the first
+    if locked:
+        checks += [
+            CheckFile(
+                "unlocked.usdc",
+                f"the locked joints ({_names(locked)}) loosened",
+                "On Play gravity moves what a loosened lock no longer holds: a slide up a column "
+                "drops to its lowest point (decision 0018), and a part whose weight sits off a "
+                "loosened turning axis swings to its limit. Then Shift+drag each loosened part: "
+                "it moves freely within its limits.",
+                machine={
+                    j.joint_id: {"mode": JointMode(kind="free", citations=j.mode.citations)}
+                    for j in locked
+                    if j.mode is not None
+                },
+            ),
+            CheckFile(
+                "locked_at_setting.usdc",
+                f"the locked joints ({_names(locked)}) set away from the modelled pose",
+                "On Play "
+                + "; ".join(
+                    f"'{j.joint_id}' is at {_amount(j, settings[j.joint_id])}" for j in locked
+                )
+                + ". Each holds there under gravity and a Shift+drag.",
+                machine=at_setting,
+            ),
+        ]
+    checks.append(
+        CheckFile(
+            "all_motions.usdc",
+            "everything at once",
+            "The driven joints turn slowly, the springs return their joints with the followers "
+            "following, and the locked joints hold at their settings.",
+            machine=at_setting,
+            settings=spin,
+            starts=far,
+        )
+    )
+    return checks
+
+
+def _far_end(joint: Joint) -> float:
+    """The end of a joint's travel farthest from its rest position, its adjustable stop
+    included."""
+    lower, upper = stopped_limits(joint)
+    rest = joint.mode.position if joint.mode and joint.mode.position is not None else 0.0
+    ends = [e for e in (lower, upper) if e is not None]
+    if not ends:
+        raise ExportError(f"joint '{joint.joint_id}' has no limits to start a check from")
+    return max(ends, key=lambda e: abs(e - rest))
+
+
+def _lock_setting(joint: Joint) -> float:
+    """Where a check locks a joint: 30 deg on a turning joint, half way to its upper limit on a
+    sliding one, kept within its limits."""
+    lower, upper = stopped_limits(joint)
+    if joint.joint_type == "prismatic":
+        target = (upper or 0.0) / 2 if (upper or 0.0) > 0 else (lower or 0.0) / 2
+    else:
+        target = SETTING_TURN
+    if upper is not None:
+        target = min(target, upper)
+    if lower is not None:
+        target = max(target, lower)
+    return target
+
+
+def _amount(joint: Joint, value: float) -> str:
+    if joint.joint_type == "prismatic":
+        return f"{value:+.4f} m ({value / 0.0254:+.2f} in)"
+    return f"{math.degrees(value):+.1f} deg"
+
+
+def _names(joints: Sequence[Joint]) -> str:
+    return ", ".join(f"'{j.joint_id}'" for j in joints)
 
 
 @dataclass(frozen=True)
@@ -100,10 +330,21 @@ def build_run(
             errors = [i for i in findings if i.severity == "error"]
             if errors:
                 raise ExportError(f"the exported twin failed validation: {errors[0].message}")
-            for name, drive in CHECK_DRIVES.items():
-                check = run_dir / CHECKS_DIR / name
-                written.append(check)
-                export_twin(twin, results, check, drive, data_dir)
+            for check in check_files(results):
+                path_ = run_dir / CHECKS_DIR / check.name
+                written.append(path_)
+                export_twin(
+                    twin,
+                    check.results(results),
+                    path_,
+                    check.drive,
+                    data_dir,
+                    joint_settings=check.settings,
+                    starts=check.starts,
+                )
+                failed = [i for i in validate_file(path_) if i.severity == "error"]
+                if failed:
+                    raise ExportError(f"{check.name} failed validation: {failed[0].message}")
             for program in programs:  # level 3: the program drives the joint (decision 0016)
                 folder = run_dir / PROGRAMS_DIR / program.name
                 written.append(folder)
@@ -120,10 +361,27 @@ def build_run(
     write_job_result(run_dir, Path(request_path), job)
     if job.reused_existing:
         return BuildOutcome(job)
+    views = write_views(run_dir)
     _write_run_files(
-        run_dir, kb, job, request, Path(request_path), reference_path, reference, findings
+        run_dir, kb, job, request, Path(request_path), reference_path, reference, findings, views
     )
     return BuildOutcome(job, findings, exported[0], exported[1:])
+
+
+def write_views(run_dir: Path) -> dict[str, Path]:
+    """For a several-part spec: the reviewer's views in ``views/`` (decision 0023), with each
+    fed photo placed on the mesh (about a minute a photo), and the joint recorder. Nothing for
+    decision 0012's single spindle."""
+    spec = read_spec(Path(run_dir) / SPEC_FILE)
+    if not isinstance(spec, PartsSpec):
+        return {}
+    model_record = json.loads((Path(run_dir) / "meshes" / "assembly.json").read_text("utf-8"))
+    mesh = oriented_mesh(generated_mesh(run_dir), spec)
+    photos = fit_fed_photos(mesh, Path(run_dir) / GENERATOR_DIR / "prepared", spec.yaw_deg)
+    scale = float(model_record["scale_factor_m_per_unit"])
+    views = write_spec_views(mesh, spec, scale, Path(run_dir) / VIEWS_DIR, photos)
+    shutil.copyfile(RECORDER, Path(run_dir) / RECORDER_FILE)
+    return views
 
 
 def program_files(results: Sequence[PipelineResult]) -> list[ProgramFile]:
@@ -164,6 +422,7 @@ def _write_run_files(
     reference_path: Path | None,
     reference: ReferenceFacts | None,
     findings: list[Issue],
+    views: Mapping[str, Path],
 ) -> None:
     """Copies of the stored records, and ``RUN.md`` for the run's details and the review."""
     results = [kb.get_result(rid) for rid in job.twin.built_from]
@@ -175,7 +434,7 @@ def _write_run_files(
     record_path = run_dir / GENERATOR_DIR / GENERATOR_RECORD
     generator = json.loads(record_path.read_text(encoding="utf-8"))
     lines = _run_notes(
-        job, stored, generator, request, request_path, reference_path, reference, findings
+        job, stored, generator, request, request_path, reference_path, reference, findings, views
     )
     (run_dir / "RUN.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
@@ -189,6 +448,7 @@ def _run_notes(
     reference_path: Path | None,
     reference: ReferenceFacts | None,
     findings: list[Issue],
+    views: Mapping[str, Path] | None = None,
 ) -> list[str]:
     twin = job.twin
     details = generator["details"]
@@ -253,14 +513,36 @@ def _run_notes(
         lines += [
             f"- `{PROGRAMS_DIR}/{p.name}/`: {p.behavior.name}; see its PROGRAM.md" for p in programs
         ]
+    warnings = [i for r in results for i in r.issues if i.severity == "warning"]
+    if views:
+        lines += ["", "## Stand-ins and known inaccuracies (the warnings above)", ""]
+        lines += [f"- `{i.ref or '-'}`: {i.message}" for i in warnings]
+        lines += ["", f"## Views (`{VIEWS_DIR}/`, decision 0023)", ""]
+        lines += [f"- `{VIEWS_DIR}/{path.name}`" for path in views.values()]
+    checks = check_files(results)
+    lines += ["", "## Isaac Sim check (fill in)", "", "- Isaac Sim version/build:"]
+    if checks and all(not c.look_for for c in checks):  # the PoC's single spindle
+        lines += [
+            f"- `{TWIN_FILE}` (spindle holds 0 deg):",
+            "- `checks/spin.usdc` (spindle turns at 30 deg/s):",
+            "- `checks/quarter_turn.usdc` (spindle turns to 90 deg and holds):",
+        ]
+    else:
+        lines += [
+            (
+                f"- Measuring: before Play, paste `{RECORDER_FILE}` into Window > Script Editor "
+                "and click Run; it writes every joint's position over time to `recordings/`."
+            ),
+            "- Pushing parts: hold Shift and drag with the left mouse button while it runs.",
+            (
+                f"- `{TWIN_FILE}` (the twin as the contract states it: driven joints hold, "
+                "springs rest, followers follow, locks hold the modelled pose):"
+            ),
+        ]
+        for check in checks:
+            lines += [f"- `{CHECKS_DIR}/{check.name}`: {check.shows}. Look for: {check.look_for}"]
+            lines.append("  - Seen:")
     lines += [
-        "",
-        "## Isaac Sim check (fill in)",
-        "",
-        "- Isaac Sim version/build:",
-        f"- `{TWIN_FILE}` (spindle holds 0 deg):",
-        "- `checks/spin.usdc` (spindle turns at 30 deg/s):",
-        "- `checks/quarter_turn.usdc` (spindle turns to 90 deg and holds):",
         *(
             f"- `{PROGRAMS_DIR}/{p.name}/program.usdc` with run_program.py (the program "
             "drives the spindle):"

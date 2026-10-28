@@ -28,6 +28,8 @@ from typing import Literal
 import numpy as np
 import trimesh
 
+from moonwalkers.contracts.pipeline_result import Issue
+
 from .assemble import AssembledParts, AxisName, GeometrySpec, Vec3, assemble
 from .mesh_tools import (
     CircleFit,
@@ -43,7 +45,22 @@ from .mesh_tools import (
     tip_slabs,
     transformed,
 )
-from .pipeline import ReferenceFacts, size_checks
+from .part_views import FittedPhoto, fit_fed_photos, write_spec_views
+from .parts_spec import (
+    AssembledModel,
+    OpenLoop,
+    PartsSpec,
+    assemble_parts,
+    open_loops,
+    oriented_mesh,
+)
+from .pipeline import (
+    ReferenceFacts,
+    cited_length,
+    parts_issues,
+    size_checks,
+    spec_size_checks,
+)
 
 PROFILE_SLICES = 24
 WINDOW_FRACTION = 0.25  # default profile window: a quarter of the mesh's largest extent
@@ -220,6 +237,86 @@ def preview_parts(mesh_path: Path, spec: GeometrySpec, out_dir: Path) -> Preview
         "spindle": render_views(spindle, out_dir / "spindle"),
     }
     return Preview(parts, {name: paths["sheet"] for name, paths in views.items()})
+
+
+@dataclass(frozen=True)
+class PartsPreview:
+    """A several-part spec tried without storing anything (decisions 0023 and 0027)."""
+
+    model: AssembledModel
+    views: dict[str, Path]  # cuts, parts, part_<id>, on_<slot>_photo
+    photos: list[FittedPhoto]
+    size_checks: list[Issue]
+    issues: list[Issue]  # stand-ins, removed parts, inaccuracies, pieces, seams
+    holes: list[OpenLoop]  # open loops across a removed part: patch them, or cover them
+
+
+def preview_parts_spec(
+    mesh_path: Path,
+    spec: PartsSpec,
+    reference: ReferenceFacts | None,
+    out_dir: Path,
+    prepared: Path | None = None,
+) -> PartsPreview:
+    """Cut, place the stand-ins and scale into ``out_dir``/meshes, and write the reviewer's
+    views (``part_views.write_spec_views``). With ``prepared`` (the run's
+    ``generator/prepared``), each fed photo is placed on the mesh and the parts are drawn over
+    it; that takes about a minute a photo."""
+    known = cited_length(reference, spec.scale.fact, "the scale")
+    out_dir = Path(out_dir)
+    model = assemble_parts(mesh_path, spec, known, out_dir / "meshes")
+    mesh = oriented_mesh(mesh_path, spec)
+    fitted = fit_fed_photos(mesh, prepared, spec.yaw_deg) if prepared is not None else []
+    views = write_spec_views(mesh, spec, model.scale_factor, out_dir, fitted)
+    checks = [
+        *size_checks(model, reference),
+        *spec_size_checks(spec, model.scale_factor, reference),
+    ]
+    removed = {p.part_id for p in spec.parts if p.kind == "removed"}
+    holes = [loop for loop in open_loops(mesh, spec) if removed & set(loop.across)]
+    return PartsPreview(model, views, fitted, checks, parts_issues(spec, model), holes)
+
+
+def format_parts_preview(preview: PartsPreview) -> str:
+    m = preview.model
+    seams = {s.part: s for s in m.seams}
+    lines = [
+        (
+            f"scale: {m.scale_factor:.6f} m per model unit "
+            f"({m.scale_measured_model_units:.4f} model units)"
+        ),
+        (
+            f"overall extents (m): depth x {m.overall_extents_m[0]:.4f}, "
+            f"width y {m.overall_extents_m[1]:.4f}, height z {m.overall_extents_m[2]:.4f}"
+        ),
+        "parts:",
+    ]
+    for part in m.parts:
+        seam = seams.get(part.part_id)
+        pieces = f", {seam.pieces} piece(s), {seam.stray_faces} stray faces" if seam else ""
+        lines.append(
+            f"  {part.part_id} ({part.kind}): {part.faces} faces{pieces}, bounds (m) "
+            f"{_fmt(part.bounds_m[0])} to {_fmt(part.bounds_m[1])}"
+        )
+    lines += [f"  removed {name}: {faces} faces" for name, faces in m.removed_faces.items()]
+    lines.append("joints:")
+    lines += [f"  {j.joint_id}: axis {_fmt(j.axis)} at {_fmt(j.origin_m)} m" for j in m.joints]
+    for fitted in preview.photos:
+        f = fitted.fit
+        lines.append(
+            f"photo {fitted.slot}: azimuth {f.azimuth_deg:+.1f} deg (slot implies "
+            f"{fitted.expected_azimuth_deg:+.1f}), elevation {f.elevation_deg:.1f}, "
+            f"silhouette IoU {f.iou:.3f}"
+        )
+    lines += [f"{i.severity}: {i.message}" for i in preview.size_checks]
+    lines += [f"{i.severity} ({i.ref or '-'}): {i.message}" for i in preview.issues]
+    lines += [
+        f"hole in {h.part} across {', '.join(h.across)}: centre {_fmt(h.centre)}, size "
+        f"{_fmt(h.size)}, {h.edges} edges (patch it, or check that a stand-in covers it)"
+        for h in preview.holes
+    ]
+    lines += [f"views ({name}): {path}" for name, path in preview.views.items()]
+    return "\n".join(lines)
 
 
 def format_inspection(inspection: Inspection) -> str:

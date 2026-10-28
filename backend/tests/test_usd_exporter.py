@@ -360,3 +360,22 @@ def test_unexportable_structures_are_refused(twin_and_result, extra_parts, joint
     parts = [p.model_dump() for p in result.parts] + [extra_part(p) for p in extra_parts]
     with pytest.raises(ExportError, match=message):
         build_stage(twin, [variant(result, parts=parts, joints=joints)])
+
+
+def test_parts_held_to_the_root_by_fixed_joints_are_grey_like_it(twin_and_result) -> None:
+    """A part fixed to the root never moves, so it is grey; one fixed to a moving part moves,
+    so it is orange (Daniel's check of grizzly/t33901@v5, 2026-10-28)."""
+    twin, result = twin_and_result
+    parts = [p.model_dump() for p in result.parts] + [extra_part(p) for p in ("plate", "cap")]
+    joints = [j.model_dump() for j in result.joints] + [
+        joint("plate_mount", "body", "plate", "fixed"),
+        joint("cap_mount", "spindle", "cap", "fixed"),
+    ]
+    stage = build_stage(twin, [variant(result, parts=parts, joints=joints)])
+
+    def colour(part: str) -> tuple[float, ...]:
+        geometry = stage.GetPrimAtPath(f"{ROOT}/{part}/geometry")
+        return tuple(round(c, 2) for c in UsdGeom.Mesh(geometry).GetDisplayColorAttr().Get()[0])
+
+    assert colour("body") == colour("plate") == (0.55, 0.57, 0.6)
+    assert colour("spindle") == colour("cap") == (0.9, 0.45, 0.1)

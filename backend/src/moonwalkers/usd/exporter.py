@@ -96,7 +96,7 @@ START_TIME_CODE = 0.0
 END_TIME_CODE = 1_000_000.0
 TIME_CODES_PER_SECOND = 60.0
 
-ROOT_PART_COLOR = (0.55, 0.57, 0.60)  # grey: the fixed base
+ROOT_PART_COLOR = (0.55, 0.57, 0.60)  # grey: the fixed base, and parts held to it by fixed joints
 MOVING_PART_COLOR = (0.90, 0.45, 0.10)  # orange: parts that move
 
 # How contract modes are simulated (decision 0018): stand-ins chosen for the drill press's quill
@@ -361,9 +361,10 @@ def build_stage(
     root.SetCustomDataByKey("moonwalkers", _twin_provenance(twin, results))
 
     articulated = bool(joints)
+    still = fixed_with_root(root_part, joints)
     body_paths: dict[str, Sdf.Path] = {}
     for part_id, (part, result_id) in parts.items():
-        color = ROOT_PART_COLOR if part_id == root_part else MOVING_PART_COLOR
+        color = ROOT_PART_COLOR if part_id in still else MOVING_PART_COLOR
         body_paths[part_id] = _write_part(
             stage, root_path, part, result_id, articulated, color, data_dir
         )
@@ -423,6 +424,22 @@ def _check_prim_names(ids: list[str], reserved: set[str], what: str) -> None:
                 f"{what} ids '{names[name]}' and '{item_id}' both become the prim name '{name}'"
             )
         names[name] = item_id
+
+
+def fixed_with_root(root_part: str, joints: dict[str, tuple[Joint, str]]) -> set[str]:
+    """The root part and every part held to it through fixed joints only: the parts that never
+    move, coloured as the root is (a stand-in column section on a drill press's frame, Daniel's
+    check of grizzly/t33901@v5, 2026-10-28)."""
+    still = {root_part}
+    fixed = [j for j, _ in joints.values() if j.joint_type == "fixed"]
+    grew = True
+    while grew:
+        grew = False
+        for joint in fixed:
+            if joint.parent_part in still and joint.child_part not in still:
+                still.add(joint.child_part)
+                grew = True
+    return still
 
 
 def _root_part(parts: dict[str, tuple[Part, str]], joints: dict[str, tuple[Joint, str]]) -> str:

@@ -2,9 +2,10 @@
 
 This guide is for an AI agent (in the PoC, Claude Code; decision 0003) that is connected to the
 project's `moonwalkers` MCP server (decision 0013). It turns machine photos (one, or several with
-their views, decision 0022) into a functional digital twin: a body and a spindle on a revolute
-joint, scaled, with every fact cited. A person then reviews the twin. Each step below names the tool to use. The tools' own descriptions give their
-arguments.
+their views, decision 0022) into a functional digital twin, scaled, with every fact cited: a body
+and a spindle on a revolute joint (sections 4 and 5), or a machine of several parts on several
+joints, such as a drill press (section 5b; decisions 0027 and 0028). A person then reviews the
+twin. Each step below names the tool to use. The tools' own descriptions give their arguments.
 
 ## Rules
 - **Cite every fact.** Each value, dimension and capability needs a source with a locator (page,
@@ -196,9 +197,57 @@ the job is done. Otherwise the job waits for you:
 4. You can call `add_joint` and `set_scale` again until the preview is right. Once you submit, the
    run is fixed.
 
+## 5b. A machine of several parts
+For a machine whose moving parts are more than one spindle about +x (the T33901 drill press: the
+quill, the spindle, the downfeed handles, the table on its column, its tilt and its turn). The spec
+is set piece by piece, and `preview_twin` shows each change; nothing is stored until
+`submit_twin`. The T33901's spec (`data/machines/grizzly-t33901/part_cutting/2026-10-27_spec/`,
+decision 0027 and its updates) is a worked example.
+1. **Read the parts list and the figures first** (the manual's exploded view and photos): which
+   parts move, on what, how far, and what locks them. Each joint and stand-in cites them.
+2. **Measure on the oriented mesh.** `inspect_geometry(run, up, front, yaw_deg)` for the views and
+   the bounds; **`fit_circles(run, up, front, along, at, yaw_deg)`** for round parts along any
+   axis (a column or a quill along z, a hub along y). Use the `round` fits; several slices along
+   one part should agree. Write each measurement into the note of what it sets.
+3. **`set_spec_frame`:** up, front and yaw_deg as inspected; `origin_xy` where the twin's origin
+   goes (the spindle's axis); `fixed_part` (the frame, which keeps every face no cut takes); and
+   `method`.
+4. **`set_cut_list`:** an ordered list; a face goes to the first entry whose shape holds its
+   centre. Give each entry a note naming its evidence.
+   - Faces of a part the mesh gets wrong go to a **removed** part, which a stand-in replaces.
+   - An entry for the fixed part early in the list keeps its faces out of later, larger shapes
+     (the head's wall behind a removed handle hub).
+5. **`set_spec_part`** for every part: `cut`, `removed` or `stand_in`.
+   - **Stand-ins** (Daniel's rule): a labelled stand-in where the mesh hides or gets wrong a part
+     that shows or that a joint needs; left out where it is hidden and unused. Match it to the
+     photos, scaled by a cited size in the same photo, and to the parts list's sizes. Name it
+     "Stand-in: ...", cite its sizes and photos, and say in its note what is read from where.
+     Sizes are in metres; `at` is in model units.
+   - A stand-in that does not move on its own is held to its part by a **fixed joint**.
+6. **`set_spec_joint`** for every joint: type, parent and child, axis and point (model units),
+   limits in rad or m, and the contract's behaviour (mode, adjustable stop, link; decision 0020)
+   with citations. **A lever that another joint follows must be balanced** about its axis. The
+   T33901's v1 handles hung 47 mm off theirs, and through the link they sagged the quill by
+   20 mm.
+7. **`set_scale_length`:** the largest cited length whose two ends both show (decision 0024: the
+   overall height). **`set_size_checks`:** every other cited length you can measure, with how.
+8. **`preview_twin(run)`** (and `photos=true` once, about a minute a photo, to draw the parts over
+   the fed photos):
+   - **open every `part_<id>` view, not only `parts`.** A leftover shows only in its part's view:
+     the T33901's v1 kept half a generated crank, seen only in `part_table_bracket.png`;
+   - **`holes`:** open edges where removed faces met a cut part. Close each with a `patches`
+     entry on that part (`near` = the hole's centre) through `set_spec_part`, or check in the
+     views that a stand-in covers it. If a patch is refused or a hole stays, move the cut's edge:
+     a patch cannot join two sheets of a part that touch at one point;
+   - the size checks, and the issues the twin will carry.
+9. **Repeat** until every view is right and no hole is left. Then `submit_twin`, and run NVIDIA's
+   validator on `twin.usdc` and each check file (`uv run omni_asset_validate <file>` from
+   `backend/`): it finds what ours does not, such as non-manifold points.
+
 ## 6. Submit and report
 1. **`submit_twin(run)`** stores the result and a new twin version (needs review), exports
-   `twin.usdc` and two check files, and validates them. If the machine already has a twin and the
+   `twin.usdc` and its check files (two for a spindle; one per behaviour the joints state for
+   several parts), and validates them. If the machine already has a twin and the
    run is not a new version, it reuses the stored twin instead and says so.
 2. **Report to the person:**
    - the twin id and the USD path;
@@ -224,7 +273,10 @@ Tool errors say what is wrong. The common ones:
 |---|---|
 | "add a reference source first" | Call `add_reference_source` before `identify_machine` or `add_fact` |
 | "citations of unknown sources" | Cite a `source_id` recorded with `add_reference_source`, not the photo from `add_input` |
-| "the geometry spec is not complete" | Call both `add_joint` and `set_scale` |
+| "the geometry spec is not complete" | One spindle: call both `add_joint` and `set_scale`. Several parts: set what the message names (it says "still to set ..." or why the pieces do not make a spec, such as a joint joining a part not set yet) |
+| "a single spindle's joint and scale cannot be added" / "start a new run for a spec of several parts" | A run's spec is of one kind: start a new run to switch |
+| "no open edge loop within 0.02 model units" | A patch's `near` must be a hole's centre from `preview_twin`'s `holes` |
+| "give measured_model_units" | Only the overall depth, width and height are measured by the pipeline; measure any other length yourself |
 | "already built its twin" / "already assembled" / "already generated" | The run folder is fixed: start a new run (`new_version=true` for a rebuild) |
 | "the image-to-3D generator is not configured" | The person must set `MOONWALKERS_GEN_ROOT` for the server |
 | "no photo for the generator" | Add a whole-machine photo with use `generator` |
@@ -233,7 +285,7 @@ Tool errors say what is wrong. The common ones:
 | "Pipeline D (...) ... is not in yet" (or A, C) | The document's pipeline is not in yet: cite it with `add_reference_source` and record its facts with `add_fact` |
 
 Claude Code asks the person before each tool call unless they allow the tool. Only
-`check_knowledge_base` and `list_jobs` are read-only. `request_twin` stores nothing when it reuses a
+`check_knowledge_base`, `list_jobs` and `fit_circles` are read-only. `request_twin` stores nothing when it reuses a
 twin. The other tools write only inside the run folder, except `submit_twin`, which also writes the
 knowledge base.
 

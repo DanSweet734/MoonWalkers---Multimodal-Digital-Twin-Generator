@@ -8,8 +8,10 @@ file each one leaves (data/README.md):
   with its view and use (decision 0022);
 - notes: ``reference_facts.json`` (``add_reference_source`` and the other note tools);
 - mesh: ``generator/run.json`` (``generate_geometry``);
-- spec: ``geometry_spec.json``, written once ``add_joint`` and ``set_scale`` are both done;
-- preview: ``preview/assembled/views.png`` (``preview_twin``; optional);
+- spec: ``geometry_spec.json``, written once ``add_joint`` and ``set_scale`` are both done, or
+  while the pieces of a several-part spec make a valid one (decision 0028);
+- preview: ``preview/assembled/views.png``, or ``preview_parts/parts.png`` for several parts
+  (``preview_twin``; optional);
 - twin: ``twin_record.json`` (``submit_twin``), or a reuse recorded in ``request.job_result.json``.
 
 Command-line builds (decision 0012) read their notes from a file outside the run folder, so their
@@ -30,12 +32,14 @@ from moonwalkers.contracts.pipeline_result import InputType, JobResult, Source, 
 from moonwalkers.kb import machine_key
 from moonwalkers.orchestrator import JobRequest, PhotoUse, PhotoView
 from moonwalkers.pipelines.b.build import JOB_RESULT_SUFFIX, REQUEST_FILE, job_result_file
+from moonwalkers.pipelines.b.parts_spec import PartsSpec
 from moonwalkers.pipelines.b.pipeline import GENERATOR_DIR, GENERATOR_RECORD, ReferenceFacts
 
 from .runs import SpecState, Workspace
 
 TWIN_RECORD = "twin_record.json"
 PREVIEW_SHEET = "preview/assembled/views.png"
+PARTS_PREVIEW_SHEET = "preview_parts/parts.png"
 MACHINE_FOLDER = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 Stage = Literal["no_photo", "waiting_for_agent", "in_progress", "built", "reused", "unreadable"]
@@ -157,7 +161,11 @@ def _status(ws: Workspace, run_dir: Path, where: dict[str, Any]) -> RunStatus:
         _notes_step(ws.reference(run_dir), built=twin is not None),
         _mesh_step(_read_json(run_dir / GENERATOR_DIR / GENERATOR_RECORD)),
         _spec_step(spec),
-        JobStep(step="preview", label="Preview rendered", done=(run_dir / PREVIEW_SHEET).is_file()),
+        JobStep(
+            step="preview",
+            label="Preview rendered",
+            done=any((run_dir / s).is_file() for s in (PREVIEW_SHEET, PARTS_PREVIEW_SHEET)),
+        ),
         _twin_step(twin, reused),
     ]
 
@@ -251,16 +259,24 @@ def _mesh_step(record: dict[str, Any] | None) -> JobStep:
 
 
 def _spec_step(state: SpecState) -> JobStep:
-    if state.spec is not None:
+    if isinstance(state.spec, PartsSpec):
+        twin = state.spec.twin_parts
+        stand_ins = sum(p.kind == "stand_in" for p in twin)
+        detail = (
+            f"decided by {state.spec.decided_by}: {len(twin)} parts ({stand_ins} stand-ins), "
+            f"{len(state.spec.joints)} joints"
+        )
+    elif state.spec is not None:
         detail = f"decided by {state.spec.decided_by}"
+    elif state.kind == "parts":
+        detail = f"{', '.join(state.parts)} set; {state.problem}"
     elif state.parts:
         missing = [p for p in ("joint", "scale") if p not in state.parts]
         detail = f"{', '.join(state.parts)} set; still to set: {', '.join(missing)}"
     else:
         detail = None
-    return JobStep(
-        step="spec", label="Joint and scale set", done=state.spec is not None, detail=detail
-    )
+    label = "Parts and joints set" if state.kind == "parts" else "Joint and scale set"
+    return JobStep(step="spec", label=label, done=state.spec is not None, detail=detail)
 
 
 def _twin_step(twin: TwinRecord | None, reused: JobResult | None) -> JobStep:

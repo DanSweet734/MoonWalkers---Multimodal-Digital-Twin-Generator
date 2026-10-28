@@ -1,9 +1,7 @@
 """The Phase 4 spike's runner: its cut lists, coloured views and report."""
 
-import struct
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from moonwalkers.pipelines.b import part_spike
@@ -42,13 +40,6 @@ def test_render_parts_writes_a_colour_sheet_and_legend(tmp_path: Path, indexer) 
     legend = (tmp_path / "parts.txt").read_text(encoding="utf-8").splitlines()
     assert legend[0].startswith("frame: rgb(190, 190, 190)") and legend[1].startswith("spindle")
     assert (image != 255).any(axis=2).sum() > 500
-
-
-def test_write_rgb_png_checks_its_input(tmp_path: Path) -> None:
-    part_spike.write_rgb_png(tmp_path / "x.png", np.zeros((2, 3, 3), dtype=np.uint8))
-    assert struct.unpack(">II", (tmp_path / "x.png").read_bytes()[16:24]) == (3, 2)
-    with pytest.raises(ValueError):
-        part_spike.write_rgb_png(tmp_path / "y.png", np.zeros((2, 3), dtype=np.uint8))
 
 
 def test_the_report_lists_every_row() -> None:

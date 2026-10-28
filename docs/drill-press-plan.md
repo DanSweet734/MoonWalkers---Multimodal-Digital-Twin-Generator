@@ -11,10 +11,10 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 3 are done (PRs #15, #16, #18, #19). Phase 4's spike
-is done (2026-10-24, PR #20). Daniel reviewed it on 2026-10-26 and accepted decision 0023. PR #20
-waits for his word to merge, and Phase 5 is next. Stop at the end of each phase,
-open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
+**Status:** approved (PR #15). Phases 0 to 4 are done (PRs #15, #16, #18, #19, #20; PR #20
+merged on 2026-10-26 with decision 0023 accepted). Phase 5 is under way: its first session built
+`grizzly/t33901@v1` for Daniel's Isaac Sim check, and its second session has a hand-off below. Stop
+at the end of each phase, open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
@@ -549,23 +549,191 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       Daniel on 2026-10-26, with his answers on stand-ins); worklog; PR #20
 
 ## Phase 5 - Pipeline B builds several parts and joints (levels 1 and 2)
-- [ ] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
+
+### Hand-off (2026-10-26, from the Phase 4 chat)
+- **Start** from `main` after PR #20 (merge commit `2f3f638`), on branch
+  `feat/phase-5-several-parts-and-joints`, created from `main` on 2026-10-26. Its first commit holds
+  this hand-off and is not on `main` yet. Phase 5 starts in a new chat.
+- **Read first:**
+  - decision 0023, including "Daniel's answers" at its end;
+  - `docs/research/2026-10-24-part-cutting-spike.md`: section 4 (the T33901's measurements and
+    errors), section 6 (the measures) and section 8 (the review: the table and the crank);
+  - decisions 0012 (the geometry spec and the run folder) and 0022 (`yaw_deg`, the photos);
+  - the items below.
+- **What Phase 4 left in code, and what Phase 5 does with it** (all in `pipelines/b/`):
+
+  | Module | What it is | For Phase 5 |
+  |---|---|---|
+  | `part_cuts.py` | (a): `CylinderCut`, `BoxCut`, `HalfSpaceCut`, `PartCut`, `assign`, `split`, `seams` | the cut list in the geometry spec (decision 0023) |
+  | `part_spike.py` | the spike's runner; `T33901_CUTS` (the draft cut list, with each shape's evidence), `T33901_PASSES`, `render_parts`, `photo_overlay`, `write_rgb_png` | start the T33901's spec from `T33901_CUTS`; move the views and the overlay into the inspection |
+  | `photo_marks.py` | (d): orthographic `Camera`, `render`, `carry`, `fill_unseen`, `fit_camera`, `in_photo` | `fit_camera` and `in_photo` place each fed photo for the overlay; `carry` waits |
+  | `mesh_tools.py` | `face_groups` (union-find) and `read_png` (all five PNG filters), added beside the old tools | used by the above |
+  | `synthetic_parts.py` | the Phase 1 drill press as one labelled mesh (separate, fused, rounded), `surface_nets`, `score` | a test mesh for the several-part spec |
+  | `mesh_segments.py` | (b): pieces and sharp-edge regions | not used to cut (decision 0023) |
+
+  The spike re-runs with `uv run python -m moonwalkers.pipelines.b.part_spike <out> --t33901
+  ../data/machines/grizzly-t33901/runs/2026-10-24_run-001` (about 4.5 min). Its last output is
+  in `data/machines/grizzly-t33901/part_cutting/2026-10-24_spike/` (`report.md`, `t33901_a.png`,
+  `t33901_a_on_front_photo.png`, `t33901_a_on_left_photo.png`).
+- **The T33901's frame and measurements** (model units, squared with up `+y`, front `+z`, yaw
+  49.1):
+  - +X is the front, +Y the machine's own left (the operator's right, the handles' side), +Z up;
+  - the column's axis is at (-0.1385, +0.005), radius 0.079;
+  - the spindle's axis is at (0.277, -0.022), from the chuck guard's round fits;
+  - the depth stop's rod is at (0.334, -0.156);
+  - the pinion's axis is along Y through about (x 0.229, z 0.497), where the handles' lines meet.
+    The spring housing on -Y gives (0.252, 0.482);
+  - the table's top is at z ≈ -0.231.
+
+  The vertical axes came from circle fits on a copy turned so +Z became +X
+  (`orientation_matrix("+y", "+z")` on the squared mesh), since `fit_circles` slices across X
+  only.
+- **The scale (decision 0024).** Two cited sizes already agree within 1%:
+  - the column's "3-1/8 in." diameter (p. 9) gives 0.501 m per unit;
+  - the "39 in." height (p. 8) gives 0.4965 for the squared height of 1.995.
+
+  Spindle to column measures 5-6% short of the cited 7 in at either scale (research note,
+  section 4).
+- **Stand-ins (Daniel, 2026-10-26):** the chuck, the table and the crank, plus the rack (below).
+  - **The rack.** Asked "The column rack ... would get a stand-in too ... Is that right?" and
+    "May I merge PR #20?", Daniel replied "Yes let's merge PR #20". That is read as a yes to both
+    [INFERENCE: one reply to two questions]. Say so in this phase's first report, so he can
+    correct it.
+  - **The exporter already takes stand-ins.** It meshes each part by its own format
+    (`usd/exporter.py`, `_part_mesh`), so `geometry_format="primitive"` parts (boxes, cylinders,
+    compounds; `usd/geometry.py`) can sit beside the cut mesh parts. Read in the code; not tried in
+    a build.
+  - **Shapes beyond boxes and cylinders.** Primitives cannot cut holes, so they cannot make the
+    table's slots and centre hole, its rounded corners, or the crank's S-shaped arm.
+    [INFERENCE] `synthetic_parts.surface_nets` turns a signed distance into a closed mesh with no
+    install. A rounded square minus the slots and the hole is easy to write as a signed distance
+    (`max(a, -b)` subtracts b), and could be saved as a GLB stand-in. Not tried.
+  - **Numbering.** 0024-0026 are reserved in the table below. A separate record for stand-ins
+    would be 0027, unless it is part of the geometry spec's record.
+- **Carried from Phase 4's hand-off, still true:**
+  - run-001 shows as an open job ("mesh generated"). Whether this phase continues it or starts a
+    new run with the same photos is this phase's call;
+  - a running MCP server keeps the tools it started with: after changing its code, ask Daniel to
+    restart it (`/mcp`, or a new session) before testing through it;
+  - the manual's figures are in `inputs/photos/manual/`, and `SOURCES.md` lists every photo.
+- **The environment** (found in Phase 4):
+  - the backend has numpy and trimesh, but no scipy, networkx, scikit-image, rtree, shapely,
+    Pillow, embreex or manifold3d. These trimesh calls fail, as checked on 2026-10-26:
+    - `mesh.split()`: "no graph engines available!";
+    - proximity and ray casting: no `rtree`;
+    - voxel marching cubes: no `skimage`;
+    - booleans: "No boolean backend: `pip install manifold3d`".
+
+    Phase 4 wrote what it needed (above). Any of these would be an install, asked first;
+  - Pillow 12.3.0 is in the generator's environment (`C:\mw-gen\hunyuan3d-2\.venv`). It was used
+    once, read-only with `-I`, to check `read_png`;
+  - the quick tests (`-m "not gpu and not slow"`) take about 2 min, 586 passing at Phase 4's
+    end. The slow tests are the fused mesh at 4 mm, about 30 s each, and the spike end to end,
+    about 70 s;
+  - Windows PowerShell 5.1 splits a `gh pr create --body` argument at its double quotes. Write
+    the body to a file in the session's scratch folder and use `--body-file`;
+  - the Bash tool's safety check failed for a while on 2026-10-24 ("no verdict"). The PowerShell
+    tool still worked.
+- **Daniel's way of reviewing** (Phase 4): he looked at the coloured views and judged parts
+  against the photos, and caught the table and the crank that way. Put the views and the photo
+  overlays in the run folder and in the PR.
+- **Housekeeping:** PR #20's branch `feat/phase-4-part-cutting-spike` was kept, since Daniel did
+  not ask to delete it. No deadline was given for Phase 5.
+
+### Hand-off (2026-10-27, from the first Phase 5 chat to the second)
+- **Done in the first session** (worklog 2026-10-27; commits on this branch): steps 1-5 of the
+  order of work Daniel was given.
+  - The T33901's reference facts and the quote checker.
+  - Decisions 0024 (the scale is the overall height; masses stay placeholders) and 0027 (joints
+    and stand-ins in the spec), both **proposed**, for Daniel's review.
+  - The several-part spec, stand-ins, views, check files and size checks in Pipeline B.
+  - **`grizzly/t33901@v1` built** in run `2026-10-24_run-001`: 11 parts (4 stand-ins), 10 joints
+    (3 fixed), six check files, `views/`, `record_joints.py`. Its `RUN.md` lists what to look for
+    in each file. **Daniel's Isaac Sim check is pending.**
+- **Told Daniel in the first report:** his "Yes let's merge PR #20" was read as a yes to the column
+  rack's stand-in too.
+- **Left for the second session** (steps 6-7):
+  - **The MCP tools** (item below). Today `add_joint` and `set_scale` write decision 0012's spec
+    parts (`workspace/runs.py`, `set_spec_part`, `spec_state`), `preview_twin` calls the
+    single-spindle preview, and `inspect_geometry` fits circles across x only. The pipeline, the
+    CLI and the views already take a `PartsSpec` (`pipelines/b/parts_spec.py`), so the tools need
+    to write one: the cut list, parts (cut, stand-in, removed), joints and the scale fact, then
+    preview it with `inspection.preview_parts_spec`. Old runs must keep working.
+  - `docs/agent-procedure.md`, the README status, CLAUDE.md, then the PR. The PR describes the
+    views; they are in `data/` (not in git), and the overlays hold copyrighted photos.
+- **The T33901's spec:** `data/machines/grizzly-t33901/part_cutting/2026-10-27_spec/`.
+  `compose_spec.py` writes it from cited inches and measured model units, and
+  `geometry_spec_next.json` is its current output. It differs from v1 only where stand-in pieces
+  met end to end; they now overlap. A next version goes in a new run folder: copy `request.json`
+  and `generator/` from run-001, so the mesh is reused by its key and not regenerated.
+- **NVIDIA's validator on v1:** 0 errors, 3 warnings (non-manifold points in the chuck and the
+  crank). Fixed in the code and the next spec; a dry run of the next spec gave "No issues found."
+  (worklog 2026-10-27).
+- **Time:** a build takes about 2.5 min, most of it placing the two fed photos for the overlays
+  (about a minute each). A preview with `--no-photos` takes about 40 s.
+- **Still true from the hand-off above:** the MCP server keeps the tools it started with; ask
+  Daniel to restart it (`/mcp`) before testing changed tools through it. Write `gh pr create`
+  bodies to a file (`--body-file`).
+- **Daniel's review and Isaac Sim check of v1 (2026-10-27,** recorded in run-001's `RUN.md`):
+  - decisions 0024 and 0027 accepted ("look good");
+  - the table "looks fantastic", its locks hold, and loosened it drops and tilts, as expected;
+  - **the quill sags** below the top in every file he opened ("a noticeable gap");
+  - **the downfeed handles are "very noticeably wrong"** (he called them "the crank": "three
+    handles that all connect to a central joint"); the Phase 1 box model's were "far more
+    accurate";
+  - **PNGs in the PR: approved.** "Yes let's upload a few small PNGs under docs in the private
+    repo" (an exception to CLAUDE.md rule 5, for review images only).
+- **So the second session first builds v2,** then does steps 6-7:
+  1. in `compose_spec.py` (decision 0027, updates; run-001's `RUN.md`, "Daniel's follow-up"):
+     - a balanced stand-in for the downfeed hub and its three handles, replacing the generated
+       hub and its stray faces;
+     - the rest of the generated table height crank cut out: its arm lies at y 0.10-0.12, behind
+       the column's back, and Daniel's screenshot shows two cranks;
+     - a stand-in table pivot lock handle (the cited "FOLDING HANDLE M10-1.5 X 28, 70L"),
+       replacing the generated arm's two prongs;
+     - the head wall's holes where the hub was cut, covered by the stand-in hub or logged;
+     - look at every `part_<id>.png`, not only `parts.png`, before building;
+  2. a new run folder `2026-10-27_run-002` (or the day's date) with run-001's `request.json` and
+     `generator/`, the new spec, built as `new_version`; check that both validators are clean;
+  3. if the joint recorder shows the quill still sagging (v1: about 20 mm, ringing for about
+     4 s, in Daniel's recording of `twin.usdc`), the spring's stand-in values or the masses
+     (decision 0024, update);
+  4. Daniel's Isaac Sim re-check of v2, with `adjustable_stop.usdc` and `all_motions.usdc`, which
+     he has not opened yet;
+  5. then the MCP tools, the agent procedure, the PR with a few PNGs of v2's views under `docs/`.
+
+### Items
+- [x] Reference facts for the T33901, like `pipelines/b/haas_ha5c.reference.json`, with every
       quote checked against its PDF page
-- [ ] A quote checker: it confirms every quote in a reference file is on its cited page, using
+      (Oct 27, 2026: `pipelines/b/grizzly_t33901.reference.json`, 36 facts; 42 of 42 quotes on
+      their cited pages)
+- [x] A quote checker: it confirms every quote in a reference file is on its cited page, using
       the PDF's text, and runs on the HA5C's file and the T33901's. pypdf's text splits words at
       line breaks with a hyphen ("prede- termined", p. 7; "con - trolled", p. 30), so the checker
       must join them (worklog 2026-10-23)
-- [ ] Decision record 0024: facts and scale. Which cited dimension sets the scale (candidates: the
+      (Oct 27, 2026: `python -m moonwalkers.pipelines.b.quotes`. The HA5C's: 15 of 16 checkable
+      quotes; the miss is the drawing's stacked fraction, which pypdf cannot read as written)
+- [x] Decision record 0024: facts and scale. Which cited dimension sets the scale (candidates: the
       7 in from spindle to column, the 39 in height, the 23-3/8 in from spindle to base). With
       several photos, cited dimensions can also check one another. Then how the cited 108 lb is
       split between the parts, or whether the placeholder density stays (decision 0010).
+      (Oct 27, 2026: proposed, and accepted by Daniel the same day. The overall height,
+      0.496536 m per model unit; the column's diameter agrees within 0.8%. Masses stay
+      placeholders, since no source splits the weight. That nothing at levels 1-2 depends on them
+      was corrected the same day: the unbalanced downfeed hub sagged the quill through its link
+      (decision 0024, updates). Oct 28: real masses asked for and not built, for the reasons
+      in its last update)
 - [x] The machine key: "Grizzly Industrial, Inc." normalises to `grizzly-industrial/t33901`
       (`kb/keys.py`), but the data folder is `grizzly-t33901`. Add a `grizzly` alias, with the
       source of the short name (decision 0009).
       (Oct 24, 2026: done early, in Phase 3's PR #19, on Daniel's word. Both names now give
       `grizzly/t33901`; the source of the short name is the "GRIZZLY LOGO LABEL", manual p. 54)
-- [ ] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
+- [x] A geometry spec for several parts (decision 0023): each part with its cuts, and joints of any
       type and axis, with limits, modes and links. The HA5C's existing specs still build.
+      (Oct 27, 2026: `pipelines/b/parts_spec.py`, decision 0027, accepted by Daniel the same day.
+      The inspection's views,
+      pieces, overlays and circle fits along any axis are in `part_views.py` and `inspect
+      --preview --spec`, `--circles-along`)
   - Decision 0023 (accepted by Daniel on 2026-10-26) makes the cuts an ordered cut list
     (`part_cuts`), each shape with a note naming its evidence. The spike's T33901 list
     (`part_spike.T33901_CUTS`) is a draft to start from.
@@ -573,7 +741,7 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     of the parts, each part's pieces, and the cuts drawn over each fed photo.
   - Logged for this phase (research note of 2026-10-24, sections 4 and 8): the handle fused to
     the wall; spindle to column 5-6% short; the spindle 1.4 cm off the column's plane.
-- [ ] **Labelled stand-ins** where the mesh hides or gets wrong a part that shows (Daniel,
+- [x] **Labelled stand-ins** where the mesh hides or gets wrong a part that shows (Daniel,
       2026-10-26, review of PR #20; decision 0023, "Daniel's answers"). Each is cited and
       logged as an inaccuracy. How a stand-in takes a cut part's place in the spec is decided
       in this phase.
@@ -584,19 +752,70 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     and Fig. 36. The generated one is 0.586 by 0.614 units, skewed, and 0.055 off the spindle.
   - **The crank,** to match Fig. 36 and the colour photos: a flat S-shaped arm with its handle
     pointing out, down and to the front. No size is cited.
-  - **The column rack,** visible in Figs. 36, 37 and 48, under Daniel's rule. He has not answered
-    this one: confirm.
-- [ ] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
+  - **The column rack,** visible in Figs. 36, 37 and 48, under Daniel's rule. His "Yes let's merge
+    PR #20" is read as a yes to this too (hand-off above): say so in the first report.
+
+  (Oct 27, 2026: all four, matched to the photos against cited sizes, each its own part named
+  "Stand-in: ...", with a warning; the generated table, crank and chuck end are cut out. The
+  chuck guard is its own part, fixed to the quill, so it can be hidden to see the chuck. Said in
+  the first report: the rack read as a yes)
+  - **The downfeed hub and its three handles** (added after Daniel's Isaac Sim check, 2026-10-27):
+    the generated hub is "very noticeably wrong", and its weight off its axis likely makes the
+    quill sag. A balanced stand-in from the cited stud and knob (p. 50) in v2 (decision 0027,
+    update).
+    (Oct 27, 2026: in v3, with the table pivot lock handle, the crank's leftover arm cut out and
+    the holes patched; decision 0027, "Update: v2 and v3")
+  - **The table pivot lock handle** (Daniel's screenshot of v1: two prongs where the photos show
+    one handle): the cited "FOLDING HANDLE M10-1.5 X 28, 70L" (p. 50) in v3.
+  - **The depth stop's rod** (Daniel's re-check of v3: a gap behind it when the quill moves
+    down): one M12 rod through the head's ring in v4 (decision 0027, "Update: v4").
+  - **The quill, the column inside the bracket, the depth stop nut and its bracket** (Daniel's
+    check of v4): in v5 (decision 0027, "Update: v5").
+- [x] **Left as generated, logged:** the depth stop's nut and bracket stay one ring, with the head
       ("the depth stop ring can stay in the head for now", Daniel, 2026-10-26). The back stays
       guessed: no photo of it exists in any source Daniel or Claude Code could find, and there is
       no T33901 to photograph (Daniel, 2026-10-26).
-- [ ] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
+      (Oct 28, 2026: the ring no longer stays: in v5 it is cut out, the nut a stand-in riding on
+      the rod and the stop bracket a stand-in on the head, on Daniel's word. The back stays
+      guessed)
+- [x] MCP tools: `add_joint` and `inspect_geometry` stop assuming one spindle about +X, and new
       tools are added if needed. Old runs still work. `docs/agent-procedure.md` is updated.
-- [ ] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
+      (Oct 28, 2026: decision 0028, accepted by Daniel the same day. Seven tools set a several-part spec piece by piece,
+      `fit_circles` measures along any axis, `preview_twin` previews either kind and lists the
+      holes to patch. `add_joint` and `set_scale` are unchanged. The procedure's section 5b)
+- [x] Size checks against every cited dimension: width, depth, height, spindle to column, spindle
       to table, spindle to base
-- [ ] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
+      (Oct 27, 2026: width, depth, height, column, spindle to column, base length and width, all
+      within 6%. Spindle to table and to base cannot be measured: the spindle's end is inside
+      the guard the generator made solid; decision 0024)
+      (Oct 27-28, 2026, v3 to v6: width -7.0% and depth -6.0%, since v1's generated handle that
+      pointed out along +Y had stretched both; the others as v1. All under 10%)
+- [x] Build `grizzly/t33901@v1`. Isaac Sim check of levels 1 and 2. Log every inaccuracy and
       stand-in as an issue in the twin, in `RUN.md`, and in the phase report's table.
-- [ ] Worklog with run details (versions, time); PR
+      (Levels 1 and 2 reached by v4 and v5, below; every inaccuracy and stand-in is an issue in
+      each twin and in its `RUN.md`. The phase report's table is Phase 7's)
+      (Oct 27, 2026: built in run-001 and logged in the twin and `RUN.md`. Both validators: 0
+      errors. Daniel's Isaac Sim check the same day: level 1; the table and its locks as
+      expected; the quill sags and the downfeed handles are wrong, so **v2 follows**)
+      (Oct 27, 2026, second session: **`grizzly/t33901@v3`** in run `2026-10-27_run-002`, both
+      validators clean in all seven files. v2, run `2026-10-27_run-001`, is superseded: NVIDIA's
+      validator warned about the table arm. **Daniel's Isaac Sim re-check of v3 is next**, with a
+      joint recording; its `RUN.md` lists what to look for)
+      (Oct 28, 2026: Daniel's re-check of v3 with recordings: **the quill rests at the top**
+      (0.000 mm), the handles follow within 0.2%, level 2 for the quill, its spring and the
+      handles. His two leftovers, the crank's nub and the gap behind the depth stop's rod, are
+      fixed in **`grizzly/t33901@v4`**, run `2026-10-28_run-001`, both validators clean.
+      Not opened yet: `adjustable_stop.usdc`, `all_motions.usdc`)
+      (Oct 28, 2026: Daniel's check of v4 with recordings: the depth stop stops the quill at
+      41.3 mm where its check file sets it, the spring returns it, the table's locks hold at
+      their settings: **level 2**. His two gaps when parts move, below the head and in the column,
+      and the depth stop nut on the rod are in **`grizzly/t33901@v5`**, run `2026-10-28_run-002`,
+      both validators clean. Masses: asked for, not built (decision 0024, update))
+      (Oct 28, 2026: Daniel's check of v5 with recordings: level 2, the table loosened moving
+      through all its cited travel. **`grizzly/t33901@v6`**, run `2026-10-28_run-003`: v5 with the
+      parts fixed to the frame grey, as he asked; both validators clean)
+- [x] Worklog with run details (versions, time); PR
+      (Oct 28, 2026: worklogs 2026-10-26 to 10-28; PR #21, for Daniel's review of the phase)
 
 ## Phase 6 - Control logic (level 3), for the drill press and the HA5C
 - [ ] Decision record 0025: how `ControlBehavior` describes a manual machine:
@@ -659,6 +878,8 @@ test settles both.
 | 0024 | The drill press's facts and scale | 5 | Item 7 |
 | 0025 | Control logic for a manual machine | 6 | Item 6 |
 | 0026 | The HA5C controller's acceleration and mill signals (amends 0016) | 6 | Advisors, Oct 22, 2026 |
+| 0027 | Joints and stand-ins in the geometry spec | 5 | This plan |
+| 0028 | MCP tools for a several-part spec | 5 | This plan |
 
 ## Not in this plan
 - Pipelines A, C and D themselves: they are their owners'.
@@ -684,3 +905,13 @@ Code.
   - photos or a video of a full stroke (research note).
 
   Until then, a labelled stand-in.
+- **The back of the T33901.** No photo of it exists in any source found, and there is no T33901
+  to photograph (Daniel, 2026-10-26). The generator's guess stays, logged as such, until the lab's
+  photos come or a source turns up.
+- **The parts' masses.** The manual gives only the total, 108 lb; authoring per-part estimates
+  needs a contract change, discussed with the pipeline owners first. Left until the stakeholders
+  ask or Phase 6 needs forces (Daniel, 2026-10-28; decision 0024, update). Meanwhile the spring
+  return bounces before resting.
+- **The depth stop nut's place in a check file.** It sits at the twin's stop, the full stroke; in
+  `checks/adjustable_stop.usdc` the stop is half way and the nut stays put (decision 0027,
+  "Update: v5").

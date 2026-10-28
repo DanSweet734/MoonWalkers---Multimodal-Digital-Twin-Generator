@@ -177,10 +177,82 @@ class InspectionReport(BaseModel):
 
 class SpecStatus(BaseModel):
     run: str
-    parts_set: list[str]
+    kind: str | None = Field(
+        default=None,
+        description="spindle (add_joint, set_scale; decision 0012) or parts (set_spec_frame and "
+        "the others; decisions 0027, 0028)",
+    )
+    parts_set: list[str] = Field(description="the pieces of the spec set so far")
     complete: bool
-    spec: GeometrySpec | None
+    spec: GeometrySpec | None = Field(description="a single spindle's complete spec")
+    problem: str | None = Field(
+        default=None, description="why a several-part spec's pieces do not make a spec yet"
+    )
+    parts: dict[str, str] = Field(
+        default_factory=dict, description="a several-part spec's parts: id -> kind"
+    )
+    joints: list[str] = Field(default_factory=list, description="id: type, parent -> child")
+    cuts: list[str] = Field(default_factory=list, description="the cut list, in order")
     note: str
+
+
+class CircleAlongReport(BaseModel):
+    position: float = Field(description="the slice's position along the axis, model units")
+    samples: int
+    centre: Vec3 | None = Field(description="the circle's centre, in the twin's axes")
+    radius: float | None
+    rms: float | None
+    coverage: float
+    round: bool
+
+
+class CirclesReport(BaseModel):
+    run: str
+    along: str
+    fits: list[CircleAlongReport]
+
+
+class PartPreview(BaseModel):
+    part_id: str
+    kind: str
+    faces: int
+    pieces: int | None = Field(description="pieces of the generated mesh, for a cut part")
+    stray_faces: int | None
+    bounds_m: tuple[Vec3, Vec3]
+
+
+class JointPreview(BaseModel):
+    joint_id: str
+    axis: Vec3
+    origin_m: Vec3
+
+
+class HoleReport(BaseModel):
+    part: str
+    centre: Vec3 = Field(description="model units, after orienting: a patch's `near`")
+    size: Vec3
+    edges: int
+    across: list[str] = Field(description="the parts on the other side of its edge")
+
+
+class PartsPreviewReport(BaseModel):
+    run: str
+    scale_m_per_unit: float
+    scale_measured_model_units: float
+    overall_extents_m: Vec3 = Field(description="depth (x), width (y), height (z)")
+    parts: list[PartPreview]
+    removed_faces: dict[str, int]
+    joints: list[JointPreview]
+    photos: list[str] = Field(description="each fed photo's fit on the mesh, when placed")
+    size_checks: list[Issue]
+    issues: list[Issue] = Field(description="stand-ins, removed parts, inaccuracies, patches")
+    holes: list[HoleReport] = Field(
+        description="open edges a cut part has where removed faces met it: close each with a "
+        "patch on that part, or check in the views that a stand-in covers it"
+    )
+    views: dict[str, str] = Field(
+        description="PNGs: cuts, parts, part_<id> (look at each), on_<slot>_photo"
+    )
 
 
 class PreviewReport(BaseModel):

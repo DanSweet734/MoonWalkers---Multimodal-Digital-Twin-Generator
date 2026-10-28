@@ -13,6 +13,7 @@ import zlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Literal
 
 import numpy as np
 import trimesh
@@ -384,6 +385,30 @@ def fit_circles(
         rng = np.random.default_rng(seed)
         fits.append(_fit_circle(float(x), in_slice, tolerance, rng, iterations))
     return fits
+
+
+# The coordinates in the order that puts the slicing axis first, keeping the frame right-handed.
+_ALONG = {"x": (0, 1, 2), "y": (1, 2, 0), "z": (2, 0, 1)}
+
+
+def fit_circles_along(
+    mesh: trimesh.Trimesh, axis: Literal["x", "y", "z"], positions: Sequence[float], **options: Any
+) -> list[tuple[CircleFit, tuple[float, float, float] | None]]:
+    """``fit_circles`` in slices across any axis, for round parts that are not along X (the
+    drill press's column and quill stand along Z). Each fit comes with its centre as a point in
+    the mesh's frame, at the slice's position; ``CircleFit.x`` is that position along ``axis``
+    and its ``centre_yz`` holds the other two coordinates in cyclic order (y, z; z, x; x, y)."""
+    order = _ALONG[axis]
+    permuted = trimesh.Trimesh(mesh.vertices[:, order], mesh.faces, process=False)
+    fitted = []
+    for fit in fit_circles(permuted, positions, **options):
+        centre = None
+        if fit.centre_yz is not None:
+            point = [0.0, 0.0, 0.0]
+            point[order[0]], point[order[1]], point[order[2]] = fit.x, *fit.centre_yz
+            centre = (point[0], point[1], point[2])
+        fitted.append((fit, centre))
+    return fitted
 
 
 def scan_positions(mesh: trimesh.Trimesh, count: int = 8) -> list[float]:

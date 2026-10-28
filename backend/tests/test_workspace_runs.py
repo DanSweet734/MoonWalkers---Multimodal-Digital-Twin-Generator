@@ -158,3 +158,67 @@ def test_nothing_changes_once_assembled_or_built(ws: Workspace, photo_run, fixed
     )
     with pytest.raises(RunFolderConflict, match="already built"):
         ws.add_input(run_dir, photo)
+
+
+# ------------------------------------------------------------------ a several-part spec (0028)
+def several_parts_pieces() -> dict:
+    """The Phase 1 drill press's several-part spec, as its pieces."""
+    from test_pipeline_b_parts_spec import drill_press_spec
+
+    spec = drill_press_spec()
+    frame = {k: spec[k] for k in ("up", "front", "origin_xy", "fixed_part", "decided_by", "method")}
+    return {
+        "frame": frame,
+        "scale_length": spec["scale"],
+        "cuts": spec["cuts"],
+        "parts": spec["parts"],
+        "joints": spec["joints"],
+        "size_checks": spec["size_checks"],
+    }
+
+
+def set_all(ws: Workspace, run_dir: Path, pieces: dict) -> None:
+    for name in ("frame", "scale_length", "cuts", "size_checks"):
+        ws.set_parts_piece(run_dir, name, pieces[name])
+    for part in pieces["parts"]:
+        ws.set_parts_piece(run_dir, "parts", part)
+    for joint in pieces["joints"]:
+        ws.set_parts_piece(run_dir, "joints", joint)
+
+
+def test_a_several_part_spec_is_written_only_while_its_pieces_make_one(ws: Workspace) -> None:
+    run_dir = ws.start_run("MoonWalkers", "Test Indexer")
+    pieces = several_parts_pieces()
+    state = ws.set_parts_piece(run_dir, "frame", pieces["frame"])
+    assert state.kind == "parts" and state.spec is None
+    assert state.problem == "still to set: scale_length, cuts, parts"
+    set_all(ws, run_dir, pieces)
+    state = ws.spec_state(run_dir)
+    assert state.spec is not None and state.problem is None and (run_dir / SPEC_FILE).is_file()
+    assert len(state.spec.joints) == len(pieces["joints"])  # type: ignore[union-attr]
+
+    # Taking out a joint's child breaks the spec: geometry_spec.json goes, the pieces stay.
+    state = ws.remove_parts_entry(run_dir, "parts", "rack_teeth")
+    assert state.spec is None and not (run_dir / SPEC_FILE).exists()
+    assert "rack_teeth" in (state.problem or "")
+    state = ws.set_parts_piece(run_dir, "parts", pieces["parts"][-1])  # back again
+    assert state.spec is not None and (run_dir / SPEC_FILE).is_file()
+
+
+def test_a_bad_piece_is_refused_and_kinds_do_not_mix(ws: Workspace) -> None:
+    run_dir = ws.start_run("MoonWalkers", "Test Indexer")
+    pieces = several_parts_pieces()
+    ws.set_parts_piece(run_dir, "frame", pieces["frame"])
+    stand_in = dict(pieces["parts"][-1], citations=[])
+    with pytest.raises(ValidationError, match="needs citations"):
+        ws.set_parts_piece(run_dir, "parts", stand_in)
+    with pytest.raises(WorkspaceError, match="unknown piece"):
+        ws.set_parts_piece(run_dir, "nothing", {})
+    with pytest.raises(WorkspaceError, match="no part 'nowhere'"):
+        ws.remove_parts_entry(run_dir, "parts", "nowhere")
+    with pytest.raises(WorkspaceError, match="several parts"):
+        ws.set_spec_part(run_dir, "joint", JOINT)
+    other = ws.start_run("MoonWalkers", "Test Indexer")
+    ws.set_spec_part(other, "joint", JOINT)
+    with pytest.raises(WorkspaceError, match="single spindle"):
+        ws.set_parts_piece(other, "frame", pieces["frame"])
