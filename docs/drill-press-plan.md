@@ -11,10 +11,11 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 4 are done (PRs #15, #16, #18, #19, #20; PR #20
-merged on 2026-10-26 with decision 0023 accepted). Phase 5 is under way: its first session built
-`grizzly/t33901@v1` for Daniel's Isaac Sim check, and its second session has a hand-off below. Stop
-at the end of each phase, open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
+**Status:** approved (PR #15). Phases 0 to 5 are done (PRs #15, #16, #18, #19, #20, #21; PR #21
+merged on 2026-10-28). Phase 6 is under way on `feat/phase-6-control-logic`: its research, decision
+0025 (proposed), the controller and `grizzly/t33901@v7` are done (2026-10-30), and Daniel's Isaac
+Sim check of level 3 is next. Stop at the end of each phase, open a pull request, and wait for
+review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
@@ -906,8 +907,28 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     to restart it (`/mcp`) before testing through it.
 - **The HA5C's part** is as the items below say: research Parameters 18 and 44 first.
 
+### Daniel's answers (2026-10-30), and the order of work
+He agreed to this order, stopping for checks:
+1. research both machines;
+2. decision 0025;
+3. a runner tested outside Isaac Sim;
+4. a build with control;
+5. his Isaac Sim check of level 3;
+6. the HA5C;
+7. the PR.
+
+His calls:
+- time a stroke on any benchtop drill press, with stand-ins ready if that is not possible;
+- move the depth stop's nut to where the photos show it;
+- live controls in the Property panel;
+- "Just the drill press for now" in Isaac Sim. Read as: the HA5C's work stays, and its Isaac
+  Sim check waits until it is deemed necessary.
+
+Worklog 2026-10-30.
+
 ### Items
-- [ ] Decision record 0025: how `ControlBehavior` describes a manual machine:
+- [x] Decision record 0025 (proposed 2026-10-30, `docs/decisions/0025-control-logic-for-a-manual-machine.md`;
+      research: `docs/research/2026-10-30-control-logic-research.md`): how `ControlBehavior` describes a manual machine:
   - the keyed switch as a `state_machine`: key in or out, switch up or down, and the motor runs
     only with the key in and the switch up (p. 6);
   - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9). Only one belt
@@ -923,12 +944,23 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     programs drive a joint.
 
   `spec` is free-form for each kind, so none of this should need a contract change. If it does,
-  that is its own record and version bump.
-- [ ] An interpreter or runner for these behaviours, tested outside Isaac Sim. A build writes their
-      program folder with the twin (decision 0016).
-- [ ] Isaac Sim check of level 3 for the drill press
+  that is its own record and version bump. **Done without one:** a `state_machine` switch, a
+  `lookup_table` of speeds and a `command_set` of the operator's commands with two scenarios
+  (`drilling-stroke`, `no-key-no-start`). The stroke's untimed values are labelled stand-ins until
+  Daniel times a stroke.
+- [x] An interpreter or runner for these behaviours, tested outside Isaac Sim (2026-10-30).
+      `control/isaac_controls.py` is one controller: Isaac Sim runs it on each physics step, and
+      `control/manual.py` plans every scenario with it. A build writes `programs/operator-controls/`
+      (decision 0025). Also: the joint recorder records velocities, `python -m moonwalkers.control
+      compare` measures a recording, and the exporter writes a cited top speed.
+- [x] A build with control: `grizzly/t33901@v7` (run `2026-10-30_run-001`, spec
+      `part_cutting/2026-10-27_spec/geometry_spec_v7.json`), with the depth stop and nut at 43 mm
+- [ ] Isaac Sim check of level 3 for the drill press (`docs/setup/isaac-sim-check.md`, section 9)
 - [ ] **The HA5C controller's acceleration and its signals to a mill** (advisors, Oct 22, 2026:
       model them if possible; if not, record why and bring it back to the stakeholders).
+  - **Research done (2026-10-30;** research note, section 5): the 2006, 2012 and 2017 manuals
+    give no HA5C value for Parameter 18 or 44. All three say Parameter 18 is "usually 2X"
+    Parameter 19, which means full speed in about 0.5 s [INFERENCE]. That is the basis for a stand-in.
   - **Research first.** Look for the HA5C's values of Parameters 18 and 44 beyond the 2006 and 2012
     manuals, which give none (`docs/research/2026-10-19-open-questions-research.md`, section 3).
   - **Acceleration.** [INFERENCE] The manuals describe the mechanism, so it can be modelled:
@@ -1001,6 +1033,6 @@ Code.
   needs a contract change, discussed with the pipeline owners first. Left until the stakeholders
   ask or Phase 6 needs forces (Daniel, 2026-10-28; decision 0024, update). Meanwhile the spring
   return bounces before resting.
-- **The depth stop nut's place in a check file.** It sits at the twin's stop, the full stroke; in
-  `checks/adjustable_stop.usdc` the stop is half way and the nut stays put (decision 0027,
-  "Update: v5").
+- **The depth stop nut's place in a check file.** From v7 the nut and the stop agree at 43 mm,
+  where the photos show them (decision 0025). In `checks/adjustable_stop.usdc` the stop still moves
+  and the nut stays put (decision 0027, "Update: v5").

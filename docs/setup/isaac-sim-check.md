@@ -319,6 +319,65 @@ two sessions, 0 errors (`kit_20261024_010941.log`, `kit_20261024_011630.log`).
 - Files 5 and 6 were opened too. Files 1, 8 and 9 were not, and no recording was made. Run-003's
   `RUN.md` holds the full record.
 
+## 9. Drill-press plan, Phase 6: the T33901's controls (success level 3)
+`grizzly/t33901@v7` (run `2026-10-30_run-001`) carries the manual's controls (decision 0025):
+- the keyed switch;
+- the twelve speeds;
+- the operator's downfeed handles, in two scenarios and live from the Property panel.
+
+Its depth stop and nut are set at 43 mm, where the photos show them. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\grizzly-t33901\runs\2026-10-30_run-001\programs\operator-controls\`.
+Its `PROGRAM.md` lists the rules, the stand-ins and every step's time.
+
+1. **Open** that folder's `controls.usdc` (File > Open).
+2. **Start the recorder, then the runner.** Window > Script Editor:
+   - paste the whole of `record_joints.py` from the folder and click **Run**;
+   - then paste the whole of `run_controls.py` and click **Run**. It prints `grizzly/t33901@v7:
+     scenarios drilling-stroke, no-key-no-start, live; ...` and `driving the joints on each
+     physics step through simulation_manager; press Play`.
+3. **Find the controls.** In the Stage window, select `Controls` under `grizzly_t33901`. The
+   Property panel shows the group "MoonWalkers controls" with:
+   - "Plugged in", "Disabling key in", "ON/OFF paddle up" and "Pull the downfeed handles";
+   - "Spindle speed (RPM)" (a list of the twelve), "Pull speed (mm/s)" and "Scenario on Play";
+   - a second group "set by run_controls.py": "Motor running", "Spindle RPM commanded" and "Last
+     message".
+
+   They may sit under "Raw USD Properties". Where Isaac Sim shows custom attributes is not
+   confirmed yet. Leave "Scenario on Play" at `drilling-stroke`.
+4. **Press Play.** The console prints each step, and the panel's boxes tick as the scenario goes:
+   - **t = 0:** speed 790 RPM, power connected, key in, paddle up, "motor starts". The chuck comes
+     up to 790 RPM in 1 s, a stand-in. At 13 turns a second it may blur, or seem to turn slowly
+     backwards, as fast wheels do on video.
+   - **t = 2:** the quill goes down 30 mm in about 1 s, and the handles turn with it.
+   - **t = 3 to 12.5:** the cut, 1.34 mm/s. The quill reaches the depth stop at about 12.1 s,
+     where the nut meets the bracket.
+   - **t = 13.5:** "release the handles", and the spring returns the quill. It may bounce, as v3-v6
+     did.
+   - **t = 18.5:** paddle down, "motor stops". The spindle coasts to a stop by about 23.5 s.
+   - **t = 24.5:** key out, unplugged, then "scenario finished; the Property panel's controls are
+     live".
+5. **Then use the panel yourself:**
+   - tick "Plugged in", then "ON/OFF paddle up" without the key. The console says "the motor does
+     not start", quoting p. 6;
+   - untick the paddle, tick the key, tick the paddle: "motor starts";
+   - pick another speed while plugged in. It is refused, quoting p. 30, and the list goes back to
+     790;
+   - unplug, pick 340, plug in and start: the chuck turns more slowly;
+   - tick "Pull the downfeed handles": the quill goes down at the pull speed to the stop. Untick
+     it, and the spring returns the quill.
+6. **The other scenario.** Stop, set "Scenario on Play" to `no-key-no-start`, and press Play. The
+   paddle goes up at t = 0, but the spindle stays still. At t = 4, with the key in, it starts; it
+   stops at t = 7 and coasts down. Stop, then Play, always starts over.
+7. **Recordings** go to the folder's `recordings/`, named after the scenario, for example
+   `controls_drilling-stroke_<date>_<time>.csv`. They now hold each joint's velocity too. Claude
+   Code measures one with `uv run python -m moonwalkers.control compare <csv>
+   <folder>/trajectory_drilling-stroke.json`.
+8. **Report** what each scenario and the panel did, and which recordings to read.
+
+**If the panel shows no "MoonWalkers controls":** the scenarios still play from the console, so
+report that. **If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top
+of the pasted runner.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

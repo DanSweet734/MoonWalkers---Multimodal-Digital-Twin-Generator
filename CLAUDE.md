@@ -97,6 +97,22 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   twelve speeds and drilling stroke), a runner tested outside Isaac Sim (today's program runner
   drives revolute joints only), the Isaac Sim check of level 3, and decision 0026 (the HA5C's
   acceleration and mill signals).
+  - **Daniel's calls (2026-10-30):**
+    - work in the proposed order and stop for checks;
+    - time a stroke on any benchtop drill press, with stand-ins ready;
+    - set the depth stop and its nut where the photos show them (43 mm);
+    - live controls in the Property panel;
+    - only the drill press is checked in Isaac Sim for now.
+  - **Done (2026-10-30):**
+    - the research note `docs/research/2026-10-30-control-logic-research.md`;
+    - decision 0025 (proposed): three control behaviours in the T33901's reference file, and one
+      controller (`control/isaac_controls.py`) that Isaac Sim runs and `control/manual.py` plans
+      with;
+    - `grizzly/t33901@v7` (run `2026-10-30_run-001`, spec `geometry_spec_v7.json`), with
+      `programs/operator-controls/`.
+  - **Next:** Daniel's Isaac Sim check of level 3 (`docs/setup/isaac-sim-check.md`, section 9),
+    and his stroke timing, which would replace the stand-ins (in a v8). The HA5C's Parameters 18
+    and 44 have no published value; a stand-in can rest on the manuals' "usually 2X".
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -220,6 +236,14 @@ Backend (run from `backend/`):
   which writes `data/machines/<machine>/programs/<date>_<program>_v<N>/` (open its `PROGRAM.md`).
   A build writes `programs/<behaviour>/` into the run when a control behaviour carries `spec["program"]`.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
+- A manual machine's controls (level 3, decision 0025): a switch, a speed table and the operator's
+  commands with scenarios, as three control behaviours (the T33901's are in its reference file).
+  A build writes `programs/<command set>/` (`controls.usdc` with live controls in the Property
+  panel, `run_controls.py`, a plan per scenario). For a stored twin:
+  `uv run python -m moonwalkers.control controls --twin grizzly/t33901[@vN] [--file controls.json]`.
+  Measure a joint recording against a plan:
+  `uv run python -m moonwalkers.control compare <recording.csv> <folder>/trajectory_<scenario>.json`.
+  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 9.
 - Validate an exported twin (`.usda` or `.usdc`): `uv run python -m moonwalkers.usd.validate <file>`, then NVIDIA's `uv run omni_asset_validate <file>`
 - Check a twin by eye in Isaac Sim: `docs/setup/isaac-sim-check.md`
 - MCP server for the agent: Claude Code starts it from `.mcp.json` (approve it once per project). To
