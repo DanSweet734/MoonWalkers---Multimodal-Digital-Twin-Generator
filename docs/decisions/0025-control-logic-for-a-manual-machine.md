@@ -209,3 +209,47 @@ table. Every stand-in is an issue in the twin.
   - `drilling-stroke` takes 24.5 s, and the quill reaches the stop at 12.1 s;
   - `no-key-no-start` takes 13.0 s, and the motor starts at 4.0 s, once the key is in.
 - Daniel's Isaac Sim check is next (`docs/setup/isaac-sim-check.md`, section 9).
+
+## Isaac Sim check (Daniel, 2026-10-31)
+Isaac Sim Full 6.2 (Kit 110.4.0), session log `kit_20261031_000713.log`, 0 errors. Five recordings
+in `programs/operator-controls/recordings/`, measured with `compare`; the folder's `PROGRAM.md`
+holds the full record.
+- **Daniel:** "all seemed to go pretty well!" The controls show in the Property panel under "Raw
+  USD Properties".
+- **As planned:**
+  - every step printed at its planned time, and runs 1 and 2 measure the same to the digit;
+  - the motor ran only plugged in, with the key in and the paddle up;
+  - the not-described changes printed their notes in live use;
+  - the spindle reached 95% of 790 RPM in 0.95 s, held 790.0 RPM, and was below 1% 4.95 s after
+    the stop;
+  - the handles kept 57.08 rad/m;
+  - the quill pressed on the stop at 43.00 mm.
+- **Not tried:** the speed list. Its refusal while plugged in is unchecked in Isaac Sim.
+- **Not as planned: the quill swings about the hand.**
+  - It lags at first, overshoots to the stop at 3.5 s during the approach (planned 12.1 s), then
+    swings through the cut. The errors shrink from 12 mm, every 1.33-1.48 s.
+  - Each release bounces 4-5 times (first bounce 19-22 mm), as v3-v6 did.
+- **Why, computed** from v7's convex hulls at the placeholder 1000 kg/m3, with trimesh in the
+  generator's environment (the backend has no scipy):
+  - The stand-in hub's hull, 6.4 kg spanning its splayed handles, has 0.073 kg m2 about the
+    handles' axis. Through the 57.09 rad/m link it weighs on the quill as 237 kg, against the
+    quill's own 1.9 kg: M = 125.
+  - [INFERENCE] The acceleration drive scales by the quill's own parts only, so it acts on a
+    quill 125 times heavier than it allows for. Predicted: a period of 2.87 s and a damping ratio
+    of 1/sqrt(M) = 0.090. Measured: about 2.8 s and 0.10.
+  - So "the response does not depend on the placeholder masses" (decision 0018) fails for a joint
+    that others follow. Decision 0024's update already suspected this for the bounces.
+- **Where the spring is:** "the spring housing is located on the left side of the headstock (see
+  Figure 49)" (p. 40), a "FLAT COIL SPRING" under a "RETURN SPRING COVER" (p. 49). Phase 5
+  measured that housing on the pinion's axis (decision 0027). So the spring turns the pinion, the
+  handles' joint [INFERENCE: coaxial within 1 cm on the mesh].
+- **Options, for Daniel:**
+  - (a) Simulate the spring and the hand on the handles' joint. The contract stays as it is
+    (decision 0020: the exporter decides how to simulate). There the drive's own inertia
+    dominates: the quill adds only 0.0006 kg m2, M = 1.01, so it should behave as designed.
+    Whether PhysX takes a drive on a mimic follower is not confirmed. The link carried pushes
+    both ways in Daniel's checks [INFERENCE].
+  - (b) Scale the quill drive's gains by M. That needs the hulls' inertia in the backend (scipy,
+    an install), and the spring stays where the machine has none.
+  - (c) Keep v7 and log the swing until real masses.
+
