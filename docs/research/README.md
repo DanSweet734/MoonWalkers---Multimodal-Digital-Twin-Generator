@@ -44,6 +44,11 @@
   mesh into moving parts (shape cut lists, the mesh's own shape, learned segmenters, marks on
   photos), scored on a labelled synthetic drill press and judged on the T33901's mesh; P3-SAM's
   and PartField's licences and sizes; the T33901 mesh's errors that no cut can fix.
+- `2026-10-30-control-logic-research.md` - drill-press plan, Phase 6: what the T33901's manual
+  says about its keyed switch, speeds and stroke (and leaves out), the depth stop's setting
+  measured in the photos (about 43 mm), drilling feeds for a stroke, Isaac Sim 6.2.0's joint speed
+  cap, velocity readings and Property-panel choice lists, and the HA5C's Parameters 18, 19 and 44
+  in three Haas manuals (no HA5C value; "usually 2X").
 
 Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
 Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.
