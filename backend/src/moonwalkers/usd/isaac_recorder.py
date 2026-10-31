@@ -7,10 +7,14 @@
 3. Press Play. After every physics step it records the timeline's time and every joint's position:
    radians for joints that turn and metres for joints that slide. It reads them through
    ``omni.physics.tensors``, whose ``get_dof_positions`` "returns the positions in radians for
-   rotational DOFs".
+   rotational DOFs". Each joint's velocity follows (rad/s or m/s, ``get_dof_velocities``): a
+   spindle at 2860 RPM turns 286 degrees between steps, and its position wraps at 360 (decision
+   0025).
 4. It writes the recording to ``recordings/<file>_<date>_<time>.csv`` next to the opened file,
-   every half second and when a run ends, and prints the path. Stop, then Play, starts a new
-   recording. Running this file again replaces the earlier recorder; ``stop()`` removes it.
+   every half second and when a run ends, and prints the path. On a twin with controls, the
+   scenario that plays is added to the name (``<file>_<scenario>_<date>_<time>.csv``). Stop, then
+   Play, starts a new recording. Running this file again replaces the earlier recorder; ``stop()``
+   removes it.
 
 So a check is measured, not only seen: how fast the spring returns the quill, where the depth stop
 ends its travel, and how closely the handles follow. Physics steps come from Isaac Sim's
@@ -28,21 +32,33 @@ API = "auto"  # "auto", "simulation_manager" or "omni.physx"
 HANDLE = "_moonwalkers_joint_recorder"
 WRITE_EVERY = 30  # physics steps: half a second at 60 steps per second
 UNITS = {0: "rad", 1: "m"}  # omni.physics.tensors DofType: 0 rotation, 1 translation
+SCENARIO = "moonwalkers:controls:scenario"  # what a controls file plays (decision 0025)
 
 
 class Recording:
-    """One run's joint positions, written as CSV: ``time_s`` then one column per joint."""
+    """One run's joint positions, written as CSV: ``time_s`` then one column per joint, then,
+    with ``velocities``, one more per joint for its velocity."""
 
-    def __init__(self, names, kinds):
+    def __init__(self, names, kinds, velocities=False):
         if len(names) != len(kinds):
             raise ValueError("every joint needs a kind (0 for turning, 1 for sliding)")
-        self.columns = ["time_s"] + [f"{n} ({UNITS.get(k, '?')})" for n, k in zip(names, kinds)]
+        units = [UNITS.get(k, "?") for k in kinds]
+        self.joints = len(names)
+        self.velocities = velocities
+        self.columns = ["time_s"] + [f"{n} ({u})" for n, u in zip(names, units)]
+        if velocities:
+            self.columns += [f"{n} ({u}/s)" for n, u in zip(names, units)]
         self.rows = []
 
-    def add(self, t, positions):
-        if len(positions) != len(self.columns) - 1:
-            raise ValueError(f"expected {len(self.columns) - 1} positions, got {len(positions)}")
-        self.rows.append([float(t)] + [float(p) for p in positions])
+    def add(self, t, positions, velocities=None):
+        if len(positions) != self.joints:
+            raise ValueError(f"expected {self.joints} positions, got {len(positions)}")
+        row = [float(t)] + [float(p) for p in positions]
+        if self.velocities:
+            if velocities is None or len(velocities) != self.joints:
+                raise ValueError(f"expected {self.joints} velocities")
+            row += [float(v) for v in velocities]
+        self.rows.append(row)
 
     def csv_text(self):
         lines = [",".join(self.columns)]
@@ -54,15 +70,16 @@ class Recorder:
     """Starts a new recording on the first step, and again whenever the timeline's time goes
     back (Stop, then Play). Says when a recording should be written."""
 
-    def __init__(self, names, kinds, path_for_run):
+    def __init__(self, names, kinds, path_for_run, velocities=False):
         self.names, self.kinds = list(names), list(kinds)
         self.path_for_run = path_for_run  # run number -> where to write that run
+        self.velocities = velocities
         self.runs = 0
         self.last_t = None
         self.recording = None
         self.path = None
 
-    def step(self, t, positions):
+    def step(self, t, positions, velocities=None):
         """Record one step. Returns the (path, text) pairs to write now: a finished run, and the
         current one every ``WRITE_EVERY`` steps."""
         writes = []
@@ -70,10 +87,10 @@ class Recorder:
             if self.recording is not None:
                 writes.append((self.path, self.recording.csv_text()))
             self.runs += 1
-            self.recording = Recording(self.names, self.kinds)
+            self.recording = Recording(self.names, self.kinds, self.velocities)
             self.path = self.path_for_run(self.runs)
         self.last_t = t
-        self.recording.add(t, positions)
+        self.recording.add(t, positions, velocities)
         if len(self.recording.rows) % WRITE_EVERY == 0:
             writes.append((self.path, self.recording.csv_text()))
         return writes
@@ -82,12 +99,22 @@ class Recorder:
         return [] if self.recording is None else [(self.path, self.recording.csv_text())]
 
 
-def recording_path(stage_path, run, now=None):
-    """``recordings/<file>_<date>_<time>[_run<N>].csv`` beside the opened file."""
+def recording_path(stage_path, run, now=None, tag=None):
+    """``recordings/<file>[_<tag>]_<date>_<time>[_run<N>].csv`` beside the opened file."""
     stage_path = pathlib.Path(stage_path)
     stamp = (now or datetime.datetime.now()).strftime("%Y-%m-%d_%H%M%S")
     suffix = "" if run == 1 else f"_run{run}"
-    return stage_path.parent / "recordings" / f"{stage_path.stem}_{stamp}{suffix}.csv"
+    name = f"{stage_path.stem}_{tag}" if tag else stage_path.stem
+    return stage_path.parent / "recordings" / f"{name}_{stamp}{suffix}.csv"
+
+
+def scenario_tag(stage):
+    """The scenario a controls file will play, or None on a twin without controls."""
+    for prim in stage.Traverse():
+        attr = prim.GetAttribute(SCENARIO)
+        if attr and attr.HasAuthoredValue():
+            return str(attr.Get())
+    return None
 
 
 def _number(value):
@@ -176,7 +203,8 @@ def start():
                     state["recorder"] = Recorder(
                         meta.dof_names,
                         [int(k) for k in meta.dof_types],
-                        lambda run: recording_path(stage_path, run, started),
+                        lambda run: recording_path(stage_path, run, started, scenario_tag(stage)),
+                        velocities=True,
                     )
             except Exception as exc:  # noqa: BLE001 - report, and try again on the next Play
                 state["failed"] = True
@@ -184,8 +212,10 @@ def start():
                 return
         recorder = state["recorder"]
         runs = recorder.runs
-        positions = dof_row(state["view"][1].get_dof_positions(), len(recorder.names))
-        writes = recorder.step(t, positions)
+        view = state["view"][1]
+        positions = dof_row(view.get_dof_positions(), len(recorder.names))
+        velocities = dof_row(view.get_dof_velocities(), len(recorder.names))
+        writes = recorder.step(t, positions, velocities)
         _write(writes)
         if recorder.runs != runs:
             print(f"MoonWalkers recorder: recording {', '.join(recorder.names)} to {recorder.path}")

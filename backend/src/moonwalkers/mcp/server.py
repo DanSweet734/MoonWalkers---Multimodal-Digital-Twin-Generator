@@ -37,6 +37,7 @@ from moonwalkers.contracts.pipeline_result import (
     Source,
     TwinRecord,
 )
+from moonwalkers.control.manual import check_behavior
 from moonwalkers.control.program import IndexProgram, runnable_behaviors
 from moonwalkers.generators.base import (
     GeneratorError,
@@ -608,7 +609,12 @@ def create_server(
         spec["program"]["rows"], one row per step as the manual prints it: [step,
         step_size_deg, feed_deg_s (or the Step# for G96), loop_count, g_code], for example the
         manual's programming examples. It is checked now, and the build writes a program folder
-        for Isaac Sim."""
+        for Isaac Sim. A manual machine (decision 0025; docs/agent-procedure.md) takes three:
+        a "state_machine" switch (spec inputs, on_when, start_input, off_why, not_described), a
+        "lookup_table" of speeds (spec joint, switch, rows of rpm, initial_rpm, change_only_when,
+        run_up_s, coast_down_s) and a "command_set" of the operator's commands with scenarios
+        (spec switch, speed, quill, commands, scenarios, default_scenario), each checked here;
+        the build then writes a controls folder with live controls for Isaac Sim."""
         with guarded():
             run_dir = ws.run_dir(run)
             need_reference(run_dir)
@@ -627,6 +633,7 @@ def create_server(
 
             def put(data: dict[str, Any]) -> None:
                 kept = [b for b in data["control"] if b["behavior_id"] != behavior_id]
+                check_behavior(behavior, [ControlBehavior.model_validate(b) for b in kept])
                 data["control"] = [*kept, behavior.model_dump(mode="json")]
 
             return summary(run_dir, save_notes(run_dir, put))

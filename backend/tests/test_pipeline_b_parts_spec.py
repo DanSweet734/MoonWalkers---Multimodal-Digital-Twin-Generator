@@ -393,3 +393,38 @@ def test_a_twin_without_behaviour_keeps_the_pocs_two_checks(example_result) -> N
     assert [c.name for c in checks] == ["spin.usdc", "quarter_turn.usdc"]
     assert checks[0].drive.target == pytest.approx(math.radians(30))
     assert checks[1].drive.target == pytest.approx(math.radians(90))
+
+
+def test_a_build_with_the_operators_controls_writes_its_controls_folder(
+    photo_run, spec_run, drill_press_generator, kb
+) -> None:
+    """The T33901's switch, speed table and operator's commands (decision 0025) give the twin a
+    controls folder beside its check files, listed in RUN.md."""
+    from moonwalkers.contracts.pipeline_result import ControlBehavior
+
+    t33901 = json.loads(
+        (Path(build.__file__).with_name("grizzly_t33901.reference.json")).read_text(
+            encoding="utf-8"
+        )
+    )
+    reference = reference_facts()
+    have = {s.source_id for s in reference.sources}
+    reference.sources += [
+        Source.model_validate(s) for s in t33901["sources"] if s["source_id"] not in have
+    ]
+    reference.control = [ControlBehavior.model_validate(b) for b in t33901["control"]]
+    run_dir = photo_run.run_dir
+    spec_run()
+    request = JobRequest(job_id="job-1", sources=[photo_run.photo])
+    (run_dir / "request.json").write_text(request.model_dump_json(), encoding="utf-8")
+    build.build_run(
+        run_dir, photo_run.data_dir, run_dir / "request.json", reference, None,
+        drill_press_generator, kb,
+    )  # fmt: skip
+
+    folder = run_dir / "programs" / "operator-controls"
+    assert (folder / "controls.usdc").is_file() and (folder / "run_controls.py").is_file()
+    assert [i for i in validate_file(folder / "controls.usdc") if i.severity == "error"] == []
+    notes = (run_dir / "RUN.md").read_text(encoding="utf-8")
+    assert "`programs/operator-controls/`: ON/OFF switch with disabling key" in notes
+    assert "`programs/operator-controls/controls.usdc` with run_controls.py" in notes

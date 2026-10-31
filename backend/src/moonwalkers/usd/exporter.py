@@ -83,7 +83,12 @@ from moonwalkers.contracts.pipeline_result import (
 from .frames import quat_between
 from .geometry import MeshData, primitive_mesh
 from .mesh_files import MESH_FILE_FORMATS, mesh_data_from_file
-from .physx_schemas import apply_mimic, define_rack_and_pinion, set_joint_state
+from .physx_schemas import (
+    apply_mimic,
+    define_rack_and_pinion,
+    set_joint_state,
+    set_max_joint_velocity,
+)
 from .physx_schemas import keep_awake as keep_articulation_awake
 from .units import KILOGRAMS_PER_UNIT, METERS_PER_UNIT, usd_angle, usd_length
 
@@ -664,6 +669,8 @@ def _write_joint(
     joint_drive = _joint_drive(joint, drive, setting)
     if joint_drive is not None:
         _write_drive(prim, joint_drive, _drive_kind(joint))
+    if joint.max_velocity is not None and joint.joint_type != "fixed":  # cited (decision 0025)
+        set_max_joint_velocity(prim, _to_usd(joint, joint.max_velocity))
 
     prim.SetDocumentation(
         f"{joint.joint_type.capitalize()} joint '{joint.joint_id}': "

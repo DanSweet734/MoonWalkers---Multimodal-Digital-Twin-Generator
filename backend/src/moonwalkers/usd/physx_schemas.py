@@ -18,6 +18,7 @@ RACK_AND_PINION_TYPE = "PhysxPhysicsRackAndPinionJoint"
 JOINT_STATE_API = "PhysicsJointStateAPI"
 JOINT_STATE_AXES = ("angular", "linear")  # revolute and prismatic joints (schema doc)
 ARTICULATION_API = "PhysxArticulationAPI"
+JOINT_API = "PhysxJointAPI"
 
 
 def apply_mimic(
@@ -84,6 +85,16 @@ def keep_awake(root: Usd.Prim) -> None:
     at 30 degrees a second until pushed (decision 0017)."""
     root.AddAppliedSchema(ARTICULATION_API)
     _float(root, "physxArticulation:sleepThreshold", 0.0)
+
+
+def set_max_joint_velocity(prim: Usd.Prim, speed: float) -> None:
+    """Cap the joint ``prim``'s speed at ``speed``: degrees per second on a revolute joint, stage
+    distance per second on a prismatic one. The schema's default is ``inf`` (Isaac Sim 6.2.0's
+    ``generatedSchema.usda``), and Isaac Sim converts radians to degrees for a rotation when it
+    writes this attribute itself (``articulation.py``, ``set_dof_max_velocities``; decision
+    0025)."""
+    prim.AddAppliedSchema(JOINT_API)
+    _float(prim, "physxJoint:maxJointVelocity", speed)
 
 
 def set_joint_state(prim: Usd.Prim, axis: str, position: float) -> None:
