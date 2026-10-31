@@ -262,14 +262,7 @@ def controls_notes(
             f"- The spindle comes up to speed over {speed.run_up_s:g} s and coasts down over "
             f"{speed.coast_down_s:g} s, in straight lines."
         ),
-        (
-            f"- The quill keeps its spring drive (stiffness {quill['stiffness']:g}, damping "
-            f"{quill['damping']:g}, aimed {abs(quill['spring_target_m']) * 1000:.0f} mm above "
-            "the top; decision 0018). The hand moves that drive's target: it aims "
-            f"{quill['gravity_offset_m'] * 1000:.1f} mm short of where it holds the quill, the "
-            "sag under gravity (9.81 / stiffness), and presses "
-            f"{quill['press_past_m'] * 1000:.0f} mm past the depth stop when it reaches it."
-        ),
+        _spring_line(quill),
         "- The hand is ideal: it follows its path whatever the spring and the handles push back.",
     ]
     for name, plan in plans.items():
@@ -295,7 +288,7 @@ def controls_notes(
             + (f" from t = {m['motor_on_s']:.2f} s" if m.get("motor_on_s") is not None else "")
             + (f", off at t = {m['motor_off_s']:.2f} s" if m.get("motor_off_s") is not None else "")
             + "."
-            + _quill_line(m),
+            + _quill_line(m, quill),
         ]
     lines += [
         "",
@@ -325,21 +318,47 @@ def controls_notes(
     return "\n".join(lines) + "\n"
 
 
+def _spring_line(quill: dict[str, Any]) -> str:
+    """Where the quill's spring is simulated, and how the hand moves it."""
+    drive = quill["drive"]
+    gains = f"stiffness {quill['stiffness']:g}, damping {quill['damping']:g}"
+    past = f"{abs(quill['spring_target_m']) * 1000:.2f} mm"
+    press = f"{quill['press_past_m'] * 1000:.2f} mm"
+    if drive["kind"] == "linear":
+        return (
+            f"- The quill keeps its spring drive ({gains}, aimed {past} above the top; decision "
+            "0018). The hand moves that drive's target: it aims "
+            f"{quill['gravity_offset_m'] * 1000:.1f} mm short of where it holds the quill, the "
+            f"sag under gravity (9.81 / stiffness), and presses {press} past the depth stop."
+        )
+    return (
+        f"- The quill's return spring is simulated on `{drive['joint_id']}`, the pinion it "
+        "turns, where the T33901 has its spring (p. 40), so that the drive's own parts outweigh "
+        f"what the link adds (decision 0025, update of 2026-10-31): {gains}, aimed 0.03 rad "
+        f"({past} of quill travel) past the top. The hand moves that drive's target "
+        f"({drive['scale']:.1f} deg per m of quill travel) and presses {press} of travel past "
+        "the depth stop. [INFERENCE] The quill's weight barely turns the pinion (0.13 mm on "
+        "v7's hulls), so the hand aims at itself."
+    )
+
+
 def _states(states: dict[str, str]) -> str:
     return ", ".join(f"{name} is {state}" for name, state in states.items())
 
 
-def _quill_line(m: dict[str, Any]) -> str:
+def _quill_line(m: dict[str, Any], quill: dict[str, Any]) -> str:
     if m.get("quill_at_stop_s") is None:
         return ""
     line = f" The quill reaches the stop at t = {m['quill_at_stop_s']:.2f} s"
     if m.get("released_s") is not None:
         line += f", is released at {m['released_s']:.2f} s"
     if m.get("quill_home_s") is not None:
-        line += (
-            f" and is home by {m['quill_home_s']:.2f} s in the reference response, which leaves "
-            "out the handles' inertia (v3-v6 bounced for 3.4-5.7 s, decision 0024)"
-        )
+        line += f" and is home by {m['quill_home_s']:.2f} s in the reference response"
+        if quill["drive"]["kind"] == "linear":  # the link's followers weigh on this drive
+            line += (
+                ", which leaves out the inertia the link adds (v3-v7 bounced for 3.4-5.7 s, "
+                "decisions 0024 and 0025)"
+            )
     return line + "."
 
 

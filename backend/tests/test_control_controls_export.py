@@ -3,6 +3,7 @@ the plans and the notes; the live controls the runner reads from the Property pa
 
 import importlib.util
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -49,7 +50,7 @@ def test_a_controls_folder_holds_the_twin_the_runner_the_plans_and_the_notes(fol
     notes = (folder / "PROGRAM.md").read_text(encoding="utf-8")
     assert "DISCONNECT MACHINE FROM POWER!" in notes
     assert "## Scenario `drilling-stroke`" in notes and "## Scenario `no-key-no-start`" in notes
-    assert "16.4 mm short of where it holds the quill" in notes
+    assert "simulated on `downfeed_handles`, the pinion it turns" in notes
     plan = json.loads((folder / "trajectory_drilling-stroke.json").read_text(encoding="utf-8"))
     assert plan["followers"] == [
         {"joint_id": "downfeed_handles", "ratio": pytest.approx(57.085, abs=1e-3), "stand_in": True}
@@ -166,3 +167,21 @@ def test_the_command_line_writes_controls_for_a_stored_twin(
     (written,) = (tmp_path / "machines" / "moonwalkers-testdrillpress" / "programs").iterdir()
     assert written.name.endswith("_operator-controls_v1")
     assert (written / "controls.usdc").is_file()
+
+
+def test_the_runner_moves_the_handles_drive_in_degrees(folder) -> None:
+    """The quill's spring is on the downfeed handles (decision 0025, update): the runner turns
+    the hand's metres of quill travel into the handles' degrees."""
+    run = load_runner(folder)
+    stage = Usd.Stage.Open(str(folder / "controls.usdc"))
+    spec = json.loads(run.find_controls(stage).GetAttribute(run.SPEC).Get())
+    drive = spec["joints"]["quill"]["drive"]
+    assert drive["path"] == f"{ROOT}/joints/downfeed_handles" and drive["kind"] == "angular"
+    assert stage.GetPrimAtPath(drive["path"]).HasAPI(UsdPhysics.DriveAPI, "angular")
+    assert not stage.GetPrimAtPath(f"{ROOT}/joints/quill_travel").HasAPI(
+        UsdPhysics.DriveAPI, "linear"
+    )
+    stop = spec["joints"]["quill"]["stop_m"]
+    assert run.to_drive(drive, stop) == pytest.approx(
+        math.degrees(math.radians(270) * stop / 0.08255)
+    )

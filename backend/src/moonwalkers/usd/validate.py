@@ -163,7 +163,8 @@ def _check_physics(stage: Usd.Stage, parsed: dict, issues: list[Issue]) -> None:
     joints = [(p, d) for t in JOINT_TYPES for p, d in descs(t)]
     articulations = descs(UsdPhysics.ObjectType.Articulation)
     xforms = UsdGeom.XformCache()
-    followers = _check_couplings(stage, dict(joints), issues)
+    followers, links = _check_couplings(stage, dict(joints), issues)
+    driven = {p for p, j in joints if j.type in MOVING_JOINT_TYPES and j.drive.enabled}
     _check_joint_states(stage, dict(joints), issues)
 
     for path, joint in joints:
@@ -189,7 +190,8 @@ def _check_physics(stage: Usd.Stage, parsed: dict, issues: list[Issue]) -> None:
         if joint.type in MOVING_JOINT_TYPES:
             kind = MOVING_JOINT_TYPES[joint.type]
             locked = joint.limit.enabled and joint.limit.lower == joint.limit.upper
-            if not joint.drive.enabled and path not in followers and not locked:
+            moved_by_link = path in followers or bool(links.get(path, set()) & driven)
+            if not joint.drive.enabled and not moved_by_link and not locked:
                 issues.append(
                     Issue(severity="warning", message=f"{kind} joint has no drive", ref=str(path))
                 )
@@ -266,10 +268,14 @@ def _check_physics(stage: Usd.Stage, parsed: dict, issues: list[Issue]) -> None:
             )
 
 
-def _check_couplings(stage: Usd.Stage, joints: dict, issues: list[Issue]) -> set[Sdf.Path]:
+def _check_couplings(
+    stage: Usd.Stage, joints: dict, issues: list[Issue]
+) -> tuple[set[Sdf.Path], dict[Sdf.Path, set[Sdf.Path]]]:
     """PhysX couplings, which usd-core's parser does not read (decision 0019). Returns the
-    joints that follow another, since those need no drive of their own."""
+    joints that follow another, since those need no drive of their own, and each leader's
+    followers: a leader whose follower carries its spring needs none either (decision 0025)."""
     followers: set[Sdf.Path] = set()
+    links: dict[Sdf.Path, set[Sdf.Path]] = {}
     for prim in stage.Traverse():
         path, ref = prim.GetPath(), str(prim.GetPath())
         for axis in mimic_axes(prim):
@@ -287,6 +293,7 @@ def _check_couplings(stage: Usd.Stage, joints: dict, issues: list[Issue]) -> set
                     )
                 )
                 continue
+            links.setdefault(targets[0], set()).add(path)
             if follower.type == UsdPhysics.ObjectType.RevoluteJoint and not follower.limit.enabled:
                 issues.append(
                     Issue(
@@ -315,6 +322,8 @@ def _check_couplings(stage: Usd.Stage, joints: dict, issues: list[Issue]) -> set
                 )
             else:
                 followers.add(hinge[0])
+                if len(slide) == 1:
+                    links.setdefault(slide[0], set()).add(hinge[0])
             if len(slide) != 1 or _joint_type(joints, slide[0]) != "prismatic":
                 issues.append(
                     Issue(severity="error", message="rack and pinion needs one slide", ref=ref)
@@ -330,7 +339,7 @@ def _check_couplings(stage: Usd.Stage, joints: dict, issues: list[Issue]) -> set
                         ref=ref,
                     )
                 )
-    return followers
+    return followers, links
 
 
 def _joint_type(joints: dict, path: Sdf.Path) -> str | None:

@@ -28,7 +28,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from moonwalkers.contracts.pipeline_result import ControlBehavior, Joint, Source
-from moonwalkers.usd.exporter import SPRING_PRELOAD, contract_settings, stopped_limits
+from moonwalkers.usd.exporter import SPRING_PRELOAD, simulated_settings, stopped_limits
 
 from .isaac_controls import LIVE, Controller, Refused, ScenarioPlayer
 from .program import ProgramError
@@ -281,7 +281,12 @@ def controller_spec(
     machine: str,
 ) -> dict[str, Any]:
     """The JSON the stage carries for ``isaac_controls``: the three specs, and the quill and
-    spindle joints with what the exporter writes for them (decisions 0018, 0020)."""
+    spindle joints with what the exporter writes for them (decisions 0018, 0020, 0025).
+
+    The hand moves the drive that carries the quill's spring. That is the quill's own drive, or,
+    when a turning joint follows the quill, that joint's (``springs_on_pinions``). The controller
+    works in metres of quill travel either way; ``drive`` maps them to the drive's own units
+    (metres, or degrees: ``scale`` x metres + ``offset``)."""
     op, speed = controls.operator_spec, controls.speed_spec
     quill = joints.get(op.quill)
     spindle = joints.get(speed.joint)
@@ -293,12 +298,10 @@ def controller_spec(
         raise ProgramError(f"the speed table drives '{speed.joint}', not a turning joint")
     if quill.mode is None or quill.mode.kind != "spring_return":
         raise ProgramError(f"'{quill.joint_id}' has no spring to return it when released")
-    settings = contract_settings(quill)
-    assert settings is not None and settings.drive is not None  # a spring_return mode
     lower, stop = stopped_limits(quill)
     if stop is None:
         raise ProgramError(f"'{quill.joint_id}' has no stop or limit at the end of its travel")
-    down = -quill.axis[2] / math.sqrt(sum(c * c for c in quill.axis))
+    hand = _hand_drive(quill, joints, paths)
     switch = controls.switch_spec.model_dump()
     return {
         "machine": machine,
@@ -318,11 +321,7 @@ def controller_spec(
                 "rest_m": quill.mode.position or 0.0,
                 "lower_m": lower if lower is not None else 0.0,
                 "stop_m": stop,
-                "spring_target_m": settings.drive.target,
-                "stiffness": settings.drive.stiffness,
-                "damping": settings.drive.damping,
-                "press_past_m": SPRING_PRELOAD,
-                "gravity_offset_m": GRAVITY * down / settings.drive.stiffness,
+                **hand,
             },
             "spindle": {"joint_id": spindle.joint_id, "path": paths[spindle.joint_id]},
         },
@@ -334,6 +333,55 @@ def controller_spec(
             for name, s in op.scenarios.items()
         },
         "default_scenario": op.default_scenario,
+    }
+
+
+def _hand_drive(
+    quill: Joint, joints: Mapping[str, Joint], paths: Mapping[str, str]
+) -> dict[str, Any]:
+    """The drive the hand moves, in metres of quill travel: its spring's target, gains, how far
+    it presses past the stop and how far short of the hand it aims against gravity."""
+    settings = simulated_settings(joints)
+    own = settings[quill.joint_id].drive
+    if own is not None:  # the spring is on the quill itself
+        down = -quill.axis[2] / math.sqrt(sum(c * c for c in quill.axis))
+        return {
+            "drive": {
+                "joint_id": quill.joint_id,
+                "path": paths[quill.joint_id],
+                "kind": "linear",
+                "scale": 1.0,
+                "offset": 0.0,
+            },
+            "spring_target_m": own.target,
+            "stiffness": own.stiffness,
+            "damping": own.damping,
+            "press_past_m": SPRING_PRELOAD,
+            "gravity_offset_m": GRAVITY * down / own.stiffness,
+        }
+    (pinion_id,) = [
+        j
+        for j, s in settings.items()
+        if s.drive is not None and s.coupling is not None and s.coupling.leader == quill.joint_id
+    ]
+    pinion = settings[pinion_id]
+    assert pinion.drive is not None and pinion.coupling is not None
+    ratio, offset = pinion.coupling.ratio, pinion.coupling.offset
+    return {
+        "drive": {
+            "joint_id": pinion_id,
+            "path": paths[pinion_id],
+            "kind": "angular",
+            "scale": math.degrees(ratio),
+            "offset": math.degrees(offset),
+        },
+        "spring_target_m": (pinion.drive.target - offset) / ratio,
+        "stiffness": pinion.drive.stiffness,
+        "damping": pinion.drive.damping,
+        "press_past_m": SPRING_PRELOAD / abs(ratio),
+        # [INFERENCE] The quill's weight barely turns the pinion: on the T33901's v7 hulls it
+        # sags 0.0075 rad, 0.13 mm of travel (decision 0025, update), so the hand aims at itself.
+        "gravity_offset_m": 0.0,
     }
 
 

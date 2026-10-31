@@ -128,11 +128,27 @@ def test_the_stand_in_ratio_turns_the_handles_270_degrees_over_the_stroke() -> N
 
 
 @pytest.mark.parametrize("name", sorted(dp.CHECKS))
-def test_the_quill_keeps_its_spring_unless_the_check_feeds_it(drill_press, name: str) -> None:
+def test_the_quills_spring_is_on_the_handles_unless_the_check_feeds_the_quill(
+    drill_press, name: str
+) -> None:
+    """Decision 0025, update of 2026-10-31: where the handles follow the quill by mimic, they carry
+    its spring, aimed 0.03 rad past the top, and the quill has no drive. The depth stop check feeds
+    the quill with its own drive, and the rack and pinion leaves the spring on the quill."""
     stage = dp.check_stage(*drill_press, dp.CHECKS[name])
-    drive = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{JOINTS}/quill_travel"), "linear")
-    expected = dp.SPINDLE_TRAVEL if name == "depth_stop.usdc" else -0.03
-    assert math.isclose(drive.GetTargetPositionAttr().Get(), expected, rel_tol=1e-6)
+    quill = stage.GetPrimAtPath(f"{JOINTS}/quill_travel")
+    handles = stage.GetPrimAtPath(f"{JOINTS}/downfeed_handles")
+    if name == "depth_stop.usdc":
+        drive = UsdPhysics.DriveAPI(quill, "linear")
+        assert math.isclose(drive.GetTargetPositionAttr().Get(), dp.SPINDLE_TRAVEL, rel_tol=1e-6)
+        assert not handles.HasAPI(UsdPhysics.DriveAPI, "angular")
+    elif name == "handles_follow_rack_pinion.usdc":
+        drive = UsdPhysics.DriveAPI(quill, "linear")
+        assert math.isclose(drive.GetTargetPositionAttr().Get(), -0.03, rel_tol=1e-6)
+    else:
+        assert not quill.HasAPI(UsdPhysics.DriveAPI, "linear")
+        drive = UsdPhysics.DriveAPI(handles, "angular")
+        assert math.isclose(drive.GetTargetPositionAttr().Get(), math.degrees(-0.03), rel_tol=1e-6)
+        assert drive.GetStiffnessAttr().Get() == 600.0
 
 
 @pytest.mark.parametrize("name", sorted(dp.CHECKS))

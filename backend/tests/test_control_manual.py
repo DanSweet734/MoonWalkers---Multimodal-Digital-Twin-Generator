@@ -109,13 +109,40 @@ def test_the_hand_drives_a_sprung_slide_and_the_speed_table_a_turning_joint(
         controller_spec(controls, joints, paths, "test")
 
 
-def test_the_runner_json_carries_what_the_exporter_writes_for_the_quill(spec) -> None:
+RATIO = math.radians(270) / 0.08255  # the handles' stand-in ratio, rad per m (decision 0019)
+
+
+def test_the_hand_moves_the_spring_on_the_pinion(spec) -> None:
+    """The quill's spring is simulated on the downfeed handles (decision 0025, update), so the
+    hand's metres of quill travel become the handles' degrees."""
     quill = spec["joints"]["quill"]
     assert quill["stop_m"] == PHOTO_STOP_M
-    assert quill["spring_target_m"] == pytest.approx(-0.03)  # the spring's preload (0018)
+    assert quill["drive"] == {
+        "joint_id": "downfeed_handles",
+        "path": "/twin/joints/downfeed_handles",
+        "kind": "angular",
+        "scale": pytest.approx(math.degrees(RATIO)),
+        "offset": 0.0,
+    }
+    assert quill["spring_target_m"] == pytest.approx(-0.03 / RATIO)  # 0.03 rad past the top
+    assert quill["press_past_m"] == pytest.approx(0.03 / RATIO)
     assert quill["stiffness"] == 600.0 and quill["damping"] == 49.0
-    assert quill["gravity_offset_m"] == pytest.approx(9.81 / 600)  # the axis points down
+    assert quill["gravity_offset_m"] == 0.0
     assert spec["joints"]["spindle"]["path"] == "/twin/joints/spindle_rotation"
+
+
+def test_without_a_pinion_the_hand_moves_the_quills_own_spring(controlled_drill_press) -> None:
+    """A slide that nothing follows keeps its spring, and the hand aims g/k short of itself,
+    against gravity along the joint (decision 0025)."""
+    _, result = controlled_drill_press
+    (controls,) = manual_controls(result.control)
+    joints = {j.joint_id: j for j in result.joints if j.joint_id != "downfeed_handles"}
+    joints["quill_travel"] = joints["quill_travel"].model_copy(update={"axis": (0.0, 1.0, -1.0)})
+    quill = controller_spec(controls, joints, {j: j for j in joints}, "test")["joints"]["quill"]
+    assert quill["drive"]["kind"] == "linear" and quill["drive"]["joint_id"] == "quill_travel"
+    assert quill["spring_target_m"] == pytest.approx(-0.03)
+    assert quill["press_past_m"] == pytest.approx(0.03)
+    assert quill["gravity_offset_m"] == pytest.approx(9.81 / math.sqrt(2) / 600)
 
 
 # ---------------------------------------------------------------------------- the rules
@@ -186,7 +213,7 @@ def test_the_hand_pulls_to_the_stop_presses_on_it_and_lets_the_spring_return_it(
     assert t["quill_velocity_m_s"] == pytest.approx(0.01)
     for _ in range(10):
         t = c.step(1.0)
-    assert t["quill_target_m"] == pytest.approx(PHOTO_STOP_M + 0.03)  # pressing on the stop
+    assert t["quill_target_m"] == pytest.approx(PHOTO_STOP_M + quill["press_past_m"])
     assert t["quill_velocity_m_s"] == 0.0
     assert c.release()[0].startswith("release the handles: 'Spindle automatically returns")
     assert c.step(0.1)["quill_target_m"] == quill["spring_target_m"]
@@ -198,7 +225,9 @@ def test_a_pull_to_a_point_holds_there_and_must_stay_above_the_stop(spec) -> Non
     for _ in range(3):
         t = c.step(0.5)
     assert c.hand == pytest.approx(0.0303)
-    assert t["quill_target_m"] == pytest.approx(0.0303 - 9.81 / 600)
+    assert t["quill_target_m"] == pytest.approx(
+        0.0303 - spec["joints"]["quill"]["gravity_offset_m"]
+    )
     assert t["quill_velocity_m_s"] == 0.0
     with pytest.raises(Refused, match="above the depth stop"):
         c.pull(0.03, to_m=0.05)
@@ -244,9 +273,10 @@ def test_the_drilling_stroke_feeds_to_the_stop_and_the_spring_returns_the_quill(
     assert m["released_s"] == pytest.approx(3.01 + 0.0127 / 0.001338 + 1.0, abs=1e-3)
     assert m["quill_at_stop_s"] < m["released_s"] < m["quill_home_s"] < m["motor_off_s"]
     # the reference quill follows the hand within half a millimetre while it is pulled
+    offset = spec["joints"]["quill"]["gravity_offset_m"]
     for t, x, target in zip(plan.times, plan.predicted_quill_m, plan.quill_target_m, strict=True):
         if 2.5 <= t <= 12.0:
-            assert x == pytest.approx(target + 9.81 / 600, abs=5e-4)
+            assert x == pytest.approx(target + offset, abs=5e-4)
     assert max(plan.predicted_quill_m) <= PHOTO_STOP_M + 1e-12
     assert plan.rpm[-1] == 0.0  # it coasted to a stop before the key came out
 
@@ -265,13 +295,3 @@ def test_planning_refuses_a_scenario_the_manual_does_not_allow(spec) -> None:
     steps.insert(2, {"do": "set_speed", "rpm": 340})  # after plugging in
     with pytest.raises(ProgramError, match="scenario 'drilling-stroke': step 3"):
         plan_scenario(spec, "drilling-stroke")
-
-
-def test_gravity_offset_follows_the_axis(controlled_drill_press) -> None:
-    _, result = controlled_drill_press
-    (controls,) = manual_controls(result.control)
-    joints = {j.joint_id: j for j in result.joints}
-    tilted = joints["quill_travel"].model_copy(update={"axis": (0.0, 1.0, -1.0)})
-    joints["quill_travel"] = tilted
-    spec = controller_spec(controls, joints, {j: j for j in joints}, "test")
-    assert spec["joints"]["quill"]["gravity_offset_m"] == pytest.approx(9.81 / math.sqrt(2) / 600)

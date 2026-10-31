@@ -14,8 +14,10 @@ file as ``run_controls.py``.
    removes it.
 
 On every physics step the runner sets the spindle's target velocity (degrees per second) and the
-quill's target position and velocity (metres). The rules are the manual's, written into the stage
-by ``moonwalkers.control`` as JSON on the ``Controls`` prim (``moonwalkers:controls:spec``):
+target position and velocity of the drive that carries the quill's spring: the quill's own, in
+metres, or the downfeed handles', in degrees, where the T33901 has its spring (decision 0025).
+The rules are the manual's, written into the stage by ``moonwalkers.control`` as JSON on the
+``Controls`` prim (``moonwalkers:controls:spec``):
 
 - the motor runs only when the machine is plugged in, the key is in and the paddle is up;
 - the speed is one of the cited settings, changed only while unplugged;
@@ -304,6 +306,11 @@ def apply_panel(prim, controller):
     return lines
 
 
+def to_drive(drive, metres):
+    """A position in metres of quill travel as the drive's own target (metres or degrees)."""
+    return drive["scale"] * metres + drive["offset"]
+
+
 def _set(prim, name, value):
     attr = prim.GetAttribute(name)
     if attr and attr.Get() != value:
@@ -325,7 +332,8 @@ def start():
     spec = json.loads(prim.GetAttribute(SPEC).Get())
     joints = spec["joints"]
     spindle = UsdPhysics.DriveAPI(stage.GetPrimAtPath(joints["spindle"]["path"]), "angular")
-    quill = UsdPhysics.DriveAPI(stage.GetPrimAtPath(joints["quill"]["path"]), "linear")
+    hand = joints["quill"]["drive"]  # quill metres -> the drive's units: scale * m + offset
+    quill = UsdPhysics.DriveAPI(stage.GetPrimAtPath(hand["path"]), hand["kind"])
     for drive in (spindle, quill):
         drive.CreateTargetPositionAttr()
         drive.CreateTargetVelocityAttr()
@@ -366,8 +374,8 @@ def start():
             lines += [f"t = {t:.2f} s: {s}" for s in apply_panel(prim, controller)]
         targets = controller.step(dt)
         spindle.GetTargetVelocityAttr().Set(targets["spindle_deg_s"])
-        quill.GetTargetPositionAttr().Set(targets["quill_target_m"])
-        quill.GetTargetVelocityAttr().Set(targets["quill_velocity_m_s"])
+        quill.GetTargetPositionAttr().Set(to_drive(hand, targets["quill_target_m"]))
+        quill.GetTargetVelocityAttr().Set(hand["scale"] * targets["quill_velocity_m_s"])
         _set(prim, MOTOR, targets["motor_on"])
         _set(prim, COMMANDED, round(targets["rpm"], 1))
         for line in lines:
@@ -378,7 +386,10 @@ def start():
     api, handle = _subscribe(on_step)
     setattr(builtins, HANDLE, (api, handle))
     names = ", ".join([*spec["scenarios"], LIVE])
-    paths = f"spindle {joints['spindle']['path']}, quill {joints['quill']['path']}"
+    paths = (
+        f"spindle {joints['spindle']['path']}, quill {joints['quill']['path']} "
+        f"(moved through {hand['path']})"
+    )
     print(f"{SAY}{spec.get('machine', 'twin')}: scenarios {names}; {paths}")
     print(f"{SAY}driving the joints on each physics step through {api}; press Play")
 

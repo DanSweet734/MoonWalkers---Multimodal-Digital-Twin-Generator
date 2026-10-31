@@ -14,10 +14,12 @@ from moonwalkers.usd.exporter import (
     JointCoupling,
     JointSettings,
     build_stage,
+    simulated_settings,
 )
 from moonwalkers.usd.frames import quat_between
 from moonwalkers.usd.physx_schemas import applied_schemas, mimic_axes
 from moonwalkers.usd.primitive_twin import DRIVES, build_test_twin
+from moonwalkers.usd.validate import validate_stage
 
 FIXTURES = Path(__file__).parent / "fixtures" / "test_twin"
 ROOT = "/test_slider"
@@ -267,9 +269,56 @@ def test_unusable_settings_are_refused(slider, settings, message) -> None:
         build_stage(twin, [result], joint_settings=settings)
 
 
-def test_a_follower_cannot_have_its_own_drive() -> None:
-    with pytest.raises(ValueError, match="own drive"):
-        JointSettings(drive=DriveSettings.hold(), coupling=JointCoupling("slide_travel", 1.0))
+# ------------------------------------------------- a slide's spring on its pinion (decision 0025)
+DRILL = "/moonwalkers_testdrillpress/joints"
+
+
+def has_drive(stage, path: str, kind: str) -> bool:
+    return stage.GetPrimAtPath(path).HasAPI(UsdPhysics.DriveAPI, kind)
+
+
+def test_a_slides_spring_is_simulated_on_the_pinion_that_follows_it(controlled_drill_press) -> None:
+    """The quill's spring return goes on the downfeed handles, the pinion it turns (decision 0025,
+    update of 2026-10-31): stiffness and damping as before, aimed 0.03 rad past the rest angle,
+    towards the top. The quill keeps no drive, and the validator does not miss one."""
+    twin, result = controlled_drill_press
+    stage = build_stage(twin, [result])
+    assert not has_drive(stage, f"{DRILL}/quill_travel", "linear")
+    handles = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{DRILL}/downfeed_handles"), "angular")
+    assert handles.GetStiffnessAttr().Get() == 600.0 and handles.GetDampingAttr().Get() == 49.0
+    assert handles.GetTargetPositionAttr().Get() == pytest.approx(math.degrees(-0.03))
+    assert handles.GetTypeAttr().Get() == "acceleration"
+    assert mimic_axes(stage.GetPrimAtPath(f"{DRILL}/downfeed_handles")) == ["rotX"]
+    findings = [i for i in validate_stage(stage) if i.severity != "info"]
+    assert findings == []
+
+
+def test_the_exporter_says_where_each_spring_is(controlled_drill_press) -> None:
+    _, result = controlled_drill_press
+    settings = simulated_settings({j.joint_id: j for j in result.joints})
+    assert settings["quill_travel"].drive is None
+    assert "simulated on 'downfeed_handles'" in (settings["quill_travel"].note or "")
+    pinion = settings["downfeed_handles"]
+    assert pinion.coupling is not None and pinion.coupling.leader == "quill_travel"
+    assert pinion.drive is not None and pinion.drive.target == pytest.approx(-0.03)
+
+
+def test_a_checks_own_drive_for_the_slide_keeps_the_pinion_free(controlled_drill_press) -> None:
+    """A check that feeds the quill with its own drive (``adjustable_stop``) leaves the handles
+    following, with no drive to fight it."""
+    twin, result = controlled_drill_press
+    feed = JointSettings(drive=DriveSettings.hold(0.08))
+    stage = build_stage(twin, [result], joint_settings={"quill_travel": feed})
+    assert has_drive(stage, f"{DRILL}/quill_travel", "linear")
+    assert not has_drive(stage, f"{DRILL}/downfeed_handles", "angular")
+
+
+def test_with_a_rack_and_pinion_the_spring_stays_on_the_slide(controlled_drill_press) -> None:
+    twin, result = controlled_drill_press
+    stage = build_stage(twin, [result], coupling_method="rack_and_pinion")
+    quill = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{DRILL}/quill_travel"), "linear")
+    assert quill.GetTargetPositionAttr().Get() == pytest.approx(-0.03)
+    assert not has_drive(stage, f"{DRILL}/downfeed_handles", "angular")
 
 
 def test_inverted_setting_limits_are_refused() -> None:
