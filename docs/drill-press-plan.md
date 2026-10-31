@@ -956,6 +956,14 @@ Worklog 2026-10-30.
 - [x] A build with control: `grizzly/t33901@v7` (run `2026-10-30_run-001`, spec
       `part_cutting/2026-10-27_spec/geometry_spec_v7.json`), with the depth stop and nut at 43 mm
 - [ ] Isaac Sim check of level 3 for the drill press (`docs/setup/isaac-sim-check.md`, section 9)
+  - **v7, checked by Daniel on 2026-10-31.**
+    - The switch, the twelve speeds (790, 1420 and 2860 RPM held exactly), both scenarios and the
+      live controls ("Raw USD Properties") work as planned.
+    - The quill swung about the hand (±12 mm, about every 2.8 s) and bounced on release. The cause
+      is the stand-in hub's placeholder inertia, reflected through the link, 125 times the quill's.
+  - **Daniel chose option (a):** the spring is simulated on the handles' pinion, where the T33901
+    has it (p. 40; decision 0025, update). `grizzly/t33901@v8` (run `2026-10-31_run-001`, the v7
+    spec) awaits his re-check.
 - [ ] **The HA5C controller's acceleration and its signals to a mill** (advisors, Oct 22, 2026:
       model them if possible; if not, record why and bring it back to the stakeholders).
   - **Research done (2026-10-30;** research note, section 5): the 2006, 2012 and 2017 manuals

@@ -374,6 +374,23 @@ Its `PROGRAM.md` lists the rules, the stand-ins and every step's time.
    <folder>/trajectory_drilling-stroke.json`.
 8. **Report** what each scenario and the panel did, and which recordings to read.
 
+**Result on 2026-10-31 (Daniel, v7):** the switch, the speeds (790, 1420 and 2860 RPM held
+exactly) and both scenarios ran as planned. The live controls work under "Raw USD Properties". The
+quill swung about the hand (±12 mm, about every 2.8 s) and bounced on release: the stand-in hub's
+placeholder inertia, reflected through the link (decision 0025, "Isaac Sim check").
+
+**Re-check of v8** (run `2026-10-31_run-001`): the quill's spring is now simulated on the downfeed
+handles, where the T33901 has its spring (decision 0025, update of 2026-10-31). Use
+`...\runs\2026-10-31_run-001\programs\operator-controls\` and repeat steps 1 to 4 with
+`drilling-stroke`, with the recorder running. The quill should:
+- follow the hand: down 30 mm by t = 3 s, then slowly to the stop by t = 12.5 s, with no swing;
+- rest on the stop until t = 13.5 s;
+- return to the top in a fraction of a second when released, without bouncing.
+
+Then open `...\runs\2026-10-31_run-001\checks\spring_return.usdc` with that run's
+`record_joints.py`, press Play, and stop after a few seconds. The quill jumps to the stop and the
+spring brings it home, now without the bounces v3-v7 had.
+
 **If the panel shows no "MoonWalkers controls":** the scenarios still play from the console, so
 report that. **If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top
 of the pasted runner.

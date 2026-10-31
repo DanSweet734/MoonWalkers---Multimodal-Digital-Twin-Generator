@@ -253,3 +253,51 @@ holds the full record.
     an install), and the spring stays where the machine has none.
   - (c) Keep v7 and log the swing until real masses.
 
+**The speed list, checked the same day** (Daniel's second session, `kit_20261031_003325.log`, 0
+errors):
+- three changes while plugged in were refused, quoting p. 30;
+- unplugged, 1420 RPM and then 2860 RPM were accepted;
+- the spindle held each speed exactly (790.0, 1420.0, 2860.0 RPM), reaching 95% of 2860 in 0.95 s.
+  So nothing caps the cited top speed;
+- removing the key while the motor ran printed the "not described" note.
+
+## Update (2026-10-31): the spring is simulated on the pinion
+**Daniel chose option (a):** "For the fix I agree with your recommendation. Let's go with option 1."
+
+- **The rule** (`usd/exporter.py`, `springs_on_pinions`): a spring that returns a sliding joint
+  which one turning joint follows by mimic is written on the turning joint. That is a rack and
+  pinion, as the quill's rack and the handles' pinion are.
+  - **The spring keeps its stand-in values** (stiffness 600, damping 49, acceleration type),
+    aimed 0.03 rad past the follower's rest angle, towards the top.
+  - **The slide keeps no drive;** the link moves it.
+  - **Left as they are:** a check whose own settings name either joint (the `adjustable_stop`
+    feed), and the rack-and-pinion coupling.
+  - **The contract is unchanged:** the quill's `spring_return` still says what the machine does
+    (p. 7), and the exporter decides where to simulate it (decision 0020's rule).
+- **This amends** decision 0018 (a spring is a drive on its own joint) and decision 0019 (a
+  follower has no drive of its own). `JointSettings` no longer refuses a drive on a follower.
+- **The validator** no longer reports "has no drive" for a joint whose follower carries one.
+- **The controller** moves the drive that carries the spring. `controller_spec` gives its joint
+  and the map from metres of quill travel to its degrees (57.09 rad/m, so 3270.8 deg/m).
+  - The hand presses 0.03 rad past the stop, 0.53 mm of travel.
+  - It aims at itself. [INFERENCE] The quill's weight turns the pinion by about 0.0075 rad, 0.13 mm
+    of travel, on v7's hulls: the quill's 1.9 kg x 9.81 / 57.09 = 0.33 N m against the hub's
+    0.073 kg m2 and 600 per second squared.
+- **What the twin should do now** [INFERENCE: the hub's own inertia outweighs the quill's
+  reflected 0.0006 kg m2, M = 1.01]:
+  - the drive acts as designed, about critically damped, with omega = 24.5 rad/s;
+  - the quill follows the hand within about 1 mm;
+  - the spring returns it in a fraction of a second, without bouncing.
+
+  Whether PhysX takes a drive on a mimic follower is for the Isaac Sim re-check to show.
+
+**Built: `grizzly/t33901@v8`** (run `2026-10-31_run-001`, the v7 spec; a dry run in a scratch copy
+first).
+- In `twin.usdc`, `checks/spring_return.usdc` and `controls.usdc`, the quill has no drive, and the
+  downfeed handles carry the spring: -1.719 deg (0.03 rad past the top), stiffness 600, damping 49.
+- `checks/adjustable_stop.usdc` keeps its feed on the quill, and the handles have no drive.
+- NVIDIA's validator reports "No issues found." for all eight files. Ours gives its usual five
+  infos.
+- The plan: the quill is home 0.23 s after the release in the reference response. Daniel's
+  re-check is next (`docs/setup/isaac-sim-check.md`, section 9, "Re-check of v8").
+

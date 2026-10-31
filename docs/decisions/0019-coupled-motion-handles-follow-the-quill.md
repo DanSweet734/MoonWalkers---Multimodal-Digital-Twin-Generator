@@ -91,3 +91,8 @@ Run `2026-10-22_run-001`; its `RUN.md` holds the full record.
   and stays out of the articulation.
 - Measured with the joint recorder in `all_motions`: the mimic held the handles at 57.03-57.68 rad/m
   of quill travel while it moved, against the 57.085 set, so within 1%.
+
+## Update (2026-10-31): a follower may carry its leader's spring
+"A follower has no drive of its own" no longer holds when the leader is a sprung slide. The
+handles now carry the quill's spring return, where the T33901 has it (manual, p. 40), and the
+mimic moves the quill (decision 0025, "Update (2026-10-31)").
