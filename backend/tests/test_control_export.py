@@ -8,7 +8,13 @@ from pathlib import Path
 import pytest
 from pxr import Usd, UsdPhysics
 
-from moonwalkers.control import ProgramError, ProgramFile, packaged_programs, write_program_folder
+from moonwalkers.control import (
+    ProgramError,
+    ProgramFile,
+    RunSettings,
+    packaged_programs,
+    write_program_folder,
+)
 from moonwalkers.control.cli import main as control_cli
 from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.usd.exporter import ExportError
@@ -16,6 +22,7 @@ from moonwalkers.usd.primitive_twin import build_test_twin
 from moonwalkers.usd.validate import validate_file
 
 JOINT = "/moonwalkers_testindexer/joints/spindle_rotation"
+CONSTANT = RunSettings(acceleration_deg_s2=None, mill_answer_s=0.0)  # decision 0016's motion
 
 
 @pytest.fixture
@@ -38,7 +45,7 @@ def test_a_program_folder_holds_the_twin_its_program_and_the_runner(
     tmp_path: Path, twin_and_result
 ) -> None:
     twin, result = twin_and_result
-    output = write_program_folder(tmp_path / "p", program(), twin, [result], tmp_path)
+    output = write_program_folder(tmp_path / "p", program(), twin, [result], tmp_path, CONSTANT)
     folder = output.folder
     assert sorted(p.name for p in folder.iterdir()) == [
         "PROGRAM.md",
@@ -81,7 +88,9 @@ def test_the_runner_follows_the_program_it_finds_on_the_stage(
     tmp_path: Path, twin_and_result
 ) -> None:
     twin, result = twin_and_result
-    folder = write_program_folder(tmp_path / "p", program(), twin, [result], tmp_path).folder
+    folder = write_program_folder(
+        tmp_path / "p", program(), twin, [result], tmp_path, CONSTANT
+    ).folder
     runner = load_runner(folder)  # outside Isaac Sim, so it does not start itself
     (found,) = runner.find_programs(Usd.Stage.Open(str(folder / "program.usdc")))
     assert found.joint_path == JOINT and found.name == "ha5c-manual-example-5-subroutine"
@@ -96,7 +105,9 @@ def test_the_runner_prints_its_lines_again_after_stop_then_play(
     tmp_path: Path, twin_and_result
 ) -> None:
     twin, result = twin_and_result
-    folder = write_program_folder(tmp_path / "p", program(), twin, [result], tmp_path).folder
+    folder = write_program_folder(
+        tmp_path / "p", program(), twin, [result], tmp_path, CONSTANT
+    ).folder
     runner = load_runner(folder)
     progress = runner.Progress(runner.find_programs(Usd.Stage.Open(str(folder / "program.usdc"))))
     finished = "'ha5c-manual-example-5-subroutine' finished at 16.112 s, target 0.000 deg"
@@ -142,7 +153,9 @@ def test_the_command_line_runs_a_program_on_a_stored_twin(
     kb = JsonKnowledgeBase(tmp_path / "kb")
     kb.save_result(result)
     kb.save_twin(twin)
-    assert control_cli(["show", "ha5c-manual-example-3", "--dwell", "0"]) == 0
+    assert (
+        control_cli(["show", "ha5c-manual-example-3", "--dwell", "0", "--acceleration", "0"]) == 0
+    )
     assert "duration 2.667 s, final target 720.000 deg" in capsys.readouterr().out
     args = ["run", "ha5c-manual-example-3", "--twin", twin.machine_key, "--data", str(tmp_path)]
     assert control_cli(args) == 0
@@ -154,3 +167,32 @@ def test_the_command_line_runs_a_program_on_a_stored_twin(
     assert len(list(folder.parent.iterdir())) == 2
     assert control_cli(["run", "nothing", "--twin", twin.machine_key]) == 1
     assert "neither a packaged program" in capsys.readouterr().err
+
+
+def test_a_folder_carries_the_relay_and_the_waits_for_cycle_start(
+    tmp_path: Path, twin_and_result
+) -> None:
+    """Decision 0026: by default the moves accelerate, the relay pulses after each move
+    (Parameter 1 = 1), and in step mode the controller waits for cycle start after each step."""
+    twin, result = twin_and_result
+    settings = RunSettings(continue_mode="step")
+    output = write_program_folder(tmp_path / "p", program(), twin, [result], tmp_path, settings)
+    trajectory = output.trajectory
+    assert trajectory.duration_s > 16.112 - 6 * 1.0  # slower moves, no Parameter 16 pauses
+    stage = Usd.Stage.Open(str(output.folder / "program.usdc"))
+    joint = stage.GetPrimAtPath(JOINT)
+    spans = list(joint.GetAttribute("moonwalkers:program:relayTimes").Get())
+    assert spans == [v for s in trajectory.relay for v in (s.start_s, s.end_s)] and spans
+    starts = list(joint.GetAttribute("moonwalkers:program:waitStarts").Get())
+    assert starts == [w.start_s for w in trajectory.waits] and len(starts) == 6
+    hold = joint.GetAttribute("moonwalkers:program:holdForCycleStart")
+    assert hold.Get() is False and hold.GetDisplayName() == "Hold for Cycle Start"
+    runner = load_runner(output.folder)
+    (found,) = runner.find_programs(stage)
+    assert found.relay_at(trajectory.relay[0].start_s + 0.1)
+    assert found.waits == [(w.start_s, w.hold_s) for w in trajectory.waits]
+    native = Usd.Stage.Open(str(output.folder / "program_native.usdc"))
+    relay = native.GetPrimAtPath(JOINT).GetAttribute("moonwalkers:program:plannedRelay")
+    assert relay.Get(Usd.TimeCode((trajectory.relay[0].start_s + 0.1) * 60)) is True
+    notes = (output.folder / "PROGRAM.md").read_text(encoding="utf-8")
+    assert "540 deg/s^2, a stand-in" in notes and "## Waits for the mill's cycle start" in notes

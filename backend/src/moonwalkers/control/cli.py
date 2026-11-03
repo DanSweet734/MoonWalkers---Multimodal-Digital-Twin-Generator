@@ -18,7 +18,9 @@ program file. ``show`` prints what the program does. ``run`` writes a program fo
 twin: by default the version a request would reuse, under
 ``data/machines/<machine>/programs/<date>_<program>_v<version>/``. Open its ``PROGRAM.md``.
 Settings: ``--dwell`` (seconds paused after each step, Parameter 16), ``--absolute`` (``direct``
-or ``shortest``) and ``--max-feed`` (degrees per second for steps without F).
+or ``shortest``), ``--max-feed`` (degrees per second for steps without F), and, from decision
+0026, ``--acceleration`` (deg/s^2; 0 for none), ``--relay`` (Parameter 1), ``--step-mode``
+(Parameter 10 = 0) and ``--mill-answer`` (seconds the simulated mill takes to send cycle start).
 """
 
 from __future__ import annotations
@@ -41,7 +43,7 @@ from moonwalkers.workspace import default_data_dir
 from .compare import compare, format_measures, read_recording
 from .controls_export import controls_files, write_controls_folder
 from .export import write_program_folder
-from .interpreter import RunSettings, Trajectory, run_program
+from .interpreter import ACCELERATION_STAND_IN, RunSettings, Trajectory, run_program
 from .manual import ControlsFile
 from .program import ProgramError, ProgramFile, packaged_programs
 
@@ -76,6 +78,19 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument("--dwell", type=float, default=1.0, help="pause after each step (s)")
         command.add_argument("--absolute", choices=("direct", "shortest"), default="direct")
         command.add_argument("--max-feed", type=float, help="feed rate for steps without F")
+        command.add_argument(
+            "--acceleration",
+            type=float,
+            default=ACCELERATION_STAND_IN,
+            help="Parameter 18 as deg/s^2 (default: the stand-in, 540); 0 for none",
+        )
+        command.add_argument("--relay", type=int, choices=(0, 1, 2), help="Parameter 1")
+        command.add_argument(
+            "--step-mode", action="store_true", help="Parameter 10 = 0: wait for cycle start"
+        )
+        command.add_argument(
+            "--mill-answer", type=float, default=1.0, help="seconds the simulated mill takes"
+        )
         if name == "run":
             command.add_argument("--twin", required=True, help="machine key[@vN], e.g. haas/ha5c")
             command.add_argument("--data", type=Path, help="the data folder")
@@ -179,7 +194,14 @@ def format_trajectory(program: ProgramFile, trajectory: Trajectory) -> str:
 
 
 def _settings(args: argparse.Namespace) -> RunSettings:
-    values = {"step_dwell_s": args.dwell, "absolute": args.absolute}
+    values = {
+        "step_dwell_s": args.dwell,
+        "absolute": args.absolute,
+        "acceleration_deg_s2": args.acceleration or None,
+        "relay": args.relay,
+        "continue_mode": "step" if args.step_mode else "auto",
+        "mill_answer_s": args.mill_answer,
+    }
     if args.max_feed is not None:
         values["max_feed_deg_s"] = args.max_feed
     try:
