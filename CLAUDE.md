@@ -114,10 +114,13 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     swung about the hand: the stand-in hub's placeholder inertia, reflected through the link, was
     125 times the quill's. He chose option (a): the spring is simulated on the handles' pinion,
     where the T33901 has it (decision 0025, update; `usd/exporter.py`, `springs_on_pinions`).
-  - **Next:** his re-check of `grizzly/t33901@v8` (run `2026-10-31_run-001`;
-    `docs/setup/isaac-sim-check.md`, section 9, "Re-check of v8"). His stroke timing, if he has
-    it, replaces the stand-ins. Then the HA5C (decision 0026): Parameters 18 and 44 have no
-    published value, and a stand-in can rest on the manuals' "usually 2X".
+  - **Level 3 met for the T33901 (Daniel's re-check of `grizzly/t33901@v8`, run
+    `2026-10-31_run-001`, 2026-11-02):**
+    - the stroke stays within 0.62 mm of the plan, and the quill returns in 0.28 s with no bounce;
+    - the return is overdamped, logged in decision 0025;
+    - his stroke timing, if he has it, replaces the stand-ins.
+  - **Next:** step 6, the HA5C (decision 0026). Parameters 18 and 44 have no published value; a
+    stand-in can rest on the manuals' "usually 2X". Then the PR.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

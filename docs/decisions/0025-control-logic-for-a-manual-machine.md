@@ -301,3 +301,22 @@ first).
 - The plan: the quill is home 0.23 s after the release in the reference response. Daniel's
   re-check is next (`docs/setup/isaac-sim-check.md`, section 9, "Re-check of v8").
 
+## Re-check of v8 (Daniel, 2026-11-02)
+Isaac Sim Full 6.2 (Kit 110.4.0), two sessions with 0 errors (`kit_20261102_205720.log`,
+`kit_20261102_210249.log`). Daniel: "For the stroke it looked right ... On the spring return yes
+the quill no longer bounces like v3-v7." Measured with `compare`:
+- **PhysX takes the drive on the mimic follower,** and the link moves the quill.
+- **`drilling-stroke`:** the quill reaches the stop at 12.12 s (planned 12.13 s) and rests at 43.01
+  mm. It stays within 0.62 mm of the reference while pulled (v7: 12.1 mm). It is home 0.28 s after
+  the release (reference 0.23 s), with no bounce (v7: 4). At rest it is at -0.010 mm, with no sag.
+  The spindle and the handles (57.09 rad/m) are as before.
+- **`checks/spring_return.usdc`:** from 43 mm the quill is home at 0.25 s, with no bounce.
+- **Not as the reference:** the return is overdamped. The quill drops 14-20 mm in the first 1/60 s
+  step, then decays at about 12 /s, the spring's stiffness over its damping (600/49), where a
+  critically damped return was predicted. [INFERENCE] PhysX's drive on the follower, solved with
+  the mimic constraint, does not act as the 1-D reference assumes. The return still takes the
+  predicted time, and the spring's numbers are stand-ins anyway (decision 0018). Logged, not
+  changed.
+- **Level 3 is met for the T33901:** the keyed switch, the twelve speeds and the operator's stroke
+  run as the manual describes, live and in scenarios.
+
