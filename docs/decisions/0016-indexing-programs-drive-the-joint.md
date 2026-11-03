@@ -156,3 +156,13 @@ The native file is now a confirmed way to show a program with no script, for exa
 without this guide. Whether to make it the default, perhaps with the target velocity time-sampled
 too, is a choice for the integration phase. It should come after measuring both files' joint
 angle over time against the plan.
+
+## Update (2026-11-02): acceleration and the mill's signals
+Decision 0026 amends this record:
+- moves now speed up and slow down at a labelled stand-in of 540 deg/s^2 (Parameter 18 is "usually
+  2X" Parameter 19);
+- the CNC relay is a timeline set by Parameter 1 and the signal codes;
+- G89, G92 and, with Parameter 10 = 0, every step wait for the mill's cycle start, answered by a
+  simulated mill or by a person in Isaac Sim's Property panel.
+
+`--acceleration 0 --mill-answer 0` gives this record's motion. Folders written before then keep it.

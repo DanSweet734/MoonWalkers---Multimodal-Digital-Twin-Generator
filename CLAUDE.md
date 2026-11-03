@@ -119,8 +119,16 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     - the stroke stays within 0.62 mm of the plan, and the quill returns in 0.28 s with no bounce;
     - the return is overdamped, logged in decision 0025;
     - his stroke timing, if he has it, replaces the stand-ins.
-  - **Next:** step 6, the HA5C (decision 0026). Parameters 18 and 44 have no published value; a
-    stand-in can rest on the manuals' "usually 2X". Then the PR.
+  - **The HA5C (decision 0026, proposed, 2026-11-02):**
+    - the acceleration is a 540 deg/s^2 stand-in, from the manuals' "usually 2X";
+    - the CNC relay follows Parameter 1 and the codes;
+    - the controller waits for cycle start (a simulated mill, or a tick in the Property panel),
+      with a step mode;
+    - new v3 program folders under `data/machines/haas-ha5c/programs/2026-11-02_*`. Its Isaac Sim
+      check waits until Daniel deems it necessary.
+  - **Next:** the platform diagram Daniel asked for (2026-11-02): one Markdown page with Mermaid
+    diagrams covering the outside software, our modules and the 24 MCP tools, each with its
+    inputs and outputs, shipped with the Phase 6 PR. Then the PR.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

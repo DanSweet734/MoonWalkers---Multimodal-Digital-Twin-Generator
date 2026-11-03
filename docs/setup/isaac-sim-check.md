@@ -185,6 +185,16 @@ Play the output should print `first physics step at t = ... (run 2)`.
 
 Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 
+**Acceleration and the mill's signals (decision 0026, not checked yet).** Folders written from
+2026-11-02 add three things, in the same steps 1 to 4:
+- the moves speed up and slow down;
+- the runner prints when the CNC relay closes and opens, and shows it in the joint's "CNC relay
+  (to the mill)" attribute (Property panel, "Raw USD Properties");
+- in a step-mode folder (`...\programs\2026-11-02_ha5c-manual-example-3_v3\`), tick "Hold for
+  Cycle Start" on the joint before Play, then tick "Cycle Start" at each wait.
+
+Use `...\programs\2026-11-02_ha5c-manual-example-5-subroutine_v3\` for auto continue.
+
 **If nothing moves on Play:**
 - If no `first physics step` line was printed, the callback did not fire. In the pasted script,
   change `API = "auto"` near the top to `API = "omni.physx"`, run it again, and press Play.

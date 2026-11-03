@@ -981,6 +981,17 @@ Worklog 2026-10-30.
     G93) as events with no motion (decision 0016). Show them in Isaac Sim, and try one step per
     simulated Cycle Start (decision 0016, option 2b).
   - Decision record 0026, which amends 0016. Isaac Sim check of a program with acceleration.
+  - **Done (2026-11-02, decision 0026, proposed):**
+    - moves ramp at a 540 deg/s^2 stand-in;
+    - the CNC relay follows Parameter 1 and the codes;
+    - the controller waits for the mill's cycle start, answered by a simulated mill or by a
+      "Cycle Start" tick in the Property panel;
+    - a step mode (Parameter 10 = 0).
+
+    New folders on HA5C v3: `data/machines/haas-ha5c/programs/2026-11-02_ha5c-manual-example-5-subroutine_v3/`
+    and `2026-11-02_ha5c-manual-example-3_v3/` (step mode). Both validators are clean. Their Isaac
+    Sim check waits until Daniel deems it necessary (2026-10-30). The missing parameter values go
+    back to the stakeholders.
 - [ ] Worklog; PR
 
 ## Phase 7 - The agent builds it, and the phase report
