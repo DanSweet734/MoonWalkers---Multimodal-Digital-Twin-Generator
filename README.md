@@ -4,6 +4,12 @@ A multimodal AI-agent platform that turns everyday facility and equipment inform
 
 A capstone contribution to the **MoonWalkers collaborative platform** at CSUN's **ARCS** (Autonomy Research Center for STEAHM), built by a four-person team with guidance from faculty and NASA JPL advisors.
 
+**How it works today:** [How a twin is built](docs/how-a-twin-is-built.md) shows each step in
+diagrams, from photos and documents to a controlled twin in Isaac Sim, with what goes into and
+comes out of each. The [tool guide](docs/tool-guide.md) explains every tool by name: the outside
+software, our own modules, the agent's 24 MCP tools and the commands, with each one's purpose,
+inputs and outputs.
+
 ---
 
 ## Project status

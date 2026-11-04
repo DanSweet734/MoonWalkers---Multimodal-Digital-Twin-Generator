@@ -126,9 +126,11 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
       with a step mode;
     - new v3 program folders under `data/machines/haas-ha5c/programs/2026-11-02_*`. Its Isaac Sim
       check waits until Daniel deems it necessary.
-  - **Next:** the platform diagram Daniel asked for (2026-11-02): one Markdown page with Mermaid
-    diagrams covering the outside software, our modules and the 24 MCP tools, each with its
-    inputs and outputs, shipped with the Phase 6 PR. Then the PR.
+  - **For the stakeholders (2026-11-03, reviewed by Daniel):**
+    - `docs/how-a-twin-is-built.md`: eight Mermaid diagrams;
+    - `docs/tool-guide.md`: every tool by name, with its purpose, inputs and outputs;
+    - both linked from the README.
+  - **Next:** the Phase 6 PR.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
