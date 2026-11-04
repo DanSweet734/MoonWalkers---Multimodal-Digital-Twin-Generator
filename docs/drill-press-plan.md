@@ -11,11 +11,10 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 5 are done (PRs #15, #16, #18, #19, #20, #21; PR #21
-merged on 2026-10-28). Phase 6 is under way on `feat/phase-6-control-logic`: its research, decision
-0025 (proposed), the controller and `grizzly/t33901@v7` are done (2026-10-30), and Daniel's Isaac
-Sim check of level 3 is next. Stop at the end of each phase, open a pull request, and wait for
-review before starting the next. The HA5C stays the reference twin: every
+**Status:** approved (PR #15). Phases 0 to 6 are done (PRs #15, #16, #18, #19, #20, #21, #22;
+PR #22 merged on 2026-11-03 with decisions 0025 and 0026 accepted). Phase 7 is next, on
+`feat/phase-7-agent-build`: its hand-off is below. Stop at the end of each phase, open a pull
+request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
@@ -995,7 +994,84 @@ Worklog 2026-10-30.
 - [x] Worklog; PR #22 (opened 2026-11-03), for Daniel's review
 
 ## Phase 7 - The agent builds it, and the phase report
-- [ ] A fresh Claude Code session builds the T33901 from a dashboard job with several photos,
+
+### Hand-off (2026-11-03, from the Phase 6 chat)
+- **Start** from `main` after PR #22 (merge commit `0f9f011`, merged 2026-11-03), on branch
+  `feat/phase-7-agent-build`, created from `main` the same day. Its first commit holds this
+  hand-off and is not on `main` yet. Phase 7 starts in a new chat. PR #22's branch
+  `feat/phase-6-control-logic` was kept: Daniel did not ask to delete it.
+- **What Phase 6 left:**
+  - **level 3 is met for the T33901** with `grizzly/t33901@v8` (run `2026-10-31_run-001`, the
+    v7 spec `part_cutting/2026-10-27_spec/geometry_spec_v7.json`). Its stroke is within 0.62 mm
+    of the plan, and its quill returns in 0.28 s (decision 0025, "Re-check of v8");
+  - **decisions 0025 and 0026 are accepted** (Daniel, 2026-11-03);
+  - **the stakeholder pages,** `docs/how-a-twin-is-built.md` and `docs/tool-guide.md`, are
+    linked from the README. Daniel reviewed them from a private rendered preview,
+    https://claude.ai/artifact/1xijqhGqBWy7u8SzsqxvRK, rebuilt from the two Markdown files by
+    `data/scratch/2026-11-03_phase-6/md_preview.py <repo root> <out.html>` (run with
+    `backend/.venv/Scripts/python.exe -I`) and republished to that URL with the Artifact tool.
+    The diagrams were not checked as GitHub draws them; look once on GitHub.
+- **Read first:**
+  - this plan's Phase 7 items;
+  - `docs/agent-procedure.md`, including 5b (several parts) and step 3's manual controls;
+  - decisions 0022-0028 for what the agent must reproduce;
+  - `docs/poc-report.md` as the model for the phase report.
+- **The agent's build (item 1):**
+  - **Restart the MCP server first** (`/mcp` in Claude Code). Phase 6 changed `add_control`, and
+    the server keeps the tools it started with (Phase 5's lesson).
+  - A twin of the T33901 exists, so the job needs `new_version` true (`start_run`, or the
+    dashboard's upload). The reference file now holds the three control behaviours, their sources
+    (the UofT and UF feed references) and three stand-in issues.
+  - Compare what the agent writes with:
+    - the v7 spec, whose depth stop and nut are at 43 mm (measured three ways, research note
+      2026-10-30, section 2);
+    - the reference file's `control`.
+  - The exporter puts the quill's spring on the handles itself (`springs_on_pinions`); the agent
+    states only the contract's `spring_return` on the quill.
+  - Build in a scratch copy of the data folder first. Copying only `kb/`, the machine's `inputs/`
+    and the run folder is enough (13 MB for the T33901).
+  - A run folder copied from another needs its own `job_id` in `request.json`, or the store
+    refuses the result as already stored (Phase 6's first dry run).
+- **The phase report (item 3):**
+  - **Results per level:** levels 1 and 2 (Phase 5); level 3 (Phase 6, v8); the HA5C's
+    acceleration and signals (decision 0026, no Isaac Sim check yet).
+  - **Decisions 0017-0028.**
+  - **The table of inaccuracies and stand-ins.** Gather the plan's "Still open", every decision's
+    stand-ins, and the twins' warnings. From Phase 6:
+    - the T33901's run-up 1 s, coast-down 5 s, pull to the work and hold 1 s, until Daniel
+      times a stroke;
+    - the spindle's direction ([INFERENCE]);
+    - the not-described switch changes;
+    - the overdamped return (a 14-20 mm first-step drop);
+    - the handles 1.3 deg past the quill's top at rest;
+    - the HA5C's acceleration (540 deg/s^2), Parameter 1, G93's pulse and the mill's answer
+      time.
+  - **The advisors' report page:** the week of 21-28 Oct is a separate claude.ai page (memory
+    "integration-report-page"); Phase 7's report starts a new page in the same design.
+- **Waiting on Daniel, none blocking:**
+  - his stroke timing (what to time: decision 0025, "Daniel's timing replaces the stand-ins");
+  - the HA5C's Isaac Sim check, if he deems it necessary (`docs/setup/isaac-sim-check.md`,
+    section 7);
+  - reviews of v7 and v8 in the dashboard. They are unreviewed, so a request reuses v8.
+- **Tools and environment learned in Phase 6:**
+  - **The backend has no scipy,** so trimesh's `convex_hull` fails there. The generator's
+    environment has scipy 1.16.3 and trimesh 4.9.0, used read-only with `-I`, as
+    `data/scratch/2026-11-03_phase-6/reflected_inertia.py` is.
+  - **Isaac Sim's custom attributes** show in the Property panel under "Raw USD Properties"
+    (Daniel, 2026-10-31).
+  - **Isaac Sim 6.2.0's own files** answer questions about PhysX and the panel without a session
+    (`C:\isaacsim\extscache\...`, research note 2026-10-30, section 4).
+  - **The GitHub repository** is `DanSweet734/MoonWalkers---Multimodal-Digital-Twin-Generator`,
+    not the folder's name.
+  - **Writing scripts:** in this environment's Bash tool, a heredoc that holds Python triple
+    quotes fails to parse, and a `\2026` in a Python string becomes an octal escape. Write such
+    scripts with the Write tool, and check Windows paths in the output.
+  - **Test counts at Phase 6's end:**
+    - quick suite: 696 passed, 5 deselected (about 3.5 min);
+    - slow suite: 5 passed (about 5 min);
+    - dashboard: 15 passed.
+
+- [ ] A fresh Claude Code session builds the T33901, with its controls, from a dashboard job with several photos,
       through the tools and the updated procedure. A summary of its transcript goes in the
       worklog, and the quote checker checks every quote.
 - [ ] A second request reuses the stored twin; the HA5C still builds and is reused

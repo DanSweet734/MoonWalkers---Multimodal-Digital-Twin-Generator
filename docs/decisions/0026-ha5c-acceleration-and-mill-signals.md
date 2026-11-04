@@ -1,6 +1,7 @@
 # 0026 - The HA5C controller's acceleration and its signals to a mill (amends 0016)
 
-- **Status:** proposed (by Claude Code in the drill-press plan's Phase 6, step 6)
+- **Status:** accepted (Daniel, 2026-11-03: "I accept decisions 0025 and 0026, all looks good." Merged in PR #22). Proposed by Claude Code in the
+  drill-press plan's Phase 6, step 6. Its stand-ins still go back to the stakeholders
 - **Date:** 2026-11-02
 - **Decided by:** team (Daniel), to be brought back to the stakeholders (the advisors asked for
   this on 2026-10-22: "model them if possible; if not, record why")
