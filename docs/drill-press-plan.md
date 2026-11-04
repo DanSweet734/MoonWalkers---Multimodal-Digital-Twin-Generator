@@ -992,7 +992,7 @@ Worklog 2026-10-30.
     and `2026-11-02_ha5c-manual-example-3_v3/` (step mode). Both validators are clean. Their Isaac
     Sim check waits until Daniel deems it necessary (2026-10-30). The missing parameter values go
     back to the stakeholders.
-- [ ] Worklog; PR
+- [x] Worklog; PR #22 (opened 2026-11-03), for Daniel's review
 
 ## Phase 7 - The agent builds it, and the phase report
 - [ ] A fresh Claude Code session builds the T33901 from a dashboard job with several photos,
