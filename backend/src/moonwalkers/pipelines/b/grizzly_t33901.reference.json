@@ -16,6 +16,26 @@
       "uri": "user",
       "title": "Daniel Sweet's directions for the T33901 twin: stand-ins allowed and labelled (2026-10-22); a loosened table drops (2026-10-23); labelled stand-ins for the chuck, the table, the crank and the column rack, matched to the photos (review of PR #20, 2026-10-26)",
       "retrieved_at": "2026-10-26T00:00:00Z"
+    },
+    {
+      "source_id": "src-uoft-drill-press-module",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/grizzly-t33901/inputs/documents/utoronto-mie-module-1-the-drill-press-2010.pdf",
+      "title": "University of Toronto, Mechanical & Industrial Engineering, 'MODULE 1 The Drill Press' (Introduction to Machining; PDF created 2010-07-26), from https://www.mie.utoronto.ca/wp-content/uploads/2016/10/MODULE-1-The-Drill-Press.pdf",
+      "sha256": "a7d276b07fc93a58ab73ff50d154192c28d8a000cb46c811c71edb5d0a94ba43",
+      "retrieved_at": "2026-10-31T06:18:00Z",
+      "license_note": "Course notes; local copy for internal research only, not redistributed"
+    },
+    {
+      "source_id": "src-ufl-speeds-and-feeds",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/grizzly-t33901/inputs/documents/ufl-eml2322l-drilling-and-milling-speeds-and-feeds-2018.pdf",
+      "title": "University of Florida, EML2322L design lab, 'Drilling and Milling Speeds and Feeds' (PDF created 2018-10-23), from https://web.mae.ufl.edu/designlab/Lab%20Assignments/EML2322L-Drilling%20and%20Milling%20Speeds%20and%20Feeds.pdf",
+      "sha256": "ffd8e0521593001343d3baa163c467b875cca0b3ea0e2008b53d87769fed6318",
+      "retrieved_at": "2026-10-31T06:18:00Z",
+      "license_note": "Lab handout; local copy for internal research only, not redistributed"
     }
   ],
   "identity": {
@@ -107,7 +127,431 @@
     {"key": "motor_speed", "value": 180.118, "unit": "rad/s", "original": "1720 RPM", "confidence": 0.9,
      "citations": [{"source_id": "src-t33901-manual", "locator": "PDF p. 8", "quote": "Speed ... 1720 RPM"}]}
   ],
-  "control": [],
+  "control": [
+    {
+      "behavior_id": "power_switch",
+      "name": "ON/OFF switch with disabling key",
+      "kind": "state_machine",
+      "description": "The paddle switch turns the motor on when moved up and off when moved down. With its yellow key removed the switch is disabled, so the motor cannot start. The machine is first connected to power, then turned on.",
+      "drives_joints": [
+        "spindle_rotation"
+      ],
+      "spec": {
+        "inputs": {
+          "power": {
+            "states": [
+              "disconnected",
+              "connected"
+            ],
+            "attribute": "powerConnected",
+            "label": "Plugged in"
+          },
+          "key": {
+            "states": [
+              "out",
+              "in"
+            ],
+            "attribute": "keyInserted",
+            "label": "Disabling key in"
+          },
+          "paddle": {
+            "states": [
+              "down",
+              "up"
+            ],
+            "attribute": "paddleUp",
+            "label": "ON/OFF paddle up"
+          }
+        },
+        "output": "motor",
+        "on_when": {
+          "power": "connected",
+          "key": "in",
+          "paddle": "up"
+        },
+        "start_input": "paddle",
+        "off_why": {
+          "power": "the machine is not connected to power ('Connects machine to power, and turns machine ON', p. 26)",
+          "key": "'Removal of yellow key disables switch so motor cannot start' (p. 6)"
+        },
+        "not_described": [
+          {
+            "input": "key",
+            "to": "out",
+            "when": {
+              "motor": "on"
+            },
+            "why": "removing the key while the motor runs: p. 6 says only that without it the motor 'cannot start'"
+          },
+          {
+            "input": "key",
+            "to": "in",
+            "when": {
+              "paddle": "up"
+            },
+            "why": "inserting the key with the paddle up: the manual describes the key only as disabling the switch (p. 6)"
+          },
+          {
+            "input": "power",
+            "to": "connected",
+            "when": {
+              "paddle": "up",
+              "key": "in"
+            },
+            "why": "connecting power with the switch on: the manual connects power first, then turns the machine ON (p. 26)"
+          }
+        ]
+      },
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 6",
+          "quote": "ON/OFF Switch w/Disabling Key: Turns motor ON when moved up; turns motor OFF when moved down. Removal of yellow key disables switch so motor cannot start."
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 8",
+          "quote": "Switch Type ... Paddle Safety Switch w/Disabling Key"
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 24",
+          "quote": "Try to start machine with ON/OFF switch. Machine should not start."
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 26",
+          "quote": "Connects machine to power, and turns machine ON."
+        }
+      ]
+    },
+    {
+      "behavior_id": "spindle_speed",
+      "name": "Spindle speed: twelve belt settings",
+      "kind": "lookup_table",
+      "description": "The spindle runs at one of twelve cited speeds, set by the V-belts while the machine is disconnected from power. Only 790 RPM names its belt positions (B-3); the rest are on a label under the closed belt cover and stay out of the twin (Daniel, 2026-10-24). When the motor stops, the spindle coasts to a stop on its own.",
+      "drives_joints": [
+        "spindle_rotation"
+      ],
+      "spec": {
+        "joint": "spindle_rotation",
+        "switch": "power_switch",
+        "rows": [
+          {
+            "rpm": 340
+          },
+          {
+            "rpm": 500
+          },
+          {
+            "rpm": 530
+          },
+          {
+            "rpm": 660
+          },
+          {
+            "rpm": 740
+          },
+          {
+            "rpm": 790,
+            "belts": "B-3"
+          },
+          {
+            "rpm": 1380
+          },
+          {
+            "rpm": 1420
+          },
+          {
+            "rpm": 1680
+          },
+          {
+            "rpm": 1860
+          },
+          {
+            "rpm": 2200
+          },
+          {
+            "rpm": 2860
+          }
+        ],
+        "initial_rpm": 790,
+        "table_why": "'12 Speed Settings: 340, 500, 530, 660, 740, 790, 1380, 1420, 1680, 1860, 2200, 2860 RPM' (p. 9)",
+        "change_only_when": {
+          "power": "disconnected"
+        },
+        "change_refused_why": "disconnect the machine first: 'To change spindle speed: 1. DISCONNECT MACHINE FROM POWER!' (p. 30)",
+        "run_up_s": 1.0,
+        "coast_down_s": 5.0,
+        "direction": 1,
+        "stand_ins": {
+          "run_up_s": "stand-in: no source gives how long the motor takes to reach speed; to be replaced by Daniel's timing (decision 0025)",
+          "coast_down_s": "stand-in: 'Always allow spindle to stop on its own' (p. 14) gives no time; to be replaced by Daniel's timing (decision 0025)",
+          "ramps": "[INFERENCE] the speed rises and falls in a straight line",
+          "direction": "[INFERENCE] positive about the joint's axis, down the spindle: clockwise seen from above. The manual does not say",
+          "initial_rpm": "the setting the twin starts at: 790 RPM, the one setting whose belts are cited (p. 30)"
+        }
+      },
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 9",
+          "quote": "12 Speed Settings: 340, 500, 530, 660, 740, 790, 1380, 1420, 1680, 1860, 2200, 2860 RPM"
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 30",
+          "quote": "To change spindle speed: 1. DISCONNECT MACHINE FROM POWER!"
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 30",
+          "quote": "a belt combination of B-3 creates 790 RPM"
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 14",
+          "quote": "Always allow spindle to stop on its own."
+        },
+        {
+          "source_id": "src-daniel-directions",
+          "locator": "2026-10-30: 'It would be nice to time a stroke on any benchtop. Let's attempt it but prepare the information for a stand in if necessary'; the controls 'accessible in the property panel as well'"
+        }
+      ]
+    },
+    {
+      "behavior_id": "operator_controls",
+      "name": "Operator's controls: power, key, switch, speed and downfeed handles",
+      "kind": "command_set",
+      "description": "What an operator does at the T33901, in the manual's order of work (p. 26): choose the speed, connect power, turn the machine on, pull a downfeed handle to drill down to the depth stop, release it so the spring returns the quill, turn the machine off and disconnect it. Two scenarios: a drilling stroke, and the manual's test that the switch does not start the motor without its key.",
+      "drives_joints": [
+        "quill_travel",
+        "spindle_rotation"
+      ],
+      "spec": {
+        "switch": "power_switch",
+        "speed": "spindle_speed",
+        "quill": "quill_travel",
+        "commands": {
+          "set": "connect or disconnect power, insert or remove the key, move the paddle up or down (pp. 6, 26)",
+          "set_speed": "choose one of the twelve speeds with the belts, disconnected from power (pp. 9, 30)",
+          "pull": "pull a downfeed handle down: 'Moves spindle down when pulled down' (p. 7)",
+          "release": "let go of the handle: 'Spindle automatically returns to top position when released' (p. 7)"
+        },
+        "release_why": "'Spindle automatically returns to top position when released' (p. 7)",
+        "live_pull_speed_m_s": 0.03,
+        "scenarios": {
+          "drilling-stroke": {
+            "description": "A 1/2 in deep hole with a 1/4 in twist bit in mild steel, in the manual's order of work (p. 26), down to the depth stop where the photos set it (about 43 mm).",
+            "steps": [
+              {
+                "do": "set_speed",
+                "rpm": 790,
+                "note": "p. 29's chart gives 1250 RPM for 13/64-3/8 in twist bits in mild steel; 790 is the fastest of the twelve not above it (p. 9), belts B-3 (p. 30)"
+              },
+              {
+                "do": "set",
+                "input": "power",
+                "state": "connected",
+                "note": "'Connects machine to power' (p. 26)"
+              },
+              {
+                "do": "set",
+                "input": "key",
+                "state": "in",
+                "note": "the disabling key (p. 6)"
+              },
+              {
+                "do": "set",
+                "input": "paddle",
+                "state": "up",
+                "note": "'Turns motor ON when moved up' (p. 6)"
+              },
+              {
+                "do": "wait",
+                "s": 2.0,
+                "note": "the spindle comes up to speed (1 s, a stand-in), and a second more"
+              },
+              {
+                "do": "pull",
+                "to_m": 0.0303,
+                "speed_m_s": 0.03,
+                "note": "stand-in: the bit down to the work, 1/2 in above the depth stop, in about 1 s"
+              },
+              {
+                "do": "pull",
+                "speed_m_s": 0.001338,
+                "note": "cutting to the depth stop: 0.004 in/rev for a 1/4 in HSS drill (UF, Table 2; UofT, Table 1.1.2) x 790 RPM = 3.16 in/min"
+              },
+              {
+                "do": "wait",
+                "s": 1.0,
+                "note": "stand-in: holding at depth"
+              },
+              {
+                "do": "release",
+                "note": "'Spindle automatically returns to top position when released' (p. 7)"
+              },
+              {
+                "do": "wait",
+                "s": 5.0,
+                "note": "the spring returns the quill; v3-v6 rested after 3.4-5.7 s (decision 0024)"
+              },
+              {
+                "do": "set",
+                "input": "paddle",
+                "state": "down",
+                "note": "'turns motor OFF when moved down' (p. 6)"
+              },
+              {
+                "do": "wait",
+                "s": 6.0,
+                "note": "'Always allow spindle to stop on its own' (p. 14): 5 s, a stand-in"
+              },
+              {
+                "do": "set",
+                "input": "key",
+                "state": "out",
+                "note": "the key removed (p. 6)"
+              },
+              {
+                "do": "set",
+                "input": "power",
+                "state": "disconnected",
+                "note": "'turns machine OFF and disconnects it from power' (p. 26)"
+              }
+            ]
+          },
+          "no-key-no-start": {
+            "description": "The manual's test run (p. 24): with the key removed the switch does not start the motor; with the key in, it does.",
+            "steps": [
+              {
+                "do": "set",
+                "input": "power",
+                "state": "connected",
+                "note": "'Connect machine to power supply' (p. 24)"
+              },
+              {
+                "do": "set",
+                "input": "paddle",
+                "state": "up",
+                "note": "'Try to start machine with ON/OFF switch. Machine should not start.' (p. 24)"
+              },
+              {
+                "do": "wait",
+                "s": 3.0
+              },
+              {
+                "do": "set",
+                "input": "paddle",
+                "state": "down"
+              },
+              {
+                "do": "set",
+                "input": "key",
+                "state": "in"
+              },
+              {
+                "do": "wait",
+                "s": 1.0
+              },
+              {
+                "do": "set",
+                "input": "paddle",
+                "state": "up",
+                "note": "with the key in, the motor starts (p. 6)"
+              },
+              {
+                "do": "wait",
+                "s": 3.0
+              },
+              {
+                "do": "set",
+                "input": "paddle",
+                "state": "down"
+              },
+              {
+                "do": "wait",
+                "s": 6.0,
+                "note": "the spindle coasts to a stop (p. 14)"
+              },
+              {
+                "do": "set",
+                "input": "key",
+                "state": "out"
+              },
+              {
+                "do": "set",
+                "input": "power",
+                "state": "disconnected"
+              }
+            ]
+          }
+        },
+        "default_scenario": "drilling-stroke",
+        "stand_ins": {
+          "pull to the work": "30.3 mm at 0.03 m/s: a stand-in until Daniel's timing (decision 0025)",
+          "hold at depth": "1.0 s: a stand-in until Daniel's timing",
+          "live_pull_speed_m_s": "0.03 m/s, the stand-in pull, as the Property panel's starting pull speed",
+          "bit and hole": "a 1/4 in twist bit in mild steel, 1/2 in deep: the scenario's choice, under UF's 3 drill diameters (0.75 in), so no pecking"
+        }
+      },
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 7",
+          "quote": "Downfeed Handle (1 of 3): Moves spindle down when pulled down. Spindle automatically returns to top position when released."
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 26",
+          "quote": "Selects appropriate spindle speed according to drill bit speed chart"
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 26",
+          "quote": "When finished, turns machine OFF and disconnects it from power."
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 29, Figure 30 (an image): 'Twist/Brad Point Drill Bits', row 13/64\" - 3/8\", 'Mild Steel' 1250",
+          "quote": "Figure 30. Drill bit speed chart (RPMs)."
+        },
+        {
+          "source_id": "src-t33901-manual",
+          "locator": "PDF p. 24",
+          "quote": "Connect machine to power supply"
+        },
+        {
+          "source_id": "src-ufl-speeds-and-feeds",
+          "locator": "PDF p. 4",
+          "quote": "Recommended Average Feed Rates for 2 Flute HSS Drills"
+        },
+        {
+          "source_id": "src-ufl-speeds-and-feeds",
+          "locator": "PDF p. 5",
+          "quote": "fr ≈ 0.004 in/rev"
+        },
+        {
+          "source_id": "src-uoft-drill-press-module",
+          "locator": "PDF p. 10",
+          "quote": "Table 1.1.2: HSS Feed Rates [in/rev]"
+        },
+        {
+          "source_id": "src-uoft-drill-press-module",
+          "locator": "PDF p. 10",
+          "quote": "multiply the feed rate by the spindle speed [rpm]"
+        },
+        {
+          "source_id": "src-daniel-directions",
+          "locator": "2026-10-30: 'It would be nice to time a stroke on any benchtop. Let's attempt it but prepare the information for a stand in if necessary'; the controls 'accessible in the property panel as well'"
+        }
+      ]
+    }
+  ],
   "issues": [
     {"severity": "info", "ref": "spindle_to_column",
      "message": "[INFERENCE] 'Max. Distance From Spindle to Column ... 7 in.' (p. 8) is taken to the column's surface, since the swing is 14 in (p. 8), twice 7 in."},
@@ -116,6 +560,9 @@
     {"severity": "info",
      "message": "Not in the manual or any source reached on 2026-10-22: the handle-to-quill ratio, the head's size and the return spring's force (docs/research/2026-10-22-t33901-handle-ratio-and-figures.md). The spring's tension can be adjusted (p. 40)."},
     {"severity": "info",
-     "message": "The speed chart under the belt cover was not readable in any photo found; only 'a belt combination of B-3 creates 790 RPM' is cited (p. 30). Belt positions are left out of the twin, since the cover is closed (Daniel, 2026-10-24)."}
+     "message": "The speed chart under the belt cover was not readable in any photo found; only 'a belt combination of B-3 creates 790 RPM' is cited (p. 30). Belt positions are left out of the twin, since the cover is closed (Daniel, 2026-10-24)."},
+    {"severity": "warning", "ref": "spindle_speed", "message": "Stand-ins: the motor's run-up (1 s) and coast-down (5 s), in straight lines. No source gives them; the manual says only 'Always allow spindle to stop on its own' (p. 14). To be replaced by Daniel's timing on a benchtop drill press (decision 0025). [INFERENCE] The spindle turns clockwise seen from above; the manual does not say."},
+    {"severity": "warning", "ref": "operator_controls", "message": "Stand-ins in the drilling-stroke scenario: the pull to the work (30.3 mm at 0.03 m/s) and the hold at depth (1 s), until Daniel's timing (decision 0025). The cutting feed is cited: 0.004 in/rev for a 1/4 in HSS drill (UF, Table 2; UofT, Table 1.1.2) times 790 RPM. The operator's hand is ideal: it follows its path whatever the spring and the handles push back."},
+    {"severity": "info", "ref": "power_switch", "message": "Not described by the manual, so refused in a scenario and done with a note in live use: removing the key while the motor runs, inserting it with the paddle up, and connecting power with the switch on (decision 0025)."}
   ]
 }

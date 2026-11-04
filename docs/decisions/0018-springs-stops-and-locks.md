@@ -122,3 +122,9 @@ somewhere." So, from contract v0.2.0's drill press on (decision 0020):
 **Seen in Isaac Sim (Daniel, 2026-10-24, run `2026-10-23_run-003`):** in `table_free`, "upon hitting
 play the table does indeed drop". The assumption itself, that the real T33901's table drops, is
 still not confirmed.
+
+## Update (2026-10-31): a slide's spring on its pinion
+When a turning joint follows a sprung slide by mimic (the T33901's handles and quill), the spring
+is simulated on the turning joint. The acceleration drive scales by its own joint's parts only,
+so the handles' inertia, reflected through the link, made the quill swing and bounce (decision
+0025, "Isaac Sim check" and "Update (2026-10-31)").

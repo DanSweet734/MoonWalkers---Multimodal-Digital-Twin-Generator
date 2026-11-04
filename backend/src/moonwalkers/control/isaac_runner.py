@@ -9,6 +9,11 @@
    not trail behind.
 4. Press Stop, then Play, to run the program again from the start; the runner prints its lines
    again. Running this file again replaces the earlier runner; ``stop()`` removes it.
+5. The mill's signals (decision 0026): the runner prints when the CNC relay closes and opens, and
+   shows it in the joint's "CNC relay (to the mill)" attribute. Where the controller waits for
+   the mill's cycle start, a simulated mill answers after its planned time. To press Cycle Start
+   yourself instead, select the joint and, in the Property panel, tick "Hold for Cycle Start"
+   before Play; at each wait, tick "Cycle Start" to go on.
 
 The program's motion is stored in the stage itself: every joint with the attributes
 ``moonwalkers:program:times`` (seconds) and ``moonwalkers:program:anglesDeg`` (degrees), written by
@@ -28,21 +33,35 @@ API = "auto"  # "auto", "simulation_manager" or "omni.physx"
 TIMES = "moonwalkers:program:times"
 ANGLES = "moonwalkers:program:anglesDeg"
 NAME = "moonwalkers:program:name"
+RELAY_TIMES = "moonwalkers:program:relayTimes"  # start, end, start, end, ... (seconds)
+WAIT_STARTS = "moonwalkers:program:waitStarts"  # where the controller waits for cycle start
+WAIT_HOLDS = "moonwalkers:program:waitHolds"  # how long the simulated mill takes to answer
+HOLD = "moonwalkers:program:holdForCycleStart"  # the panel: wait for a person's press
+CYCLE_START = "moonwalkers:program:cycleStart"  # the panel: the press, reset by the runner
+RELAY = "moonwalkers:program:cncRelay"  # the panel: the relay's state, set by the runner
 HANDLE = "_moonwalkers_program_runner"
 
 
 class Program:
     """One joint's planned motion."""
 
-    def __init__(self, joint_path, name, times, angles):
+    def __init__(self, joint_path, name, times, angles, relay=(), waits=()):
         if len(times) != len(angles) or len(times) < 1:
             raise ValueError(f"{joint_path}: the program needs as many times as angles")
         if any(b < a for a, b in itertools.pairwise(times)):
             raise ValueError(f"{joint_path}: the program's times must not go backwards")
+        if len(relay) % 2:
+            raise ValueError(f"{joint_path}: the relay's times come in pairs (closed, open)")
         self.joint_path = joint_path
         self.name = name
         self.times = list(times)
         self.angles = list(angles)
+        self.relay = [(relay[i], relay[i + 1]) for i in range(0, len(relay), 2)]
+        self.waits = list(waits)  # (start, hold) pairs
+
+    def relay_at(self, t):
+        """Whether the CNC relay is closed at plan time ``t``."""
+        return any(start <= t < end for start, end in self.relay)
 
     @property
     def duration(self):
@@ -92,6 +111,40 @@ class Progress:
         return lines
 
 
+class PlanClock:
+    """The program's own time. It runs with the timeline, except that with ``hold`` it stops
+    at each wait for cycle start until a press, then goes on from the end of that wait, as the
+    controller does when the mill (or a person) sends cycle start."""
+
+    def __init__(self, waits):
+        self.waits = sorted(waits)
+        self.reset()
+
+    def reset(self):
+        self.offset = 0.0
+        self.next = 0
+        self.holding = False
+
+    def advance(self, t, hold, pressed):
+        """The plan time at timeline time ``t``, and whether a press was used."""
+        plan = t - self.offset
+        if not hold or self.next >= len(self.waits):
+            if self.next < len(self.waits) and plan >= sum(self.waits[self.next]):
+                self.next += 1  # the simulated mill answered this wait
+            return plan, False
+        start, wait = self.waits[self.next]
+        if plan < start:
+            return plan, False
+        if pressed:
+            self.offset = t - (start + wait)
+            self.next += 1
+            self.holding = False
+            return start + wait, True
+        self.holding = True
+        self.offset = t - start
+        return start, False
+
+
 def find_programs(stage):
     """Every joint on the stage that carries a program."""
     programs = []
@@ -100,12 +153,17 @@ def find_programs(stage):
         if not (times and angles and times.HasAuthoredValue() and angles.HasAuthoredValue()):
             continue
         name = prim.GetAttribute(NAME)
+        relay = _floats(prim.GetAttribute(RELAY_TIMES))
+        starts = _floats(prim.GetAttribute(WAIT_STARTS))
+        holds = _floats(prim.GetAttribute(WAIT_HOLDS))
         programs.append(
             Program(
                 str(prim.GetPath()),
                 name.Get() if name and name.HasAuthoredValue() else "program",
                 [float(v) for v in times.Get()],
                 [float(v) for v in angles.Get()],
+                relay,
+                list(zip(starts, holds, strict=True)),
             )
         )
     return programs
@@ -126,18 +184,40 @@ def start():
     timeline = omni.timeline.get_timeline_interface()
     drives = []
     for program in programs:
-        drive = UsdPhysics.DriveAPI(stage.GetPrimAtPath(program.joint_path), "angular")
+        prim = stage.GetPrimAtPath(program.joint_path)
+        drive = UsdPhysics.DriveAPI(prim, "angular")
         drive.CreateTargetPositionAttr()
         drive.CreateTargetVelocityAttr()
-        drives.append((drive, program))
+        drives.append((drive, program, prim, PlanClock(program.waits), {"relay": None}))
     progress = Progress(programs)
+    say = "MoonWalkers runner: "
 
     def on_step(*_args):
         t = float(timeline.get_current_time())
-        for drive, program in drives:
-            angle, speed = program.target_at(t)
+        restart = progress.last_t is None or t < progress.last_t
+        for drive, program, prim, clock, seen in drives:
+            if restart:
+                clock.reset()
+                seen["relay"] = None
+            hold = bool(_get(prim, HOLD, False))
+            pressed = hold and clock.holding and bool(_get(prim, CYCLE_START, False))
+            was_holding = clock.holding
+            plan_t, used = clock.advance(t, hold, pressed)
+            if used:
+                _put(prim, CYCLE_START, False)
+                print(f"{say}Cycle Start at t = {t:.2f} s: plan time {plan_t:.2f} s")
+            elif clock.holding and not was_holding:
+                print(f"{say}waiting for Cycle Start at plan time {plan_t:.2f} s")
+            angle, speed = program.target_at(plan_t)
             drive.GetTargetPositionAttr().Set(angle)
-            drive.GetTargetVelocityAttr().Set(speed)
+            drive.GetTargetVelocityAttr().Set(0.0 if clock.holding else speed)
+            relay = program.relay_at(plan_t)
+            if relay != seen["relay"]:
+                if seen["relay"] is not None:
+                    state = "closes (a signal to the mill)" if relay else "opens"
+                    print(f"{say}CNC relay {state} at plan time {plan_t:.2f} s")
+                seen["relay"] = relay
+                _put(prim, RELAY, relay)
         for line in progress.lines(t):
             print(line)
 
@@ -151,6 +231,22 @@ def start():
     print(
         f"MoonWalkers runner: driving the joint(s) on each physics step through {api}; press Play"
     )
+
+
+def _floats(attr):
+    return [float(v) for v in attr.Get()] if attr and attr.HasAuthoredValue() else []
+
+
+def _get(prim, name, default):
+    attr = prim.GetAttribute(name)
+    value = attr.Get() if attr else None
+    return default if value is None else value
+
+
+def _put(prim, name, value):
+    attr = prim.GetAttribute(name)
+    if attr and attr.Get() != value:
+        attr.Set(value)
 
 
 def stop():

@@ -53,6 +53,12 @@ how to simulate it (``contract_settings``):
   ``PhysxMimicJointAPI`` unless ``coupling_method`` says otherwise. The numbers are decision
   0018's stand-ins.
 * An ``adjustable_stop`` replaces the limit on its side, for every joint that has one.
+* A spring that returns a sliding joint which a turning joint follows by mimic (a rack and
+  pinion) is simulated on the turning joint (``springs_on_pinions``; decision 0025, update of
+  2026-10-31). The acceleration drive scales by its own joint's parts only, and the pinion's
+  followers weigh on the slide by the ratio squared: on the T33901 the stand-in hub weighed as 237
+  kg on a 1.9 kg quill, which swung. The T33901's spring is on its pinion shaft too (manual,
+  p. 40). The slide keeps no drive; the link moves it.
 * ``joint_settings`` replace what the contract asks for, joint by joint, for a check; their
   ``limits=None`` keeps the contract's limits and stop. ``starts`` set starting positions on top.
 """
@@ -62,7 +68,7 @@ from __future__ import annotations
 import json
 import math
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, replace
 from importlib.metadata import version as package_version
 from pathlib import Path
@@ -83,7 +89,12 @@ from moonwalkers.contracts.pipeline_result import (
 from .frames import quat_between
 from .geometry import MeshData, primitive_mesh
 from .mesh_files import MESH_FILE_FORMATS, mesh_data_from_file
-from .physx_schemas import apply_mimic, define_rack_and_pinion, set_joint_state
+from .physx_schemas import (
+    apply_mimic,
+    define_rack_and_pinion,
+    set_joint_state,
+    set_max_joint_velocity,
+)
 from .physx_schemas import keep_awake as keep_articulation_awake
 from .units import KILOGRAMS_PER_UNIT, METERS_PER_UNIT, usd_angle, usd_length
 
@@ -177,9 +188,10 @@ class JointCoupling:
 class JointSettings:
     """How one joint is written, beyond what the contract says (decisions 0017-0019).
 
-    ``drive`` is the joint's own drive, or None for no drive (a follower must have none: the
-    coupling moves it). ``limits`` replace the contract's, in its units: equal limits lock the
-    joint, and a depth stop narrows a slide. ``start`` is the position the joint starts at.
+    ``drive`` is the joint's own drive, or None for no drive. A follower has none, as the
+    coupling moves it, unless it carries its leader's spring (``springs_on_pinions``).
+    ``limits`` replace the contract's, in its units: equal limits lock the joint, and a depth
+    stop narrows a slide. ``start`` is the position the joint starts at.
     ``note`` says why, for example that a value is a stand-in; it is written into the joint's
     provenance.
     """
@@ -193,8 +205,6 @@ class JointSettings:
     def __post_init__(self) -> None:
         if self.limits is not None and self.limits[0] > self.limits[1]:
             raise ValueError(f"lower limit {self.limits[0]} is above upper limit {self.limits[1]}")
-        if self.coupling is not None and self.drive is not None:
-            raise ValueError("a joint that follows another cannot have its own drive")
 
 
 def contract_settings(
@@ -242,6 +252,78 @@ def contract_settings(
         note="from the contract: spring return; stiffness, damping and preload are stand-ins "
         "(decision 0018)",
     )
+
+
+def simulated_settings(
+    joints: Mapping[str, Joint], coupling_method: CouplingMethod = "mimic"
+) -> dict[str, JointSettings]:
+    """What the exporter writes for each joint from the contract alone, springs moved to their
+    pinions: the settings a twin's ``twin.usdc`` has (decisions 0020, 0025)."""
+    settings = {}
+    for joint_id, joint in joints.items():
+        derived = contract_settings(joint, coupling_method=coupling_method)
+        if derived is not None:
+            settings[joint_id] = derived
+    return springs_on_pinions(settings, joints)
+
+
+def springs_on_pinions(
+    settings: Mapping[str, JointSettings],
+    joints: Mapping[str, Joint],
+    keep: Collection[str] = (),
+) -> dict[str, JointSettings]:
+    """Simulate a sliding joint's spring on the one turning joint that follows it by mimic.
+
+    The spring keeps its stiffness and damping, in the turning joint's units, and is aimed
+    ``SPRING_PRELOAD`` past the follower's rest angle, the way the slide's spring was aimed past
+    its rest. Joints named in ``keep`` (a check's own settings) are left as they are, with their
+    partners (decision 0025, update of 2026-10-31)."""
+    out = dict(settings)
+    for leader_id, setting in settings.items():
+        leader = joints[leader_id]
+        mode = leader.mode
+        if (
+            leader_id in keep
+            or leader.joint_type != "prismatic"
+            or mode is None
+            or mode.kind != "spring_return"
+            or setting.drive is None
+        ):
+            continue
+        followers = [
+            follower_id
+            for follower_id, s in settings.items()
+            if s.coupling is not None
+            and s.coupling.leader == leader_id
+            and s.coupling.method == "mimic"
+            and joints[follower_id].joint_type == "revolute"
+        ]
+        if len(followers) != 1 or followers[0] in keep:
+            continue
+        (follower_id,) = followers
+        follower = settings[follower_id]
+        coupling = follower.coupling
+        assert coupling is not None
+        rest = mode.position if mode.position is not None else 0.0
+        rest_angle = coupling.ratio * rest + coupling.offset
+        past = setting.drive.target - rest  # the slide's preload, signed
+        direction = math.copysign(1.0, past * coupling.ratio) if past else 0.0
+        out[leader_id] = replace(
+            setting,
+            drive=None,
+            note=f"from the contract: spring return, simulated on '{follower_id}', the pinion "
+            "it turns (decision 0025, update)",
+        )
+        carried = (
+            f"carries '{leader_id}''s spring return: stiffness, damping and preload are "
+            "stand-ins (decisions 0018, 0025)"
+        )
+        out[follower_id] = replace(
+            follower,
+            drive=replace(setting.drive, target=rest_angle + direction * SPRING_PRELOAD),
+            note="; ".join(filter(None, [follower.note, carried])),
+        )
+    return out
 
 
 def stopped_limits(joint: Joint) -> tuple[float | None, float | None]:
@@ -488,6 +570,9 @@ def _joint_settings(
         if derived is not None:
             settings[joint_id] = derived
     settings.update(explicit)
+    settings = springs_on_pinions(
+        settings, {j: joint for j, (joint, _) in joints.items()}, explicit
+    )
     for joint_id, start in starts.items():  # a fixed joint is refused by _check_settings
         joint = joints[joint_id][0]
         setting = settings.get(joint_id) or JointSettings(drive=_joint_drive(joint, drive, None))
@@ -664,6 +749,8 @@ def _write_joint(
     joint_drive = _joint_drive(joint, drive, setting)
     if joint_drive is not None:
         _write_drive(prim, joint_drive, _drive_kind(joint))
+    if joint.max_velocity is not None and joint.joint_type != "fixed":  # cited (decision 0025)
+        set_max_joint_velocity(prim, _to_usd(joint, joint.max_velocity))
 
     prim.SetDocumentation(
         f"{joint.joint_type.capitalize()} joint '{joint.joint_id}': "

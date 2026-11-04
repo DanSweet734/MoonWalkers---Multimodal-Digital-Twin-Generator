@@ -41,10 +41,22 @@ from moonwalkers.usd.exporter import (
 from moonwalkers.usd.validate import validate_file
 
 from .interpreter import RunSettings, Trajectory, run_program
-from .isaac_runner import ANGLES, NAME, TIMES
+from .isaac_runner import (
+    ANGLES,
+    CYCLE_START,
+    HOLD,
+    NAME,
+    RELAY,
+    RELAY_TIMES,
+    TIMES,
+    WAIT_HOLDS,
+    WAIT_STARTS,
+)
 from .program import ProgramError, ProgramFile
 
 PLANNED = "moonwalkers:program:plannedAngleDeg"
+PLANNED_RELAY = "moonwalkers:program:plannedRelay"  # time samples of the relay, to scrub
+GROUP = "MoonWalkers program"
 RUNNER = Path(__file__).with_name("isaac_runner.py")
 
 
@@ -134,6 +146,17 @@ def program_notes(
             f"{settings.start_deg:g} deg"
         ),
         (
+            f"- Acceleration (Parameter 18): {_acceleration(settings)}. Parameter 1 (the CNC "
+            f"relay): {trajectory.relay_parameter}. Parameter 10: "
+            + (
+                "2, auto continue"
+                if settings.continue_mode == "auto"
+                else "0, stop after each step and wait for cycle start"
+            )
+            + f". The simulated mill answers {settings.mill_answer_s:g} s after the controller "
+            "starts waiting (a stand-in; decision 0026)"
+        ),
+        (
             f"- Duration {trajectory.duration_s:.3f} s; final target {trajectory.final_deg:.3f} "
             f"deg ({trajectory.final_deg % 360:.3f} on the dial)"
         ),
@@ -164,6 +187,17 @@ def program_notes(
             f"| {e.start_s:.3f} | {e.end_s:.3f} | {e.step:02d} | {e.g} | {e.start_deg:.3f} | "
             f"{e.end_deg:.3f} | {e.what} |"
         )
+    lines += ["", "## The CNC relay (the signal to the mill)", ""]
+    lines += [f"- closed {s.start_s:.3f}-{s.end_s:.3f} s ({s.why})" for s in trajectory.relay] or [
+        "- never closed"
+    ]
+    if trajectory.waits:
+        lines += ["", "## Waits for the mill's cycle start", ""]
+        lines += [
+            f"- from {w.start_s:.3f} s, step {w.step:02d}: {w.why}; the simulated mill answers "
+            f"after {w.hold_s:g} s"
+            for w in trajectory.waits
+        ]
     if trajectory.notes:
         lines += ["", "## Notes", "", *(f"- {n}" for n in trajectory.notes)]
     lines += [
@@ -175,12 +209,17 @@ def program_notes(
         "   the bottom. It prints the program it found and the physics API it uses.",
         "3. Press Play. The spindle should follow the timeline above, and the runner prints a",
         "   line when the program finishes. Stop, then Play, runs it again.",
+        "   The runner also prints each time the CNC relay closes and opens, and shows it in the",
+        '   joint\'s "CNC relay (to the mill)" attribute (Property panel, "Raw USD Properties").',
+        '   To press Cycle Start yourself, tick "Hold for Cycle Start" on the joint before Play,',
+        '   then tick "Cycle Start" at each wait.',
         "4. Optional: in a new Isaac Sim session, open `program_native.usdc` and press Play",
         "   without the script. It should make the same moves (Isaac Sim 6.2.0 did on 2026-10-19).",
         "",
         "- Isaac Sim version/build:",
         "- Runner output (API, first physics step):",
         "- Did the spindle follow the timeline (moves, pauses, return home)?",
+        "- Did the moves speed up and slow down, and did the relay close where listed?",
         "- Where did it stop?",
         "- `program_native.usdc` without the script: same moves or not:",
         "- Success level reached (1-3):",
@@ -209,6 +248,7 @@ def _add_program(
     planned = prim.CreateAttribute(PLANNED, Sdf.ValueTypeNames.Double, custom=True)
     for w in trajectory.waypoints:
         planned.Set(w.deg, Usd.TimeCode(w.t * TIME_CODES_PER_SECOND))
+    _add_signals(prim, trajectory)
     UsdPhysics.DriveAPI(prim, "angular").CreateTargetVelocityAttr(0.0)
     behavior = program.behavior
     prim.SetCustomDataByKey(
@@ -235,6 +275,46 @@ def _add_native(prim: Usd.Prim, trajectory: Trajectory) -> None:
     target = UsdPhysics.DriveAPI(prim, "angular").GetTargetPositionAttr()
     for w in trajectory.waypoints:
         target.Set(w.deg, Usd.TimeCode(w.t * TIME_CODES_PER_SECOND))
+    _relay_samples(prim, trajectory)
+
+
+def _add_signals(prim: Usd.Prim, trajectory: Trajectory) -> None:
+    """The mill's signals (decision 0026): the relay's spans and the waits for the runner, the
+    relay as time samples to scrub, and the Property panel's attributes."""
+    doubles = Sdf.ValueTypeNames.DoubleArray
+    spans = [v for s in trajectory.relay for v in (s.start_s, s.end_s)]
+    prim.CreateAttribute(RELAY_TIMES, doubles, custom=True).Set(Vt.DoubleArray(spans))
+    starts = [w.start_s for w in trajectory.waits]
+    prim.CreateAttribute(WAIT_STARTS, doubles, custom=True).Set(Vt.DoubleArray(starts))
+    holds = [w.hold_s for w in trajectory.waits]
+    prim.CreateAttribute(WAIT_HOLDS, doubles, custom=True).Set(Vt.DoubleArray(holds))
+    for name, label, doc in (
+        (
+            HOLD,
+            "Hold for Cycle Start",
+            "tick before Play to press Cycle Start yourself at each wait",
+        ),
+        (CYCLE_START, "Cycle Start", "tick at a wait to send cycle start; the runner unticks it"),
+        (
+            RELAY,
+            "CNC relay (to the mill)",
+            "closed while the relay signals the mill; set by the runner",
+        ),
+    ):
+        attr = prim.CreateAttribute(name, Sdf.ValueTypeNames.Bool, custom=True)
+        attr.Set(False)
+        attr.SetDisplayName(label)
+        attr.SetDisplayGroup(GROUP)
+        attr.SetDocumentation(doc)
+    _relay_samples(prim, trajectory)
+
+
+def _relay_samples(prim: Usd.Prim, trajectory: Trajectory) -> None:
+    relay = prim.CreateAttribute(PLANNED_RELAY, Sdf.ValueTypeNames.Bool, custom=True)
+    relay.Set(False, Usd.TimeCode(0))
+    for span in trajectory.relay:
+        relay.Set(True, Usd.TimeCode(span.start_s * TIME_CODES_PER_SECOND))
+        relay.Set(False, Usd.TimeCode(span.end_s * TIME_CODES_PER_SECOND))
 
 
 def _trajectory_json(
@@ -249,6 +329,15 @@ def _trajectory_json(
         **trajectory.model_dump(mode="json"),
     }
     return json.dumps(data, indent=2)
+
+
+def _acceleration(settings: RunSettings) -> str:
+    if settings.acceleration_deg_s2 is None:
+        return "none, full feed from start to end (decision 0016)"
+    return (
+        f"{settings.acceleration_deg_s2:g} deg/s^2, a stand-in: no HA5C value is published, and "
+        "the manuals say Parameter 18 is 'usually 2X' Parameter 19 (decision 0026)"
+    )
 
 
 def _num(value: float | None, default: str) -> str:

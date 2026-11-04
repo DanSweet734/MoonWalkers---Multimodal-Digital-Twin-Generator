@@ -11,10 +11,11 @@
 (worklog 2026-10-22). **Written:** Oct 22, 2026, for Daniel's review. He answered its questions
 the same day (below).
 
-**Status:** approved (PR #15). Phases 0 to 4 are done (PRs #15, #16, #18, #19, #20; PR #20
-merged on 2026-10-26 with decision 0023 accepted). Phase 5 is under way: its first session built
-`grizzly/t33901@v1` for Daniel's Isaac Sim check, and its second session has a hand-off below. Stop
-at the end of each phase, open a pull request, and wait for review before starting the next. The HA5C stays the reference twin: every
+**Status:** approved (PR #15). Phases 0 to 5 are done (PRs #15, #16, #18, #19, #20, #21; PR #21
+merged on 2026-10-28). Phase 6 is under way on `feat/phase-6-control-logic`: its research, decision
+0025 (proposed), the controller and `grizzly/t33901@v7` are done (2026-10-30), and Daniel's Isaac
+Sim check of level 3 is next. Stop at the end of each phase, open a pull request, and wait for
+review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
 **Direction (Daniel, Oct 22, 2026):** "The goal is to allow multiple image input and allow for the
@@ -815,10 +816,119 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
       through all its cited travel. **`grizzly/t33901@v6`**, run `2026-10-28_run-003`: v5 with the
       parts fixed to the frame grey, as he asked; both validators clean)
 - [x] Worklog with run details (versions, time); PR
-      (Oct 28, 2026: worklogs 2026-10-26 to 10-28; PR #21, for Daniel's review of the phase)
+      (Oct 28, 2026: worklogs 2026-10-26 to 10-28; PR #21, approved and merged by Daniel's word
+      on 2026-10-28, merge commit `a8d179a`)
 
 ## Phase 6 - Control logic (level 3), for the drill press and the HA5C
-- [ ] Decision record 0025: how `ControlBehavior` describes a manual machine:
+
+### Hand-off (2026-10-28, from the Phase 5 chat)
+- **Start** from `main` after PR #21 (merge commit `a8d179a`, merged 2026-10-28), on branch
+  `feat/phase-6-control-logic`, created from `main` the same day. Its first commit holds this
+  hand-off and is not on `main` yet. Phase 6 starts in a new chat. PR #21's branch
+  `feat/phase-5-several-parts-and-joints` was kept: Daniel did not ask to delete it.
+- **Read first:**
+  - decision 0016 (indexing programs drive a joint) and its code in `control/` (`program.py`,
+    `interpreter.py`, `export.py`, `isaac_runner.py`, `python -m moonwalkers.control`);
+  - decisions 0018 (springs, stops and locks), 0019 (the handles follow the quill) and 0020
+    (contract v0.2.0's modes, stops and links): how the twin's joints are simulated;
+  - decisions 0024 and 0027 with their updates: the T33901 twin as built, and why its masses stay
+    placeholders;
+  - the items below; for the HA5C, `docs/research/2026-10-19-open-questions-research.md`,
+    section 3 (Parameters 18 and 44).
+- **The twin to build on: `grizzly/t33901@v6`** (run `2026-10-28_run-003`).
+  - v6 is v5's spec (`data/machines/grizzly-t33901/part_cutting/2026-10-27_spec/
+    geometry_spec_v5.json`, written by `compose_spec.py` there) with the exporter colouring parts
+    held to the frame grey. 17 parts (11 stand-ins), 16 joints (9 fixed); both validators clean.
+  - Daniel checked v4 and v5 in Isaac Sim with recordings: level 2 (the runs' `RUN.md`).
+  - Reviews: v2 rejected; v1 and v3-v6 not reviewed, so a request reuses v6, the newest not
+    rejected (decision 0015). The HA5C's v3 and the TH240's v1 are approved.
+  - **Its moving joints,** as Phase 6's control will drive them:
+
+    | Joint | Type, parent -> child, axis | Limits | Contract behaviour | Simulated as (exporter) |
+    |---|---|---|---|---|
+    | `quill_travel` | prismatic, frame -> quill, -z | 0 to 0.08255 m (3-1/4 in) | `spring_return` to 0; `adjustable_stop` at the full stroke | a position drive of the acceleration type, stiffness 600, damping 49, aimed 0.03 m past the top (`SPRING_PRELOAD`, decision 0018) |
+    | `spindle_rotation` | revolute, quill -> chuck, -z | none | `driven`; `max_velocity_fact` = max_spindle_speed (2860 RPM) | the default drive; `checks/spin.usdc` turns it at 30 deg/s for the eye |
+    | `downfeed_handles` | revolute, frame -> handle_hub, +y | -0.05 to 4.76 rad | `follows` quill_travel at 57.09 rad per m (270 deg over the stroke, a stand-in ratio) | `PhysxMimicJointAPI`, which works both ways (decision 0019) |
+    | `table_around_column`, `table_height`, `table_tilt`, `table_around_center` | revolute, prismatic, revolute, revolute | cited | `locked` | equal limits; `checks/unlocked.usdc` loosens all four (by design: Daniel asked on 2026-10-28) |
+
+    The fixed joints hold stand-ins to their parts: the guard, the quill tube, the rod and its nut
+    on the quill; the rack on the collar; the crank on the bracket; the pivot lock handle on the
+    arm; the column section and the depth stop bracket on the frame.
+- **What Phase 6 will meet, found in Phase 5:**
+  - **The program runner drives revolute joints only.** `control/export.py` takes the twin's
+    revolute joint that a behaviour drives and writes its program in degrees on an angular drive,
+    and `isaac_runner.py` sets angular drive targets. A drilling stroke drives the prismatic
+    quill in metres on a linear drive, so both need a linear case.
+  - **The quill already has a drive: its spring.** [INFERENCE] A stroke program must move that
+    drive's target (the operator's hand) and then hand back to the spring's preloaded target, or
+    the two fight. The depth stop is the quill's limit replaced at the stop's position
+    (`exporter.stopped_limits`); the twin's stop is at the full stroke, where the stand-in nut
+    sits. `checks/adjustable_stop.usdc` moves the stop but not the nut (open below).
+  - **The handles follow through the mimic, both ways:** driving the quill turns them; a stroke
+    that drove the handles instead would move the quill.
+  - **The spring return bounces before it rests** (v3: four bounces, still after 3.4-3.9 s; v4:
+    five, 5.7 s; Phase 1's box model: 0.83 s). [INFERENCE] The stand-in handles' convex hull makes
+    their placeholder inertia large. A program that waits for the quill to come home must allow
+    for it. Real masses would need a contract change discussed with the pipeline owners first
+    (decision 0024, last update); Daniel: "Good call keeping mass as placeholders" (2026-10-28).
+  - **The control's facts are cited already** in `pipelines/b/grizzly_t33901.reference.json`:
+    `switch` ("Paddle Safety Switch w/Disabling Key", p. 8), `spindle_speeds` (the twelve, p. 9),
+    `min_spindle_speed`, `max_spindle_speed`, `motor_speed`. Its `control` list is empty:
+    decision 0025's behaviours go there, each quoting its page (p. 6 for the keyed switch), checked
+    with `python -m moonwalkers.pipelines.b.quotes`. An issue there already says the speed chart
+    under the belt cover was not readable.
+  - **A build with control is a new run folder:** copy `request.json` and `generator/` from
+    `2026-10-28_run-003` (the mesh is reused by its key) and `geometry_spec_v5.json`; dry-run in a
+    scratch copy of the data folder (`build --data`), check both validators, then build (v7). A
+    `program_interpreter` behaviour with `spec["program"]` gets `programs/<behaviour>/` in the
+    run (decision 0016).
+- **Daniel's way of checking** (Phase 5): Isaac Sim Full 6.2.0. He opens the files a run's
+  `RUN.md` lists, runs `record_joints.py` (Window > Script Editor, Run, then Play) and reports in
+  chat. The recorder writes `recordings/<file>_<date>_<time>.csv` beside the file opened
+  (`checks/recordings/` for check files): `time_s`, then each joint in m or rad, at 60 Hz.
+  Record his words and the recordings' numbers in the run's `RUN.md` (the quill's rest, bounce
+  peaks, the handles' ratio, where each table joint went). His term: "downfeed handles". A picture
+  helped when a term was new (the hub: `part_cutting/2026-10-27_spec/hub_photo_and_twin.png`).
+- **Left open from Phase 5** (this plan's "Still open"): the masses; the depth stop nut's place in
+  `checks/adjustable_stop.usdc`; the handle ratio; the back.
+- **Not tried in Phase 5:** the dashboard's twin page with a several-part twin (17 parts, 16
+  joints); an agent building the T33901 through the new tools (Phase 7, procedure section 5b).
+- **The environment, still true:**
+  - the backend has numpy and trimesh, and none of scipy, networkx, scikit-image, rtree,
+    shapely, Pillow, embreex or manifold3d; any of them would be an install, asked first;
+  - Pillow 12.3.0 is in the generator's environment (`C:\mw-gen\hunyuan3d-2\.venv`), used
+    read-only with `-I` to crop and measure photos;
+  - pypdf reads the manual's text (its "fontTools is required" warning is harmless), and
+    pypdfium2 renders pages;
+  - the quick tests take about 3 min (647 passing at Phase 5's end), the slow ones about 3.5 min
+    (4);
+  - `gh pr create` and `gh pr edit` take the body from a file (`--body-file`);
+  - the MCP server (24 tools) keeps the tools it started with: after changing its code, ask Daniel
+    to restart it (`/mcp`) before testing through it.
+- **The HA5C's part** is as the items below say: research Parameters 18 and 44 first.
+
+### Daniel's answers (2026-10-30), and the order of work
+He agreed to this order, stopping for checks:
+1. research both machines;
+2. decision 0025;
+3. a runner tested outside Isaac Sim;
+4. a build with control;
+5. his Isaac Sim check of level 3;
+6. the HA5C;
+7. the PR.
+
+His calls:
+- time a stroke on any benchtop drill press, with stand-ins ready if that is not possible;
+- move the depth stop's nut to where the photos show it;
+- live controls in the Property panel;
+- "Just the drill press for now" in Isaac Sim. Read as: the HA5C's work stays, and its Isaac
+  Sim check waits until it is deemed necessary.
+
+Worklog 2026-10-30.
+
+### Items
+- [x] Decision record 0025 (proposed 2026-10-30, `docs/decisions/0025-control-logic-for-a-manual-machine.md`;
+      research: `docs/research/2026-10-30-control-logic-research.md`): how `ControlBehavior` describes a manual machine:
   - the keyed switch as a `state_machine`: key in or out, switch up or down, and the motor runs
     only with the key in and the switch up (p. 6);
   - the spindle speed as a `lookup_table` of the twelve cited speeds (p. 9). Only one belt
@@ -834,12 +944,33 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     programs drive a joint.
 
   `spec` is free-form for each kind, so none of this should need a contract change. If it does,
-  that is its own record and version bump.
-- [ ] An interpreter or runner for these behaviours, tested outside Isaac Sim. A build writes their
-      program folder with the twin (decision 0016).
-- [ ] Isaac Sim check of level 3 for the drill press
+  that is its own record and version bump. **Done without one:** a `state_machine` switch, a
+  `lookup_table` of speeds and a `command_set` of the operator's commands with two scenarios
+  (`drilling-stroke`, `no-key-no-start`). The stroke's untimed values are labelled stand-ins until
+  Daniel times a stroke.
+- [x] An interpreter or runner for these behaviours, tested outside Isaac Sim (2026-10-30).
+      `control/isaac_controls.py` is one controller: Isaac Sim runs it on each physics step, and
+      `control/manual.py` plans every scenario with it. A build writes `programs/operator-controls/`
+      (decision 0025). Also: the joint recorder records velocities, `python -m moonwalkers.control
+      compare` measures a recording, and the exporter writes a cited top speed.
+- [x] A build with control: `grizzly/t33901@v7` (run `2026-10-30_run-001`, spec
+      `part_cutting/2026-10-27_spec/geometry_spec_v7.json`), with the depth stop and nut at 43 mm
+- [x] Isaac Sim check of level 3 for the drill press (`docs/setup/isaac-sim-check.md`, section 9):
+      **met with v8 on 2026-11-02**. The stroke is within 0.62 mm of the plan, and the quill
+      returns in 0.28 s with no bounce (decision 0025, "Re-check of v8")
+  - **v7, checked by Daniel on 2026-10-31.**
+    - The switch, the twelve speeds (790, 1420 and 2860 RPM held exactly), both scenarios and the
+      live controls ("Raw USD Properties") work as planned.
+    - The quill swung about the hand (±12 mm, about every 2.8 s) and bounced on release. The cause
+      is the stand-in hub's placeholder inertia, reflected through the link, 125 times the quill's.
+  - **Daniel chose option (a):** the spring is simulated on the handles' pinion, where the T33901
+    has it (p. 40; decision 0025, update). `grizzly/t33901@v8` (run `2026-10-31_run-001`, the v7
+    spec) passed his re-check on 2026-11-02.
 - [ ] **The HA5C controller's acceleration and its signals to a mill** (advisors, Oct 22, 2026:
       model them if possible; if not, record why and bring it back to the stakeholders).
+  - **Research done (2026-10-30;** research note, section 5): the 2006, 2012 and 2017 manuals
+    give no HA5C value for Parameter 18 or 44. All three say Parameter 18 is "usually 2X"
+    Parameter 19, which means full speed in about 0.5 s [INFERENCE]. That is the basis for a stand-in.
   - **Research first.** Look for the HA5C's values of Parameters 18 and 44 beyond the 2006 and 2012
     manuals, which give none (`docs/research/2026-10-19-open-questions-research.md`, section 3).
   - **Acceleration.** [INFERENCE] The manuals describe the mechanism, so it can be modelled:
@@ -850,7 +981,18 @@ Time-boxed to one session. It compares ways to cut one mesh into several parts.
     G93) as events with no motion (decision 0016). Show them in Isaac Sim, and try one step per
     simulated Cycle Start (decision 0016, option 2b).
   - Decision record 0026, which amends 0016. Isaac Sim check of a program with acceleration.
-- [ ] Worklog; PR
+  - **Done (2026-11-02, decision 0026, proposed):**
+    - moves ramp at a 540 deg/s^2 stand-in;
+    - the CNC relay follows Parameter 1 and the codes;
+    - the controller waits for the mill's cycle start, answered by a simulated mill or by a
+      "Cycle Start" tick in the Property panel;
+    - a step mode (Parameter 10 = 0).
+
+    New folders on HA5C v3: `data/machines/haas-ha5c/programs/2026-11-02_ha5c-manual-example-5-subroutine_v3/`
+    and `2026-11-02_ha5c-manual-example-3_v3/` (step mode). Both validators are clean. Their Isaac
+    Sim check waits until Daniel deems it necessary (2026-10-30). The missing parameter values go
+    back to the stakeholders.
+- [x] Worklog; PR #22 (opened 2026-11-03), for Daniel's review
 
 ## Phase 7 - The agent builds it, and the phase report
 - [ ] A fresh Claude Code session builds the T33901 from a dashboard job with several photos,
@@ -912,6 +1054,6 @@ Code.
   needs a contract change, discussed with the pipeline owners first. Left until the stakeholders
   ask or Phase 6 needs forces (Daniel, 2026-10-28; decision 0024, update). Meanwhile the spring
   return bounces before resting.
-- **The depth stop nut's place in a check file.** It sits at the twin's stop, the full stroke; in
-  `checks/adjustable_stop.usdc` the stop is half way and the nut stays put (decision 0027,
-  "Update: v5").
+- **The depth stop nut's place in a check file.** From v7 the nut and the stop agree at 43 mm,
+  where the photos show them (decision 0025). In `checks/adjustable_stop.usdc` the stop still moves
+  and the nut stays put (decision 0027, "Update: v5").

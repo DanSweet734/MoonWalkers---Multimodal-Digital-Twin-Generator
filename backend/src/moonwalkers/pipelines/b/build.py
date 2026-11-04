@@ -36,6 +36,7 @@ from moonwalkers.contracts.pipeline_result import (
     Source,
     TwinRecord,
 )
+from moonwalkers.control.controls_export import CONTROLS_FILE, controls_files, write_controls_folder
 from moonwalkers.control.export import write_program_folder
 from moonwalkers.control.program import ProgramFile, runnable_behaviors
 from moonwalkers.generators.base import ImageTo3DGenerator
@@ -323,6 +324,7 @@ def build_run(
                 "build a new version in a new run folder"
             )
         programs = program_files(results)  # a program that cannot run fails before any file
+        controls = controls_files(results)  # so do controls whose specs cannot be read
         export_twin(twin, results, path, DriveSettings.hold(0.0), data_dir)
         written = [path]
         try:
@@ -349,6 +351,10 @@ def build_run(
                 folder = run_dir / PROGRAMS_DIR / program.name
                 written.append(folder)
                 write_program_folder(folder, program, twin, results, data_dir)
+            for control in controls:  # level 3 for a manual machine (decision 0025)
+                folder = run_dir / PROGRAMS_DIR / control.name
+                written.append(folder)
+                write_controls_folder(folder, control, twin, results, data_dir)
         except BaseException:  # nothing is stored, so leave no files that claim otherwise
             for item in written:
                 shutil.rmtree(item) if item.is_dir() else item.unlink(missing_ok=True)
@@ -508,10 +514,17 @@ def _run_notes(
         "- no findings"
     ]
     programs = program_files(results)
-    if programs:
-        lines += ["", "## Programs (decision 0016)", ""]
+    controls = controls_files(results)
+    if programs or controls:
+        lines += ["", "## Programs and controls (decisions 0016, 0025)", ""]
         lines += [
             f"- `{PROGRAMS_DIR}/{p.name}/`: {p.behavior.name}; see its PROGRAM.md" for p in programs
+        ]
+        lines += [
+            f"- `{PROGRAMS_DIR}/{c.name}/`: "
+            + ", ".join(b.name for b in c.behaviors)
+            + "; see its PROGRAM.md"
+            for c in controls
         ]
     warnings = [i for r in results for i in r.issues if i.severity == "warning"]
     if views:
@@ -547,6 +560,11 @@ def _run_notes(
             f"- `{PROGRAMS_DIR}/{p.name}/program.usdc` with run_program.py (the program "
             "drives the spindle):"
             for p in programs
+        ),
+        *(
+            f"- `{PROGRAMS_DIR}/{c.name}/{CONTROLS_FILE}` with run_controls.py (scenarios and live "
+            "controls in the Property panel; level 3):"
+            for c in controls
         ),
         "- Success level reached (1-3):",
         "- Reviewer notes:",

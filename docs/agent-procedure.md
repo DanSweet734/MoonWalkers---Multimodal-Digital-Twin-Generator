@@ -142,6 +142,26 @@ the job is done. Otherwise the job waits for you:
      then writes `programs/<behaviour>/` in the run folder, which holds `program.usdc` and the
      runner for Isaac Sim.
    - Ready-made programs from the HA5C manual: `uv run python -m moonwalkers.control list`.
+   - **A manual machine** (no program, an operator at the controls; decision 0025) takes three
+     behaviours, recorded in this order. Each cites the manual's words for every rule:
+     - a `state_machine` for its switch. Its spec holds `inputs` (each with two states, off then
+       on, a Property-panel `attribute` and a `label`), `on_when`, `start_input`, `off_why` (why
+       the motor stays off without each condition) and `not_described` (changes the manual does
+       not describe, which a scenario may not make);
+     - a `lookup_table` of its speeds. Its spec holds `joint`, `switch`, `rows` of `rpm` (with
+       `belts` only where cited), `initial_rpm`, `table_why`, `change_only_when`,
+       `change_refused_why`, `run_up_s`, `coast_down_s` and `direction`. Label every value no
+       source gives in `stand_ins`;
+     - a `command_set` of the operator's commands. Its spec holds `switch`, `speed`, `quill` (the
+       joint the hand drives), `commands`, `release_why`, `live_pull_speed_m_s`, and `scenarios`
+       of steps (`set`, `set_speed`, `pull`, `release`, `wait`), plus `default_scenario` and
+       `stand_ins`.
+
+     The T33901's three, in `pipelines/b/grizzly_t33901.reference.json`, are the example to
+     follow. The tool checks each one's spec, and the command set against the two it names. The
+     build plans every scenario: a step the manual does not allow fails the build, with its
+     number. It then writes `programs/<command set>/`, which holds `controls.usdc` and its runner.
+     Also add an `add_issue` warning for the stand-ins, as the T33901's reference does.
 6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see.
 
 ## 4. Generate and inspect the geometry

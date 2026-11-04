@@ -114,6 +114,36 @@ def make_source() -> SourceFactory:
     return make
 
 
+T33901_REFERENCE = (
+    Path(__file__).parents[1] / "src/moonwalkers/pipelines/b/grizzly_t33901.reference.json"
+)
+PHOTO_STOP_M = 0.043  # the depth stop where the photos set it (decision 0025)
+
+
+@pytest.fixture
+def controlled_drill_press(fixed_time: datetime) -> tuple[TwinRecord, PipelineResult]:
+    """The box-and-cylinder drill press (Phase 1) with the T33901's three control behaviours
+    and the sources they cite (decision 0025), its depth stop at 43 mm and its spindle's cited
+    top speed, 2860 RPM."""
+    from moonwalkers.usd.primitive_drill_press import build_test_drill_press
+
+    reference = json.loads(T33901_REFERENCE.read_text(encoding="utf-8"))
+    twin, result = build_test_drill_press(fixed_time)
+    have = {s.source_id for s in result.sources}
+    sources = [Source.model_validate(s) for s in reference["sources"] if s["source_id"] not in have]
+    joints = []
+    for joint in result.joints:
+        if joint.joint_id == "quill_travel":
+            stop = joint.adjustable_stop.model_copy(update={"position": PHOTO_STOP_M})
+            joint = joint.model_copy(update={"adjustable_stop": stop})
+        elif joint.joint_id == "spindle_rotation":
+            joint = joint.model_copy(update={"max_velocity": 2860 * 2 * math.pi / 60})
+        joints.append(joint)
+    control = [ControlBehavior.model_validate(b) for b in reference["control"]]
+    update = {"control": control, "sources": [*result.sources, *sources], "joints": joints}
+    return twin, result.model_copy(update=update)
+
+
 @pytest.fixture(params=["json"])
 def kb(request: pytest.FixtureRequest, tmp_path: Path) -> KnowledgeBase:
     """Each knowledge base implementation in turn (add Neo4j here when it exists)."""

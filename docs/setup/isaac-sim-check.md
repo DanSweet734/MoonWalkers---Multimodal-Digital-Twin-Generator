@@ -185,6 +185,16 @@ Play the output should print `first physics step at t = ... (run 2)`.
 
 Details: decision 0016, "Isaac Sim check", and the folder's `PROGRAM.md`.
 
+**Acceleration and the mill's signals (decision 0026, not checked yet).** Folders written from
+2026-11-02 add three things, in the same steps 1 to 4:
+- the moves speed up and slow down;
+- the runner prints when the CNC relay closes and opens, and shows it in the joint's "CNC relay
+  (to the mill)" attribute (Property panel, "Raw USD Properties");
+- in a step-mode folder (`...\programs\2026-11-02_ha5c-manual-example-3_v3\`), tick "Hold for
+  Cycle Start" on the joint before Play, then tick "Cycle Start" at each wait.
+
+Use `...\programs\2026-11-02_ha5c-manual-example-5-subroutine_v3\` for auto continue.
+
 **If nothing moves on Play:**
 - If no `first physics step` line was printed, the callback did not fire. In the pasted script,
   change `API = "auto"` near the top to `API = "omni.physx"`, run it again, and press Play.
@@ -318,6 +328,82 @@ two sessions, 0 errors (`kit_20261024_010941.log`, `kit_20261024_011630.log`).
 - **File 10:** "the same as before". File 2 turned as before.
 - Files 5 and 6 were opened too. Files 1, 8 and 9 were not, and no recording was made. Run-003's
   `RUN.md` holds the full record.
+
+## 9. Drill-press plan, Phase 6: the T33901's controls (success level 3)
+`grizzly/t33901@v7` (run `2026-10-30_run-001`) carries the manual's controls (decision 0025):
+- the keyed switch;
+- the twelve speeds;
+- the operator's downfeed handles, in two scenarios and live from the Property panel.
+
+Its depth stop and nut are set at 43 mm, where the photos show them. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\grizzly-t33901\runs\2026-10-30_run-001\programs\operator-controls\`.
+Its `PROGRAM.md` lists the rules, the stand-ins and every step's time.
+
+1. **Open** that folder's `controls.usdc` (File > Open).
+2. **Start the recorder, then the runner.** Window > Script Editor:
+   - paste the whole of `record_joints.py` from the folder and click **Run**;
+   - then paste the whole of `run_controls.py` and click **Run**. It prints `grizzly/t33901@v7:
+     scenarios drilling-stroke, no-key-no-start, live; ...` and `driving the joints on each
+     physics step through simulation_manager; press Play`.
+3. **Find the controls.** In the Stage window, select `Controls` under `grizzly_t33901`. The
+   Property panel shows the group "MoonWalkers controls" with:
+   - "Plugged in", "Disabling key in", "ON/OFF paddle up" and "Pull the downfeed handles";
+   - "Spindle speed (RPM)" (a list of the twelve), "Pull speed (mm/s)" and "Scenario on Play";
+   - a second group "set by run_controls.py": "Motor running", "Spindle RPM commanded" and "Last
+     message".
+
+   They may sit under "Raw USD Properties". Where Isaac Sim shows custom attributes is not
+   confirmed yet. Leave "Scenario on Play" at `drilling-stroke`.
+4. **Press Play.** The console prints each step, and the panel's boxes tick as the scenario goes:
+   - **t = 0:** speed 790 RPM, power connected, key in, paddle up, "motor starts". The chuck comes
+     up to 790 RPM in 1 s, a stand-in. At 13 turns a second it may blur, or seem to turn slowly
+     backwards, as fast wheels do on video.
+   - **t = 2:** the quill goes down 30 mm in about 1 s, and the handles turn with it.
+   - **t = 3 to 12.5:** the cut, 1.34 mm/s. The quill reaches the depth stop at about 12.1 s,
+     where the nut meets the bracket.
+   - **t = 13.5:** "release the handles", and the spring returns the quill. It may bounce, as v3-v6
+     did.
+   - **t = 18.5:** paddle down, "motor stops". The spindle coasts to a stop by about 23.5 s.
+   - **t = 24.5:** key out, unplugged, then "scenario finished; the Property panel's controls are
+     live".
+5. **Then use the panel yourself:**
+   - tick "Plugged in", then "ON/OFF paddle up" without the key. The console says "the motor does
+     not start", quoting p. 6;
+   - untick the paddle, tick the key, tick the paddle: "motor starts";
+   - pick another speed while plugged in. It is refused, quoting p. 30, and the list goes back to
+     790;
+   - unplug, pick 340, plug in and start: the chuck turns more slowly;
+   - tick "Pull the downfeed handles": the quill goes down at the pull speed to the stop. Untick
+     it, and the spring returns the quill.
+6. **The other scenario.** Stop, set "Scenario on Play" to `no-key-no-start`, and press Play. The
+   paddle goes up at t = 0, but the spindle stays still. At t = 4, with the key in, it starts; it
+   stops at t = 7 and coasts down. Stop, then Play, always starts over.
+7. **Recordings** go to the folder's `recordings/`, named after the scenario, for example
+   `controls_drilling-stroke_<date>_<time>.csv`. They now hold each joint's velocity too. Claude
+   Code measures one with `uv run python -m moonwalkers.control compare <csv>
+   <folder>/trajectory_drilling-stroke.json`.
+8. **Report** what each scenario and the panel did, and which recordings to read.
+
+**Result on 2026-10-31 (Daniel, v7):** the switch, the speeds (790, 1420 and 2860 RPM held
+exactly) and both scenarios ran as planned. The live controls work under "Raw USD Properties". The
+quill swung about the hand (±12 mm, about every 2.8 s) and bounced on release: the stand-in hub's
+placeholder inertia, reflected through the link (decision 0025, "Isaac Sim check").
+
+**Re-check of v8** (run `2026-10-31_run-001`): the quill's spring is now simulated on the downfeed
+handles, where the T33901 has its spring (decision 0025, update of 2026-10-31). Use
+`...\runs\2026-10-31_run-001\programs\operator-controls\` and repeat steps 1 to 4 with
+`drilling-stroke`, with the recorder running. The quill should:
+- follow the hand: down 30 mm by t = 3 s, then slowly to the stop by t = 12.5 s, with no swing;
+- rest on the stop until t = 13.5 s;
+- return to the top in a fraction of a second when released, without bouncing.
+
+Then open `...\runs\2026-10-31_run-001\checks\spring_return.usdc` with that run's
+`record_joints.py`, press Play, and stop after a few seconds. The quill jumps to the stop and the
+spring brings it home, now without the bounces v3-v7 had.
+
+**If the panel shows no "MoonWalkers controls":** the scenarios still play from the console, so
+report that. **If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top
+of the pasted runner.
 
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are

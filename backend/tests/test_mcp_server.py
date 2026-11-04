@@ -407,6 +407,32 @@ async def test_a_recorded_program_is_checked_and_built_into_the_run(setup, photo
 
 
 @pytest.mark.anyio
+async def test_a_manual_machines_controls_are_checked_as_they_are_recorded(
+    setup, photo_run
+) -> None:
+    """The T33901's switch, speed table and operator's commands (decision 0025) go in through
+    add_control; a spec that cannot be read, or that names the wrong behaviour, is refused."""
+    server, _ = setup
+    reference = (
+        Path(__file__).parents[1] / "src/moonwalkers/pipelines/b/grizzly_t33901.reference.json"
+    )
+    switch, speed, operator = (
+        {**b, "citations": SHEET}
+        for b in json.loads(reference.read_text(encoding="utf-8"))["control"]
+    )
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        broken = {**switch, "spec": {**switch["spec"], "start_input": "lamp"}}
+        assert "start_input" in await fails(client, "add_control", run=run, **broken)
+        await ok(client, "add_control", run=run, **switch)
+        await ok(client, "add_control", run=run, **speed)
+        wrong = {**operator, "spec": {**operator["spec"], "speed": "power_switch"}}
+        assert "not a lookup_table" in await fails(client, "add_control", run=run, **wrong)
+        notes = await ok(client, "add_control", run=run, **operator)
+    assert notes["control"] == ["power_switch", "spindle_speed", "operator_controls"]
+
+
+@pytest.mark.anyio
 async def test_without_a_generator_root_only_earlier_meshes_can_be_used(photo_run, clock) -> None:
     server = create_server(Workspace(photo_run.data_dir, clock), UnconfiguredGenerator)
     async with Client(server) as client:
