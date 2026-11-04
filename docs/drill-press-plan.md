@@ -12,8 +12,9 @@
 the same day (below).
 
 **Status:** approved (PR #15). Phases 0 to 6 are done (PRs #15, #16, #18, #19, #20, #21, #22;
-PR #22 merged on 2026-11-03 with decisions 0025 and 0026 accepted). Phase 7 is next, on
-`feat/phase-7-agent-build`: its hand-off is below. Stop at the end of each phase, open a pull
+PR #22 merged on 2026-11-03 with decisions 0025 and 0026 accepted). **Phase 7 is done** on
+`feat/phase-7-agent-build` (PR #23, for Daniel's review): the plan's report is
+[docs/drill-press-report.md](drill-press-report.md). Stop at the end of each phase, open a pull
 request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
 
@@ -1071,13 +1072,21 @@ Worklog 2026-10-30.
     - slow suite: 5 passed (about 5 min);
     - dashboard: 15 passed.
 
-- [ ] A fresh Claude Code session builds the T33901, with its controls, from a dashboard job with several photos,
+- [x] A fresh Claude Code session builds the T33901, with its controls, from a dashboard job with several photos,
       through the tools and the updated procedure. A summary of its transcript goes in the
-      worklog, and the quote checker checks every quote.
-- [ ] A second request reuses the stored twin; the HA5C still builds and is reused
-- [ ] The phase report, like `docs/poc-report.md`: results per level, the decisions, the table of
-      known inaccuracies and stand-ins, and open questions
-- [ ] README status; CLAUDE.md's "Current phase" points to the next step; PR
+      worklog, and the quote checker checks every quote. **Done 2026-11-04:** `grizzly/t33901@v9`
+      (run `2026-11-04_run-001`), from a five-photo dashboard job; 140 of 141 quotes on their
+      pages; level 3 in Daniel's Isaac Sim check. His three findings in its stand-ins were fixed
+      in `v10` and `v11` (runs `-002` and `-004`), built by the Phase 7 chat from scripts in
+      `part_cutting/2026-11-04_spec/` (worklog 2026-11-04; report, section 3)
+- [x] A second request reuses the stored twin; the HA5C still builds and is reused (2026-11-04:
+      `request_twin` and the dashboard reuse v11 and HA5C v3; HA5C v3's run rebuilds in a scratch
+      copy to the same meshes)
+- [x] The phase report, like `docs/poc-report.md`: results per level, the decisions, the table of
+      known inaccuracies and stand-ins, and open questions:
+      [docs/drill-press-report.md](drill-press-report.md); the advisors' page
+      https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK (private until Daniel shares it)
+- [x] README status; CLAUDE.md's "Current phase" points to the next step; PR #23
 
 ## Decision records this plan needs
 They are numbered in the order the plan reaches them. The PoC report's section 8 lists the
@@ -1130,6 +1139,13 @@ Code.
   needs a contract change, discussed with the pipeline owners first. Left until the stakeholders
   ask or Phase 6 needs forces (Daniel, 2026-10-28; decision 0024, update). Meanwhile the spring
   return bounces before resting.
+- **The table crank in the base** (Daniel, 2026-11-04, `checks/unlocked.usdc` of v10): fixed in
+  the photos' pose, it passes up to 4 cm into the base at the table's lowest setting. Logged, on
+  his word; the next version's crank stand-in carries it as an issue (v11's does not).
+- **The tool gaps found by the agent's build** (report, section 7.3): no tool to correct a photo's
+  view or an issue, no zero-area or non-manifold check in `preview_twin`, `fit_circles` over
+  whole slices, and the dashboard's one-folder upload. A stale issue in v10 and v11 comes from
+  the second.
 - **The depth stop nut's place in a check file.** From v7 the nut and the stop agree at 43 mm,
   where the photos show them (decision 0025). In `checks/adjustable_stop.usdc` the stop still moves
   and the nut stays put (decision 0027, "Update: v5").

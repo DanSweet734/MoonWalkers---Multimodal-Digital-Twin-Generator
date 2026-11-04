@@ -126,10 +126,22 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     - `docs/how-a-twin-is-built.md`: eight Mermaid diagrams;
     - `docs/tool-guide.md`: every tool by name, with its purpose, inputs and outputs;
     - both linked from the README.
-- **Now: Phase 7, the agent builds the T33901, and the phase report** (branch
-  `feat/phase-7-agent-build`, from `main` after PR #22). Start from the plan's Phase 7 "Hand-off
-  (2026-11-03, from the Phase 6 chat)". Restart the MCP server (`/mcp`) before the agent's build:
-  Phase 6 changed `add_control`.
+- **Phase 7 is done, for Daniel's review** (PR #23, branch `feat/phase-7-agent-build`): the plan
+  is complete once it is merged.
+  - **The agent's build:** a fresh Claude Code session built `grizzly/t33901@v9` with its
+    controls from a five-photo dashboard job through the MCP tools. 140 of 141 quotes are on their
+    pages, and Daniel's Isaac Sim check reached level 3 on 2026-11-04.
+  - **v10 and v11:** they fix his three findings in v9's stand-ins (a straight crank, a missing
+    table height lock handle, a broken sheet under the table). They were built by the Phase 7
+    chat from scripts in `part_cutting/2026-11-04_spec/`, not by the agent, each dry-run first.
+    A request reuses v11.
+  - **The record:** the plan's report is `docs/drill-press-report.md`: results per level, every
+    run, the decisions, the table of inaccuracies and stand-ins, the open questions and the tool
+    gaps the agent found. The advisors' page is https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK,
+    private until Daniel shares it.
+  - **Next:** the advisors' and Daniel's choice of the next plan (report, section 7.1, item 4).
+    Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
+    the next version), and v10 and v11 carry a stale issue from the agent's notes.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

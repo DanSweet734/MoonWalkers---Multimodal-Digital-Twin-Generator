@@ -260,9 +260,21 @@ decision 0027 and its updates) is a worked example.
      views that a stand-in covers it. If a patch is refused or a hole stays, move the cut's edge:
      a patch cannot join two sheets of a part that touch at one point;
    - the size checks, and the issues the twin will carry.
-9. **Repeat** until every view is right and no hole is left. Then `submit_twin`, and run NVIDIA's
-   validator on `twin.usdc` and each check file (`uv run omni_asset_validate <file>` from
-   `backend/`): it finds what ours does not, such as non-manifold points.
+9. **Repeat** until every view is right and no hole is left.
+10. **Dry-run the build before `submit_twin`.** A submitted version is stored for good, and the
+    preview does not find zero-area faces or non-manifold points; the build and NVIDIA's
+    validator do. No tool does this yet, so from `backend/`:
+    - copy `kb/`, the machine's `inputs/` and the run folder into a scratch data folder with the
+      same layout, such as `data/scratch/<date>_dry-run/data/`;
+    - give the copied `request.json` its own `job_id`, or the store refuses it as already stored;
+    - `uv run python -m moonwalkers.pipelines.b build <copied run> --reference <copied
+      run>/reference_facts.json --data <scratch data> --gen-root <the generator folder>`;
+    - run both validators, `uv run python -m moonwalkers.usd.validate <file>` and
+      `uv run omni_asset_validate <file>`, on `twin.usdc`, every file in `checks/` and, with
+      controls, `programs/<command set>/controls.usdc`.
+
+    Fix what they report through the tools, and repeat. The T33901's agent build needed three dry
+    runs (worklog 2026-11-04). Then `submit_twin`, and validate its files the same way.
 
 ## 6. Submit and report
 1. **`submit_twin(run)`** stores the result and a new twin version (needs review), exports
