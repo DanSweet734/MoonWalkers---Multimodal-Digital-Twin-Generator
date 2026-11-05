@@ -1126,19 +1126,17 @@ Code.
   manual's, are untried.
 
 ## Still open
-- **The handle ratio.** It can be settled only by:
-  - a measurement on a real T33901: the handles' angle over the full 3-1/4 in stroke;
-  - Grizzly's technical support (contacting them is Daniel's call);
-  - photos or a video of a full stroke (research note).
-
-  Until then, a labelled stand-in.
+- **The handle ratio.** It stays a labelled stand-in: "This was just a test machine, leave this
+  as a stand in and we'll go more in depth like this with a machine we actually own" (the
+  meeting of 2026-10-29). A measurement would settle it: the handles' angle over the full
+  3-1/4 in stroke.
 - **The back of the T33901.** No photo of it exists in any source found, and there is no T33901
-  to photograph (Daniel, 2026-10-26). The generator's guess stays, logged as such, until the lab's
-  photos come or a source turns up.
-- **The parts' masses.** The manual gives only the total, 108 lb; authoring per-part estimates
-  needs a contract change, discussed with the pipeline owners first. Left until the stakeholders
-  ask or Phase 6 needs forces (Daniel, 2026-10-28; decision 0024, update). Meanwhile the spring
-  return bounces before resting.
+  to photograph (Daniel, 2026-10-26). The generator's guess stays, logged as such: "No one can
+  supply this, the estimate looks acceptable for this stage" (the meeting of 2026-10-29).
+- **The parts' masses.** The manual gives only the total, 108 lb. Wanted: "If possible we should
+  have the option to carry mass if the client requests it" (the meeting of 2026-10-29). It needs
+  a contract change, discussed with the pipeline owners first (decision 0024, update), and is
+  not started.
 - **The table crank in the base** (Daniel, 2026-11-04, `checks/unlocked.usdc` of v10): fixed in
   the photos' pose, it passes up to 4 cm into the base at the table's lowest setting. Logged, on
   his word; the next version's crank stand-in carries it as an issue (v11's does not).

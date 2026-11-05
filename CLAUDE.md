@@ -138,7 +138,10 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     run, the decisions, the table of inaccuracies and stand-ins, the open questions and the tool
     gaps the agent found. The advisors' page is https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK,
     which Daniel shares for the weekly meeting.
-  - **Next:** the advisors' and Daniel's choice of the next plan (report, section 7.1, item 4).
+  - **Next machines:** a Haas CNC machine and a type of robotic arm, Dr. Li's candidates for
+    real-world comparison. Daniel is to meet someone for their photos; the models are not
+    confirmed. What comes before that is the advisors' and Daniel's choice (report, section
+    7.1).
     Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
     the next version), and v10 and v11 carry a stale issue from the agent's notes.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
@@ -147,7 +150,10 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - use Claude Code and Anthropic's tools first; compatibility with other agents (Codex) comes
     later;
   - model the HA5C controller's acceleration and mill signals if possible. If not possible,
-    record why and bring it back to the stakeholders.
+    record why and bring it back to the stakeholders;
+  - **from the meeting of 2026-10-29** (report, section 7.1): an option to carry mass if a client
+    requests it; the T33901 was a test machine, so its handle ratio stays a stand-in and its
+    guessed back is acceptable for this stage, with that depth kept for a machine we own.
 - **Who owns what.**
   - Pipelines A, C and D belong to their owners (Ava, Kiran, Sarkis). They replace their stubs
     in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and
