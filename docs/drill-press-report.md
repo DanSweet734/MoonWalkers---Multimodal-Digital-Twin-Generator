@@ -1,6 +1,7 @@
 # MoonWalkers drill-press plan: report (the Grizzly T33901)
 
-**Status: draft for Daniel's review, 2026-11-04,** at the end of the drill-press plan's Phase 7
+**Status: final for the drill-press plan, 2026-11-04,** reviewed and approved by Daniel
+(PR #23), at the end of the plan's Phase 7
 ([docs/drill-press-plan.md](drill-press-plan.md)). Written by Claude Code with Daniel Sweet. As in
 the [PoC report](poc-report.md), each claim names its evidence: a decision record, a worklog, a
 run's `RUN.md` or a program's `PROGRAM.md` (run folders are under `data/`, which is not in the
@@ -23,7 +24,7 @@ its controls, from a dashboard job through the platform's tools.
   three control behaviours, and wrote the 17-part spec piece by piece. 140 of its 141 quotes are on
   their cited pages, and both validators are clean. Daniel's look in Isaac Sim found three stand-in
   faults, fixed in v10 and v11 by Claude Code in another session.
-- **Reuse:** a second request for the T33901 reuses the newest twin not rejected, now v11. The
+- **Reuse:** a second request for the T33901 reuses v11, which Daniel approved. The
   HA5C still builds and is reused (v3, approved).
 - **The main limits** (section 6): the back of the machine is guessed, the masses are
   placeholders, the handle ratio and several timings are stand-ins, and the HA5C's new control
@@ -109,6 +110,10 @@ dashboard 15 (plan, Phase 7 hand-off). Phase 7 changed no code.
   column (9-5/8 to 24 in floor to table, p. 9), the tilt (±45°) and the turn about its centre.
   The four table motions are locked by equal limits; `checks/unlocked.usdc` loosens them all.
   Daniel's look at `v11` (2026-11-04): the table "still drops with everything riding along".
+- **All the motions at once** (`checks/all_motions.usdc` of `v8`, 2026-11-02, with a recording):
+  the quill came home from 23 mm with no bounce and the handles followed at 57.09 rad/m; the
+  spindle turned at 30.0 deg/s; the four table joints held their settings exactly. Daniel:
+  "All looks good" (worklog 2026-11-02).
 
 ### Level 3: the manual's control drives it: met
 Decision 0025 gives the T33901 three control behaviours, each rule citing its page. A
@@ -215,10 +220,10 @@ dashboard (decision 0015).
 | `v8` | `2026-10-31_run-001` | Claude Code (CLI) | the spring on the pinion | **3** (2026-11-02) | needs review |
 | `v9` | `2026-11-04_run-001` | **a fresh Claude Code session through the MCP tools,** from a dashboard job | everything, written anew | 3 for the controls; three stand-in faults (2026-11-04) | needs review |
 | `v10` | `2026-11-04_run-002` | Claude Code (scripts), from v9 and v7 | crank, height lock handle, pivot lock, table | crank and lever right; the arm's underside broken (2026-11-04) | needs review |
-| `v11` | `2026-11-04_run-004` | Claude Code (scripts), from v10 | the arm's collar top | "looks a lot better" (2026-11-04) | needs review |
+| `v11` | `2026-11-04_run-004` | Claude Code (scripts), from v10 | the arm's collar top | "looks a lot better" (2026-11-04) | **approved** (Daniel, 2026-11-04): "Approved according to personal review" |
 
 `2026-11-04_run-003` is the dashboard's reuse job, not a build. A request reuses `v11`, the newest
-version not rejected.
+approved version.
 
 The metrics of Dr. Li's agentic-pipeline deck were again not measured formally. This plan's own
 measures are the size checks, the quote checker, the joint recorder and `compare`, which measures a
@@ -260,8 +265,8 @@ Code proposed each one, and Daniel reviewed and accepted it.
 - **The HA5C's control model** rests on stand-ins (decision 0026) and has not been run in Isaac
   Sim.
 - **People stay in the loop.** The agent asked about a mistagged photo. Daniel's checks in Isaac
-  Sim found what neither validator nor the agent's previews did. Of the eleven versions, only v2
-  has a review (rejected).
+  Sim found what neither validator nor the agent's previews did. Of the eleven versions, v11 is
+  approved and v2 rejected; the others have no review.
 
 ### Known inaccuracies and stand-ins, in one place
 For `grizzly/t33901@v11` unless the row says otherwise. Each part's stand-in carries a warning in
@@ -312,9 +317,9 @@ issues of earlier versions. The HA5C's rows from the PoC (PoC report, section 6)
    less dependent on a person's checks (7.3)?
 
 ### 7.2 For Daniel and the team
-1. **Reviews in the dashboard.** Every version but v2 (rejected) is unreviewed, so requests reuse
-   v11. A review records
-   which versions stand (decision 0015).
+1. **Reviews in the dashboard.** v11 is approved, so requests reuse it. v1, v3 to v10 have no
+   review; none is needed for that, since a review only records which versions stand (decision
+   0015).
 2. **The stroke timing** on any benchtop drill press, to replace the four timing stand-ins
    (decision 0025, "Daniel's timing replaces the stand-ins").
 3. **The HA5C's Isaac Sim check** of decision 0026, if deemed necessary

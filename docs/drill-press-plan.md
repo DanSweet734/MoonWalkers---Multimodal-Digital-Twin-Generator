@@ -13,7 +13,7 @@ the same day (below).
 
 **Status:** approved (PR #15). Phases 0 to 6 are done (PRs #15, #16, #18, #19, #20, #21, #22;
 PR #22 merged on 2026-11-03 with decisions 0025 and 0026 accepted). **Phase 7 is done** on
-`feat/phase-7-agent-build` (PR #23, for Daniel's review): the plan's report is
+`feat/phase-7-agent-build` (PR #23, approved by Daniel on 2026-11-04): the plan's report is
 [docs/drill-press-report.md](drill-press-report.md). Stop at the end of each phase, open a pull
 request, and wait for review before starting the next. The HA5C stays the reference twin: every
 phase keeps it building, and its tests passing.
@@ -1085,7 +1085,7 @@ Worklog 2026-10-30.
 - [x] The phase report, like `docs/poc-report.md`: results per level, the decisions, the table of
       known inaccuracies and stand-ins, and open questions:
       [docs/drill-press-report.md](drill-press-report.md); the advisors' page
-      https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK (private until Daniel shares it)
+      https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK (Daniel shares it)
 - [x] README status; CLAUDE.md's "Current phase" points to the next step; PR #23
 
 ## Decision records this plan needs
