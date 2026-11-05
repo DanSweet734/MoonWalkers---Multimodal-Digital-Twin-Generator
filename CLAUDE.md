@@ -139,8 +139,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     gaps the agent found. The advisors' page is https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK,
     which Daniel shares for the weekly meeting.
   - **Next machines:** a Haas CNC machine and a type of robotic arm, Dr. Li's candidates for
-    real-world comparison. Daniel is to meet someone for their photos; the models are not
-    confirmed. What comes before that is the advisors' and Daniel's choice (report, section
+    real-world comparison. Daniel is to meet someone for their photos and videos after the
+    week's meeting (none in hand yet), and will give the models after talking with Dr. Li and
+    his assistant. What comes before that is the advisors' and Daniel's choice (report, section
     7.1).
     Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
     the next version), and v10 and v11 carry a stale issue from the agent's notes.

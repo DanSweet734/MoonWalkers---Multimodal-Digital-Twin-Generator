@@ -306,8 +306,8 @@ issues of earlier versions. The HA5C's rows from the PoC (PoC report, section 6)
 ## 7. Open questions, by priority
 ### 7.1 For the advisors
 **Answered at the meeting of 2026-10-29.** These are the questions of the integration report of
-2026-10-28, with the answers as Daniel reported them on 2026-11-04. He said the meeting went well
-and the feedback was positive.
+2026-10-28, with the advisors' answers as Daniel reported them on 2026-11-04. He said the meeting
+went well and the feedback was positive.
 - **Masses:** "If possible we should have the option to carry mass if the client requests it." So
   an optional mass per part is wanted, not a change for every twin. It needs a contract change
   (an optional mass on a `Part` with its citations, v0.3.0), discussed with the pipeline owners
@@ -316,9 +316,10 @@ and the feedback was positive.
   more in depth like this with a machine we actually own." The stand-in stays.
 - **Photos of the back:** "No one can supply this, the estimate looks acceptable for this stage."
   The generator's guess stays, logged.
-- **The lab's photos:** Daniel is to meet someone to "hopefully get photos of two machines, a Haas
-  CNC machine and a type of robotic arm. These are the machines Dr. Li has put as our next
-  candidates for real world comparisons." The exact models are not confirmed.
+- **The lab's photos** (Dr. Li): after this week's meeting Daniel is to meet someone to "hopefully
+  get photos of two machines, a Haas CNC machine and a type of robotic arm. These are the machines
+  Dr. Li has put as our next candidates for real world comparisons." No photos or videos are in
+  hand yet. The exact models are not confirmed until he has talked with Dr. Li and his assistant.
 - **How twins are built:** the stakeholders asked for the specifics, with each tool's input and
   output (Daniel, 2026-11-03). Done: [how a twin is built](how-a-twin-is-built.md) and
   [the tool guide](tool-guide.md).
