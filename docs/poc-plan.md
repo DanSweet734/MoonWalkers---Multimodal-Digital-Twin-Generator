@@ -27,7 +27,7 @@ Plus: a second request for the same machine reuses the stored twin and the resul
       `machine_key`, versioning on user request (JSON files, decision 0008)
 - [x] Orchestrator turns `PipelineResult`(s) into a `TwinRecord`; `JobResult.reused_existing` works
       (reuse and versioning rules: decision 0009)
-- [x] Stubs for Pipelines A, C, D returning fixture `PipelineResult`s
+- [x] Stubs for Pipelines A, C, D returning fixture `PipelineResult`s (historical PoC; D now has an [Octopart adapter](setup/pipeline-d-octopart.md), with its fixture retained for tests)
 - [x] Tests for reuse and re-versioning; worklog; decision record for the store choice; PR
       (Oct 16, 2026: branch `feat/phase-1-kb-orchestrator`)
 

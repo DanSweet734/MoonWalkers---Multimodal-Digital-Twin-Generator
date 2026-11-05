@@ -1,0 +1,2 @@
+# Isolated browser environment only; do not add to the backend environment.
+playwright>=1.45,<2

@@ -423,10 +423,14 @@ def write_manual(photo_run) -> str:
 
 
 @pytest.mark.anyio
-async def test_a_document_is_refused_while_its_pipeline_is_not_in(setup, photo_run) -> None:
+async def test_a_document_is_refused_while_its_pipeline_is_not_in(
+    photo_run, fake_generator, clock
+) -> None:
     """Pipeline D's stub would answer with the HA5C's facts, so the document is refused before
     anything is generated (decision 0021)."""
-    server, _ = setup
+    server = create_server(
+        Workspace(photo_run.data_dir, clock), fake_generator, clock=clock, pipelines={}
+    )
     async with Client(server) as client:
         run = (await ok(client, "start_run", **MACHINE))["run"]
         message = await fails(

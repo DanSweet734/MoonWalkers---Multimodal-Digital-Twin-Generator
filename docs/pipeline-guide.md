@@ -4,6 +4,10 @@ For Ava (Pipeline A: nameplate photos, brochures and data sheets), Kiran (Pipeli
 drawings and schematics) and Sarkis (Pipeline D: PDF catalogues and online resources). How a
 pipeline runs is decision 0021, still to be agreed with you. Its questions for you are at its end.
 
+## Pipeline D status
+
+Pipeline D now registers an Octopart adapter. See [setup, inputs and limitations](setup/pipeline-d-octopart.md). Its real path is `backend/src/moonwalkers/pipelines/d/`. PDF catalog processing remains unsupported; the manual example below is illustrative, not an implemented PDF reader.
+
 ## What you build
 - **One class** that implements `Pipeline.run(job_id, sources) -> PipelineResult`
   (`backend/src/moonwalkers/pipelines/base.py`). It turns the job's inputs into one cited result.
