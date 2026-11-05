@@ -91,12 +91,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     is locked in every file but `checks/unlocked.usdc`, by design. Daniel's term: "downfeed
     handles". Review PNGs went under `docs/images/` by his exception to rule 5 (2026-10-27,
     review images only).
-- **Now: Phase 6, control logic (level 3), for the drill press and the HA5C** (branch
-  `feat/phase-6-control-logic`, from `main` after PR #21). Start from the plan's Phase 6
-  "Hand-off (2026-10-28, from the Phase 5 chat)": decision 0025 (the T33901's keyed switch,
-  twelve speeds and drilling stroke), a runner tested outside Isaac Sim (today's program runner
-  drives revolute joints only), the Isaac Sim check of level 3, and decision 0026 (the HA5C's
-  acceleration and mill signals).
+- **Phase 6 is done** (PR #22, merged on 2026-11-03; decisions 0025 and 0026 accepted by Daniel
+  the same day): control logic, level 3, for the drill press and the HA5C.
   - **Daniel's calls (2026-10-30):**
     - work in the proposed order and stop for checks;
     - time a stroke on any benchtop drill press, with stand-ins ready;
@@ -105,7 +101,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     - only the drill press is checked in Isaac Sim for now.
   - **Done (2026-10-30):**
     - the research note `docs/research/2026-10-30-control-logic-research.md`;
-    - decision 0025 (proposed): three control behaviours in the T33901's reference file, and one
+    - decision 0025: three control behaviours in the T33901's reference file, and one
       controller (`control/isaac_controls.py`) that Isaac Sim runs and `control/manual.py` plans
       with;
     - `grizzly/t33901@v7` (run `2026-10-30_run-001`, spec `geometry_spec_v7.json`), with
@@ -119,7 +115,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     - the stroke stays within 0.62 mm of the plan, and the quill returns in 0.28 s with no bounce;
     - the return is overdamped, logged in decision 0025;
     - his stroke timing, if he has it, replaces the stand-ins.
-  - **The HA5C (decision 0026, proposed, 2026-11-02):**
+  - **The HA5C (decision 0026, 2026-11-02):**
     - the acceleration is a 540 deg/s^2 stand-in, from the manuals' "usually 2X";
     - the CNC relay follows Parameter 1 and the codes;
     - the controller waits for cycle start (a simulated mill, or a tick in the Property panel),
@@ -130,7 +126,21 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     - `docs/how-a-twin-is-built.md`: eight Mermaid diagrams;
     - `docs/tool-guide.md`: every tool by name, with its purpose, inputs and outputs;
     - both linked from the README.
-  - **Next:** the Phase 6 PR.
+- **Phase 7 is done** (PR #23, approved by Daniel on 2026-11-04): the plan is complete.
+  - **The agent's build:** a fresh Claude Code session built `grizzly/t33901@v9` with its
+    controls from a five-photo dashboard job through the MCP tools. 140 of 141 quotes are on their
+    pages, and Daniel's Isaac Sim check reached level 3 on 2026-11-04.
+  - **v10 and v11:** they fix his three findings in v9's stand-ins (a straight crank, a missing
+    table height lock handle, a broken sheet under the table). They were built by the Phase 7
+    chat from scripts in `part_cutting/2026-11-04_spec/`, not by the agent, each dry-run first.
+    Daniel approved v11 on 2026-11-04, so requests reuse it.
+  - **The record:** the plan's report is `docs/drill-press-report.md`: results per level, every
+    run, the decisions, the table of inaccuracies and stand-ins, the open questions and the tool
+    gaps the agent found. The advisors' page is https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK,
+    which Daniel shares for the weekly meeting.
+  - **Next:** the advisors' and Daniel's choice of the next plan (report, section 7.1, item 4).
+    Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
+    the next version), and v10 and v11 carry a stale issue from the agent's notes.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;

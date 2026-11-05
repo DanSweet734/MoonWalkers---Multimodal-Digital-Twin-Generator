@@ -1,7 +1,7 @@
 # 0025 - Control logic for a manual machine: the T33901's switch, speeds and stroke
 
-- **Status:** proposed (by Claude Code in the drill-press plan's Phase 6, after Daniel's answers
-  of 2026-10-30)
+- **Status:** accepted (Daniel, 2026-11-03: "I accept decisions 0025 and 0026, all looks good." Merged in PR #22). Proposed by Claude Code in the drill-press
+  plan's Phase 6, after Daniel's answers of 2026-10-30
 - **Date:** 2026-10-30
 - **Decided by:** team (Daniel)
 
