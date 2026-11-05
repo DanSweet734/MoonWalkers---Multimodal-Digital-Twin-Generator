@@ -251,7 +251,8 @@ Code proposed each one, and Daniel reviewed and accepted it.
 ## 6. Limits, stated plainly
 - **The back is guessed.** The only whole-machine photos are front corners: no side, the back,
   the top or the underside is seen square on (v11's photo issue). No photo of the back exists, and
-  there is no T33901 to photograph (Daniel, 2026-10-26).
+  there is no T33901 to photograph (Daniel, 2026-10-26). The estimate is accepted for this stage
+  (meeting of 2026-10-29).
 - **The generator gets small and thin parts wrong.** Of v11's 19 parts, 13 are stand-ins, among
   them every handle, the chuck, the quill and the table. A stand-in matches the photos and the
   cited sizes, but none is the machine's real shape (decision 0027).
@@ -276,17 +277,17 @@ issues of earlier versions. The HA5C's rows from the PoC (PoC report, section 6)
 | What | How far off, or what it rests on | Evidence |
 |---|---|---|
 | Overall sizes | Width -5.7%, depth -5.9%; other cited lengths -5.9% to +5.8% (section 3) | v11's `RUN.md`; decision 0024 |
-| The back, top and underside | Guessed by the generator: not measurable | v11's photo issue; decision 0022 |
+| The back, top and underside | Guessed by the generator: not measurable. Accepted for this stage (2026-10-29) | v11's photo issue; decision 0022 |
 | The chuck guard | Clear plastic on the machine, an opaque solid in the twin | v11's issues; decision 0023 |
 | Seams and patched holes | 751 open seam edges; 13 holes closed flat (frame 6, bracket 3, arm 2, quill 1, guard 1), the surface under them unknown | v11's issues; decision 0027 |
 | Stand-in chuck | A JT3 key chuck of cylinders and three jaws; sizes read from Fig. 46 against the cited 1.85 in quill | v11's issues |
 | Stand-in quill | The cited 1.85 in, a plain cylinder; its length inside the head inferred | v11's issues |
 | Stand-in depth rod, nut and bracket | Sizes from Fig. 35, the photos and the mesh; no thread. The nut is set at 43 mm, measured from the photos (41.5-43.6 mm; the agent read 41.6 and 44 mm) | v11's issues; decision 0025 |
 | Stand-in hub and downfeed handles | The cited studs and knobs (p. 50); the hub's size, the angles and the 28° lean read from photos; plain knobs | v11's issues; worklog 2026-11-04 |
-| The handle-to-quill ratio | A stand-in: 270° over the stroke, 57.09 rad/m. No source gives the pinion | plan, "Still open"; decision 0019 |
+| The handle-to-quill ratio | A stand-in: 270° over the stroke, 57.09 rad/m. No source gives the pinion. It stays one on this test machine (2026-10-29) | plan, "Still open"; decision 0019 |
 | The handles at rest | 0.022 rad (1.3°) past the quill's top | decision 0025; v9's `RUN.md` |
 | The spring | Stiffness 600, damping 49 and a 0.03 rad preload are stand-ins. The return is overdamped: a 14-20 mm drop in the first 1/60 s, then home in 0.25-0.28 s | decisions 0018, 0025 |
-| Masses | Placeholders: only the 108 lb total is cited; per-part masses need a contract change | decision 0024, update |
+| Masses | Placeholders: only the 108 lb total is cited. An option to carry mass on a client's request is wanted (2026-10-29), and needs a contract change | decision 0024, update |
 | Stand-in table | The cited 11-1/4 in square, 1-1/16 in and four 9/16 in slots; rim, gutter and corners from `table_top.png`, taken at an angle; depths and post estimated | v11's issues |
 | Stand-in table crank | From Fig. 36 and the photos; no size cited. **Fixed, so at the table's lowest setting it passes up to 4 cm into the base.** The real crank turns as the table moves [INFERENCE]. This is in v10's and v11's `RUN.md`, but not yet an issue in the twin | v10's `RUN.md`; worklog 2026-11-04 |
 | Stand-in pivot lock and height lock handles | The parts list's folding handles (parts 122 and 105); the levers' lengths read from "70L" and "90L" [INFERENCE] | v11's issues |
@@ -304,17 +305,32 @@ issues of earlier versions. The HA5C's rows from the PoC (PoC report, section 6)
 
 ## 7. Open questions, by priority
 ### 7.1 For the advisors
-1. **Real masses.** A per-part mass needs a contract change (an optional mass on a `Part` with its
-   citations, v0.3.0). That has to be discussed with the pipeline owners first, and no source
-   gives the parts' masses: estimates would be labelled stand-ins. Is it worth doing now, or when
-   a control needs forces (decision 0024, update)?
-2. **The HA5C's real parameters.** Can the lab, or a contact at Haas, give Parameters 1, 18, 19 and
-   44 from a real HA5C control? They would replace decision 0026's stand-ins.
-3. **A real drill press.** The lab's photos and checks would settle the back, the handle ratio,
-   the crank's reach, and the stroke's timings. Is a T33901, or a similar benchtop drill press,
-   within reach?
-4. **What comes next:** a second machine, the teammates' pipelines, or making the agent's tools
-   less dependent on a person's checks (7.3)?
+**Answered at the meeting of 2026-10-29.** These are the questions of the integration report of
+2026-10-28, with the advisors' answers as Daniel reported them on 2026-11-04. He said the meeting
+went well and the feedback was positive.
+- **Masses:** "If possible we should have the option to carry mass if the client requests it." So
+  an optional mass per part is wanted, not a change for every twin. It needs a contract change
+  (an optional mass on a `Part` with its citations, v0.3.0), discussed with the pipeline owners
+  first. No source gives the T33901's parts' masses, so its values would be labelled estimates.
+- **The handles' gearing:** "This was just a test machine, leave this as a stand in and we'll go
+  more in depth like this with a machine we actually own." The stand-in stays.
+- **Photos of the back:** "No one can supply this, the estimate looks acceptable for this stage."
+  The generator's guess stays, logged.
+- **The lab's photos** (Dr. Li): after this week's meeting Daniel is to meet someone to "hopefully
+  get photos of two machines, a Haas CNC machine and a type of robotic arm. These are the machines
+  Dr. Li has put as our next candidates for real world comparisons." No photos or videos are in
+  hand yet. The exact models are not confirmed until he has talked with Dr. Li and his assistant.
+- **How twins are built:** the stakeholders asked for the specifics, with each tool's input and
+  output (Daniel, 2026-11-03). Done: [how a twin is built](how-a-twin-is-built.md) and
+  [the tool guide](tool-guide.md).
+
+**Still to ask, at this week's meeting:**
+1. **The HA5C's real parameters.** Can the lab, or a contact at Haas, give Parameters 1, 18, 19 and
+   44 from a real HA5C control? They would replace decision 0026's stand-ins. Daniel: "This would
+   have to be a question to ask the stakeholders this week."
+2. **What comes next, while the photos are awaited:** the option to carry mass, closing the gaps
+   the agent found so that it needs fewer checks by a person (7.3), or preparing for the next
+   machines?
 
 ### 7.2 For Daniel and the team
 1. **Reviews in the dashboard.** v11 is approved, so requests reuse it. v1, v3 to v10 have no
@@ -345,6 +361,7 @@ None fixed in this phase (worklog 2026-11-04):
    command line, as decision 0028 expected.
 
 ## 8. Next
-The plan's four goals are met for the T33901, and the HA5C keeps building. What comes next is for
-the advisors and Daniel to choose (7.1, item 4). The record for a new chat: this report,
+The plan's four goals are met for the T33901, and the HA5C keeps building. The next machines for
+real-world comparison are a Haas CNC machine and a robotic arm, Dr. Li's candidates, once their
+photos come. What comes before that is for the advisors and Daniel to choose (7.1, item 2). The record for a new chat: this report,
 [docs/drill-press-plan.md](drill-press-plan.md) and CLAUDE.md's "Current phase".
