@@ -45,7 +45,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     merged before Ava, Kiran and Sarkis could answer, to start Phase 3. A change they ask for gets
     its own decision record.
   - **Daniel's direction (2026-10-23):** a loosened table drops, as a similar drill press's did
-    (decision 0018). The `Sarkis` branch was only an access test: ignore it.
+    (decision 0018).
 - **Phase 3 is done** (PR #19, merged on 2026-10-24). Decision 0022 (accepted by Daniel): each
   machine photo's view in the operator's words and its use (generator or evidence) live in
   `request.json`; `pipelines/b/photos.py` alone maps them to the generator's slots; one photo
@@ -138,13 +138,16 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     run, the decisions, the table of inaccuracies and stand-ins, the open questions and the tool
     gaps the agent found. The advisors' page is https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK,
     which Daniel shares for the weekly meeting.
-  - **Next machines:** a Haas CNC machine and a type of robotic arm, Dr. Li's candidates for
-    real-world comparison. Daniel is to meet someone for their photos and videos after the
-    week's meeting (none in hand yet), and will give the models after talking with Dr. Li and
-    his assistant. What comes before that is the advisors' and Daniel's choice (report, section
-    7.1).
     Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
     the next version), and v10 and v11 carry a stale issue from the agent's notes.
+- **Next: the lab's machines** (meeting of 2026-11-05; report, section 7.1). No plan is written yet.
+  - **Daniel photographed three, with nameplates:** a "ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper
+    and CobotPump" with a "Realhand L20 Dexterous Robotic Hand" attached, a Haas VF-3 and a Haas
+    TM-1. The order is ours to choose. Public sources: `docs/research/2026-11-06-lab-machines.md`.
+  - **The repository is public:** keep nameplates' serial numbers in `data/`, out of commits.
+  - **Order of work (Daniel, 2026-11-06):** update the record, then a setup guide for the
+    teammates, then the machines from photos. Video input for Pipeline B starts once the photo
+    results are acceptable.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
   - get as close to the real machine as the sources allow, and log every inaccuracy;
@@ -154,7 +157,10 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     record why and bring it back to the stakeholders;
   - **from the meeting of 2026-10-29** (report, section 7.1): an option to carry mass if a client
     requests it; the T33901 was a test machine, so its handle ratio stays a stand-in and its
-    guessed back is acceptable for this stage, with that depth kept for a machine we own.
+    guessed back is acceptable for this stage, with that depth kept for a machine we own;
+  - **from the meeting of 2026-11-05:** masses are a bonus, not a priority (Dr. Lu); when an agent
+    cannot reach a source, the user is prompted, with an option to skip it (Dr. Li,
+    `docs/agent-procedure.md`, step 2); the lab has no HA5C, so decision 0026's stand-ins stay.
 - **Who owns what.**
   - Pipelines A, C and D belong to their owners (Ava, Kiran, Sarkis). They replace their stubs
     in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and

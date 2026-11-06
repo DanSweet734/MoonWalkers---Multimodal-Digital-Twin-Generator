@@ -324,13 +324,24 @@ went well and the feedback was positive.
   output (Daniel, 2026-11-03). Done: [how a twin is built](how-a-twin-is-built.md) and
   [the tool guide](tool-guide.md).
 
-**Still to ask, at this week's meeting:**
-1. **The HA5C's real parameters.** Can the lab, or a contact at Haas, give Parameters 1, 18, 19 and
-   44 from a real HA5C control? They would replace decision 0026's stand-ins. Daniel: "This would
-   have to be a question to ask the stakeholders this week."
-2. **What comes next, while the photos are awaited:** the option to carry mass, closing the gaps
-   the agent found so that it needs fewer checks by a person (7.3), or preparing for the next
-   machines?
+**Answered at the meeting of 2026-11-05,** as Daniel reported on 2026-11-06. He said it went well
+and that the advisors like the progress.
+- **The HA5C's real parameters:** "The lab cannot provide the Haas HA5C as there isn't one in
+  there. It was just a test machine." Decision 0026's stand-ins stay.
+- **What comes next:** the lab's photos came, so the question of what to do while waiting for them
+  is closed. Daniel: "we are cleared to start working on these machines using photos."
+- **The lab's machines:** Daniel photographed three, with their nameplates. Dr. Li's "Haas CNC
+  machine" could be either of two, so he took both:
+  - a "ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper and CobotPump", with a "Realhand L20 Dexterous
+    Robotic Hand" attached;
+  - a Haas VF-3;
+  - a Haas TM-1.
+- **Which machine first:** "the decision is up to us. Eventually they'd like both."
+- **Video:** once the photo results are acceptable, video input for Pipeline B can begin.
+- **Masses** (Dr. Lu): "a feature that do not need prioritization, moreso a bonus if that can be
+  added." This lowers the priority of the 2026-10-29 answer above.
+- **Sources an agent cannot reach** (Dr. Li): "it would be ok if the user was prompted", and "it
+  would also be nice to have an option to skip it."
 
 ### 7.2 For Daniel and the team
 1. **Reviews in the dashboard.** v11 is approved, so requests reuse it. v1, v3 to v10 have no
@@ -362,6 +373,7 @@ None fixed in this phase (worklog 2026-11-04):
 
 ## 8. Next
 The plan's four goals are met for the T33901, and the HA5C keeps building. The next machines for
-real-world comparison are a Haas CNC machine and a robotic arm, Dr. Li's candidates, once their
-photos come. What comes before that is for the advisors and Daniel to choose (7.1, item 2). The record for a new chat: this report,
+real-world comparison are the lab's ReBeL arm, Haas VF-3 and Haas TM-1 (7.1), which need a plan of
+their own. What public sources exist for each:
+[the research note](research/2026-11-06-lab-machines.md). The record for a new chat: this report,
 [docs/drill-press-plan.md](drill-press-plan.md) and CLAUDE.md's "Current phase".
