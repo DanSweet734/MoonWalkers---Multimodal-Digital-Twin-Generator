@@ -127,7 +127,9 @@ job. Read-only tools change nothing.
 **Not yet used in an agent's build** (2026-11-09): `set_photo`, `preview_cutouts`,
 `correct_issue`, `dry_run_twin`, `fit_circles`'s box and direction, and `preview_twin`'s mesh
 warnings. Their tests pass, and `dry_run_twin`'s steps dry-ran v11 clean. The ReBeL arm (the lab's
-plan, Phase 2) is their first use, and its report will say how they did.
+plan, Phase 2) is their first use, and its report will say how they did. Once the agent's build
+in Phase 8 has used them, this note is replaced by how each did (the plan's Phase 8, on Daniel's
+word, 2026-11-09).
 
 ## Commands people run
 From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.

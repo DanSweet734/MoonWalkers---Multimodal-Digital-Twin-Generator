@@ -409,7 +409,8 @@ at; the new tools used in Phase 2.
 - [ ] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
 - [ ] The score: a small scorer for the measures above. The shape distance needs the ROS model's
       `.dae` meshes read, which may need an install (asked first).
-- [ ] Decision records, worklog, `RUN.md`, PR.
+- [ ] Decision records, worklog, `RUN.md`, PR. The PR says which of Phase 1's new tools were
+      used and how they did, for the tool guide (Phase 8).
 
 **Measured by:** the scorecard's sizes, photo match, shape, parts and joints, axes and ranges.
 
@@ -488,6 +489,10 @@ the commanded poses against the plan, and the hand's match with the photos.
 - [ ] The plan's report: results per machine and level, the scorecard, the inaccuracies, the open
       questions and the tool gaps; a new advisors' page in the drill-press page's design.
 - [ ] A hand-off for the video plan.
+- [ ] **The tool guide brought up to date** (Daniel, 2026-11-09). Once the agent's build has used
+      Phase 1's tools, `docs/tool-guide.md` replaces its note "Not yet used in an agent's build"
+      with how each did, citing the runs. A tool still unused, or one that fell short, stays
+      named there with the reason.
 
 **Measured by:** the scorecard for the agent's build, beside the chat's builds.
 
@@ -509,6 +514,17 @@ can go again if a phase finds a need (2026-11-09). Items 1 and 2 are the likelie
 haascnc.com refuses scripts (403):
 - the TM-1's and the VF-3's specification pages, or archived sheets for 2006 and 2014;
 - the mill operator's manual for each machine's control, with its G and M code chapters;
+- links found by a search on 2026-11-09, for Daniel to open (not opened by a script; the
+  search's summaries are not used as sources):
+  - https://www.haascnc.com/machines/vertical-mills/toolroom-mills/models/tm-1.html
+  - https://haascnc.com/content/dam/haascnc/machines/vertical-mills/toolroom/assets/Vertical_ToolroomSeries.pdf
+  - https://www.haascnc.com/owners/pre-install-guide/mills-pre-install/TM-1.html
+  - https://www.haascnc.com/machines/vertical-mills/vf-series/models/medium/vf-3.html
+  - https://www.haascnc.com/service/online-operator-s-manuals/mill-operator-s-manual.html (the
+    one that answered 403 on 2026-11-06)
+  - https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english_mill_interactive_manual_print_version_2023.pdf
+  - https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english---mill-ngc---operator's-manual---2021.pdf
+  - the online chapters "17 - Mill - G-Codes" and "18 - Mill - M-Codes" under the manual's page;
 - the trunnion's page once its model is known, and how a Haas rotary is set up as a 4th and 5th
   axis.
 
