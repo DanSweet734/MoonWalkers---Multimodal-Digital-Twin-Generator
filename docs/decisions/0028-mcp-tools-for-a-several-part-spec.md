@@ -5,6 +5,7 @@
 - **Date:** 2026-10-28
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0013 (the MCP server: one tool per platform action, state in the run folder)
+- **Amended by:** decision 0030 (the tools the drill press's agent lacked, 2026-11-09)
 
 ## Context
 Decision 0027 gave Pipeline B a geometry spec of several parts and joints (`PartsSpec`). The

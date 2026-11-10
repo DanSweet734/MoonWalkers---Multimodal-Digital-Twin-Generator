@@ -9,12 +9,17 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 ## Current phase: the lab's machines plan, Phase 1 (the drill-press plan is done)
 **Start here:** `docs/lab-machines-plan.md`. The plan was approved and merged on 2026-11-09 (PR
 #27; Daniel's answers in its "Decided on review"). Phase 1 (file the photos and sources, close the
-tool gaps) is under way on branch `feat/lab-phase-1-photos-and-tools`, in the plan chat, on
-Daniel's word.
-- **Done:** the photos are filed. Daniel chose SAM for cutting the machine out, with crop boxes and
-  drawn masks as options. The per-photo cut-out (decision 0029, accepted), its preview and
-  `set_photo` (tool gap 1) are built.
-- **Left:** tool gaps 2, 4, 5, 6 and 7, and Haas's pages, which Daniel saves.
+tool gaps) is done on branch `feat/lab-phase-1-photos-and-tools`, built in the plan chat on
+Daniel's word, and waits for his review in its pull request.
+- **Done:**
+  - the photos are filed;
+  - Daniel chose SAM for cutting the machine out, with crop boxes and drawn masks as options. The
+    per-photo cut-out (decision 0029, accepted), its preview and `set_photo` (tool gap 1) are
+    built;
+  - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, proposed). The MCP server has 28
+    tools: `correct_issue`, and `fit_circles` with `within` and a direction; mesh warnings in
+    `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
+- **Left:** Haas's pages, which Daniel saves; then Phase 2, the ReBeL arm, in a new chat.
 
 The history below is the record of the PoC and the drill-press plan.
 

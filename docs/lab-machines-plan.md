@@ -385,7 +385,8 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
     folders, which the job took from where they were filed).
 
   Items 2 and 6 were added on Daniel's word (2026-11-09).
-- [ ] Decision record (the tools, amending 0028), worklog, PR.
+- [ ] Decision record (the tools, amending 0028), worklog, PR. (2026-11-09: decision 0030
+      proposed, the worklog written, the PR opened for Daniel's review.)
 
 **Measured by:** the tests; every copied photo's SHA-256 matching its original; the masks looked
 at; the new tools used in Phase 2.
