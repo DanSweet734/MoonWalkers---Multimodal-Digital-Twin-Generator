@@ -237,7 +237,8 @@ the job is done. Otherwise the job waits for you:
 2. **`set_scale(run)`** uses the cited `center_height`. Pass `base_z` only if the base is not the
    lowest point.
 3. **`preview_twin(run)`** stores nothing. Open the assembled, body and spindle PNGs, and read
-   the size checks: a difference above 10% is a warning.
+   the size checks: a difference above 10% is a warning. `mesh_faults` lists what NVIDIA's
+   validator would warn about in the body's or the spindle's mesh; it should be empty.
 4. You can call `add_joint` and `set_scale` again until the preview is right. Once you submit, the
    run is fixed.
 
@@ -283,11 +284,16 @@ decision 0027 and its updates) is a worked example.
      entry on that part (`near` = the hole's centre) through `set_spec_part`, or check in the
      views that a stand-in covers it. If a patch is refused or a hole stays, move the cut's edge:
      a patch cannot join two sheets of a part that touch at one point;
+   - **a part NVIDIA's validator would warn about** is among the issues ("NVIDIA's asset
+     validator would warn about ..."): zero-area faces, edges with more than two faces, or
+     non-manifold points, the points given in model units after orienting, where the cut list's
+     boxes are. Move the cut boundary or the stand-in's size that makes them, by a millimetre or
+     two: the T33901's table rim at exactly 10 mm gave 40 zero-area faces, at 10.5 mm none;
    - the size checks, and the issues the twin will carry.
-9. **Repeat** until every view is right and no hole is left.
+9. **Repeat** until every view is right, no hole is left, and no part has a mesh warning.
 10. **Dry-run the build before `submit_twin`.** A submitted version is stored for good, and the
-    preview does not find zero-area faces or non-manifold points; the build and NVIDIA's
-    validator do. No tool does this yet, so from `backend/`:
+    preview now finds zero-area faces and non-manifold points (step 8), but only the build
+    checks the exported files as a whole. No tool does this yet, so from `backend/`:
     - copy `kb/`, the machine's `inputs/` and the run folder into a scratch data folder with the
       same layout, such as `data/scratch/<date>_dry-run/data/`;
     - give the copied `request.json` its own `job_id`, or the store refuses it as already stored;

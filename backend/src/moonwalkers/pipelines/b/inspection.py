@@ -33,11 +33,13 @@ from moonwalkers.contracts.pipeline_result import Issue
 from .assemble import AssembledParts, AxisName, GeometrySpec, Vec3, assemble
 from .mesh_tools import (
     CircleFit,
+    MeshFaults,
     ProfileSlice,
     TipSlab,
     fit_circles,
     footprint_angle,
     load_mesh,
+    mesh_faults,
     orientation_matrix,
     radial_profile,
     render_views,
@@ -100,6 +102,56 @@ class Inspection:
 class Preview:
     parts: AssembledParts
     views: dict[str, Path]  # "assembled", "body" and "spindle" view sheets
+    mesh_faults: list[Issue] = field(default_factory=list)  # what NVIDIA's validator would warn
+
+
+FAULT_POINTS_LISTED = 8  # non-manifold points listed in a warning; the count gives the rest
+
+
+def fault_issue(part_id: str, faults: MeshFaults, origin: Vec3 | None, scale: float) -> Issue:
+    """A warning naming what NVIDIA's asset validator would warn about in a part's mesh, with
+    its first non-manifold points: in model units, after orienting, when ``origin`` is given
+    (where a cut list's boxes are), else in metres (lab's machines plan, tool gap 5)."""
+    found = []
+    if faults.zero_area_faces:
+        found.append(f"{faults.zero_area_faces} zero-area face(s)")
+    if faults.nonmanifold_edges:
+        found.append(f"{faults.nonmanifold_edges} edge(s) with more than two faces")
+    if faults.nonmanifold_points:
+        points = faults.nonmanifold_points[:FAULT_POINTS_LISTED]
+        if origin is not None:
+            points = [tuple(p / scale + o for p, o in zip(q, origin, strict=True)) for q in points]
+        unit = "model units, oriented" if origin is not None else "m"
+        listed = ", ".join(_fmt(p) for p in points)  # type: ignore[arg-type]
+        more = len(faults.nonmanifold_points) - len(points)
+        extra = f" and {more} more" if more > 0 else ""
+        found.append(
+            f"{len(faults.nonmanifold_points)} non-manifold point(s) ({unit}): {listed}{extra}"
+        )
+    if not faults.winding_consistent:
+        found.append("neighbouring faces wound opposite ways")
+    return Issue(
+        severity="warning",
+        ref=part_id,
+        message=(
+            f"Part '{part_id}': NVIDIA's asset validator would warn about {'; '.join(found)}. "
+            "Usually a cut boundary or a stand-in's edge on the meshing grid, or two pieces "
+            "touching at a point: move it slightly and preview again."
+        ),
+    )
+
+
+def part_fault_issues(
+    paths: Sequence[tuple[str, Path]], origin: Vec3 | None = None, scale: float = 1.0
+) -> list[Issue]:
+    """``fault_issue`` for each part file whose mesh is not clean, read as the exporter reads
+    it."""
+    issues = []
+    for part_id, path in paths:
+        faults = mesh_faults(load_mesh(path))
+        if not faults.clean:
+            issues.append(fault_issue(part_id, faults, origin, scale))
+    return issues
 
 
 def inspect_mesh(
@@ -236,7 +288,8 @@ def preview_parts(mesh_path: Path, spec: GeometrySpec, out_dir: Path) -> Preview
         "body": render_views(body, out_dir / "body"),
         "spindle": render_views(spindle, out_dir / "spindle"),
     }
-    return Preview(parts, {name: paths["sheet"] for name, paths in views.items()})
+    faults = part_fault_issues([("body", parts.body_path), ("spindle", parts.spindle_path)])
+    return Preview(parts, {name: paths["sheet"] for name, paths in views.items()}, faults)
 
 
 @dataclass(frozen=True)
@@ -247,7 +300,7 @@ class PartsPreview:
     views: dict[str, Path]  # cuts, parts, part_<id>, on_<slot>_photo
     photos: list[FittedPhoto]
     size_checks: list[Issue]
-    issues: list[Issue]  # stand-ins, removed parts, inaccuracies, pieces, seams
+    issues: list[Issue]  # stand-ins, removed parts, inaccuracies, pieces, seams, mesh faults
     holes: list[OpenLoop]  # open loops across a removed part: patch them, or cover them
 
 
@@ -274,7 +327,11 @@ def preview_parts_spec(
     ]
     removed = {p.part_id for p in spec.parts if p.kind == "removed"}
     holes = [loop for loop in open_loops(mesh, spec) if removed & set(loop.across)]
-    return PartsPreview(model, views, fitted, checks, parts_issues(spec, model), holes)
+    faults = part_fault_issues(
+        [(p.part_id, p.path) for p in model.parts], model.origin_model_units, model.scale_factor
+    )
+    issues = [*parts_issues(spec, model), *faults]
+    return PartsPreview(model, views, fitted, checks, issues, holes)
 
 
 def format_parts_preview(preview: PartsPreview) -> str:
@@ -386,6 +443,7 @@ def format_preview(preview: Preview, reference: ReferenceFacts | None = None) ->
             f"{_fmt(p.spindle_bounds_m[1])}"
         ),
         *(f"{i.severity}: {i.message}" for i in size_checks(p, reference)),
+        *(f"{i.severity}: {i.message}" for i in preview.mesh_faults),
         *(f"views ({name}): {path}" for name, path in preview.views.items()),
     ]
     return "\n".join(lines)

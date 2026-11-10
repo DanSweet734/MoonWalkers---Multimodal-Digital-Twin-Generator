@@ -116,7 +116,7 @@ job. Read-only tools change nothing.
 | 22 | `remove_spec_entry` | Take a part or joint out of the spec | Run, which, id | The spec's status |
 | 23 | `set_scale_length` | Scale by any cited length | Run, fact, measured length, how | The spec's status |
 | 24 | `set_size_checks` | Compare more cited lengths with the model | Run, checks | The spec's status |
-| 25 | `preview_twin` | Try the spec without storing anything | Run | Parts, sizes, holes and PNG views to look at |
+| 25 | `preview_twin` | Try the spec without storing anything | Run | Parts, sizes, holes, PNG views to look at, and each part NVIDIA's validator would warn about (zero-area faces, non-manifold points) |
 | 26 | `submit_twin` | Build and store the twin, or reuse it | Run | The twin version, its files, and the validators' findings |
 
 ## Commands people run

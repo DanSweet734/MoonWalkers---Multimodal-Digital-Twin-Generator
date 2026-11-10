@@ -536,3 +536,84 @@ def face_groups(mesh: trimesh.Trimesh, join: np.ndarray | None = None) -> np.nda
         if np.array_equal(hooked, label):
             return np.unique(label, return_inverse=True)[1]
         label = hooked
+
+
+# --------------------------------------------------------------------------------- mesh faults
+@dataclass(frozen=True)
+class MeshFaults:
+    """What NVIDIA's asset validator would warn about in one mesh (omniverse-asset-validator
+    1.18.0, ``_geometry_checker.py``): faces of zero area (``ZeroAreaFaceChecker``), and edges
+    with more than two faces, points whose faces form more than one fan (or that no face uses),
+    and neighbouring faces wound opposite ways (``ManifoldChecker``). Found the same way, by
+    vertex index, as the exporter writes them (lab's machines plan, tool gap 5)."""
+
+    zero_area_faces: int
+    nonmanifold_edges: int
+    nonmanifold_points: tuple[tuple[float, float, float], ...]  # in the mesh's units
+    winding_consistent: bool
+
+    @property
+    def clean(self) -> bool:
+        return (
+            not self.zero_area_faces
+            and not self.nonmanifold_edges
+            and not self.nonmanifold_points
+            and self.winding_consistent
+        )
+
+
+def mesh_faults(mesh: trimesh.Trimesh) -> MeshFaults:
+    """The checks of ``MeshFaults``, on a triangle mesh. Areas are computed in 32-bit floats,
+    as the validator computes them from USD's float points, so a face is zero exactly when it is
+    there."""
+    vertices = np.asarray(mesh.vertices, dtype=np.float32)
+    faces = np.asarray(mesh.faces, dtype=np.int64)
+    if len(faces) == 0:
+        return MeshFaults(0, 0, (), True)
+    a, b, c = (vertices[faces[:, k]] for k in range(3))
+    cross = np.cross(b - a, c - a)
+    zero_area = int(np.all(cross == 0, axis=1).sum())
+
+    # Every face's three directed edges; corner 3f + k is face f's k-th vertex.
+    count = len(faces)
+    starts = faces.T.reshape(-1)  # edge (f, k) runs from faces[f, k] to faces[f, (k + 1) % 3]
+    ends = faces[:, [1, 2, 0]].T.reshape(-1)
+    face_of = np.tile(np.arange(count), 3)
+    k = np.repeat(np.arange(3), count)
+    start_corner = 3 * face_of + k
+    end_corner = 3 * face_of + (k + 1) % 3
+    keys = np.stack([np.minimum(starts, ends), np.maximum(starts, ends)], axis=1)
+    _, inverse, sizes = np.unique(keys, axis=0, return_inverse=True, return_counts=True)
+    inverse = inverse.reshape(-1)
+    nonmanifold_edges = int((sizes > 2).sum())
+
+    # Edges shared by exactly two faces: their two directed copies.
+    order = np.argsort(inverse, kind="stable")
+    paired = order[sizes[inverse[order]] == 2]
+    first, second = paired[0::2], paired[1::2]
+    winding_consistent = bool(np.all(starts[first] != starts[second]))
+
+    # Join the faces round each point that share an edge through it (union-find on corners).
+    parent = np.arange(3 * count)
+
+    def root(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = int(parent[i])
+        return i
+
+    def corner(edge: np.ndarray, vertex: np.ndarray) -> np.ndarray:
+        return np.where(starts[edge] == vertex, start_corner[edge], end_corner[edge])
+
+    for end in (starts[first], ends[first]):
+        for x, y in zip(corner(first, end), corner(second, end), strict=True):
+            parent[root(int(x))] = root(int(y))
+    roots = np.array([root(i) for i in range(3 * count)])
+    corner_vertex = faces.reshape(-1)
+    fans = np.unique(np.stack([corner_vertex, roots], axis=1), axis=0)
+    fan_counts = np.bincount(fans[:, 0], minlength=len(vertices))
+    # A point no face uses counts too: the validator's empty set of faces is not "connected"
+    # (``DisjointSet.connected`` is ``count == 1``, ``_graph_tools.py``).
+    bad = np.flatnonzero(fan_counts != 1)
+    points = tuple(tuple(float(x) for x in mesh.vertices[v]) for v in bad)
+    return MeshFaults(zero_area, nonmanifold_edges, points, winding_consistent)  # type: ignore[arg-type]

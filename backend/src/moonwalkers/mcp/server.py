@@ -1177,7 +1177,9 @@ def create_server(
         - Several parts (decision 0027): cut, place the stand-ins and scale into preview_parts/,
           with views of the cuts, the parts and each part alone (look at every one: a leftover
           shows only there), the size checks, the twin's issues, and `holes`: open edges where
-          removed faces met a cut part, each to patch or to check a stand-in covers. With
+          removed faces met a cut part, each to patch or to check a stand-in covers. Parts
+          whose meshes NVIDIA's validator would warn about (zero-area faces, non-manifold points)
+          are among the issues, with the points in model units: fix them before submitting. With
           photos=true, the parts are also drawn over each photo the generator was fed (about a
           minute a photo)."""
         with guarded():
@@ -1199,6 +1201,7 @@ def create_server(
                 body_faces=p.body_faces,
                 spindle_faces=p.spindle_faces,
                 size_checks=size_checks(p, ws.reference(run_dir)),
+                mesh_faults=preview.mesh_faults,
                 views={name: str(path) for name, path in preview.views.items()},
             )
 

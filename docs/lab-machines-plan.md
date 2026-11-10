@@ -367,8 +367,9 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
 - [ ] **The tool gaps** (drill-press report, section 7.3):
   - [x] item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated
     (2026-11-09: `set_photo`, which also sets the cut-out; decision 0029);
-  - item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the build
-    and NVIDIA's validator do;
+  - [x] item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the
+    build and NVIDIA's validator do (2026-11-09: `mesh_tools.mesh_faults`, NVIDIA's definitions,
+    the same counts as its own code on 29 meshes; it found v9's 40 zero-area faces again);
   - item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,
     storing nothing;
   - item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice

@@ -258,7 +258,11 @@ class PartsPreviewReport(BaseModel):
     joints: list[JointPreview]
     photos: list[str] = Field(description="each fed photo's fit on the mesh, when placed")
     size_checks: list[Issue]
-    issues: list[Issue] = Field(description="stand-ins, removed parts, inaccuracies, patches")
+    issues: list[Issue] = Field(
+        description="stand-ins, removed parts, inaccuracies, patches, and each part whose mesh "
+        "NVIDIA's asset validator would warn about (zero-area faces, non-manifold edges and "
+        "points, in model units), to fix before submitting"
+    )
     holes: list[HoleReport] = Field(
         description="open edges a cut part has where removed faces met it: close each with a "
         "patch on that part, or check in the views that a stand-in covers it"
@@ -278,6 +282,11 @@ class PreviewReport(BaseModel):
     body_faces: int
     spindle_faces: int
     size_checks: list[Issue]
+    mesh_faults: list[Issue] = Field(
+        default_factory=list,
+        description="what NVIDIA's asset validator would warn about in the body's or the "
+        "spindle's mesh (zero-area faces, non-manifold edges and points); empty when clean",
+    )
     views: dict[str, str] = Field(description="PNG sheets: assembled, body, spindle")
 
 
