@@ -7,7 +7,8 @@ Called by ``moonwalkers.generators.hunyuan3d`` as::
 This file must not import ``moonwalkers``: the generator environment does not have it.
 
 Steps:
-1. Remove photo backgrounds with rembg, unless an image already has transparency. (The repository's
+1. Turn each photo upright by its EXIF orientation, then remove its background with rembg, unless
+   it already has transparency. (The repository's
    multi-view example converts to RGBA before its RGB check, so it never removes backgrounds; it
    relies on pre-cut images.)
 2. Generate the shape with Hunyuan3D-DiT.
@@ -40,6 +41,16 @@ def _has_transparency(image: Any) -> bool:
     return image.mode in ("RGBA", "LA") and image.getextrema()[-1][0] < 255
 
 
+def _open_upright(path: str | Path) -> Any:
+    """The photo turned as its EXIF orientation says. Phone JPEGs often store a portrait photo
+    sideways with "rotate 90°" in EXIF: 19 of the lab's 29 photos (orientation 6, 2026-11-09).
+    Without this the generator saw them sideways."""
+    from PIL import Image, ImageOps
+
+    with Image.open(path) as image:
+        return ImageOps.exif_transpose(image)
+
+
 def run(job: dict[str, Any]) -> dict[str, Any]:
     import torch
     from hy3dgen.rembg import BackgroundRemover
@@ -49,7 +60,6 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
         FloaterRemover,
         Hunyuan3DDiTFlowMatchingPipeline,
     )
-    from PIL import Image
 
     out_dir = Path(job["out_dir"])
     prepared_dir = out_dir / "prepared"
@@ -60,7 +70,7 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     remover = None
     images = {}
     for view, path in job["images"].items():
-        image = Image.open(path)
+        image = _open_upright(path)
         if not _has_transparency(image):
             remover = remover or BackgroundRemover()
             image = remover(image.convert("RGB"))

@@ -117,8 +117,10 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
     (`smart_load_model` in `hy3dgen/shapegen/utils.py`);
   - `U2NET_HOME=<root>\models\u2net`;
   - `TMP`, `TEMP` and `TMPDIR` set to `<output>\tmp`, a folder deleted when the job ends.
-- The job removes the photo's background (unless the image already has transparency) and
-  generates the shape. It then cleans the shape up (floaters, degenerate faces, at most 40,000
+- The job turns each photo upright by its EXIF orientation (phone JPEGs often store a portrait
+  photo sideways; added on 2026-11-09), removes its background (unless the image already has
+  transparency) and generates the shape. On cluttered photos the background removal fails or
+  keeps the wrong object: `docs/research/2026-11-09-background-removal-spike.md`. It then cleans the shape up (floaters, degenerate faces, at most 40,000
   faces) and exports `mesh.glb`. In the HA5C runs the output had +Y up and the spindle nose facing
   +Z. Each run's geometry spec records the axes, and Pipeline B turns the mesh into the twin frame
   (decision 0012).

@@ -6,11 +6,11 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: drafting the lab's machines plan (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`. It holds the hand-off of 2026-11-09, on branch
-`docs/lab-machines-plan`. The plan is drafted below it (2026-11-09: Phases 0-8, a scorecard of
-measures). Daniel answered eight of its nine questions the same day ("Decided on review" there),
-and the plan waits for his approval, before any build. The history
+## Current phase: the lab's machines plan, Phase 1 (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`. The plan was approved and merged on 2026-11-09 (PR
+#27; Daniel's answers in its "Decided on review"). Phase 1 (file the photos and sources, close the
+tool gaps) is under way on branch `feat/lab-phase-1-photos-and-tools`, in the plan chat, on
+Daniel's word: the photos are filed, and the background spike waits for his choice. The history
 below is the record of the PoC and the drill-press plan.
 
 - **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three

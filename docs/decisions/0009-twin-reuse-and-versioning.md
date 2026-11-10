@@ -74,3 +74,10 @@ Decision 0015, chosen by Daniel in Phase 5, amends "Reuse: the latest version (o
 - The reuse message names the version's review status and any newer versions it skipped.
 
 The key, the flow and re-versioning on request are unchanged.
+
+## Update (2026-11-09): "GmbH" is a legal-form word
+The lab's machines plan, Phase 1. igus signs its ReBeL documentation "igus® GmbH" (Technical
+documentation ReBeL, 08/2022, p. 8), and the arm's base label reads "igus" (photo
+`20261105_133326`). Without the change, "igus GmbH" gave `igus-gmbh/rebel6dof02` and "igus" gave
+`igus/rebel6dof02`. "gmbh" joins the trailing legal-form words in `kb/keys.py`, so both give
+`igus/rebel6dof02`. No stored key changes: no twin's manufacturer ended in "GmbH".

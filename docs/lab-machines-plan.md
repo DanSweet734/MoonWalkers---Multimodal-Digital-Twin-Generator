@@ -313,24 +313,37 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
 **Measured by:** Daniel's review.
 
 ## Phase 1 - File the photos and sources, and close the tool gaps
-- [ ] Machine folders `data/machines/igus-rebel6dof02/` (the arm and its hand, one twin),
+- [x] Machine folders `data/machines/igus-rebel6dof02/` (the arm and its hand, one twin),
       `haas-tm1/` and `haas-vf3/`, by decision 0009's key. The "GmbH" fix in `kb/keys.py`, with
       a test.
-- [ ] Copy each photo into `inputs/photos/` unchanged, and check its SHA-256 against the
-      original. One `SOURCES.md` line each: what it shows, its view in the operator's words
+      (2026-11-09: "gmbh" is a legal-form word; decision 0009, update)
+- [x] Copy each photo into `inputs/photos/` unchanged, and check its SHA-256 against the
+      original.
+      (2026-11-09: 29 photos, each copy's SHA-256 checked twice, by the filing script and by
+      `sha256sum`. Views to check by Daniel: the TM-1's `134346` and `134355`, whose side is
+      uncertain.) One `SOURCES.md` line each: what it shows, its view in the operator's words
       (proposed, checked by Daniel), its use (generator or evidence), the date, the SHA-256 and
       the licence note: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the
       team's own photo; internal research only; shows serial numbers, keep out of commits."
       No serial number, IP address or asset tag in any committed file.
-- [ ] Remove `data/machine photos (temp)/` once every copy's SHA-256 matches its original
+- [x] Remove `data/machine photos (temp)/` once every copy's SHA-256 matches its original
       (Daniel, 2026-11-09: "the temp folder may go once the copies are checked").
+      (2026-11-09: removed)
 - [ ] File the cited documents, each with its `SOURCES.md` line: igus's documentation; the ROS
       model at a fixed commit; LinkerBot's and Realhand's L20 models; Haas's pages as Daniel saves
       them.
-- [ ] **A background spike:** run the generator's background removal on every photo planned for
+      (2026-11-09: all but Haas's pages, in the arm's `documents/`, each model at a fixed commit
+      with its LICENSE and a SHA-256 manifest)
+- [x] **Found on the way: the generator ignored phone photos' EXIF orientation.** 19 of the 29
+      photos are stored sideways ("rotate 90°"). The job now turns each upright
+      (`_open_upright` in `hunyuan3d_shape_job.py`).
+- [x] **A background spike:** run the generator's background removal on every photo planned for
       the generator, and look at each mask. If they fail, Daniel chooses between a crop box per
       photo in `request.json` (amending decision 0022; no install) and a segmenter (an install,
       asked first).
+      (2026-11-09: they fail on the TM-1, and are partial on the VF-3 and the arm:
+      `docs/research/2026-11-09-background-removal-spike.md`. Recommended: box-prompted SAM,
+      already in the installed rembg, with about 118 MB of weights. Waiting for Daniel's choice)
 - [ ] **The tool gaps** (drill-press report, section 7.3):
   - item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated;
   - item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the build
