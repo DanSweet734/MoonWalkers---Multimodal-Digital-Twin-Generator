@@ -1,0 +1,34 @@
+{
+  "urdf": "machines/igus-rebel6dof02/inputs/documents/models/CommonplaceRobotics_iRC_ROS@41701e6/irc_ros_description/urdf/robots/igus_rebel_6dof_00.description.xacro",
+  "packages": {
+    "irc_ros_description": "machines/igus-rebel6dof02/inputs/documents/models/CommonplaceRobotics_iRC_ROS@41701e6/irc_ros_description"
+  },
+  "source_id": "src-irc-ros-00",
+  "parts": {
+    "base": "base_link",
+    "link1": "link_1",
+    "link2": "link_2",
+    "link3": "link_5",
+    "link4": "link_6",
+    "link5": "link_7",
+    "hand": "link_8"
+  },
+  "joints": {
+    "joint1": "joint1",
+    "joint2": "joint2",
+    "joint3": "joint3",
+    "joint4": "joint4",
+    "joint5": "joint5",
+    "joint6": "joint6"
+  },
+  "pose_deg": {
+    "joint2": -51.81,
+    "joint3": 88.82,
+    "joint5": 17.96
+  },
+  "align_joint": "joint2",
+  "no_shape": {
+    "hand": "the model's link_8 is the 1.2 mm flange disc (Joint6.dae); the hand on it, the Realhand L20, is compared in Phase 7"
+  },
+  "note": "The pose is the twin's photographed pose (decision 0031) in the 00 description's joint values: its joints 2, 3 and 5 have origin pitches of +30, +30 and -7.5 degrees and limits shifted by the same, so a joint value is igus's angle minus that pitch (igus -21.81, +118.82, +10.46 degrees). Joints 1, 4 and 6 are 0, as in the twin. The 01 description includes the 00 one unchanged; whether version 02 matches them is not confirmed (the reference facts' issue)."
+}
