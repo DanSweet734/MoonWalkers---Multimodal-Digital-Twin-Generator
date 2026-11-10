@@ -49,6 +49,9 @@
   measured in the photos (about 43 mm), drilling feeds for a stroke, Isaac Sim 6.2.0's joint speed
   cap, velocity readings and Property-panel choice lists, and the HA5C's Parameters 18, 19 and 44
   in three Haas manuals (no HA5C value; "usually 2X").
+- `2026-11-06-lab-machines.md` - the lab's ReBeL arm, Realhand L20 hand, Haas TM-1 and VF-3: what
+  public sources exist (Apache-2.0 models for the arm and the hand, none found for the mills), where
+  the arm's joint limits disagree, and a provisional order.
 
 Note: `project-context.md` summarizes material shared by Dr. Li's lab. Daniel asked Dr. Li on 2026-10-17, and
 Dr. Li said it is not protected and does not need to be kept private, so the repository may be public.

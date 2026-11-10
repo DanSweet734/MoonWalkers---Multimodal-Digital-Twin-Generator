@@ -320,13 +320,13 @@ All three success levels met, and Phases 0-6 of [docs/poc-plan.md](docs/poc-plan
 
 ## Test data
 
-The faculty advisor suggested a small, standardized test set: his own lab as a controlled capture environment (test inputs are coming from his lab; on Oct 22, 2026 the advisors said the lab's photos will come once the platform is further developed), plus product data from six websites (BHS, Inc.; Made-in-China.com; Wheeler Machinery Sales; Grizzly Industrial; MASCO; and a Haas Automation model guide). These sources vary in reliability; the marketplace site in particular needs spot-checking.
+The faculty advisor suggested a small, standardized test set: his own lab as a controlled capture environment (on Oct 22, 2026 the advisors said the lab's photos would come once the platform was further developed; by Nov 5, 2026 Daniel had photographed a ReBeL arm with a Realhand L20 hand, a Haas VF-3 and a Haas TM-1 there), plus product data from six websites (BHS, Inc.; Made-in-China.com; Wheeler Machinery Sales; Grizzly Industrial; MASCO; and a Haas Automation model guide). These sources vary in reliability; the marketplace site in particular needs spot-checking.
 
 ---
 
 ## Roadmap
 
-Planned order of work. Green is done, yellow is current. No dates are committed yet.
+Planned order of work. Green is done, yellow is current. No dates are committed yet. Functional fidelity was reached on the HA5C and the T33901 while the shared platform was built; Pipelines A, C and D are still with their owners, so integration stays open beside the lab's machines. Video starts once the photo results are acceptable (Nov 5, 2026).
 
 ```mermaid
 flowchart LR
@@ -334,8 +334,9 @@ flowchart LR
   ARCH --> SRS["Requirements (SRS)"]:::done
   SRS --> POC["Proof of concept"]:::done
   POC --> INT["Integration<br/>shared platform + pipelines A-D"]:::active
-  INT --> FUNC["Functional fidelity<br/>moving parts + control logic"]:::next
-  FUNC --> EVAL["Evaluate on the<br/>standardized test set"]:::next
+  INT --> FUNC["Functional fidelity<br/>moving parts + control logic"]:::done
+  FUNC --> LAB["The lab's machines from photos:<br/>evaluate on the standardized test set"]:::active
+  LAB --> VID["Video input<br/>for Pipeline B"]:::next
 
   classDef done fill:#d4edda,stroke:#2f6f62,color:#1a1a1a
   classDef active fill:#fff3cd,stroke:#b8860b,color:#1a1a1a

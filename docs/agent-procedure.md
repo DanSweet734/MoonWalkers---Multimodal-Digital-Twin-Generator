@@ -72,6 +72,9 @@ the job is done. Otherwise the job waits for you:
      `inputs/documents/`. Then hash the saved HTML and log it in `SOURCES.md`, saying it was saved
      in a browser. Files the page links to, such as layout drawings on another host, may still
      download normally.
+   - **The person may skip a source you cannot reach** (Dr. Li, 2026-11-05). Offer both: they
+     fetch it, or you go on without it. If they skip it, log an issue naming the source and the
+     facts it would have given. Never fill the gap with a guess.
 2. `start_run(manufacturer, model, new_version)` returns `run`, which every other tool takes.
 3. `add_input(run, path, source_id, title, retrieved_at, license_note, view, use)` adds a photo:
    - the path is relative to the data folder;
