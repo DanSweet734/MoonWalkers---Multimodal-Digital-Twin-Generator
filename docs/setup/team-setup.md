@@ -5,7 +5,8 @@ passing tests on your own branch. Your pipeline's own work is in
 [the pipeline guide](../pipeline-guide.md); this page gets you to its first step.
 
 **Tested on:** a fresh clone of `main` on Windows 11, on 2026-11-06 (worklog of that date). Not yet
-tried on macOS or Linux. If a step fails for you, tell Daniel, and the fix goes into this page.
+tried on macOS or Linux: Ava's Mac will be the first. If a step fails for you, tell Daniel, and
+the fix goes into this page.
 
 ## What you need, and what you can skip
 | You need | For |

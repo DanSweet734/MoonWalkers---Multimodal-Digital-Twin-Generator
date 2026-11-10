@@ -19,7 +19,93 @@ Daniel's 29 photos of 2026-11-05 (worklog 2026-11-09) settle some of what follow
   in 11/06.
 - **The VF-3 is enclosed,** was made in 12/2014, and carries a Haas two-axis trunnion rotary table,
   photographed with the doors open. The trunnion's model is not read yet. Being a Haas rotary
-  product, like the HA5C, it may reuse decision 0026's controller [INFERENCE].
+  product, like the HA5C, it may reuse decision 0026's controller [INFERENCE]. The second update
+  finds this unlikely: on a Haas mill, its axes are the mill's own.
+
+## Second update, 2026-11-09: the plan chat
+Read for [the lab's machines plan](../lab-machines-plan.md). All accessed 2026-11-09. Nothing was
+filed in `data/` or installed; downloads went to the session's scratchpad.
+
+### The arm
+- **igus's technical documentation.** "Technical documentation ReBeL", igus GmbH, "MAT0075179.25
+  Stand 08/2022", 8 pages, from
+  https://uploads.unchainedrobotics.de/media/file_upload/Robolink%20ReBeL_DINA5_v11_a8b0f58f.pdf
+  (linked from Unchained Robotics' 6DOF-01 page; SHA-256
+  `735c2fbea8ab67d90090c3ae4659399c53e7e91af86d7dbf6b3ba9bb34b68fb3`). Text read with pypdf, page 6
+  rendered with pypdfium2, both backend dev dependencies.
+  - p. 2, 6 DOF: reach "664", payload "2" kg, mass "< 8" kg, "Max. speed 45 [°/s]", "Linear speed
+    200 [mm/s]", "Footprint Ø 180 [mm]", accuracy "+-1 [mm]", "With and without integrated
+    control".
+  - p. 2: "J1: -179° bis to +179° J2: -80° bis to +140° J3: -80° bis to +140° J4: -179° bis to
+    +179° J5: -95° bis to + 95° J6: -179° bis to +179°". These match Unchained Robotics' listing
+    in the table above.
+  - p. 6: a drawing of the arm in its "Nullstellung" (zero position), straight up, with the row
+    "ReBeL-6DOF-00 660 252 237 297 126 180 160 6,5 43 M3 62 M4" for L1, X1-X4 and D1-D7. Read from
+    the drawing: X1 runs from the foot to joint 2's axis, X2 to joint 3's, X3 to joint 5's, X4 to
+    the flange; L1 from joint 2's axis to the flange; D1 is the foot's diameter.
+- **The ROS model's versions.** `igus_rebel_6dof_01.description.xacro` includes
+  `igus_rebel_6dof_00.description.xacro` and calls its macro, so 01 is 00 (read through the GitHub
+  API, `CommonplaceRobotics/iRC_ROS`, default branch).
+- **Why the limits seemed to disagree** [INFERENCE, by arithmetic from the 00 description]:
+  - joints 2 and 3: `lower="${-pi*11/18}" upper="${pi*11/18}"` (±110°) about an origin of
+    `rpy="0.0 ${pi/6} 0.0"` (+30°), so -80° to +140° from the straight-up zero: igus's range;
+  - joint 5: `lower="${-pi*19/36 + pi/24}" upper="${pi*19/36 + pi/24}"` (-87.5° to +102.5°)
+    about `rpy="0.0 ${-pi/24} 0.0"` (-7.5°), so ±95°: igus's range;
+  - the file's own comment: "pi*2/3 are the physical limits, but to avoid any collisions we set
+    the actual limits lower";
+  - the sign convention is the URDF's (the joint's origin, then its rotation). That the offsets
+    are measured from igus's zero is the inference.
+- **Link lengths:** the URDF's offsets give 0.100 + 0.149 = 0.249 m to joint 2, 0.2384 m to joint
+  3, 0.149 - 0.03 + 0.14 + 0.03 = 0.289 m to joint 5 and 0.1208 + 0.0012 = 0.122 m to the flange,
+  against igus's 252, 237, 297 and 126 mm. Two of the URDF's offsets carry "TODO The 0.03m offset
+  are most likely caused by the mesh file (Issue 15)".
+- **Version 02.** DigiKey lists part "REBEL-6DOF-02" (search listing; its page answered 403), and
+  Unchained Robotics' 6DOF-01 page captions its images "igus ReBeL-6DOF-02". No page describing
+  what 02 changes was found. The lab's base has a connector panel and power button, on a base plate
+  with its own label (photo `20261105_133326`), where igus's drawing shows a plain foot, so 02 may
+  be the version with control in the base [INFERENCE].
+- **The arm's photos:** the lab's arm is black and orange, as igus's standard colour ("Robot
+  standard color black/orange", p. 2).
+
+### The hand
+- **The lab's hand reads "LINKERBOT"** on its back shell (photo `20261105_133438`, from above).
+- **LinkerBot's models.** https://github.com/linkerbotai/linker_hand_sim (Apache-2.0, last pushed
+  2025-08-29) holds `linker_hand_isaac_gym_urdf/l20/left/linkerhand_l20_left.urdf` and
+  `.../right/linkerhand_l20_right.urdf`, and MuJoCo versions. The right URDF has 21 revolute
+  joints, 5 with `<mimic>`. Its README: "This project has been moved to the new address, please
+  visit https://github.com/linker-bot/linkerhand-sim", which the GitHub API answered 404.
+- **Realhand's models** (`realhand-robotics/Realhand_description`, Apache-2.0, pushed 2026-10-05)
+  hold left and right L20 URDFs in `l20/` and `L20v10/`, and Isaac Sim USD files in `l20/`. Its
+  right URDF also has 21 revolute joints, 5 mimic.
+- **The two models differ:** LinkerBot's joints are named `thumb_joint0`... with a first limit of
+  -0.297 to 0.683 rad; Realhand's are named `pinky_mcp_roll`... with a first limit of ±0.17 rad.
+  Which matches the lab's hand is not confirmed.
+- **LinkerBot's other repositories** (`linkerbotai`): `linker_hand_python_sdk` and
+  `linker_hand_cpp_sdk` have no licence on GitHub, so they can be read and cited, not reused;
+  `linker_hand_ros2_sdk` is Apache-2.0.
+- **Retailers** sell the "Linker Hand L20" by "Linkerbot" (for example
+  https://rbtx.de/en-GB/components/end-effectors/linkerbot-dexterous-robotic-hand-linker-hand-l20,
+  search listing) and an "L20 Lite". None found mentions Realhand.
+- **Left or right** [INFERENCE]: a right hand, from `20261105_133438` (the back of the hand up,
+  fingers away from the base, thumb on the image's left).
+
+### The VF-3's trunnion
+- In `20261105_133959` and `20261105_133938` a cradle carries a round platter between two end
+  housings, with "5th AXIS" on the vise. A small plate on the cradle's base, lower left, is not
+  readable at the photos' resolution.
+- Dealers' listings (search results, second-hand) say Haas's TRT160 and TRT210 need "a Haas mill
+  with 4th & 5th axis drives and software version 18.00 or later", for example
+  https://ecomm.productivity.com/itemdetail/HAA1%20TRT160 and
+  https://ecomm.productivity.com/itemdetail/HAA1%20TR210 (not opened). So a Haas trunnion on a Haas
+  mill is driven as the mill's own axes [INFERENCE], and its model is not confirmed.
+
+### The TM-1
+Dealers' listings (search results, second-hand; for example
+https://surplusrecord.com/listing/haas-tm-1-cnc-toolroom-mill-47-5-x-10-5-table-30-x-12-y-16-z-7-5-hp-4000-rpm-10-automatic-tool-changer-cat-40-4th-axis-enabled-rigid-tapping-2007-1141865/,
+a 2007 unit): travels 30 x 12 x 16 in, a 47.5 x 10.5 in table (others 47.75), 7.5 HP, 4000 RPM,
+CAT-40, a 10-pocket tool changer. A TM-1P is listed at 6000 RPM
+(https://www.exapro.com/haas-tm-1p-p260304053/). Haas's own pages were not tried again: they
+refused scripts on 2026-11-06.
 
 ## Summary
 | Machine | Moving parts | Public model | Its control | Scripts can read its sources? |
