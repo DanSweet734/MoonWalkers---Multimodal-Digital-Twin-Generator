@@ -97,7 +97,28 @@ the job is done. Otherwise the job waits for you:
    - **One photo** may leave the view out, as in the PoC. Two or more each need one.
    - `add_input` checks the photos as a whole each time, and its `generator_input` says which
      model and slots the generator will use. A refused photo changes nothing.
+   - **A wrong view or use:** correct it with `set_photo(run, source_id, view, use, cutout)`
+     before `generate_geometry`. It gives the photo's whole entry, so repeat the use and the
+     cut-out you want to keep. After generation it is refused: start a new run.
    - **A nameplate or a motor plate** is a reference source (`add_reference_source`), not an input.
+5. **Check how the machine is cut out of each photo** (decision 0029), before generating.
+   - `preview_cutouts(run)` cuts the fed photos out as the generator will, in seconds. Open its
+     `sheet` with your Read tool.
+   - By default the generator keeps the photo's most salient object. On a plain background that
+     is the machine. In a lab it is often a sign, a box or a monitor in front of it, or one
+     panel of the machine (the lab's photos: `docs/research/2026-11-09-background-removal-spike.md`).
+   - **When the cut-out is wrong,** give the photo a `cutout` with `set_photo`. Coordinates are
+     fractions (0 to 1) of the photo turned upright, from its top left: read them off the photo.
+     - `{"method": "sam", "box": [x0, y0, x1, y1], "points": [...]}`: a box around the
+       machine, plus points with `keep` true on parts it loses and `keep` false on what to
+       leave out (the wall, a sign). This is the usual choice.
+     - `{"method": "crop", "box": [...]}`: the automatic removal inside the box only. It loses
+       thin parts, such as an arm's forearm.
+     - `{"method": "mask", "mask": "<PNG in the data folder>"}`: a mask a person drew, white
+       on the machine. Ask the person for one where SAM leaves holes, as in shiny guards.
+   - Preview again after each change. Specks are dropped by `min_piece` (default 0.02).
+   - **Nothing fills in what stands in front of the machine.** Log it as an issue on the twin,
+     naming the photo and what is hidden.
 
    Documents (manuals, catalogues, drawings) are not inputs while their pipeline, A, C or D, is
    not in: `add_input` refuses them (decision 0021). Read them yourself, and cite them in step 3.

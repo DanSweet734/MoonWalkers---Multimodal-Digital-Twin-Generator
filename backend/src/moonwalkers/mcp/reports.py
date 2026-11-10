@@ -95,6 +95,19 @@ class SourceAdded(BaseModel):
     )
 
 
+class CutoutPreview(BaseModel):
+    run: str
+    sheet: str = Field(
+        description="PNG: each photo cut out on grey, its box in blue, its points green (keep) "
+        "or red (leave out); open it"
+    )
+    photos: list[str] = Field(
+        description="source id: method (sam, crop, mask, auto), share of the photo kept, specks "
+        "dropped"
+    )
+    seconds: float
+
+
 class ReferenceSummary(BaseModel):
     run: str
     sources: list[str]

@@ -10,8 +10,13 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 **Start here:** `docs/lab-machines-plan.md`. The plan was approved and merged on 2026-11-09 (PR
 #27; Daniel's answers in its "Decided on review"). Phase 1 (file the photos and sources, close the
 tool gaps) is under way on branch `feat/lab-phase-1-photos-and-tools`, in the plan chat, on
-Daniel's word: the photos are filed, and the background spike waits for his choice. The history
-below is the record of the PoC and the drill-press plan.
+Daniel's word.
+- **Done:** the photos are filed. Daniel chose SAM for cutting the machine out, with crop boxes and
+  drawn masks as options. The per-photo cut-out (decision 0029, proposed), its preview and
+  `set_photo` (tool gap 1) are built.
+- **Left:** tool gaps 2, 4, 5, 6 and 7, and Haas's pages, which Daniel saves.
+
+The history below is the record of the PoC and the drill-press plan.
 
 - **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three
   success levels: a scaled model with cited facts; a spindle joint that rotates; an indexing
@@ -280,6 +285,10 @@ Backend (run from `backend/`):
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
   facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
+- Check how the machine is cut out of each photo before generating (decision 0029):
+  `uv run python -m moonwalkers.pipelines.b cutouts <run> --gen-root C:\mw-gen` writes
+  `<run>/cutouts/sheet.png` in seconds. A photo's `cutout` in `request.json` (SAM box and points,
+  crop box, or drawn mask; fractions of the upright photo) replaces the automatic removal.
 - Pipelines A, C and D outside their tests (decision 0021): `uv run python -m moonwalkers.pipelines list`
   shows which are in; `... run D --input-type pdf_catalog <file or URL>... --out <file>` runs one and
   writes its checked result, storing nothing. Stubs run only in the tests (`stub_pipelines()`).

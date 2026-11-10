@@ -35,7 +35,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 from moonwalkers.clock import Clock, utc_now
-from moonwalkers.contracts.pipeline_result import Source
+from moonwalkers.contracts.pipeline_result import InputType, Source
 from moonwalkers.kb import machine_key
 from moonwalkers.orchestrator import InputPhoto, JobRequest, MachineHint
 from moonwalkers.pipelines.b.assemble import AxisName, GeometrySpec
@@ -187,6 +187,29 @@ class Workspace:
             photos[source.source_id] = photo
         updated = JobRequest.model_validate(
             {**request.model_dump(), "sources": [*request.sources, source], "photos": photos}
+        )
+        check_photos(updated.sources, updated.photos)
+        _write_json(run_dir / REQUEST_FILE, updated.model_dump(mode="json"))
+        return updated
+
+    def set_photo(self, run_dir: Path, source_id: str, photo: InputPhoto) -> JobRequest:
+        """Change a machine photo's view, use or cut-out (decisions 0022 and 0029), before the
+        run generates its mesh: the run's photos are checked as a whole again, and nothing is
+        written if they no longer fit together."""
+        _require_unbuilt(run_dir)
+        if (run_dir / GENERATOR_DIR / GENERATOR_RECORD).is_file():
+            raise RunFolderConflict(
+                "this run already generated its mesh from its photos as they were; start a new "
+                "run to change them"
+            )
+        request = self.request(run_dir)
+        machine = [s.source_id for s in request.sources if s.input_type == InputType.MACHINE_PHOTO]
+        if source_id not in machine:
+            raise WorkspaceError(
+                f"the request has no machine photo {source_id!r} (its photos: {machine})"
+            )
+        updated = JobRequest.model_validate(
+            {**request.model_dump(), "photos": {**request.photos, source_id: photo}}
         )
         check_photos(updated.sources, updated.photos)
         _write_json(run_dir / REQUEST_FILE, updated.model_dump(mode="json"))

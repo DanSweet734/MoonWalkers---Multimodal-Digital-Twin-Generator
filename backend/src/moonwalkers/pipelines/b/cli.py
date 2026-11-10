@@ -1,6 +1,7 @@
 """Command line for Pipeline B (decision 0012). Run from ``backend/``::
 
     uv run python -m moonwalkers.pipelines.b build RUN --reference FILE
+    uv run python -m moonwalkers.pipelines.b cutouts RUN
     uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--yaw DEG]
                                                           [--circle-x X ...]]
     uv run python -m moonwalkers.pipelines.b inspect RUN --up +y --front +z [--yaw DEG]
@@ -16,11 +17,14 @@ the first time it generates the mesh and stops for the geometry spec; once
 ``checks/spin.usdc`` and ``checks/quarter_turn.usdc`` for the Isaac Sim check) and writes
 ``RUN.md``. One run folder holds one built twin: build a new version in a new run folder.
 ``inspect`` renders and measures the generated mesh, and ``--preview`` tries the spec without
-storing anything. A several-part spec (decisions 0023 and 0027) is previewed into
-``RUN/preview_parts/``: the coloured views of the cuts and the parts, each part alone, and the
-parts drawn over each fed photo, with the scale and the size checks. The generator environment
-is found through ``--gen-root`` or the ``MOONWALKERS_GEN_ROOT`` environment variable
-(docs/setup/generators.md). The MCP server (``moonwalkers.mcp``) offers the same steps as tools.
+storing anything. ``cutouts`` cuts the fed photos out as the generator would, each
+with its cut-out from ``request.json`` if it has one (decision 0029), into ``RUN/cutouts/``
+with ``sheet.png`` to look at, in seconds and without generating. A several-part spec (decisions
+0023 and 0027) is previewed into ``RUN/preview_parts/``: the coloured views of the cuts and the
+parts, each part alone, and the parts drawn over each fed photo, with the scale and the size
+checks. The generator environment is found through ``--gen-root`` or the
+``MOONWALKERS_GEN_ROOT`` environment variable (docs/setup/generators.md). The MCP server
+(``moonwalkers.mcp``) offers the same steps as tools.
 """
 
 from __future__ import annotations
@@ -31,10 +35,10 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from moonwalkers.generators.base import GeneratorError
+from moonwalkers.generators.base import CutoutRun, GeneratorError
 from moonwalkers.generators.hunyuan3d import GEN_ROOT_ENV, Hunyuan3DConfig, Hunyuan3DGenerator
 from moonwalkers.kb import JsonKnowledgeBase
-from moonwalkers.orchestrator import OrchestratorError
+from moonwalkers.orchestrator import JobRequest, OrchestratorError
 from moonwalkers.usd.exporter import ExportError
 
 from .build import REQUEST_FILE, build_run
@@ -49,10 +53,12 @@ from .inspection import (
 from .mesh_tools import fit_circles_along, load_mesh, orientation_matrix, transformed
 from .parts_spec import PartsSpec
 from .pipeline import (
+    CUTOUTS_DIR,
     GENERATOR_DIR,
     PARTS_PREVIEW_DIR,
     SPEC_FILE,
     GeometrySpecMissing,
+    PipelineB,
     RunFolderConflict,
     generated_mesh,
     load_reference,
@@ -103,6 +109,19 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
     build.add_argument("--kb", type=Path, help="knowledge base folder (default: DATA/kb)")
     build.set_defaults(command=_build)
+
+    cutouts = commands.add_parser(
+        "cutouts", help="cut the fed photos out, as the generator would, without generating"
+    )
+    cutouts.add_argument("run_dir", type=Path, help="data/machines/<machine>/runs/<run>")
+    cutouts.add_argument(
+        "--request", type=Path, help=f"JobRequest JSON (default: RUN/{REQUEST_FILE})"
+    )
+    cutouts.add_argument(
+        "--gen-root", type=Path, help=f"generator folder (default: ${GEN_ROOT_ENV})"
+    )
+    cutouts.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
+    cutouts.set_defaults(command=_cutouts)
 
     inspect = commands.add_parser("inspect", help="render and measure the generated mesh")
     inspect.add_argument("run_dir", type=Path)
@@ -197,13 +216,40 @@ def _inspect(args: argparse.Namespace) -> int:
     return 0
 
 
-# -------------------------------------------------------------------------------------- build
-def _build(args: argparse.Namespace) -> int:
+# ------------------------------------------------------------------------------------ cutouts
+def _cutouts(args: argparse.Namespace) -> int:
     run_dir = args.run_dir.resolve()
     data_dir = (args.data or _data_dir_of(run_dir)).resolve()
+    generator = Hunyuan3DGenerator(Hunyuan3DConfig.under(_gen_root(args)))
+    request_path = args.request or run_dir / REQUEST_FILE
+    request = JobRequest.model_validate_json(request_path.read_text(encoding="utf-8"))
+    pipeline = PipelineB(generator, data_dir, run_dir, photos=request.photos)
+    done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR)
+    print(format_cutouts(done))
+    return 0
+
+
+def format_cutouts(done: CutoutRun) -> str:
+    lines = [f"cut out in {done.seconds:.1f} s; look at {done.sheet}"]
+    for name, info in done.done.items():
+        specks = info.get("pieces_dropped")
+        dropped = f", {specks} specks dropped" if specks else ""
+        lines.append(f"  {name}: {info['method']}, {info['kept_share']:.1%} kept{dropped}")
+    return "\n".join(lines)
+
+
+# -------------------------------------------------------------------------------------- build
+def _gen_root(args: argparse.Namespace) -> Path:
     gen_root = args.gen_root or os.environ.get(GEN_ROOT_ENV)
     if gen_root is None:
         raise UsageError(f"the generator folder is needed: pass --gen-root or set {GEN_ROOT_ENV}")
+    return Path(gen_root)
+
+
+def _build(args: argparse.Namespace) -> int:
+    run_dir = args.run_dir.resolve()
+    data_dir = (args.data or _data_dir_of(run_dir)).resolve()
+    gen_root = _gen_root(args)
     request_path = args.request or run_dir / REQUEST_FILE
     outcome = build_run(
         run_dir,
@@ -211,7 +257,7 @@ def _build(args: argparse.Namespace) -> int:
         request_path,
         load_reference(args.reference),
         args.reference,
-        Hunyuan3DGenerator(Hunyuan3DConfig.under(Path(gen_root))),
+        Hunyuan3DGenerator(Hunyuan3DConfig.under(gen_root)),
         JsonKnowledgeBase(args.kb or data_dir / "kb"),
     )
     print(outcome.job.message)

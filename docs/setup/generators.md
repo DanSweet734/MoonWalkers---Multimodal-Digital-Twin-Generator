@@ -123,9 +123,19 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
   - `U2NET_HOME=<root>\models\u2net`;
   - `TMP`, `TEMP` and `TMPDIR` set to `<output>\tmp`, a folder deleted when the job ends.
 - The job turns each photo upright by its EXIF orientation (phone JPEGs often store a portrait
-  photo sideways; added on 2026-11-09), removes its background (unless the image already has
-  transparency) and generates the shape. On cluttered photos the background removal fails or
-  keeps the wrong object: `docs/research/2026-11-09-background-removal-spike.md`. It then cleans the shape up (floaters, degenerate faces, at most 40,000
+  photo sideways; added on 2026-11-09), then cuts the machine out of it. Without a cut-out in
+  the request, rembg's u2net removes the background, unless the image already has transparency.
+  On cluttered photos that fails or keeps the wrong object
+  (`docs/research/2026-11-09-background-removal-spike.md`). So a photo may carry a cut-out
+  (decision 0029):
+  - SAM with a box and points (the quantised `sam_vit_b_01ec64`, given the photo shrunk to
+    1024 x 684 with antialiasing);
+  - u2net inside a crop box;
+  - a mask drawn by hand.
+  Small separate pieces are then dropped. The job writes each cut-out to `prepared/<view>.png`.
+- With `"cutout_only": true` the job stops there and draws `sheet.png`, without loading the 3D
+  model: `python -m moonwalkers.pipelines.b cutouts <run>` and the MCP tool `preview_cutouts`.
+- Otherwise it generates the shape, cleans it up (floaters, degenerate faces, at most 40,000
   faces) and exports `mesh.glb`. In the HA5C runs the output had +Y up and the spindle nose facing
   +Z. Each run's geometry spec records the axes, and Pipeline B turns the mesh into the twin frame
   (decision 0012).

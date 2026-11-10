@@ -13,6 +13,12 @@ import pytest
 from mcp import Client
 
 from moonwalkers.contracts.pipeline_result import PipelineId, PipelineResult, Source, TwinRecord
+from moonwalkers.generators.base import (
+    CutoutRun,
+    GeneratorRequest,
+    GeneratorRun,
+    ImageTo3DGenerator,
+)
 from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.mcp import Workspace, create_server, default_data_dir
 from moonwalkers.mcp.server import UnconfiguredGenerator
@@ -96,6 +102,8 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
         "list_jobs",
         "start_run",
         "add_input",
+        "set_photo",
+        "preview_cutouts",
         "add_reference_source",
         "identify_machine",
         "add_fact",
@@ -589,6 +597,102 @@ async def test_several_photos_with_their_views_through_the_tools(setup, photo_ru
             (photo_run.data_dir / run / "geometry_spec.parts.json").read_text(encoding="utf-8")
         )
         assert parts["joint"]["yaw_deg"] == 45.0
+
+
+class CuttingOut(ImageTo3DGenerator):
+    """Wraps the fake generator, and previews cut-outs: it records each request."""
+
+    name = "fake-generator"
+
+    def __init__(self, inner: ImageTo3DGenerator) -> None:
+        self.inner = inner
+        self.cut_requests: list[GeneratorRequest] = []
+
+    def fingerprint(self) -> dict[str, Any]:
+        return self.inner.fingerprint()
+
+    def generate(self, request: GeneratorRequest) -> GeneratorRun:
+        return self.inner.generate(request)
+
+    def cut_out(self, request: GeneratorRequest) -> CutoutRun:
+        self.cut_requests.append(request)
+        done = {
+            name: {"method": "sam" if name in request.cutouts else "auto", "kept_share": 0.25}
+            for name in request.images
+        }
+        return CutoutRun({}, request.out_dir / "sheet.png", done, 1.5, request.out_dir / "log")
+
+
+@pytest.mark.anyio
+async def test_a_photo_is_corrected_and_its_cutout_previewed_before_generating(
+    photo_run, fake_generator, clock
+) -> None:
+    """Tool gap 1 (the lab's machines plan) and decision 0029."""
+    generator = CuttingOut(fake_generator())
+    server = create_server(Workspace(photo_run.data_dir, clock), lambda: generator, clock=clock)
+    second = Path(photo_run.photo.uri).with_name("side.png").as_posix()
+    (photo_run.data_dir / second).write_bytes(b"another side")
+    photo = {"title": "Test photo", "retrieved_at": "2026-10-16T12:00:00Z"}
+    box = {
+        "method": "sam",
+        "box": [0.1, 0.1, 0.9, 0.9],
+        "points": [{"x": 0.5, "y": 0.5, "keep": True}],
+    }
+    async with Client(server) as client:
+        run = (await ok(client, "start_run", **MACHINE))["run"]
+        await ok(
+            client,
+            "add_input",
+            run=run,
+            path=photo_run.photo.uri,
+            source_id="src-a",
+            view="front",
+            **photo,
+        )
+        await ok(client, "add_input", run=run, path=second, source_id="src-b", view="back", **photo)
+
+        # the second photo was a corner: corrected, it no longer fits beside a side view
+        assert "mix sides and corners" in await fails(
+            client, "set_photo", run=run, source_id="src-b", view="back_operator_left"
+        )
+        changed = await ok(
+            client, "set_photo", run=run, source_id="src-b", view="back", use="evidence", cutout=box
+        )
+        assert (
+            changed["generator_input"] == "single-image model: single = src-a; evidence: 1 photo(s)"
+        )
+        assert "no machine photo 'src-c'" in await fails(
+            client, "set_photo", run=run, source_id="src-c", view="front"
+        )
+        assert "must be a PNG" in await fails(
+            client,
+            "set_photo",
+            run=run,
+            source_id="src-a",
+            view="front",
+            cutout={"method": "mask", "mask": "front.jpg"},
+        )
+        saved = json.loads((photo_run.data_dir / run / "request.json").read_text(encoding="utf-8"))
+        assert saved["photos"]["src-a"] == {"view": "front", "use": "generator"}
+        assert saved["photos"]["src-b"]["cutout"]["box"] == [0.1, 0.1, 0.9, 0.9]
+
+        preview = await ok(client, "preview_cutouts", run=run)
+        assert preview["photos"] == ["src-a: auto, 25.0% kept", "src-b: sam, 25.0% kept"]
+        assert preview["sheet"].endswith("sheet.png")
+        assert set(generator.cut_requests[0].cutouts) == {"src-b"}
+
+        await ok(client, "generate_geometry", run=run)
+        assert "already generated its mesh" in await fails(
+            client, "set_photo", run=run, source_id="src-b", view="back"
+        )
+
+
+@pytest.mark.anyio
+async def test_previewing_cutouts_needs_a_generator_that_can(setup, photo_run) -> None:
+    server, _ = setup
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        assert "cannot cut photos out" in await fails(client, "preview_cutouts", run=run)
 
 
 @pytest.fixture

@@ -21,7 +21,13 @@ from typing import Any
 
 from moonwalkers.contracts.pipeline_result import Generator
 
-from .base import SINGLE_VIEW, GeneratorRequest, GeneratorRun, ImageTo3DGenerator
+from .base import (
+    SINGLE_VIEW,
+    CutoutRun,
+    GeneratorRequest,
+    GeneratorRun,
+    ImageTo3DGenerator,
+)
 from .subprocess_job import run_job
 
 GEN_ROOT_ENV = "MOONWALKERS_GEN_ROOT"  # the folder Hunyuan3DConfig.under expects
@@ -119,17 +125,9 @@ class Hunyuan3DGenerator(ImageTo3DGenerator):
             "out_dir": str(Path(request.out_dir).resolve()),
             **asdict(settings),
         }
-        result = run_job(
-            self.config.python,
-            self.script,
-            job,
-            request.out_dir,
-            self.config.timeout_s,
-            env={
-                "HY3DGEN_MODELS": str(self.config.models_dir),
-                "U2NET_HOME": str(self.config.u2net_home),
-            },
-        )
+        if request.cutouts:
+            job["cutouts"] = _job_cutouts(request)
+        result = self._run(job, request.out_dir)
         versions = result.get("versions", {})
         return GeneratorRun(
             mesh_path=Path(result["mesh_path"]),
@@ -143,3 +141,46 @@ class Hunyuan3DGenerator(ImageTo3DGenerator):
             log_path=Path(result["log_path"]),
             details=result,
         )
+
+    def cut_out(self, request: GeneratorRequest) -> CutoutRun:
+        """The job's first step alone: each image turned upright and cut out, into
+        ``out_dir/prepared/``, with ``out_dir/sheet.png`` to look at. Any image names work. Loads
+        no 3D model: seconds, not minutes (decision 0029)."""
+        job: dict[str, Any] = {
+            "images": {view: str(Path(path).resolve()) for view, path in request.images.items()},
+            "out_dir": str(Path(request.out_dir).resolve()),
+            "cutout_only": True,
+            "cutouts": _job_cutouts(request),
+        }
+        result = self._run(job, request.out_dir)
+        return CutoutRun(
+            prepared={view: Path(p) for view, p in result["prepared"].items()},
+            sheet=Path(result["sheet"]),
+            done=result["cutouts"],
+            seconds=float(result.get("seconds", 0.0)),
+            log_path=Path(result["log_path"]),
+        )
+
+    def _run(self, job: dict[str, Any], out_dir: Path) -> dict[str, Any]:
+        return run_job(
+            self.config.python,
+            self.script,
+            job,
+            out_dir,
+            self.config.timeout_s,
+            env={
+                "HY3DGEN_MODELS": str(self.config.models_dir),
+                "U2NET_HOME": str(self.config.u2net_home),
+            },
+        )
+
+
+def _job_cutouts(request: GeneratorRequest) -> dict[str, dict[str, Any]]:
+    """The request's cut-outs as the job reads them, with masks' paths absolute."""
+    return {
+        view: {
+            **cutout,
+            "mask": str(Path(cutout["mask"]).resolve()) if cutout.get("mask") else None,
+        }
+        for view, cutout in request.cutouts.items()
+    }

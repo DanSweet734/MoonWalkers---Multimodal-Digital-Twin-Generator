@@ -47,8 +47,13 @@ from moonwalkers.contracts.pipeline_result import (
     ScaleCalibration,
     Source,
 )
-from moonwalkers.generators.base import GeneratorRequest, GeneratorRun, ImageTo3DGenerator
-from moonwalkers.orchestrator.photos import InputPhoto
+from moonwalkers.generators.base import (
+    CutoutRun,
+    GeneratorRequest,
+    GeneratorRun,
+    ImageTo3DGenerator,
+)
+from moonwalkers.orchestrator.photos import SAM_MODEL, Cutout, InputPhoto
 
 from ..base import Pipeline, result_id_for
 from .assemble import AssembledParts, GeometrySpec, Vec3, assemble
@@ -59,6 +64,7 @@ from .photos import PhotoPlan, photo_issues, plan_photos
 VERSION = "0.1.0"
 SPEC_FILE = "geometry_spec.json"
 GENERATOR_DIR = "generator"
+CUTOUTS_DIR = "cutouts"  # the cut-out preview, before generating (decision 0029)
 GENERATOR_RECORD = "run.json"
 MESHES_DIR = "meshes"
 ASSEMBLY_RECORD = "assembly.json"
@@ -165,6 +171,23 @@ class PipelineB(Pipeline):
         """Step 1 alone: the job's mesh, generated now or reused from this run folder."""
         return self._photos_and_mesh(sources)[1]
 
+    def preview_cutouts(self, sources: list[Source], out_dir: Path) -> CutoutRun:
+        """The fed photos, and the evidence photos given a cut-out, cut out as the generator
+        would cut them, named by source id, with a contact sheet: for checking boxes, points
+        and masks before generating or before feeding a photo (decision 0029). Writes only into
+        ``out_dir``, which it may overwrite: it is a preview."""
+        plan, paths = self._photos(sources)
+        shown = [f.source.source_id for f in plan.fed] + [
+            s.source_id
+            for s, _ in plan.evidence
+            if s.source_id in self.photos and self.photos[s.source_id].cutout is not None
+        ]
+        given = {i: c for i in shown if (c := self.photos[i].cutout if i in self.photos else None)}
+        cutouts, _ = self._cutouts(given)
+        return self.generator.cut_out(
+            GeneratorRequest(images={i: paths[i] for i in shown}, out_dir=out_dir, cutouts=cutouts)
+        )
+
     def plan(self, sources: list[Source]) -> PhotoPlan:
         """Which photos the generator gets, in which slot, without generating anything."""
         return self._photos(sources)[0]
@@ -207,9 +230,12 @@ class PipelineB(Pipeline):
         images = plan.images(paths)
         generator = self.generator.for_views(images)
         if plan.grid == "single":
-            key = {"photo_sha256": plan.fed[0].source.sha256}
+            key: dict[str, Any] = {"photo_sha256": plan.fed[0].source.sha256}
         else:
             key = {"photos": {f.slot: f.source.sha256 for f in plan.fed}}
+        cutouts, cutout_key = self._cutouts(plan.cutouts())
+        if cutout_key:  # only then, so run folders from before decision 0029 still match
+            key["cutouts"] = cutout_key
         key = _json_values({**key, "generator": generator.fingerprint()})
         if record_path.is_file():
             record = _read_json(record_path)
@@ -229,7 +255,7 @@ class PipelineB(Pipeline):
                 log_path=out_dir / record["log_file"],
                 details=record["details"],
             )
-        run = generator.generate(GeneratorRequest(images=images, out_dir=out_dir))
+        run = generator.generate(GeneratorRequest(images=images, out_dir=out_dir, cutouts=cutouts))
         # Which photo filled which slot travels with the generator into every part's provenance.
         slots = {f.slot: f.source.source_id for f in plan.fed}
         params = {**run.generator.params, "photos": slots}
@@ -249,6 +275,27 @@ class PipelineB(Pipeline):
             },
         )
         return run
+
+    def _cutouts(
+        self, cutouts: Mapping[str, Cutout]
+    ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+        """Cut-outs by image name (decision 0029): as the generator takes them, with each mask's
+        path absolute, and as the reuse key holds them, with each mask's SHA-256 instead and
+        SAM's weights named."""
+        for_generator, for_key = {}, {}
+        for slot, cutout in cutouts.items():
+            settings = cutout.model_dump(mode="json")
+            keyed = {k: v for k, v in settings.items() if k != "mask"}
+            if cutout.mask is not None:
+                mask = (self.data_dir / cutout.mask).resolve()
+                if not mask.is_relative_to(self.data_dir) or not mask.is_file():
+                    raise ValueError(f"the mask {cutout.mask!r} is not a file in the data folder")
+                settings["mask"] = str(mask)
+                keyed["mask_sha256"] = _sha256(mask)
+            if cutout.method == "sam":
+                keyed["sam_model"] = SAM_MODEL
+            for_generator[slot], for_key[slot] = settings, keyed
+        return for_generator, for_key
 
     def _check_scale_reference(self, spec: GeometrySpec) -> None:
         """The spec's centre height must be the cited one, so the scale traces to a document."""

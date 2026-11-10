@@ -349,14 +349,22 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
       Daniel chose it the same day ("prioritize B for now"), and wants crop boxes and hand-drawn
       masks offered as well. Weights downloaded; a trial on seven photos kept the machine where
       u2net had kept the wrong object.)
-- [ ] **A cut-out setting per photo** in `request.json`, beside its view and use (amends decision
+- [x] **A cut-out setting per photo** in `request.json`, beside its view and use (amends decision
       0022): `sam` (a box, with points to keep or drop), `crop` (a box, then the automatic cut),
       `mask` (a PNG a person drew, in the run), or the automatic cut as today. The generator job
       applies it; small separate specks are removed. Built for SAM first, on Daniel's word, with
       `crop` and `mask` in the same change since they share the setting. Clicking boxes and points
       in the dashboard comes later.
+      (2026-11-09: decision 0029, proposed.
+      - A preview runs only the job's first step, in seconds: the command
+        `python -m moonwalkers.pipelines.b cutouts <run>` and the MCP tool `preview_cutouts`.
+      - Tried on nine lab photos through the platform. SAM needed the photo shrunk with
+        antialiasing first: rembg's own shrink kept the wall.
+      - What is left is per photo: more points, and a drawn mask for the TM-1's shiny guards. It
+        belongs to each machine's phase (the research note's second update).)
 - [ ] **The tool gaps** (drill-press report, section 7.3):
-  - item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated;
+  - [x] item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated
+    (2026-11-09: `set_photo`, which also sets the cut-out; decision 0029);
   - item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the build
     and NVIDIA's validator do;
   - item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,

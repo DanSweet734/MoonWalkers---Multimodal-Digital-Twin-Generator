@@ -8,6 +8,8 @@
 - **Amends:** decision 0011 (the multi-view model now runs whenever a run feeds it two or more
   photos) and decision 0012 (Pipeline B takes several photos; the geometry spec gains a turn about
   the up axis)
+- **Amended by:** decision 0029 (a photo's entry may carry a `cutout`: how the generator cuts
+  the machine out of it)
 
 ## Context
 Daniel's direction for the drill press is "multiple image input and ... the least amount of

@@ -40,6 +40,7 @@ from moonwalkers.contracts.pipeline_result import (
 from moonwalkers.control.manual import check_behavior
 from moonwalkers.control.program import IndexProgram, runnable_behaviors
 from moonwalkers.generators.base import (
+    CutoutRun,
     GeneratorError,
     GeneratorRequest,
     GeneratorRun,
@@ -58,6 +59,7 @@ from moonwalkers.kb import (
     validate_machine_key,
 )
 from moonwalkers.orchestrator import (
+    Cutout,
     InputPhoto,
     JobRequest,
     MachineHint,
@@ -90,6 +92,7 @@ from moonwalkers.pipelines.b.parts_spec import (
 )
 from moonwalkers.pipelines.b.photos import PhotoPlan, check_photos
 from moonwalkers.pipelines.b.pipeline import (
+    CUTOUTS_DIR,
     GENERATOR_DIR,
     GENERATOR_RECORD,
     INSPECT_DIR,
@@ -118,6 +121,7 @@ from .reports import (
     CircleAlongReport,
     CircleFitReport,
     CirclesReport,
+    CutoutPreview,
     GenerationReport,
     HoleReport,
     InspectionReport,
@@ -147,6 +151,9 @@ fact cited. Follow docs/agent-procedure.md. The usual order is:
 - start_run, then add_input for each machine photo, with its view in the operator's words when
   there are several (decision 0022). Photos uploaded in the dashboard are already a job:
   list_jobs finds it, and you continue it from add_reference_source;
+- preview_cutouts (open its sheet): where a photo's cut-out keeps what stands in front of the
+  machine or loses part of it, give it a cutout with set_photo (decision 0029), which also
+  corrects a view or use;
 - add_reference_source, identify_machine, add_fact and add_control (cited reading notes);
 - generate_geometry, then inspect_geometry (open the PNG views it returns);
 - one moving part about +x (decision 0012): add_joint and set_scale;
@@ -191,6 +198,10 @@ class UnconfiguredGenerator(Hunyuan3DGenerator):
             f"the image-to-3D generator is not configured: set {GEN_ROOT_ENV} for the MCP server "
             "(docs/setup/generators.md)"
         )
+
+    def cut_out(self, request: GeneratorRequest) -> CutoutRun:
+        self.generate(request)  # raises the same message
+        raise AssertionError("unreachable")
 
 
 def default_generator() -> ImageTo3DGenerator:
@@ -471,6 +482,68 @@ def create_server(
                 source=source,
                 inputs=[s.source_id for s in request.sources],
                 generator_input=generator_input(plan) if is_photo else None,
+            )
+
+    @server.tool(annotations=LOCAL_WRITE)
+    def set_photo(
+        run: str,
+        source_id: str,
+        view: PhotoView,
+        use: PhotoUse | None = None,
+        cutout: Cutout | None = None,
+    ) -> SourceAdded:
+        """Correct a machine photo already added: its view, its use, or how the generator cuts
+        the machine out of it, before generate_geometry (refused after). Gives the photo's whole
+        entry: leaving out use or cutout resets them to the default.
+        - cutout (decision 0029): without it, the generator keeps the photo's most salient
+          object, which in a lab is often a sign, a box or a monitor in front of the machine.
+          Coordinates are fractions (0 to 1) of the photo turned upright, from its top left.
+          {"method": "sam", "box": [x0, y0, x1, y1], "points": [{"x", "y", "keep"}]}: Segment
+          Anything inside the box; points with keep true on the machine, keep false on what to
+          leave out. {"method": "crop", "box": [...]}: the automatic removal inside the box only.
+          {"method": "mask", "mask": "<PNG in the data folder>"}: a mask a person drew, white or
+          opaque on the machine. "min_piece" (default 0.02): separate pieces smaller than this
+          share of the largest are dropped; 0 keeps all.
+        Check the result with preview_cutouts before generating."""
+        with guarded():
+            photo = InputPhoto.model_validate(
+                {"view": view, "use": use, "cutout": cutout.model_dump() if cutout else None}
+            )
+            run_dir = ws.run_dir(run)
+            request = ws.set_photo(run_dir, source_id, photo)
+            source = next(s for s in request.sources if s.source_id == source_id)
+            return SourceAdded(
+                run=run,
+                source=source,
+                inputs=[s.source_id for s in request.sources],
+                generator_input=generator_input(check_photos(request.sources, request.photos)),
+            )
+
+    @server.tool(annotations=LOCAL_WRITE)
+    def preview_cutouts(run: str) -> CutoutPreview:
+        """Cut the machine out of the photos the generator will get, and of evidence photos
+        given a cutout, as the generator would, without generating (seconds; decision 0029).
+        Writes <run>/cutouts/ (prepared PNGs and sheet.png), overwriting an earlier preview.
+        Open the sheet: if a cut-out keeps what stands in front of the machine or loses part of
+        it, give the photo a cutout with set_photo and preview again."""
+        with guarded():
+            run_dir = ws.run_dir(run)
+            request = ws.request(run_dir)
+            pipeline = PipelineB(generator_factory(), data_dir, run_dir, photos=request.photos)
+            done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR)
+            return CutoutPreview(
+                run=run,
+                sheet=str(done.sheet),
+                photos=[
+                    f"{name}: {info['method']}, {info['kept_share']:.1%} kept"
+                    + (
+                        f", {info['pieces_dropped']} specks dropped"
+                        if info.get("pieces_dropped")
+                        else ""
+                    )
+                    for name, info in done.done.items()
+                ],
+                seconds=done.seconds,
             )
 
     # -------------------------------------------------------------------- reading notes

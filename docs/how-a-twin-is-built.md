@@ -22,7 +22,7 @@ flowchart LR
     end
     subgraph PLATFORM["MoonWalkers backend (Python)"]
         API["API<br/>FastAPI"]
-        MCP["MCP server<br/>24 tools"]
+        MCP["MCP server<br/>26 tools"]
         RUN[("Run folder<br/>request.json, notes, spec")]
         ROUTER["Input Router"]
         PB["Pipeline B<br/>photos"]
@@ -191,7 +191,8 @@ flowchart TB
     S1 -->|"yes"| RT["request_twin"]
     S1 -->|"no"| SR["start_run, or list_jobs<br/>for a dashboard job"]
     SR --> AI["add_input<br/>each photo with its view"]
-    AI --> RS["add_reference_source"]
+    AI --> PC["preview_cutouts; set_photo<br/>to correct a view or a cut-out"]
+    PC --> RS["add_reference_source"]
     RS --> ID["identify_machine, add_fact,<br/>add_control, add_issue"]
     ID --> GG["generate_geometry"]
     GG --> IG["inspect_geometry, fit_circles"]
@@ -203,4 +204,4 @@ flowchart TB
     PV --> ST["submit_twin"]
 ```
 The procedure the agent follows is `docs/agent-procedure.md`. Each tool's inputs and outputs are
-in the [tool guide](tool-guide.md#the-agents-24-mcp-tools).
+in the [tool guide](tool-guide.md#the-agents-26-mcp-tools).

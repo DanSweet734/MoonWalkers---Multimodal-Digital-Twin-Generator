@@ -108,6 +108,47 @@ So SAM keeps the machine where u2net kept the wrong object. What is left is spec
 "drop" points or removing small separate blobs should clear [INFERENCE, to try]. Nothing can fill
 in what an object in front hides (the monitor).
 
+## Second update: the cut-out setting tried through the platform (2026-11-09)
+The boxes and points of the trial, now in `request.json` as each photo's `cutout` (decision 0029),
+run through the generator job's own code with
+`python -m moonwalkers.pipelines.b cutouts <run> --data <scratch data>`. The scratch runs are
+written by `data/scratch/2026-11-09_background-spike/cutout_trial_runs.py` into
+`data/scratch/2026-11-09_cutout-trial/`.
+
+**First run: worse than the trial.** The TM-1 kept large parts of the wall, and the arm's front
+photo broke apart. The one difference was that the trial shrank each photo to 1600 px first, and
+the job fed the photo at full size (4000 x 3000).
+
+**Why:** rembg's SAM fits each image into 1024 x 684 with `cv2.warpAffine` and `INTER_LINEAR`
+(`rembg/sessions/sam.py`, `input_size = (684, 1024)`). That does not antialias, so a
+4000-pixel photo reaches SAM's encoder aliased [INFERENCE from the code, borne out below]. The
+prompt's coordinates are in the original image's pixels and are scaled by the same matrix, so
+they were never the problem.
+
+**The fix:** the job shrinks the photo to that size with Pillow's LANCZOS first, gives SAM the
+prompt in the small image's pixels, then scales the mask back up and keeps it binary
+(`sam_size` and `Cutter` in `hunyuan3d_shape_job.py`).
+
+| Photo | First run (full size) | With the fix |
+|---|---|---|
+| TM-1 `134300` | The machine, wall pieces | The machine and its pendant, few wall pieces |
+| TM-1 `134314` | The machine and much of the wall | The same box, with four more "leave out" points on the wall and floor: no wall; holes in the shiny guards |
+| TM-1 `134337` | The machine, wall and ceiling pieces | Fewer pieces; a ceiling pipe kept |
+| Arm `133252` | The arm, the hand lost | The arm and the hand |
+| Arm `133306` | Broken apart | The hand and base kept, the middle of the arm lost (it is end-on to the camera) |
+| VF-3 `133812` | The side, the monitor dropped | The same |
+
+Specks dropped by `min_piece` 0.02: 13 to 152 per photo. A crop box alone (`crop`, u2net inside
+the box) on the arm's `133317` kept the arm's body and lost its forearm and hand, which SAM kept
+on `133252`. So the crop stays an option and SAM the default choice.
+
+**What is left, for each machine's phase:**
+- more "leave out" points where the wall touches the machine;
+- "keep" points on parts SAM loses;
+- a mask drawn by hand where SAM leaves holes in shiny sheet metal (the TM-1's guards).
+
+Each try takes 2 to 4 s a photo in the preview.
+
 ## Sources
 Accessed 2026-11-09.
 - rembg 2.0.68 as installed in `C:\mw-gen\hunyuan3d-2\.venv` (`rembg/sessions/sam.py`,
