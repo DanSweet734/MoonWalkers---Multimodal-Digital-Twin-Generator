@@ -113,7 +113,7 @@ job. Read-only tools change nothing.
 | 16 | `fit_circles` (read-only) | Find a round part's axis (a column, a quill, a hub, an arm's link at an angle) | Run, axis or direction, slice positions, optionally a box to keep (`within`) | Circle centres and radii, and how round each is |
 | 17 | `add_joint` | One moving part: define the spindle joint | Run, axis, radius, start, method | The spec's status |
 | 18 | `set_scale` | One moving part: scale from the cited centre height | Run, base plane | The spec's status |
-| 19 | `set_spec_frame` | Several parts: the mesh's axes, the origin, the fixed part | Run, axes, origin, fixed part, method | The spec's status |
+| 19 | `set_spec_frame` | Several parts: the mesh's axes, the origin, the fixed part; for an arm, a stiffer hold and a self-collision check (decision 0032) | Run, axes, origin, fixed part, method; optional `hold_drive`, `self_collision` | The spec's status |
 | 20 | `set_cut_list` | Several parts: the ordered cut shapes | Run, cuts with notes | The spec's status |
 | 21 | `set_spec_part` | Add or replace a part: cut, removed or a labelled stand-in | Run, part | The spec's status |
 | 22 | `set_spec_joint` | Add or replace a joint, with its behaviour (driven, spring return, locked, free, follows) | Run, joint | The spec's status |

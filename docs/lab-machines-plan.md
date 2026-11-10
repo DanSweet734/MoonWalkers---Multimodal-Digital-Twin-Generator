@@ -542,10 +542,12 @@ at; the new tools used in Phase 2.
 - [x] Reference facts for `igus/rebel6dof02`, each quoted from igus's documentation or the URDF,
       with the issue "version 02 not confirmed to match 00/01". (31 facts; 34 of 40 quotes found
       on their page, the other 6 photo labels and Daniel's words.)
-- [ ] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
+- [x] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
       cited frames, the hand a box. Daniel checks in Isaac Sim that each joint turns through its
-      range, and that six driven joints hold a pose under gravity. (Built and validated: run
-      `moonwalkers-testarm/runs/2026-11-09_run-001`; Daniel's check waits.)
+      range, and that six driven joints hold a pose under gravity. (Run
+      `moonwalkers-testarm/runs/2026-11-09_run-001`, Daniel's checks of 2026-11-10: every joint
+      reaches its upper limit within 0.001 degrees; the default drive sags 1.1 to 1.5 degrees,
+      the stiff one 0.06, so the arm holds with the stiff one, decision 0032.)
 - [x] The views, the front (where the fingertips point in the photographed pose, fixed to the
       base; Daniel, 2026-11-09) and the zero pose, in a decision record: decision 0031,
       proposed.
@@ -559,7 +561,11 @@ at; the new tools used in Phase 2.
       straightest link]. Size checks on all the others. (X4 is -17.9%, a warning.)
 - [x] Measure each joint's angle in the photographed pose; set the start pose and the limits.
 - [ ] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
-      (Dry run clean; `igus/rebel6dof02@v1` built, both validators clean; Daniel's check waits.)
+      (v1 built, both validators clean; Daniel's checks of 2026-11-10: both ends of every range
+      reached within 0.01 degrees; the arm folds through itself, loose bits float, extra cable
+      strands and a duplicate thumb. `igus/rebel6dof02@v2` (run `2026-11-10_run-001`, decision
+      0032): stiffer holds, the strands and bits cut out, a self-collision check file. Dry run
+      clean; Daniel's check of v2 waits.)
 - [x] The score: a small scorer for the measures above. The shape distance needs the ROS model's
       `.dae` meshes read, which may need an install (asked first). (`pipelines/b/score.py`,
       standard library and numpy; nothing installed. Ranges wait for recordings.)
@@ -701,6 +707,7 @@ merging Sarkis's branch needs one too.
 | The tools for the lab's builds (amends 0028) | 1 |
 | Crop boxes or masks for busy photos, if the spike needs one (amends 0022) | 1 |
 | A robot arm: its front, zero pose, and the public models' role: [0031](decisions/0031-the-arms-views-front-and-zero-pose.md), proposed | 2 |
+| An arm's hold, its loose pieces and its self-collision: [0032](decisions/0032-an-arms-hold-its-loose-pieces-and-self-collision.md), proposed | 2 |
 | An arm's joint programs | 3 |
 | Mill programs: a G-code reader | 5 |
 | The VF-3's trunnion axes | 6 |
