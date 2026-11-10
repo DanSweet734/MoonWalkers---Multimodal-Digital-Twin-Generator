@@ -10,6 +10,10 @@ comes out of each. The [tool guide](docs/tool-guide.md) explains every tool by n
 software, our own modules, the agent's 24 MCP tools and the commands, with each one's purpose,
 inputs and outputs.
 
+**Working on the code:** start with [team-setup.md](docs/setup/team-setup.md), from a fresh
+machine to passing tests on your own branch. Pipeline owners then follow the
+[pipeline guide](docs/pipeline-guide.md).
+
 ---
 
 ## Project status
@@ -410,7 +414,7 @@ California State University, Northridge (CSUN), Computer Science capstone.
 | `docs/decisions/` | Decision records (stack, PoC scope, agent, contract, knowledge base, generator, Phase 0 tooling, KB store, twin reuse and versioning, USD export, generator setup, Pipeline B method, MCP server, API and dashboard, twin reviews, indexing programs, sliding joints and chains, springs, stops and locks, coupled motion, contract v0.2.0, how Pipelines A, C and D run) |
 | `docs/worklog/` | Dated work entries |
 | `docs/research/` | Research notes and the project context file |
-| `docs/setup/` | Setup guides: Windows, Hugging Face, the image-to-3D generator, the Isaac Sim check, and running the dashboard |
+| `docs/setup/` | Setup guides: **[team-setup.md](docs/setup/team-setup.md), where a new teammate starts** (clone, tools, tests, branches); Daniel's Windows machine, Hugging Face, the image-to-3D generator, the Isaac Sim check, and running the dashboard |
 | `backend/` | Python package `moonwalkers` (`uv` project, Python 3.12): the shared pipeline contract and its JSON Schema, knowledge base and reviews (`kb/`), orchestrator and Input Router (`orchestrator/`), pipeline stubs (`pipelines/`), USD exporter and validator (`usd/`), image-to-3D generator adapters (`generators/`), Pipeline B (`pipelines/b/`), indexing programs (`control/`), run folders and job status (`workspace/`), the MCP server (`mcp/`), the API (`api/`), and tests |
 | `dashboard/` | Vite + React + TypeScript dashboard: jobs, twins with their sources and reviews, sources (see `dashboard/README.md`) |
 | `data/` | Local test data and outputs (gitignored except its README) |

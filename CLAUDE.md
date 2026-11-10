@@ -144,9 +144,15 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
   - **Daniel photographed three, with nameplates:** a "ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper
     and CobotPump" with a "Realhand L20 Dexterous Robotic Hand" attached, a Haas VF-3 and a Haas
     TM-1. The order is ours to choose. Public sources: `docs/research/2026-11-06-lab-machines.md`.
+  - **Daniel's calls (2026-11-09):** all three machines; the order is the arm, the TM-1, the VF-3,
+    then the hand; the hand is part of the arm's twin. The photos (2026-11-05, 29 JPEGs) wait in
+    `data/machine photos (temp)/` until a plan files them by machine. Their findings are in the
+    research note's update: a REBEL-6DOF-02 with no public model of that version, the L20 alone
+    on the flange, an open TM-1, and a VF-3 with a Haas trunnion inside. Lab measurements must be
+    planned ahead; video is a separate trip.
   - **The repository is public:** keep nameplates' serial numbers in `data/`, out of commits.
-  - **Order of work (Daniel, 2026-11-06):** update the record, then a setup guide for the
-    teammates, then the machines from photos. Video input for Pipeline B starts once the photo
+  - **Order of work (Daniel, 2026-11-06):** update the record (PR #25, merged 2026-11-09), then a
+    setup guide for the teammates (`docs/setup/team-setup.md`), then the machines from photos. Video input for Pipeline B starts once the photo
     results are acceptable.
 - **Direction from the advisors** (`docs/poc-report.md`, section 7):
   - build a more complete product before the lab's photos and real-world checks come;
@@ -243,7 +249,8 @@ Dashboard / AI agent (via MCP) -> Backend API -> Input Router -> Pipeline (A-D) 
 - Dashboard: React + TypeScript with Vite and npm; Oxlint for lint (decision 0007).
 
 ## Commands
-First-time machine setup (uv, Python 3.12, Node.js LTS, GitHub CLI): `docs/setup/windows-dev-setup.md`.
+First-time setup for a teammate (clone, tools, tests, branches): `docs/setup/team-setup.md`.
+Daniel's machine, with Isaac Sim and the generators: `docs/setup/windows-dev-setup.md`.
 
 Backend (run from `backend/`):
 - Install/sync Python deps: `uv sync` (creates `backend/.venv` from `uv.lock`)

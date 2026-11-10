@@ -96,7 +96,7 @@ def create_pipeline() -> Pipeline:
 ```
 
 ## Try it on the T33901 manual
-1. **Set up once:** `docs/setup/windows-dev-setup.md`, then `uv sync` in `backend/`.
+1. **Set up once:** [setup/team-setup.md](setup/team-setup.md), to passing tests.
 2. **Get the manual.** `data/` is not in Git, so download it yourself from
    https://cdn0.grizzly.com/manuals/t33901_m.pdf into
    `data/machines/grizzly-t33901/inputs/documents/grizzly-t33901-t33902-manual-2023.pdf`.

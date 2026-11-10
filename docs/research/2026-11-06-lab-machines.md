@@ -7,6 +7,20 @@ anything is built, and which should come first?
 yet, so nothing here says what the lab's own units look like or carry. The machine names are as
 Daniel reported them from the lab (worklog 2026-11-06).
 
+## Update, 2026-11-09: what the lab's photos show
+Daniel's 29 photos of 2026-11-05 (worklog 2026-11-09) settle some of what follows:
+- **The arm is a REBEL-6DOF-02,** by the label on its base. The public ROS package has only
+  versions `00`, `01` and `pre`, so its joint limits are **not confirmed** for this unit.
+- **Its end effector is the Realhand L20 alone,** on the wrist flange. Neither the SCHUNK EGP
+  gripper nor the CobotPump is on it. The full name comes from Dr. Li's website (Daniel).
+- **The hand is part of the arm's twin,** and all three machines are to be built (Daniel,
+  2026-11-09).
+- **The TM-1 is open-framed,** with sheet-metal guards and an umbrella tool changer. It was made
+  in 11/06.
+- **The VF-3 is enclosed,** was made in 12/2014, and carries a Haas two-axis trunnion rotary table,
+  photographed with the doors open. The trunnion's model is not read yet. Being a Haas rotary
+  product, like the HA5C, it may reuse decision 0026's controller [INFERENCE].
+
 ## Summary
 | Machine | Moving parts | Public model | Its control | Scripts can read its sources? |
 |---|---|---|---|---|
