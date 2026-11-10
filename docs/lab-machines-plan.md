@@ -320,8 +320,10 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
 - [x] Copy each photo into `inputs/photos/` unchanged, and check its SHA-256 against the
       original.
       (2026-11-09: 29 photos, each copy's SHA-256 checked twice, by the filing script and by
-      `sha256sum`. Views to check by Daniel: the TM-1's `134346` and `134355`, whose side is
-      uncertain.) One `SOURCES.md` line each: what it shows, its view in the operator's words
+      `sha256sum`. Daniel confirmed the TM-1's `134346` as its left side and `134355` as its back
+      left corner: "I couldn't get a photo directly behind the machine as it was close to the
+      wall". So `134322` and `134329`, read as its back, may show its pendant's side behind the
+      sign: asked.) One `SOURCES.md` line each: what it shows, its view in the operator's words
       (proposed, checked by Daniel), its use (generator or evidence), the date, the SHA-256 and
       the licence note: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the
       team's own photo; internal research only; shows serial numbers, keep out of commits."
