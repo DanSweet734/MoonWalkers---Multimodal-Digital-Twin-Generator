@@ -11,7 +11,9 @@ import trimesh
 from moonwalkers.pipelines.b import photo_marks
 from moonwalkers.pipelines.b.mesh_tools import read_png
 from moonwalkers.pipelines.b.part_views import (
+    FIT_PHOTO_PIXELS,
     fit_fed_photos,
+    fit_photo,
     part_colours,
     photo_overlay,
     twin_scene,
@@ -123,6 +125,50 @@ def test_spec_views_are_written_for_the_reviewer(tmp_path: Path) -> None:
 
 def test_without_prepared_photos_there_is_nothing_to_place(tmp_path: Path) -> None:
     assert fit_fed_photos(two_boxes(), tmp_path / "prepared", 0.0) == []
+
+
+def test_a_large_photo_is_fitted_on_a_reduced_copy_and_a_small_one_as_it_is() -> None:
+    large = np.zeros((4000, 3000, 4), dtype=np.uint8)  # the lab's photos, upright
+    assert fit_photo(large).shape == (800, 600, 4)  # every 5th pixel
+    assert fit_photo(np.zeros((4001, 10, 4), dtype=np.uint8)).shape[0] <= FIT_PHOTO_PIXELS
+    small = np.zeros((600, 800, 4), dtype=np.uint8)
+    assert fit_photo(small) is small
+
+
+def test_the_fed_photos_are_fitted_on_reduced_copies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    masks = []
+
+    def fit_camera(mesh, mask, azimuths, elevations):  # the search itself takes about 50 s
+        masks.append(mask)
+        return photo_marks.PhotoFit(azimuth_deg=90.0, elevation_deg=0.0, iou=0.9)
+
+    monkeypatch.setattr(photo_marks, "fit_camera", fit_camera)
+    prepared = tmp_path / "prepared"
+    prepared.mkdir()
+    photo = np.zeros((1700, 1700, 4), dtype=np.uint8)
+    photo[500:1200, 100:1600, :] = 200
+    write_rgba_png(prepared / "left.png", photo)
+    (fitted,) = fit_fed_photos(two_boxes(), prepared, 0.0)
+    assert fitted.slot == "left" and fitted.photo.shape == (567, 567, 4)  # every 3rd pixel
+    assert masks[0].shape == (567, 567) and masks[0].dtype == bool
+
+
+def write_rgba_png(path: Path, rgba: np.ndarray) -> None:
+    """An RGBA PNG with the standard library, as the generator's prepared photos are."""
+    import zlib
+
+    rows = b"".join(b"\x00" + row.tobytes() for row in rgba)
+    height, width = rgba.shape[:2]
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        crc = zlib.crc32(kind + data) & 0xFFFFFFFF
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", crc)
+
+    header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows))
+    path.write_bytes(png + chunk(b"IEND", b""))
 
 
 def test_an_overlay_draws_the_scene_through_the_fitted_camera(tmp_path: Path) -> None:

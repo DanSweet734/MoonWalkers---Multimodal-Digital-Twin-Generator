@@ -30,6 +30,11 @@ from .stand_ins import placed, shape_mesh
 SLOT_AZIMUTHS = {"front": 0.0, "left": 90.0, "back": 180.0, "right": -90.0}
 FIT_SPAN_DEG = 30.0  # the azimuth search reaches this far either side of the slot's
 FIT_ELEVATIONS = np.arange(0.0, 45.5, 3.0)  # photos are taken from about eye level or above
+# A fed photo is fitted and drawn on at most this many pixels along its longer side. The search
+# renders the mesh 200 pixels across, and the lab's 12-megapixel photos took 10 minutes or more
+# a photo at full size (the lab's machines plan, Phase 2), against about a minute for the
+# T33901's catalogue pictures.
+FIT_PHOTO_PIXELS = 800
 REMOVED = "(removed)"  # the legend's name for faces cut out of the twin
 
 PALETTE = np.array(
@@ -192,6 +197,13 @@ class FittedPhoto:
     expected_azimuth_deg: float  # where the slot's camera stands once the mesh is squared
 
 
+def fit_photo(photo: np.ndarray, longest: int = FIT_PHOTO_PIXELS) -> np.ndarray:
+    """``photo`` with every n-th pixel kept, n the smallest whole step that brings its longer side
+    to ``longest`` pixels or fewer; a photo already that small is returned as it is."""
+    step = math.ceil(max(photo.shape[:2]) / longest)
+    return photo if step <= 1 else photo[::step, ::step]
+
+
 def fit_fed_photos(mesh: trimesh.Trimesh, prepared: Path, yaw_deg: float) -> list[FittedPhoto]:
     """Place each photo the generator was fed (``generator/prepared/<slot>.png``) on the oriented
     mesh by its silhouette, searching around where its slot's camera should stand."""
@@ -200,7 +212,7 @@ def fit_fed_photos(mesh: trimesh.Trimesh, prepared: Path, yaw_deg: float) -> lis
         path = Path(prepared) / f"{slot}.png"
         if not path.is_file():
             continue
-        photo = read_png(path)
+        photo = fit_photo(read_png(path))
         if photo.ndim != 3 or photo.shape[2] != 4:
             continue  # no alpha, so no mask to fit
         guess = _wrap(azimuth - yaw_deg)
