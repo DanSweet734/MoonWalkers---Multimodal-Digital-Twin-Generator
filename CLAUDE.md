@@ -6,7 +6,7 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 2, the ReBeL arm (the drill-press plan is done)
+## Current phase: the lab's machines plan, Phase 2, the ReBeL arm, in review (the drill-press plan is done)
 **Start here:** `docs/lab-machines-plan.md`, "Phase 2", whose hand-off comes first. Phase 2 runs on
 branch `feat/lab-phase-2-rebel-arm`, from `main` after PR #28; its first commit is the hand-off.
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
@@ -21,8 +21,19 @@ The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
   - Haas's sources are filed: the mill manuals and the Toolroom sheet fetched (its PDFs answer
     scripts), its three web pages saved by Daniel.
-- **Next:** Phase 2, the ReBeL arm, levels 1 and 2. Restart the MCP server (`/mcp`) before an
-  agent uses the new tools.
+- **Phase 2 is built and in review** (branch `feat/lab-phase-2-rebel-arm`, its PR open):
+  - `igus/rebel6dof02@v1` (run `2026-11-09_run-001`): seven parts on six joints, posed as
+    photographed; position 0 is that pose and igus's limits are shifted by each joint's angle
+    in it (decision 0031, proposed). Reference facts: `pipelines/b/igus_rebel6dof02.reference.json`.
+  - A box-and-cylinder arm (`python -m moonwalkers.usd.primitive_arm <run>`, run
+    `moonwalkers-testarm/runs/2026-11-09_run-001`). Daniel's Isaac Sim checks of it and of v1
+    are waiting.
+  - The scorer: `uv run python -m moonwalkers.pipelines.b.score <run> --maker
+    src/moonwalkers/pipelines/b/igus_rebel6dof02.score.json [--recording <csv> ...]` writes
+    `<run>/score/SCORE.md`.
+  - A fed photo is now fitted on a copy of at most 800 pixels (`part_views.fit_photo`): the
+    lab's 12-megapixel photos made `dry_run_twin` time out. **Restart the MCP server (`/mcp`)**
+    before an agent builds again.
 
 The history below is the record of the PoC and the drill-press plan.
 

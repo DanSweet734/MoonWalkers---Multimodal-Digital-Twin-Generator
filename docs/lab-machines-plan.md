@@ -4,8 +4,8 @@
 compare with the real machines. These are the advisors' "real-world comparisons" (meeting of
 2026-10-29), and the start of "Evaluate on the standardized test set" on the README's roadmap.
 
-**Status (2026-11-09):** approved (PR #27). Phase 1 is done (PR #28, merged), and Phase 2,
-the ReBeL arm, starts from its hand-off below. The plan was drafted on 2026-11-09 for Daniel's
+**Status (2026-11-09):** approved (PR #27). Phase 1 is done (PR #28, merged). Phase 2, the
+ReBeL arm, is built (`igus/rebel6dof02@v1`) and waits for Daniel's Isaac Sim checks and review. The plan was drafted on 2026-11-09 for Daniel's
 review (Phase 0, branch `docs/lab-machines-plan`, PR #27). He answered eight of its nine questions the same day ("Decided on review"). Nothing is
 built, filed or installed until he approves it. The hand-off from the chat that closed
 the drill-press plan comes first; the plan follows it, from "The plan (draft of 2026-11-09)".
@@ -539,24 +539,31 @@ at; the new tools used in Phase 2.
 - **The items "Carried over, none blocking"** in the first hand-off still stand.
 
 ### Phase 2's checklist
-- [ ] Reference facts for `igus/rebel6dof02`, each quoted from igus's documentation or the URDF,
-      with the issue "version 02 not confirmed to match 00/01".
+- [x] Reference facts for `igus/rebel6dof02`, each quoted from igus's documentation or the URDF,
+      with the issue "version 02 not confirmed to match 00/01". (31 facts; 34 of 40 quotes found
+      on their page, the other 6 photo labels and Daniel's words.)
 - [ ] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
       cited frames, the hand a box. Daniel checks in Isaac Sim that each joint turns through its
-      range, and that six driven joints hold a pose under gravity.
-- [ ] The views, the front (where the fingertips point in the photographed pose, fixed to the
-      base; Daniel, 2026-11-09) and the zero pose, in a decision record.
-- [ ] Generate the mesh from the four sides, and look at it with `inspect_geometry`.
-- [ ] Cut it into seven parts and the hand by cited shapes (decision 0023), with the joint housings
+      range, and that six driven joints hold a pose under gravity. (Built and validated: run
+      `moonwalkers-testarm/runs/2026-11-09_run-001`; Daniel's check waits.)
+- [x] The views, the front (where the fingertips point in the photographed pose, fixed to the
+      base; Daniel, 2026-11-09) and the zero pose, in a decision record: decision 0031,
+      proposed.
+- [x] Generate the mesh from the four sides, and look at it with `inspect_geometry`. (Each photo
+      cut out by a mask made from SAM's cut-out; worklog 2026-11-09, Phase 2.)
+- [x] Cut it into seven parts and the hand by cited shapes (decision 0023), with the joint housings
       measured by `fit_circles`. The hand is the generator's fused shape, one labelled part on the
       flange, until Phase 7 (Daniel, 2026-11-09). The cables fused into the mesh are logged.
-- [ ] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
-      straightest link]. Size checks on all the others.
-- [ ] Measure each joint's angle in the photographed pose; set the start pose and the limits.
+      (Seven bodies: the URDF's flange is a 1.2 mm disc, merged into the hand; decision 0031.)
+- [x] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
+      straightest link]. Size checks on all the others. (X4 is -17.9%, a warning.)
+- [x] Measure each joint's angle in the photographed pose; set the start pose and the limits.
 - [ ] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
-- [ ] The score: a small scorer for the measures above. The shape distance needs the ROS model's
-      `.dae` meshes read, which may need an install (asked first).
-- [ ] Decision records, worklog, `RUN.md`, PR. The PR says which of Phase 1's new tools were
+      (Dry run clean; `igus/rebel6dof02@v1` built, both validators clean; Daniel's check waits.)
+- [x] The score: a small scorer for the measures above. The shape distance needs the ROS model's
+      `.dae` meshes read, which may need an install (asked first). (`pipelines/b/score.py`,
+      standard library and numpy; nothing installed. Ranges wait for recordings.)
+- [x] Decision records, worklog, `RUN.md`, PR. The PR says which of Phase 1's new tools were
       used and how they did, for the tool guide (Phase 8).
 
 **Measured by:** the scorecard's sizes, photo match, shape, parts and joints, axes and ranges.
@@ -693,7 +700,7 @@ merging Sarkis's branch needs one too.
 |---|---|
 | The tools for the lab's builds (amends 0028) | 1 |
 | Crop boxes or masks for busy photos, if the spike needs one (amends 0022) | 1 |
-| A robot arm: its front, zero pose, and the public models' role | 2 |
+| A robot arm: its front, zero pose, and the public models' role: [0031](decisions/0031-the-arms-views-front-and-zero-pose.md), proposed | 2 |
 | An arm's joint programs | 3 |
 | Mill programs: a G-code reader | 5 |
 | The VF-3's trunnion axes | 6 |
