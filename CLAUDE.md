@@ -6,7 +6,11 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: integration, starting with the Grizzly T33901 drill press
+## Current phase: drafting the lab's machines plan (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`. It holds the hand-off of 2026-11-09, on branch
+`docs/lab-machines-plan`. The plan is drafted below it for Daniel's review, before any build. The
+history below is the record of the PoC and the drill-press plan.
+
 - **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three
   success levels: a scaled model with cited facts; a spindle joint that rotates; an indexing
   program that drives it. It was presented to the advisors on 2026-10-22, with positive feedback.
@@ -140,7 +144,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
     which Daniel shares for the weekly meeting.
     Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
     the next version), and v10 and v11 carry a stale issue from the agent's notes.
-- **Next: the lab's machines** (meeting of 2026-11-05; report, section 7.1). No plan is written yet.
+- **Next: the lab's machines** (meeting of 2026-11-05; report, section 7.1). The plan is not
+  written yet: `docs/lab-machines-plan.md` holds its hand-off.
   - **Daniel photographed three, with nameplates:** a "ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper
     and CobotPump" with a "Realhand L20 Dexterous Robotic Hand" attached, a Haas VF-3 and a Haas
     TM-1. The order is ours to choose. Public sources: `docs/research/2026-11-06-lab-machines.md`.
