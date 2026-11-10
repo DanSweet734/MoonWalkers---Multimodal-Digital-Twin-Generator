@@ -5,7 +5,8 @@
 - **Decided by:** team (Daniel)
 - **Changes:** decision 0006's fallback (Stable Fast 3D is replaced by Hunyuan3D-2's single-image model)
 - **Amended by:** decision 0022 (two to four photos with their views run the multi-view model;
-  one photo still runs the single-image model)
+  one photo still runs the single-image model); decision 0029 (a photo may say how the machine
+  is cut out of it: SAM, a crop box or a drawn mask, instead of the automatic removal)
 
 ## Context
 Decision 0006 picked Hunyuan3D-2mv (multi-view) as Pipeline B's generator, with Stable Fast 3D as

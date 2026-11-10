@@ -191,6 +191,9 @@ class AssembledModel:
     overall_extents_m: Vec3  # depth (x), width (y), height (z) of the twin's parts
     seams: list[PartSeams]  # what the cut list left on each part, removed ones included
     removed_faces: dict[str, int]
+    # The point of the oriented mesh, in model units, at the twin's origin: a twin point p (m)
+    # is p / scale_factor + origin_model_units there.
+    origin_model_units: Vec3 = (0.0, 0.0, 0.0)
 
 
 def oriented_mesh(raw_mesh: Path, spec: PartsSpec) -> trimesh.Trimesh:
@@ -273,6 +276,7 @@ def assemble_parts(
         overall_extents_m=_vec(everything.extents),
         seams=seams(mesh, list(labels)),
         removed_faces={r: int((labels == r).sum()) for r in removed},
+        origin_model_units=_vec(origin),
     )
 
 

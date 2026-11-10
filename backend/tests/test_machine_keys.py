@@ -16,6 +16,11 @@ from moonwalkers.kb import InvalidMachineKeyError, machine_key, validate_machine
         ("Grizzly Industrial", "T33901", "grizzly/t33901"),
         ("Grizzly Industrial, Inc.", "T33901", "grizzly/t33901"),
         ("Grizzly", "T-33901", "grizzly/t33901"),
+        # The lab's machines: igus's legal name and its base label, Haas's model names
+        ("igus GmbH", "ReBeL 6DOF-02", "igus/rebel6dof02"),
+        ("igus", "REBEL-6DOF-02", "igus/rebel6dof02"),
+        ("Haas Automation, Inc.", "TM-1", "haas/tm1"),
+        ("Haas", "VF-3", "haas/vf3"),
     ],
 )
 def test_same_machine_gives_same_key(manufacturer: str, model: str, expected: str) -> None:

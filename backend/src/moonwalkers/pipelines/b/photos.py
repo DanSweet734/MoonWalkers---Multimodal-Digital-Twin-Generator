@@ -24,7 +24,13 @@ from typing import Literal
 
 from moonwalkers.contracts.pipeline_result import InputType, Issue, Source
 from moonwalkers.generators.base import SINGLE_VIEW
-from moonwalkers.orchestrator.photos import CORNER_VIEWS, SIDE_VIEWS, InputPhoto, PhotoView
+from moonwalkers.orchestrator.photos import (
+    CORNER_VIEWS,
+    SIDE_VIEWS,
+    Cutout,
+    InputPhoto,
+    PhotoView,
+)
 
 Grid = Literal["single", "sides", "corners"]
 Side = Literal["front", "operator_right", "back", "operator_left"]
@@ -77,6 +83,7 @@ class FedPhoto:
     slot: str  # the generator's name: single, front, left, back or right
     source: Source
     view: PhotoView | None  # None: a PoC request's one photo, given no view
+    cutout: Cutout | None = None  # how to cut the machine out; None: automatically (0029)
 
 
 @dataclass(frozen=True)
@@ -92,6 +99,10 @@ class PhotoPlan:
     def images(self, paths: Mapping[str, Path]) -> dict[str, Path]:
         """The generator's images by slot, from each photo's file by source id."""
         return {f.slot: paths[f.source.source_id] for f in self.fed}
+
+    def cutouts(self) -> dict[str, Cutout]:
+        """The fed photos' cut-outs by slot, for those that have one (decision 0029)."""
+        return {f.slot: f.cutout for f in self.fed if f.cutout is not None}
 
     def sides(self) -> tuple[list[Side], list[Side], list[Side]] | None:
         """The machine's sides seen square on, seen only at an angle, and not seen (guessed);
@@ -112,7 +123,9 @@ class PhotoPlan:
             "grid": self.grid,
             "expected_turn_deg": self.expected_turn_deg,
             "fed": [
-                {"slot": f.slot, "source_id": f.source.source_id, "view": f.view} for f in self.fed
+                {"slot": f.slot, "source_id": f.source.source_id, "view": f.view}
+                | ({"cutout": f.cutout.model_dump(mode="json")} if f.cutout else {})
+                for f in self.fed
             ],
             "evidence": [{"source_id": s.source_id, "view": v} for s, v in self.evidence],
         }
@@ -163,10 +176,15 @@ def check_photos(sources: Sequence[Source], photos: Mapping[str, InputPhoto]) ->
         return None
     if len(fed) == 1:
         source, view = fed[0]
-        return PhotoPlan("single", (FedPhoto(SINGLE_VIEW, source, view),), evidence)
+        cutout = photos[source.source_id].cutout
+        return PhotoPlan("single", (FedPhoto(SINGLE_VIEW, source, view, cutout),), evidence)
     grid: Grid = "corners" if kinds == {"corners"} else "sides"
     slots = CORNER_SLOTS if grid == "corners" else SIDE_SLOTS
-    return PhotoPlan(grid, tuple(FedPhoto(slots[v], s, v) for s, v in fed), evidence)
+    return PhotoPlan(
+        grid,
+        tuple(FedPhoto(slots[v], s, v, photos[s.source_id].cutout) for s, v in fed),
+        evidence,
+    )
 
 
 def photo_issues(plan: PhotoPlan) -> list[Issue]:

@@ -95,6 +95,26 @@ class SourceAdded(BaseModel):
     )
 
 
+class CutoutPreview(BaseModel):
+    run: str
+    sheet: str = Field(
+        description="PNG: each photo cut out on grey, its box in blue, its points green (keep) "
+        "or red (leave out); open it"
+    )
+    photos: list[str] = Field(
+        description="source id: method (sam, crop, mask, auto), share of the photo kept, specks "
+        "dropped"
+    )
+    seconds: float
+
+
+class NumberedIssue(BaseModel):
+    number: int = Field(description="its place in the notes, from 1: correct_issue's `number`")
+    severity: str
+    message: str
+    ref: str | None
+
+
 class ReferenceSummary(BaseModel):
     run: str
     sources: list[str]
@@ -102,6 +122,9 @@ class ReferenceSummary(BaseModel):
     facts: list[str] = Field(description="fact keys")
     control: list[str] = Field(description="control behaviour ids")
     issues: int
+    issue_list: list[NumberedIssue] = Field(
+        default_factory=list, description="the issues in the notes, numbered"
+    )
 
 
 class GenerationReport(BaseModel):
@@ -208,7 +231,10 @@ class CircleAlongReport(BaseModel):
 
 class CirclesReport(BaseModel):
     run: str
-    along: str
+    along: str | Vec3 = Field(description="an axis, or the direction the slices are across")
+    within: dict[str, tuple[float, float]] | None = Field(
+        default=None, description="the box the surface was kept in, model units, twin axes"
+    )
     fits: list[CircleAlongReport]
 
 
@@ -245,7 +271,11 @@ class PartsPreviewReport(BaseModel):
     joints: list[JointPreview]
     photos: list[str] = Field(description="each fed photo's fit on the mesh, when placed")
     size_checks: list[Issue]
-    issues: list[Issue] = Field(description="stand-ins, removed parts, inaccuracies, patches")
+    issues: list[Issue] = Field(
+        description="stand-ins, removed parts, inaccuracies, patches, and each part whose mesh "
+        "NVIDIA's asset validator would warn about (zero-area faces, non-manifold edges and "
+        "points, in model units), to fix before submitting"
+    )
     holes: list[HoleReport] = Field(
         description="open edges a cut part has where removed faces met it: close each with a "
         "patch on that part, or check in the views that a stand-in covers it"
@@ -265,7 +295,27 @@ class PreviewReport(BaseModel):
     body_faces: int
     spindle_faces: int
     size_checks: list[Issue]
+    mesh_faults: list[Issue] = Field(
+        default_factory=list,
+        description="what NVIDIA's asset validator would warn about in the body's or the "
+        "spindle's mesh (zero-area faces, non-manifold edges and points); empty when clean",
+    )
     views: dict[str, str] = Field(description="PNG sheets: assembled, body, spindle")
+
+
+class FileValidation(BaseModel):
+    file: str
+    ours: list[Issue]
+    nvidia: list[Issue] | None = Field(description="None: NVIDIA's validator is not installed")
+
+
+class DryRunReport(BaseModel):
+    run: str
+    scratch_run: str = Field(description="the copied run, in a new folder under data/scratch/")
+    message: str = Field(description="the build's message, or why it stopped")
+    built: bool
+    clean: bool = Field(description="built, and no error or warning from either validator")
+    files: list[FileValidation]
 
 
 class SubmitReport(BaseModel):

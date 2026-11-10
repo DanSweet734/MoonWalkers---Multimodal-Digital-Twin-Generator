@@ -1,10 +1,13 @@
 """Command line for Pipeline B (decision 0012). Run from ``backend/``::
 
     uv run python -m moonwalkers.pipelines.b build RUN --reference FILE
+    uv run python -m moonwalkers.pipelines.b cutouts RUN
+    uv run python -m moonwalkers.pipelines.b dry-run RUN --reference FILE
     uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--yaw DEG]
                                                           [--circle-x X ...]]
     uv run python -m moonwalkers.pipelines.b inspect RUN --up +y --front +z [--yaw DEG]
                                                       --circles-along z --at Z ...
+                                                      [--within z LO HI ...]
     uv run python -m moonwalkers.pipelines.b inspect RUN --preview [--spec FILE]
                                                       [--reference FILE] [--no-photos]
 
@@ -16,11 +19,16 @@ the first time it generates the mesh and stops for the geometry spec; once
 ``checks/spin.usdc`` and ``checks/quarter_turn.usdc`` for the Isaac Sim check) and writes
 ``RUN.md``. One run folder holds one built twin: build a new version in a new run folder.
 ``inspect`` renders and measures the generated mesh, and ``--preview`` tries the spec without
-storing anything. A several-part spec (decisions 0023 and 0027) is previewed into
-``RUN/preview_parts/``: the coloured views of the cuts and the parts, each part alone, and the
-parts drawn over each fed photo, with the scale and the size checks. The generator environment
-is found through ``--gen-root`` or the ``MOONWALKERS_GEN_ROOT`` environment variable
-(docs/setup/generators.md). The MCP server (``moonwalkers.mcp``) offers the same steps as tools.
+storing anything. ``cutouts`` cuts the fed photos out as the generator would, each
+with its cut-out from ``request.json`` if it has one (decision 0029), into ``RUN/cutouts/``
+with ``sheet.png`` to look at, in seconds and without generating. ``dry-run`` builds the run
+in a new scratch copy of the data folder and runs both validators on every file, storing nothing
+for real. A several-part spec (decisions
+0023 and 0027) is previewed into ``RUN/preview_parts/``: the coloured views of the cuts and the
+parts, each part alone, and the parts drawn over each fed photo, with the scale and the size
+checks. The generator environment is found through ``--gen-root`` or the
+``MOONWALKERS_GEN_ROOT`` environment variable (docs/setup/generators.md). The MCP server
+(``moonwalkers.mcp``) offers the same steps as tools.
 """
 
 from __future__ import annotations
@@ -31,13 +39,14 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from moonwalkers.generators.base import GeneratorError
+from moonwalkers.generators.base import CutoutRun, GeneratorError
 from moonwalkers.generators.hunyuan3d import GEN_ROOT_ENV, Hunyuan3DConfig, Hunyuan3DGenerator
 from moonwalkers.kb import JsonKnowledgeBase
-from moonwalkers.orchestrator import OrchestratorError
+from moonwalkers.orchestrator import JobRequest, OrchestratorError
 from moonwalkers.usd.exporter import ExportError
 
 from .build import REQUEST_FILE, build_run
+from .dry_run import DryRun, dry_run
 from .inspection import (
     format_inspection,
     format_parts_preview,
@@ -46,13 +55,22 @@ from .inspection import (
     preview_parts,
     preview_parts_spec,
 )
-from .mesh_tools import fit_circles_along, load_mesh, orientation_matrix, transformed
+from .mesh_tools import (
+    box_within,
+    direction_of,
+    fit_circles_across,
+    load_mesh,
+    orientation_matrix,
+    transformed,
+)
 from .parts_spec import PartsSpec
 from .pipeline import (
+    CUTOUTS_DIR,
     GENERATOR_DIR,
     PARTS_PREVIEW_DIR,
     SPEC_FILE,
     GeometrySpecMissing,
+    PipelineB,
     RunFolderConflict,
     generated_mesh,
     load_reference,
@@ -104,6 +122,28 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--kb", type=Path, help="knowledge base folder (default: DATA/kb)")
     build.set_defaults(command=_build)
 
+    cutouts = commands.add_parser(
+        "cutouts", help="cut the fed photos out, as the generator would, without generating"
+    )
+    cutouts.add_argument("run_dir", type=Path, help="data/machines/<machine>/runs/<run>")
+    cutouts.add_argument(
+        "--request", type=Path, help=f"JobRequest JSON (default: RUN/{REQUEST_FILE})"
+    )
+    cutouts.add_argument(
+        "--gen-root", type=Path, help=f"generator folder (default: ${GEN_ROOT_ENV})"
+    )
+    cutouts.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
+    cutouts.set_defaults(command=_cutouts)
+
+    dry = commands.add_parser(
+        "dry-run", help="build a copy of the run in data/scratch/ and run both validators"
+    )
+    dry.add_argument("run_dir", type=Path, help="data/machines/<machine>/runs/<run>")
+    dry.add_argument("--reference", type=Path, required=True, help="reference facts JSON")
+    dry.add_argument("--gen-root", type=Path, help=f"generator folder (default: ${GEN_ROOT_ENV})")
+    dry.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
+    dry.set_defaults(command=_dry_run)
+
     inspect = commands.add_parser("inspect", help="render and measure the generated mesh")
     inspect.add_argument("run_dir", type=Path)
     inspect.add_argument("--up", choices=AXES, help="the generator axis that points up")
@@ -127,9 +167,18 @@ def _parser() -> argparse.ArgumentParser:
     )
     inspect.add_argument(
         "--circles-along",
-        choices=("x", "y", "z"),
+        metavar="AXIS",
         help="fit circles in slices across this axis instead (the column and the quill stand "
-        "along z), at the positions given with --at",
+        "along z), at the positions given with --at; or across a direction, DX,DY,DZ, for a "
+        "part at an angle, where a position is the distance along it from the origin",
+    )
+    inspect.add_argument(
+        "--within",
+        nargs=3,
+        action="append",
+        metavar=("AXIS", "LO", "HI"),
+        help="with --circles-along: keep only the surface with AXIS between LO and HI (model "
+        "units); repeat for other axes. For a slice that crosses several parts",
     )
     inspect.add_argument("--at", type=float, nargs="+", metavar="POS", help="slice positions")
     inspect.add_argument(
@@ -167,11 +216,24 @@ def _inspect(args: argparse.Namespace) -> int:
             return 0
         print(format_preview(preview_parts(mesh, spec, run_dir / "preview"), reference))
         return 0
+    if args.within and not args.circles_along:
+        raise UsageError("--within goes with --circles-along")
     if args.circles_along:
         if args.up is None or not args.at:
             raise UsageError("--circles-along needs --up, --front and --at")
         oriented = transformed(load_mesh(mesh), orientation_matrix(args.up, args.front, args.yaw))
-        for fit, centre in fit_circles_along(oriented, args.circles_along, args.at):
+        along = args.circles_along
+        if along not in ("x", "y", "z"):
+            try:
+                along = [float(v) for v in along.split(",")]
+            except ValueError as exc:
+                raise UsageError(f"--circles-along takes x, y, z or DX,DY,DZ: {along}") from exc
+        try:
+            direction = direction_of(along)
+            box = box_within({a: (float(lo), float(hi)) for a, lo, hi in args.within or []})
+        except ValueError as exc:
+            raise UsageError(str(exc)) from exc
+        for fit, centre in fit_circles_across(oriented, direction, args.at, box=box):
             where = (
                 "no circle"
                 if centre is None
@@ -197,13 +259,72 @@ def _inspect(args: argparse.Namespace) -> int:
     return 0
 
 
-# -------------------------------------------------------------------------------------- build
-def _build(args: argparse.Namespace) -> int:
+# ------------------------------------------------------------------------------------ cutouts
+def _cutouts(args: argparse.Namespace) -> int:
+    run_dir = args.run_dir.resolve()
+    data_dir = (args.data or _data_dir_of(run_dir)).resolve()
+    generator = Hunyuan3DGenerator(Hunyuan3DConfig.under(_gen_root(args)))
+    request_path = args.request or run_dir / REQUEST_FILE
+    request = JobRequest.model_validate_json(request_path.read_text(encoding="utf-8"))
+    pipeline = PipelineB(generator, data_dir, run_dir, photos=request.photos)
+    done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR)
+    print(format_cutouts(done))
+    return 0
+
+
+def format_cutouts(done: CutoutRun) -> str:
+    lines = [f"cut out in {done.seconds:.1f} s; look at {done.sheet}"]
+    for name, info in done.done.items():
+        specks = info.get("pieces_dropped")
+        dropped = f", {specks} specks dropped" if specks else ""
+        lines.append(f"  {name}: {info['method']}, {info['kept_share']:.1%} kept{dropped}")
+    return "\n".join(lines)
+
+
+# ------------------------------------------------------------------------------------ dry run
+def _dry_run(args: argparse.Namespace) -> int:
     run_dir = args.run_dir.resolve()
     data_dir = (args.data or _data_dir_of(run_dir)).resolve()
     gen_root = args.gen_root or os.environ.get(GEN_ROOT_ENV)
+    # The run's mesh is reused; without a generator folder, generating anything new fails.
+    generator = Hunyuan3DGenerator(Hunyuan3DConfig.under(Path(gen_root or ".")))
+    done = dry_run(
+        run_dir,
+        data_dir,
+        load_reference(args.reference),
+        generator,
+        reference_path=args.reference,
+    )
+    print(format_dry_run(done))
+    return 0 if done.clean else 1
+
+
+def format_dry_run(done: DryRun) -> str:
+    lines = [f"scratch copy: {done.run_dir}", done.message]
+    for f in done.files:
+        nvidia = f.nvidia or []
+        lines.append(
+            f"{f.file.relative_to(done.run_dir)}: ours {len(f.ours)} finding(s), NVIDIA's "
+            + ("not installed" if f.nvidia is None else f"{len(nvidia)} finding(s)")
+        )
+        lines += [f"  ours {i.severity} ({i.ref or '-'}): {i.message}" for i in f.ours]
+        lines += [f"  NVIDIA {i.severity} ({i.ref or '-'}): {i.message}" for i in nvidia]
+    lines.append("clean" if done.clean else "not clean: fix the findings, then dry-run again")
+    return "\n".join(lines)
+
+
+# -------------------------------------------------------------------------------------- build
+def _gen_root(args: argparse.Namespace) -> Path:
+    gen_root = args.gen_root or os.environ.get(GEN_ROOT_ENV)
     if gen_root is None:
         raise UsageError(f"the generator folder is needed: pass --gen-root or set {GEN_ROOT_ENV}")
+    return Path(gen_root)
+
+
+def _build(args: argparse.Namespace) -> int:
+    run_dir = args.run_dir.resolve()
+    data_dir = (args.data or _data_dir_of(run_dir)).resolve()
+    gen_root = _gen_root(args)
     request_path = args.request or run_dir / REQUEST_FILE
     outcome = build_run(
         run_dir,
@@ -211,7 +332,7 @@ def _build(args: argparse.Namespace) -> int:
         request_path,
         load_reference(args.reference),
         args.reference,
-        Hunyuan3DGenerator(Hunyuan3DConfig.under(Path(gen_root))),
+        Hunyuan3DGenerator(Hunyuan3DConfig.under(gen_root)),
         JsonKnowledgeBase(args.kb or data_dir / "kb"),
     )
     print(outcome.job.message)

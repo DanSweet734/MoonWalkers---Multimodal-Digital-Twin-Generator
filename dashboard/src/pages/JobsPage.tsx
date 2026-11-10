@@ -4,6 +4,7 @@ import { api } from '../api/client.ts'
 import { Loading, Section, StageBadge } from '../components/common.tsx'
 import { formatTime, isOpen, stepsDone } from '../lib/format.ts'
 import { useApi } from '../lib/hooks.ts'
+import { fileKey, newPicks } from '../lib/picks.ts'
 import { jobHash, twinHash } from '../lib/route.ts'
 import {
   defaultUse,
@@ -77,6 +78,7 @@ export function JobsPage() {
 
 function NewJobForm() {
   const [photos, setPhotos] = useState<ChosenPhoto[]>([])
+  const [repeated, setRepeated] = useState<string[]>([])
   const urls = useRef<string[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>()
@@ -89,14 +91,27 @@ function NewJobForm() {
     urls.current = []
   }
 
+  // Each pick adds to the photos chosen, so they can come from several folders (tool gap 6).
   function choose(files: FileList | null) {
-    forget()
-    const chosen = Array.from(files ?? []).map((file, i) => {
+    const { added, repeated: again } = newPicks(
+      photos.map((p) => p.file),
+      Array.from(files ?? []),
+    )
+    const chosen = added.map((file) => {
       const url = URL.createObjectURL(file)
       urls.current.push(url)
-      return { key: `${i}-${file.name}`, file, url, view: '' as const, use: defaultUse(''), origin: '' }
+      return { key: fileKey(file), file, url, view: '' as const, use: defaultUse(''), origin: '' }
     })
-    setPhotos(chosen)
+    setRepeated(again)
+    setPhotos((current) => [...current, ...chosen])
+  }
+
+  function remove(index: number) {
+    const gone = photos[index]
+    if (gone === undefined) return
+    URL.revokeObjectURL(gone.url)
+    urls.current = urls.current.filter((url) => url !== gone.url)
+    setPhotos((current) => current.filter((_, i) => i !== index))
   }
 
   function update(index: number, change: Partial<ChosenPhoto>) {
@@ -152,23 +167,36 @@ function NewJobForm() {
         </div>
         <label>
           Machine photos (JPEG or PNG)
+          {photos.length > 0 ? `: ${photos.length} chosen, add more or remove any below` : ''}
           <input
             type="file"
             accept="image/jpeg,image/png"
             multiple
-            required
-            onChange={(e) => choose(e.target.files)}
+            required={photos.length === 0}
+            onChange={(e) => {
+              choose(e.target.files)
+              e.target.value = '' // so the next pick, even of the same folder, adds again
+            }}
           />
           <span className="hint">
             One photo works. Several make a better model: the 3D generator uses up to four views of
-            the whole machine, and close-ups are kept as evidence.
+            the whole machine, and close-ups are kept as evidence. Each pick adds to the photos
+            chosen, so they can come from several folders.
           </span>
         </label>
+        {repeated.length > 0 ? (
+          <p className="hint" role="status">
+            Already chosen, so not added again: {listText(repeated)}.
+          </p>
+        ) : null}
         {photos.length > 1 ? <WhereToStand /> : null}
         {photos.map((photo, i) => (
           <fieldset key={photo.key} className="photo-row">
             <legend>
-              Photo {i + 1} of {photos.length}: {photo.file.name}
+              Photo {i + 1} of {photos.length}: {photo.file.name}{' '}
+              <button type="button" className="link" onClick={() => remove(i)}>
+                Remove
+              </button>
             </legend>
             <img className="upload-preview" src={photo.url} alt={`Photo ${i + 1} to upload`} />
             <div className="photo-fields">

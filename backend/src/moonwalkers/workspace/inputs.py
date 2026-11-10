@@ -2,8 +2,10 @@
 
 The photo goes to ``machines/<machine>/inputs/photos/`` and gets a line in that machine's
 ``inputs/SOURCES.md``: file, where it came from, when it arrived, SHA-256 and license note. A file
-is never overwritten. The same photo uploaded again is the file already there; a different photo
-whose name is taken gets a number.
+is never overwritten. The same photo uploaded again is the file already there, in any folder under
+``photos/`` (``photos/manual/`` holds the manual's figures, and photos filed by hand may sit in
+folders of their own; the lab's machines plan, tool gap 6); a different photo whose name is taken
+gets a number.
 """
 
 from __future__ import annotations
@@ -67,8 +69,9 @@ def save_photo(
     sha256 = hashlib.sha256(data).hexdigest()
     photos = Path(machine_dir) / INPUTS_DIR / PHOTOS_DIR
     photos.mkdir(parents=True, exist_ok=True)
-    for existing in sorted(photos.iterdir()):
-        if existing.is_file() and _sha256(existing) == sha256:
+    for existing in sorted(photos.rglob("*")):  # every photo folder of the machine
+        same_size = existing.is_file() and existing.stat().st_size == len(data)
+        if same_size and _sha256(existing) == sha256:
             return SavedPhoto(existing, sha256, already_saved=True)
 
     # The local date, as in run folder names; it also keeps names like "con" from being devices.

@@ -57,7 +57,8 @@ data/
 A run folder with `request.json` is a **job**. The dashboard and the agent's `list_jobs` tool
 read its stage from the files above (decision 0014, `moonwalkers/workspace/status.py`). A photo
 uploaded in the dashboard is saved under `inputs/photos/` with its `SOURCES.md` line, and starts a
-new run folder.
+new run folder. A photo already in any folder under `inputs/photos/` (`photos/manual/` included) is
+not saved again: the job uses the file already there.
 
 The generator's environment and weights live outside the repository (`C:\mw-gen` on Daniel's
 machine, `docs/setup/generators.md`). The HA5C's reference facts, short cited quotes, are committed

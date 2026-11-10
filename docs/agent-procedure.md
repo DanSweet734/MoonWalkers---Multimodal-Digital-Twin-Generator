@@ -97,7 +97,28 @@ the job is done. Otherwise the job waits for you:
    - **One photo** may leave the view out, as in the PoC. Two or more each need one.
    - `add_input` checks the photos as a whole each time, and its `generator_input` says which
      model and slots the generator will use. A refused photo changes nothing.
+   - **A wrong view or use:** correct it with `set_photo(run, source_id, view, use, cutout)`
+     before `generate_geometry`. It gives the photo's whole entry, so repeat the use and the
+     cut-out you want to keep. After generation it is refused: start a new run.
    - **A nameplate or a motor plate** is a reference source (`add_reference_source`), not an input.
+5. **Check how the machine is cut out of each photo** (decision 0029), before generating.
+   - `preview_cutouts(run)` cuts the fed photos out as the generator will, in seconds. Open its
+     `sheet` with your Read tool.
+   - By default the generator keeps the photo's most salient object. On a plain background that
+     is the machine. In a lab it is often a sign, a box or a monitor in front of it, or one
+     panel of the machine (the lab's photos: `docs/research/2026-11-09-background-removal-spike.md`).
+   - **When the cut-out is wrong,** give the photo a `cutout` with `set_photo`. Coordinates are
+     fractions (0 to 1) of the photo turned upright, from its top left: read them off the photo.
+     - `{"method": "sam", "box": [x0, y0, x1, y1], "points": [...]}`: a box around the
+       machine, plus points with `keep` true on parts it loses and `keep` false on what to
+       leave out (the wall, a sign). This is the usual choice.
+     - `{"method": "crop", "box": [...]}`: the automatic removal inside the box only. It loses
+       thin parts, such as an arm's forearm.
+     - `{"method": "mask", "mask": "<PNG in the data folder>"}`: a mask a person drew, white
+       on the machine. Ask the person for one where SAM leaves holes, as in shiny guards.
+   - Preview again after each change. Specks are dropped by `min_piece` (default 0.02).
+   - **Nothing fills in what stands in front of the machine.** Log it as an issue on the twin,
+     naming the photo and what is hidden.
 
    Documents (manuals, catalogues, drawings) are not inputs while their pipeline, A, C or D, is
    not in: `add_input` refuses them (decision 0021). Read them yourself, and cite them in step 3.
@@ -165,7 +186,10 @@ the job is done. Otherwise the job waits for you:
      build plans every scenario: a step the manual does not allow fails the build, with its
      number. It then writes `programs/<command set>/`, which holds `controls.usdc` and its runner.
      Also add an `add_issue` warning for the stand-ins, as the T33901's reference does.
-6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see.
+6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see. The summary
+   numbers them (`issue_list`). **`correct_issue(run, number, ...)`** corrects one that turned out
+   wrong, or withdraws it (`withdraw=True`), until the twin is built: after that the issues are
+   part of its record for good.
 
 ## 4. Generate and inspect the geometry
 1. **`generate_geometry(run)`.** It takes about a minute on the GPU the first time, and reuses the
@@ -216,7 +240,8 @@ the job is done. Otherwise the job waits for you:
 2. **`set_scale(run)`** uses the cited `center_height`. Pass `base_z` only if the base is not the
    lowest point.
 3. **`preview_twin(run)`** stores nothing. Open the assembled, body and spindle PNGs, and read
-   the size checks: a difference above 10% is a warning.
+   the size checks: a difference above 10% is a warning. `mesh_faults` lists what NVIDIA's
+   validator would warn about in the body's or the spindle's mesh; it should be empty.
 4. You can call `add_joint` and `set_scale` again until the preview is right. Once you submit, the
    run is fixed.
 
@@ -232,6 +257,12 @@ decision 0027 and its updates) is a worked example.
    the bounds; **`fit_circles(run, up, front, along, at, yaw_deg)`** for round parts along any
    axis (a column or a quill along z, a hub along y). Use the `round` fits; several slices along
    one part should agree. Write each measurement into the note of what it sets.
+   - When a slice crosses several parts and the one to measure is not the largest (an arm's
+     links), add `within`, ranges on some of the twin's axes (`{"x": [lo, hi]}`, model units),
+     to keep only the surface around it.
+   - For a round part at an angle, set `along` to its direction, `[dx, dy, dz]`: a slice across
+     an axis cuts it in an ellipse. Each position in `at` is then the distance along that unit
+     direction from the origin (lab's machines plan, tool gap 4).
 3. **`set_spec_frame`:** up, front and yaw_deg as inspected; `origin_xy` where the twin's origin
    goes (the spindle's axis); `fixed_part` (the frame, which keeps every face no cut takes); and
    `method`.
@@ -262,22 +293,24 @@ decision 0027 and its updates) is a worked example.
      entry on that part (`near` = the hole's centre) through `set_spec_part`, or check in the
      views that a stand-in covers it. If a patch is refused or a hole stays, move the cut's edge:
      a patch cannot join two sheets of a part that touch at one point;
-   - the size checks, and the issues the twin will carry.
-9. **Repeat** until every view is right and no hole is left.
-10. **Dry-run the build before `submit_twin`.** A submitted version is stored for good, and the
-    preview does not find zero-area faces or non-manifold points; the build and NVIDIA's
-    validator do. No tool does this yet, so from `backend/`:
-    - copy `kb/`, the machine's `inputs/` and the run folder into a scratch data folder with the
-      same layout, such as `data/scratch/<date>_dry-run/data/`;
-    - give the copied `request.json` its own `job_id`, or the store refuses it as already stored;
-    - `uv run python -m moonwalkers.pipelines.b build <copied run> --reference <copied
-      run>/reference_facts.json --data <scratch data> --gen-root <the generator folder>`;
-    - run both validators, `uv run python -m moonwalkers.usd.validate <file>` and
-      `uv run omni_asset_validate <file>`, on `twin.usdc`, every file in `checks/` and, with
-      controls, `programs/<command set>/controls.usdc`.
-
-    Fix what they report through the tools, and repeat. The T33901's agent build needed three dry
-    runs (worklog 2026-11-04). Then `submit_twin`, and validate its files the same way.
+   - **a part NVIDIA's validator would warn about** is among the issues ("NVIDIA's asset
+     validator would warn about ..."): zero-area faces, edges with more than two faces, or
+     non-manifold points, the points given in model units after orienting, where the cut list's
+     boxes are. Move the cut boundary or the stand-in's size that makes them, by a millimetre or
+     two: the T33901's table rim at exactly 10 mm gave 40 zero-area faces, at 10.5 mm none;
+   - the size checks, and the issues the twin will carry. An issue of yours that a later change
+     made stale (v10's and v11's note of a flap that v10's cuts had removed) is withdrawn or
+     corrected with `correct_issue`.
+9. **Repeat** until every view is right, no hole is left, and no part has a mesh warning.
+10. **Dry-run the build before `submit_twin`:** `dry_run_twin(run)`. A submitted version is
+    stored for good. The dry run builds the run as `submit_twin` would, but in a new scratch copy
+    of the data folder (`data/scratch/<date>_dry-run-<NNN>/`), and runs our validator and
+    NVIDIA's on the twin, every check file and the controls. Nothing is stored for real.
+    - Fix what it reports through the tools, and dry-run again until `clean` is true. The
+      T33901's agent build needed three dry runs, by hand (worklog 2026-11-04).
+    - **By hand, from `backend/`:**
+      `uv run python -m moonwalkers.pipelines.b dry-run <run> --reference <run>/reference_facts.json`.
+    - Then `submit_twin`.
 
 ## 6. Submit and report
 1. **`submit_twin(run)`** stores the result and a new twin version (needs review), exports

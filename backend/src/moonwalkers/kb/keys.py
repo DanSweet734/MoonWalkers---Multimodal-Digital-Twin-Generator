@@ -10,9 +10,23 @@ from __future__ import annotations
 
 import re
 
-# Trailing legal-form words dropped from manufacturer names.
+# Trailing legal-form words dropped from manufacturer names. "gmbh" since the lab's ReBeL arm,
+# whose maker signs its documentation "igus® GmbH" (Technical documentation ReBeL, 08/2022, p. 8)
+# while its base label reads "igus" (docs/lab-machines-plan.md, Phase 1).
 LEGAL_SUFFIXES = frozenset(
-    {"inc", "incorporated", "corp", "corporation", "co", "company", "llc", "ltd", "limited", "plc"}
+    {
+        "inc",
+        "incorporated",
+        "corp",
+        "corporation",
+        "co",
+        "company",
+        "llc",
+        "ltd",
+        "limited",
+        "plc",
+        "gmbh",
+    }
 )
 
 # Short manufacturer names the project uses in keys and folder names (for example "haas/ha5c" in

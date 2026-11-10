@@ -13,6 +13,12 @@ import pytest
 from mcp import Client
 
 from moonwalkers.contracts.pipeline_result import PipelineId, PipelineResult, Source, TwinRecord
+from moonwalkers.generators.base import (
+    CutoutRun,
+    GeneratorRequest,
+    GeneratorRun,
+    ImageTo3DGenerator,
+)
 from moonwalkers.kb import JsonKnowledgeBase
 from moonwalkers.mcp import Workspace, create_server, default_data_dir
 from moonwalkers.mcp.server import UnconfiguredGenerator
@@ -96,11 +102,14 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
         "list_jobs",
         "start_run",
         "add_input",
+        "set_photo",
+        "preview_cutouts",
         "add_reference_source",
         "identify_machine",
         "add_fact",
         "add_control",
         "add_issue",
+        "correct_issue",
         "generate_geometry",
         "inspect_geometry",
         "fit_circles",
@@ -114,6 +123,7 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
         "set_scale_length",
         "set_size_checks",
         "preview_twin",
+        "dry_run_twin",
         "submit_twin",
     ]
     assert all(t.description and t.output_schema for t in tools.values())
@@ -295,6 +305,42 @@ async def test_mistakes_come_back_as_readable_tool_errors(setup, photo_run) -> N
 
 
 @pytest.mark.anyio
+async def test_an_issue_is_corrected_or_withdrawn_before_the_build(setup, photo_run) -> None:
+    """The lab's machines plan, tool gap 2: v10's and v11's stale note of a flap."""
+    server, _ = setup
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        for message, ref in (("a thin flap on the arm's collar", "arm"), ("belts hidden", None)):
+            notes = await ok(
+                client, "add_issue", run=run, severity="info", message=message, ref=ref
+            )
+        assert [(i["number"], i["message"]) for i in notes["issue_list"]] == [
+            (1, "a thin flap on the arm's collar"),
+            (2, "belts hidden"),
+        ]
+        notes = await ok(client, "correct_issue", run=run, number=1, severity="warning", ref="")
+        first = notes["issue_list"][0]
+        assert (first["severity"], first["message"], first["ref"]) == (
+            "warning",
+            "a thin flap on the arm's collar",
+            None,
+        )
+        notes = await ok(client, "correct_issue", run=run, number=1, withdraw=True)
+        assert notes["issues"] == 1
+        assert notes["issue_list"] == [
+            {"number": 1, "severity": "info", "message": "belts hidden", "ref": None}
+        ]
+        assert "no issue 2" in await fails(client, "correct_issue", run=run, number=2, ref="x")
+        assert "nothing to correct" in await fails(client, "correct_issue", run=run, number=1)
+        assert "not both" in await fails(
+            client, "correct_issue", run=run, number=1, withdraw=True, message="x"
+        )
+        assert "withdraw it instead" in await fails(
+            client, "correct_issue", run=run, number=1, message="  "
+        )
+
+
+@pytest.mark.anyio
 async def test_a_built_run_cannot_be_changed(setup, photo_run) -> None:
     server, _ = setup
     async with Client(server) as client:
@@ -316,6 +362,9 @@ async def test_a_built_run_cannot_be_changed(setup, photo_run) -> None:
         )
         assert "already built its twin" in await fails(
             client, "add_issue", run=run, severity="info", message="late note"
+        )
+        assert "already built its twin" in await fails(
+            client, "correct_issue", run=run, number=1, withdraw=True
         )
         rebuild = (await ok(client, "start_run", **MACHINE, new_version=True))["run"]
         assert rebuild.endswith("_run-002")
@@ -591,6 +640,145 @@ async def test_several_photos_with_their_views_through_the_tools(setup, photo_ru
         assert parts["joint"]["yaw_deg"] == 45.0
 
 
+class CuttingOut(ImageTo3DGenerator):
+    """Wraps the fake generator, and previews cut-outs: it records each request."""
+
+    name = "fake-generator"
+
+    def __init__(self, inner: ImageTo3DGenerator) -> None:
+        self.inner = inner
+        self.cut_requests: list[GeneratorRequest] = []
+
+    def fingerprint(self) -> dict[str, Any]:
+        return self.inner.fingerprint()
+
+    def generate(self, request: GeneratorRequest) -> GeneratorRun:
+        return self.inner.generate(request)
+
+    def cut_out(self, request: GeneratorRequest) -> CutoutRun:
+        self.cut_requests.append(request)
+        done = {
+            name: {"method": "sam" if name in request.cutouts else "auto", "kept_share": 0.25}
+            for name in request.images
+        }
+        return CutoutRun({}, request.out_dir / "sheet.png", done, 1.5, request.out_dir / "log")
+
+
+@pytest.mark.anyio
+async def test_a_photo_is_corrected_and_its_cutout_previewed_before_generating(
+    photo_run, fake_generator, clock
+) -> None:
+    """Tool gap 1 (the lab's machines plan) and decision 0029."""
+    generator = CuttingOut(fake_generator())
+    server = create_server(Workspace(photo_run.data_dir, clock), lambda: generator, clock=clock)
+    second = Path(photo_run.photo.uri).with_name("side.png").as_posix()
+    (photo_run.data_dir / second).write_bytes(b"another side")
+    photo = {"title": "Test photo", "retrieved_at": "2026-10-16T12:00:00Z"}
+    box = {
+        "method": "sam",
+        "box": [0.1, 0.1, 0.9, 0.9],
+        "points": [{"x": 0.5, "y": 0.5, "keep": True}],
+    }
+    async with Client(server) as client:
+        run = (await ok(client, "start_run", **MACHINE))["run"]
+        await ok(
+            client,
+            "add_input",
+            run=run,
+            path=photo_run.photo.uri,
+            source_id="src-a",
+            view="front",
+            **photo,
+        )
+        await ok(client, "add_input", run=run, path=second, source_id="src-b", view="back", **photo)
+
+        # the second photo was a corner: corrected, it no longer fits beside a side view
+        assert "mix sides and corners" in await fails(
+            client, "set_photo", run=run, source_id="src-b", view="back_operator_left"
+        )
+        changed = await ok(
+            client, "set_photo", run=run, source_id="src-b", view="back", use="evidence", cutout=box
+        )
+        assert (
+            changed["generator_input"] == "single-image model: single = src-a; evidence: 1 photo(s)"
+        )
+        assert "no machine photo 'src-c'" in await fails(
+            client, "set_photo", run=run, source_id="src-c", view="front"
+        )
+        assert "must be a PNG" in await fails(
+            client,
+            "set_photo",
+            run=run,
+            source_id="src-a",
+            view="front",
+            cutout={"method": "mask", "mask": "front.jpg"},
+        )
+        saved = json.loads((photo_run.data_dir / run / "request.json").read_text(encoding="utf-8"))
+        assert saved["photos"]["src-a"] == {"view": "front", "use": "generator"}
+        assert saved["photos"]["src-b"]["cutout"]["box"] == [0.1, 0.1, 0.9, 0.9]
+
+        preview = await ok(client, "preview_cutouts", run=run)
+        assert preview["photos"] == ["src-a: auto, 25.0% kept", "src-b: sam, 25.0% kept"]
+        assert preview["sheet"].endswith("sheet.png")
+        assert set(generator.cut_requests[0].cutouts) == {"src-b"}
+
+        await ok(client, "generate_geometry", run=run)
+        assert "already generated its mesh" in await fails(
+            client, "set_photo", run=run, source_id="src-b", view="back"
+        )
+
+
+@pytest.mark.anyio
+async def test_a_dry_run_builds_a_scratch_copy_and_stores_nothing(setup, photo_run) -> None:
+    """Tool gap 7 (the lab's machines plan): the build and both validators, in data/scratch/."""
+    server, _ = setup
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        await ok(client, "generate_geometry", run=run)
+        await ok(
+            client,
+            "add_joint",
+            run=run,
+            up="+y",
+            front="+z",
+            spindle_axis_yz=[0.0, 0.2],
+            spindle_radius=0.45,
+            spindle_start_x=1.0,
+            method="Axis from the tip slabs; the box's front face is at x = 1.",
+        )
+        await ok(client, "set_scale", run=run)
+
+        tried = await ok(client, "dry_run_twin", run=run)
+        assert tried["built"], tried["message"]
+        assert "built version 1" in tried["message"]
+        copied = Path(tried["scratch_run"])
+        assert copied.is_relative_to(photo_run.data_dir / "scratch")
+        assert copied.parts[-6].endswith("_dry-run-001")
+        files = {f["file"].replace("\\", "/") for f in tried["files"]}
+        assert "twin.usdc" in files and len(files) == 3  # the twin and its two check files
+        assert all(f["nvidia"] is not None for f in tried["files"])  # a dev dependency, installed
+        assert not any(i["severity"] == "error" for f in tried["files"] for i in f["ours"])
+        request = json.loads((copied / "request.json").read_text(encoding="utf-8"))
+        assert request["job_id"].endswith("-dry-run")
+
+        # nothing real was stored: the real build is still version 1
+        assert (await ok(client, "check_knowledge_base", **MACHINE))["versions"] == []
+        assert not (photo_run.data_dir / run / "twin.usdc").exists()
+        second = await ok(client, "dry_run_twin", run=run)
+        assert Path(second["scratch_run"]).parts[-6].endswith("_dry-run-002")
+        submitted = await ok(client, "submit_twin", run=run)
+        assert submitted["twin"]["twin_id"] == "moonwalkers/testindexer@v1"
+        assert "already built its twin" in await fails(client, "dry_run_twin", run=run)
+
+
+@pytest.mark.anyio
+async def test_previewing_cutouts_needs_a_generator_that_can(setup, photo_run) -> None:
+    server, _ = setup
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        assert "cannot cut photos out" in await fails(client, "preview_cutouts", run=run)
+
+
 @pytest.fixture
 def drill_press_server(photo_run, generator_for, clock):
     """The Phase 1 drill press as the generated mesh (decision 0028's tests)."""
@@ -702,11 +890,40 @@ async def test_a_spec_of_several_parts_is_set_piece_by_piece(drill_press_server,
         circles = await ok(
             client, "fit_circles", run=run, up="+y", front="+z", along="z", at=[0.1, 0.15]
         )
+        # The same, across a direction and within a box round the column (tool gap 4).
+        boxed = await ok(
+            client,
+            "fit_circles",
+            run=run,
+            up="+y",
+            front="+z",
+            along=[0.0, 0.0, 1.0],
+            at=[0.1, 0.15],
+            within={"x": [dp.COLUMN_X - 0.06, dp.COLUMN_X + 0.06]},
+        )
+        assert "lowest value first" in await fails(
+            client,
+            "fit_circles",
+            run=run,
+            up="+y",
+            front="+z",
+            along="z",
+            at=[0.1],
+            within={"x": [1.0, 0.0]},
+        )
     column = [f for f in circles["fits"] if f["round"]]
     assert column and all(
         f["centre"][0] == pytest.approx(dp.COLUMN_X, abs=0.003)
         and f["radius"] == pytest.approx(dp.COLUMN_RADIUS, abs=0.003)
         for f in column
+    )
+    assert boxed["within"] == {"x": [dp.COLUMN_X - 0.06, dp.COLUMN_X + 0.06]}
+    assert [f["samples"] for f in boxed["fits"]] < [f["samples"] for f in circles["fits"]]
+    boxed_column = [f for f in boxed["fits"] if f["round"]]
+    assert boxed_column and all(
+        f["centre"][0] == pytest.approx(dp.COLUMN_X, abs=0.003)
+        and f["radius"] == pytest.approx(dp.COLUMN_RADIUS, abs=0.003)
+        for f in boxed_column
     )
 
 

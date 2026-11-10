@@ -6,12 +6,24 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: drafting the lab's machines plan (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`. It holds the hand-off of 2026-11-09, on branch
-`docs/lab-machines-plan`. The plan is drafted below it (2026-11-09: Phases 0-8, a scorecard of
-measures). Daniel answered eight of its nine questions the same day ("Decided on review" there),
-and the plan waits for his approval, before any build. The history
-below is the record of the PoC and the drill-press plan.
+## Current phase: the lab's machines plan, Phase 1 (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`. The plan was approved and merged on 2026-11-09 (PR
+#27; Daniel's answers in its "Decided on review"). Phase 1 (file the photos and sources, close the
+tool gaps) is done on branch `feat/lab-phase-1-photos-and-tools`, built in the plan chat on
+Daniel's word, and waits for his review in its pull request.
+- **Done:**
+  - the photos are filed;
+  - Daniel chose SAM for cutting the machine out, with crop boxes and drawn masks as options. The
+    per-photo cut-out (decision 0029, accepted), its preview and `set_photo` (tool gap 1) are
+    built;
+  - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, accepted). The MCP server has 28
+    tools: `correct_issue`, and `fit_circles` with `within` and a direction; mesh warnings in
+    `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
+- **Left:** nothing in Phase 1 once PR #28 is merged. Haas's sources are filed: the mill manuals
+  and the Toolroom sheet fetched (its PDFs answer scripts), its three web pages saved by Daniel.
+  Then Phase 2, the ReBeL arm, in a new chat.
+
+The history below is the record of the PoC and the drill-press plan.
 
 - **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three
   success levels: a scaled model with cited facts; a spindle joint that rotates; an indexing
@@ -90,8 +102,9 @@ below is the record of the PoC and the drill-press plan.
   - Cut parts' holes are closed by the spec's `patches`; parts fixed to the frame are grey. The
     agent's MCP tools set a several-part spec piece by piece (decision 0028; procedure section
     5b).
-  - **Build in a scratch copy of `data/` first** (`build --data`) and run both validators before
-    the real build: a real build stores a version for good (v2's lesson).
+  - **Build in a scratch copy of `data/` first** and run both validators before the real build:
+    a real build stores a version for good (v2's lesson). Since 2026-11-09 one step does it:
+    `... pipelines.b dry-run <run> --reference <file>`, or the MCP tool `dry_run_twin`.
   - Masses stay placeholders: the manual gives only the 108 lb total, and per-part masses need a
     contract change discussed with the pipeline owners first (decision 0024, update). The table
     is locked in every file but `checks/unlocked.usdc`, by design. Daniel's term: "downfeed
@@ -280,6 +293,12 @@ Backend (run from `backend/`):
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
   facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
+- Try a build without storing anything: `uv run python -m moonwalkers.pipelines.b dry-run <run> --reference <facts.json>`
+  builds a copy in `data/scratch/<date>_dry-run-<NNN>/` and runs both validators on every file.
+- Check how the machine is cut out of each photo before generating (decision 0029):
+  `uv run python -m moonwalkers.pipelines.b cutouts <run> --gen-root C:\mw-gen` writes
+  `<run>/cutouts/sheet.png` in seconds. A photo's `cutout` in `request.json` (SAM box and points,
+  crop box, or drawn mask; fractions of the upright photo) replaces the automatic removal.
 - Pipelines A, C and D outside their tests (decision 0021): `uv run python -m moonwalkers.pipelines list`
   shows which are in; `... run D --input-type pdf_catalog <file or URL>... --out <file>` runs one and
   writes its checked result, storing nothing. Stubs run only in the tests (`stub_pipelines()`).

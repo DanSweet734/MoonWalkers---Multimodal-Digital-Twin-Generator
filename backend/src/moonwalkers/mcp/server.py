@@ -40,6 +40,7 @@ from moonwalkers.contracts.pipeline_result import (
 from moonwalkers.control.manual import check_behavior
 from moonwalkers.control.program import IndexProgram, runnable_behaviors
 from moonwalkers.generators.base import (
+    CutoutRun,
     GeneratorError,
     GeneratorRequest,
     GeneratorRun,
@@ -58,6 +59,7 @@ from moonwalkers.kb import (
     validate_machine_key,
 )
 from moonwalkers.orchestrator import (
+    Cutout,
     InputPhoto,
     JobRequest,
     MachineHint,
@@ -71,10 +73,13 @@ from moonwalkers.orchestrator.router import ROUTES
 from moonwalkers.pipelines import OWNERS, Pipeline, default_pipelines
 from moonwalkers.pipelines.b.assemble import AxisName
 from moonwalkers.pipelines.b.build import REQUEST_FILE, build_run
+from moonwalkers.pipelines.b.dry_run import dry_run
 from moonwalkers.pipelines.b.inspection import inspect_mesh, preview_parts, preview_parts_spec
 from moonwalkers.pipelines.b.mesh_tools import (
     CircleFit,
-    fit_circles_along,
+    box_within,
+    direction_of,
+    fit_circles_across,
     load_mesh,
     orientation_matrix,
     render_views,
@@ -90,6 +95,7 @@ from moonwalkers.pipelines.b.parts_spec import (
 )
 from moonwalkers.pipelines.b.photos import PhotoPlan, check_photos
 from moonwalkers.pipelines.b.pipeline import (
+    CUTOUTS_DIR,
     GENERATOR_DIR,
     GENERATOR_RECORD,
     INSPECT_DIR,
@@ -118,6 +124,9 @@ from .reports import (
     CircleAlongReport,
     CircleFitReport,
     CirclesReport,
+    CutoutPreview,
+    DryRunReport,
+    FileValidation,
     GenerationReport,
     HoleReport,
     InspectionReport,
@@ -125,6 +134,7 @@ from .reports import (
     JobList,
     JointPreview,
     KnowledgeBaseReport,
+    NumberedIssue,
     PartPreview,
     PartsPreviewReport,
     PreviewReport,
@@ -147,13 +157,17 @@ fact cited. Follow docs/agent-procedure.md. The usual order is:
 - start_run, then add_input for each machine photo, with its view in the operator's words when
   there are several (decision 0022). Photos uploaded in the dashboard are already a job:
   list_jobs finds it, and you continue it from add_reference_source;
+- preview_cutouts (open its sheet): where a photo's cut-out keeps what stands in front of the
+  machine or loses part of it, give it a cutout with set_photo (decision 0029), which also
+  corrects a view or use;
 - add_reference_source, identify_machine, add_fact and add_control (cited reading notes);
 - generate_geometry, then inspect_geometry (open the PNG views it returns);
 - one moving part about +x (decision 0012): add_joint and set_scale;
 - several parts and joints (decisions 0027, 0028): set_spec_frame, set_cut_list, set_spec_part
   and set_spec_joint for each, set_scale_length, set_size_checks; fit_circles measures round
   parts along any axis;
-- then preview_twin (look at every part's view), then submit_twin.
+- then preview_twin (look at every part's view), dry_run_twin until it is clean, then
+  submit_twin.
 Runs and files live in the data folder; tool paths are relative to it."""
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
@@ -191,6 +205,10 @@ class UnconfiguredGenerator(Hunyuan3DGenerator):
             f"the image-to-3D generator is not configured: set {GEN_ROOT_ENV} for the MCP server "
             "(docs/setup/generators.md)"
         )
+
+    def cut_out(self, request: GeneratorRequest) -> CutoutRun:
+        self.generate(request)  # raises the same message
+        raise AssertionError("unreachable")
 
 
 def default_generator() -> ImageTo3DGenerator:
@@ -265,6 +283,10 @@ def create_server(
             facts=[f.key for f in reference.facts],
             control=[b.behavior_id for b in reference.control],
             issues=len(reference.issues),
+            issue_list=[
+                NumberedIssue(number=n, severity=i.severity, message=i.message, ref=i.ref)
+                for n, i in enumerate(reference.issues, start=1)
+            ],
         )
 
     def save_notes(run_dir: Path, change: Callable[[dict[str, Any]], None]) -> ReferenceFacts:
@@ -473,6 +495,68 @@ def create_server(
                 generator_input=generator_input(plan) if is_photo else None,
             )
 
+    @server.tool(annotations=LOCAL_WRITE)
+    def set_photo(
+        run: str,
+        source_id: str,
+        view: PhotoView,
+        use: PhotoUse | None = None,
+        cutout: Cutout | None = None,
+    ) -> SourceAdded:
+        """Correct a machine photo already added: its view, its use, or how the generator cuts
+        the machine out of it, before generate_geometry (refused after). Gives the photo's whole
+        entry: leaving out use or cutout resets them to the default.
+        - cutout (decision 0029): without it, the generator keeps the photo's most salient
+          object, which in a lab is often a sign, a box or a monitor in front of the machine.
+          Coordinates are fractions (0 to 1) of the photo turned upright, from its top left.
+          {"method": "sam", "box": [x0, y0, x1, y1], "points": [{"x", "y", "keep"}]}: Segment
+          Anything inside the box; points with keep true on the machine, keep false on what to
+          leave out. {"method": "crop", "box": [...]}: the automatic removal inside the box only.
+          {"method": "mask", "mask": "<PNG in the data folder>"}: a mask a person drew, white or
+          opaque on the machine. "min_piece" (default 0.02): separate pieces smaller than this
+          share of the largest are dropped; 0 keeps all.
+        Check the result with preview_cutouts before generating."""
+        with guarded():
+            photo = InputPhoto.model_validate(
+                {"view": view, "use": use, "cutout": cutout.model_dump() if cutout else None}
+            )
+            run_dir = ws.run_dir(run)
+            request = ws.set_photo(run_dir, source_id, photo)
+            source = next(s for s in request.sources if s.source_id == source_id)
+            return SourceAdded(
+                run=run,
+                source=source,
+                inputs=[s.source_id for s in request.sources],
+                generator_input=generator_input(check_photos(request.sources, request.photos)),
+            )
+
+    @server.tool(annotations=LOCAL_WRITE)
+    def preview_cutouts(run: str) -> CutoutPreview:
+        """Cut the machine out of the photos the generator will get, and of evidence photos
+        given a cutout, as the generator would, without generating (seconds; decision 0029).
+        Writes <run>/cutouts/ (prepared PNGs and sheet.png), overwriting an earlier preview.
+        Open the sheet: if a cut-out keeps what stands in front of the machine or loses part of
+        it, give the photo a cutout with set_photo and preview again."""
+        with guarded():
+            run_dir = ws.run_dir(run)
+            request = ws.request(run_dir)
+            pipeline = PipelineB(generator_factory(), data_dir, run_dir, photos=request.photos)
+            done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR)
+            return CutoutPreview(
+                run=run,
+                sheet=str(done.sheet),
+                photos=[
+                    f"{name}: {info['method']}, {info['kept_share']:.1%} kept"
+                    + (
+                        f", {info['pieces_dropped']} specks dropped"
+                        if info.get("pieces_dropped")
+                        else ""
+                    )
+                    for name, info in done.done.items()
+                ],
+                seconds=done.seconds,
+            )
+
     # -------------------------------------------------------------------- reading notes
     @server.tool(annotations=LOCAL_WRITE)
     def add_reference_source(
@@ -657,6 +741,50 @@ def create_server(
 
             return summary(run_dir, save_notes(run_dir, put))
 
+    @server.tool(annotations=LOCAL_WRITE)
+    def correct_issue(
+        run: str,
+        number: int,
+        severity: Literal["info", "warning", "error"] | None = None,
+        message: str | None = None,
+        ref: str | None = None,
+        withdraw: bool = False,
+    ) -> ReferenceSummary:
+        """Correct or withdraw an issue in the reading notes, before the twin is built: one that
+        turned out wrong, or went stale when a later change fixed what it described (v10's and
+        v11's note of a flap that v10's cuts removed). `number` is its place in the summary's
+        issue_list, from 1. Give only what changes; ref="" clears what it concerns. withdraw
+        takes it out, which renumbers the ones after it. Only issues added with add_issue are
+        here: the build's own (stand-ins, patches, checks) come from the spec and cannot be
+        corrected, only made unneeded. A built twin's issues are part of its record for good."""
+        with guarded():
+            run_dir = ws.run_dir(run)
+            need_reference(run_dir)
+            changes = {
+                k: v
+                for k, v in (("severity", severity), ("message", message), ("ref", ref))
+                if v is not None
+            }
+            if withdraw and changes:
+                raise ToolError("withdraw an issue, or correct it, not both")
+            if not withdraw and not changes:
+                raise ToolError("nothing to correct: give severity, message or ref, or withdraw")
+            if "ref" in changes and changes["ref"] == "":
+                changes["ref"] = None
+            if message is not None and not message.strip():
+                raise ToolError("an issue needs a message: withdraw it instead")
+
+            def put(data: dict[str, Any]) -> None:  # after the refusal of a built run
+                held = len(data["issues"])
+                if not 1 <= number <= held:
+                    raise ToolError(f"no issue {number}: the notes hold {held}, numbered from 1")
+                if withdraw:
+                    del data["issues"][number - 1]
+                else:
+                    data["issues"][number - 1] |= changes
+
+            return summary(run_dir, save_notes(run_dir, put))
+
     # ---------------------------------------------------------------------------- geometry
     @server.tool(annotations=LOCAL_WRITE)
     def generate_geometry(run: str) -> GenerationReport:
@@ -767,21 +895,31 @@ def create_server(
         run: str,
         up: AxisName,
         front: AxisName,
-        along: Literal["x", "y", "z"],
+        along: Literal["x", "y", "z"] | tuple[float, float, float],
         at: list[float],
         yaw_deg: float = 0.0,
+        within: dict[Literal["x", "y", "z"], tuple[float, float]] | None = None,
     ) -> CirclesReport:
         """Fit a circle to the oriented mesh's surface in a thin slice across `along` at each
         position in `at` (model units, after orienting and turning by yaw_deg, as
         inspect_geometry): where a round part's axis is when it is not along +x, such as a
         column, a quill or a guard along z, or a hub along y. `round` fits are the ones to
         trust; a fit's centre is a point in the twin's axes, a joint's `point` or a cut
-        cylinder's centre. Several slices along one part agree when it is straight."""
+        cylinder's centre. Several slices along one part agree when it is straight.
+
+        For a part at an angle (an arm's link), `along` can be a direction, [dx, dy, dz]: a
+        slice across an axis cuts a slanted round part in an ellipse. A position in `at` is
+        then the distance along the unit direction from the origin (a point p is in the slice
+        when p . direction = position). `within` keeps only the surface inside a box, as ranges
+        on some of the twin's axes, {"x": [lo, hi], "z": [lo, hi]} (model units): use it when a
+        slice crosses several parts and the part to measure is not the largest."""
         with guarded():
             run_dir = ws.run_dir(run)
             mesh = transformed(
                 load_mesh(generated_mesh(run_dir)), orientation_matrix(up, front, yaw_deg)
             )
+            direction = direction_of(along)
+            box = box_within(within)
             fits = [
                 CircleAlongReport(
                     position=fit.x,
@@ -792,9 +930,14 @@ def create_server(
                     coverage=fit.coverage,
                     round=fit.round,
                 )
-                for fit, centre in fit_circles_along(mesh, along, at)
+                for fit, centre in fit_circles_across(mesh, direction, at, box=box)
             ]
-            return CirclesReport(run=run, along=along, fits=fits)
+            return CirclesReport(
+                run=run,
+                along=along,
+                within={axis: (lo, hi) for axis, (lo, hi) in within.items()} if within else None,
+                fits=fits,
+            )
 
     def generator_input(plan: PhotoPlan | None) -> str:
         if plan is None:
@@ -1104,7 +1247,9 @@ def create_server(
         - Several parts (decision 0027): cut, place the stand-ins and scale into preview_parts/,
           with views of the cuts, the parts and each part alone (look at every one: a leftover
           shows only there), the size checks, the twin's issues, and `holes`: open edges where
-          removed faces met a cut part, each to patch or to check a stand-in covers. With
+          removed faces met a cut part, each to patch or to check a stand-in covers. Parts
+          whose meshes NVIDIA's validator would warn about (zero-area faces, non-manifold points)
+          are among the issues, with the points in model units: fix them before submitting. With
           photos=true, the parts are also drawn over each photo the generator was fed (about a
           minute a photo)."""
         with guarded():
@@ -1126,10 +1271,43 @@ def create_server(
                 body_faces=p.body_faces,
                 spindle_faces=p.spindle_faces,
                 size_checks=size_checks(p, ws.reference(run_dir)),
+                mesh_faults=preview.mesh_faults,
                 views={name: str(path) for name, path in preview.views.items()},
             )
 
     # ------------------------------------------------------------------------------- submit
+    @server.tool(annotations=LOCAL_WRITE)
+    def dry_run_twin(run: str) -> DryRunReport:
+        """Build the run as submit_twin would, but in a new scratch copy of the data folder
+        (data/scratch/<date>_dry-run-<NNN>/), then run our validator and NVIDIA's on the twin,
+        every check file and the controls. Nothing is stored for real, so run it before
+        submit_twin: a submitted version is kept for good. Fix what it finds through the tools
+        and dry-run again until `clean` (the lab's machines plan, tool gap 7)."""
+        with guarded():
+            run_dir = ws.run_dir(run)
+            need_spec(run_dir)
+            done = dry_run(
+                run_dir,
+                data_dir,
+                need_reference(run_dir),
+                generator_factory(),
+                pipelines=available,
+                clock=clock,
+            )
+            return DryRunReport(
+                run=run,
+                scratch_run=str(done.run_dir),
+                message=done.message,
+                built=done.built,
+                clean=done.clean,
+                files=[
+                    FileValidation(
+                        file=str(f.file.relative_to(done.run_dir)), ours=f.ours, nvidia=f.nvidia
+                    )
+                    for f in done.files
+                ],
+            )
+
     @server.tool(annotations=LOCAL_WRITE)
     def submit_twin(run: str) -> SubmitReport:
         """Build the twin through the orchestrator. It stores the result and a new twin version
