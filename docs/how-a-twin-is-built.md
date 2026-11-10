@@ -22,7 +22,7 @@ flowchart LR
     end
     subgraph PLATFORM["MoonWalkers backend (Python)"]
         API["API<br/>FastAPI"]
-        MCP["MCP server<br/>26 tools"]
+        MCP["MCP server<br/>27 tools"]
         RUN[("Run folder<br/>request.json, notes, spec")]
         ROUTER["Input Router"]
         PB["Pipeline B<br/>photos"]
@@ -201,7 +201,8 @@ flowchart TB
     ONE -->|"several"| JN["set_spec_frame, set_cut_list,<br/>set_spec_part, set_spec_joint,<br/>remove_spec_entry,<br/>set_scale_length, set_size_checks"]
     J1 --> PV["preview_twin"]
     JN --> PV
-    PV --> ST["submit_twin"]
+    PV --> DR["dry_run_twin<br/>until clean"]
+    DR --> ST["submit_twin"]
 ```
 The procedure the agent follows is `docs/agent-procedure.md`. Each tool's inputs and outputs are
-in the [tool guide](tool-guide.md#the-agents-26-mcp-tools).
+in the [tool guide](tool-guide.md#the-agents-27-mcp-tools).

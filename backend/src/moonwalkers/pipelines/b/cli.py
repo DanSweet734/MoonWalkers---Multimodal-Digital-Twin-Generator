@@ -2,6 +2,7 @@
 
     uv run python -m moonwalkers.pipelines.b build RUN --reference FILE
     uv run python -m moonwalkers.pipelines.b cutouts RUN
+    uv run python -m moonwalkers.pipelines.b dry-run RUN --reference FILE
     uv run python -m moonwalkers.pipelines.b inspect RUN [--up +y --front +z [--yaw DEG]
                                                           [--circle-x X ...]]
     uv run python -m moonwalkers.pipelines.b inspect RUN --up +y --front +z [--yaw DEG]
@@ -19,7 +20,9 @@ the first time it generates the mesh and stops for the geometry spec; once
 ``inspect`` renders and measures the generated mesh, and ``--preview`` tries the spec without
 storing anything. ``cutouts`` cuts the fed photos out as the generator would, each
 with its cut-out from ``request.json`` if it has one (decision 0029), into ``RUN/cutouts/``
-with ``sheet.png`` to look at, in seconds and without generating. A several-part spec (decisions
+with ``sheet.png`` to look at, in seconds and without generating. ``dry-run`` builds the run
+in a new scratch copy of the data folder and runs both validators on every file, storing nothing
+for real. A several-part spec (decisions
 0023 and 0027) is previewed into ``RUN/preview_parts/``: the coloured views of the cuts and the
 parts, each part alone, and the parts drawn over each fed photo, with the scale and the size
 checks. The generator environment is found through ``--gen-root`` or the
@@ -42,6 +45,7 @@ from moonwalkers.orchestrator import JobRequest, OrchestratorError
 from moonwalkers.usd.exporter import ExportError
 
 from .build import REQUEST_FILE, build_run
+from .dry_run import DryRun, dry_run
 from .inspection import (
     format_inspection,
     format_parts_preview,
@@ -122,6 +126,15 @@ def _parser() -> argparse.ArgumentParser:
     )
     cutouts.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
     cutouts.set_defaults(command=_cutouts)
+
+    dry = commands.add_parser(
+        "dry-run", help="build a copy of the run in data/scratch/ and run both validators"
+    )
+    dry.add_argument("run_dir", type=Path, help="data/machines/<machine>/runs/<run>")
+    dry.add_argument("--reference", type=Path, required=True, help="reference facts JSON")
+    dry.add_argument("--gen-root", type=Path, help=f"generator folder (default: ${GEN_ROOT_ENV})")
+    dry.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
+    dry.set_defaults(command=_dry_run)
 
     inspect = commands.add_parser("inspect", help="render and measure the generated mesh")
     inspect.add_argument("run_dir", type=Path)
@@ -235,6 +248,38 @@ def format_cutouts(done: CutoutRun) -> str:
         specks = info.get("pieces_dropped")
         dropped = f", {specks} specks dropped" if specks else ""
         lines.append(f"  {name}: {info['method']}, {info['kept_share']:.1%} kept{dropped}")
+    return "\n".join(lines)
+
+
+# ------------------------------------------------------------------------------------ dry run
+def _dry_run(args: argparse.Namespace) -> int:
+    run_dir = args.run_dir.resolve()
+    data_dir = (args.data or _data_dir_of(run_dir)).resolve()
+    gen_root = args.gen_root or os.environ.get(GEN_ROOT_ENV)
+    # The run's mesh is reused; without a generator folder, generating anything new fails.
+    generator = Hunyuan3DGenerator(Hunyuan3DConfig.under(Path(gen_root or ".")))
+    done = dry_run(
+        run_dir,
+        data_dir,
+        load_reference(args.reference),
+        generator,
+        reference_path=args.reference,
+    )
+    print(format_dry_run(done))
+    return 0 if done.clean else 1
+
+
+def format_dry_run(done: DryRun) -> str:
+    lines = [f"scratch copy: {done.run_dir}", done.message]
+    for f in done.files:
+        nvidia = f.nvidia or []
+        lines.append(
+            f"{f.file.relative_to(done.run_dir)}: ours {len(f.ours)} finding(s), NVIDIA's "
+            + ("not installed" if f.nvidia is None else f"{len(nvidia)} finding(s)")
+        )
+        lines += [f"  ours {i.severity} ({i.ref or '-'}): {i.message}" for i in f.ours]
+        lines += [f"  NVIDIA {i.severity} ({i.ref or '-'}): {i.message}" for i in nvidia]
+    lines.append("clean" if done.clean else "not clean: fix the findings, then dry-run again")
     return "\n".join(lines)
 
 

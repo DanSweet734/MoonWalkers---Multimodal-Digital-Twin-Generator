@@ -73,6 +73,7 @@ from moonwalkers.orchestrator.router import ROUTES
 from moonwalkers.pipelines import OWNERS, Pipeline, default_pipelines
 from moonwalkers.pipelines.b.assemble import AxisName
 from moonwalkers.pipelines.b.build import REQUEST_FILE, build_run
+from moonwalkers.pipelines.b.dry_run import dry_run
 from moonwalkers.pipelines.b.inspection import inspect_mesh, preview_parts, preview_parts_spec
 from moonwalkers.pipelines.b.mesh_tools import (
     CircleFit,
@@ -122,6 +123,8 @@ from .reports import (
     CircleFitReport,
     CirclesReport,
     CutoutPreview,
+    DryRunReport,
+    FileValidation,
     GenerationReport,
     HoleReport,
     InspectionReport,
@@ -160,7 +163,8 @@ fact cited. Follow docs/agent-procedure.md. The usual order is:
 - several parts and joints (decisions 0027, 0028): set_spec_frame, set_cut_list, set_spec_part
   and set_spec_joint for each, set_scale_length, set_size_checks; fit_circles measures round
   parts along any axis;
-- then preview_twin (look at every part's view), then submit_twin.
+- then preview_twin (look at every part's view), dry_run_twin until it is clean, then
+  submit_twin.
 Runs and files live in the data folder; tool paths are relative to it."""
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
@@ -1206,6 +1210,38 @@ def create_server(
             )
 
     # ------------------------------------------------------------------------------- submit
+    @server.tool(annotations=LOCAL_WRITE)
+    def dry_run_twin(run: str) -> DryRunReport:
+        """Build the run as submit_twin would, but in a new scratch copy of the data folder
+        (data/scratch/<date>_dry-run-<NNN>/), then run our validator and NVIDIA's on the twin,
+        every check file and the controls. Nothing is stored for real, so run it before
+        submit_twin: a submitted version is kept for good. Fix what it finds through the tools
+        and dry-run again until `clean` (the lab's machines plan, tool gap 7)."""
+        with guarded():
+            run_dir = ws.run_dir(run)
+            need_spec(run_dir)
+            done = dry_run(
+                run_dir,
+                data_dir,
+                need_reference(run_dir),
+                generator_factory(),
+                pipelines=available,
+                clock=clock,
+            )
+            return DryRunReport(
+                run=run,
+                scratch_run=str(done.run_dir),
+                message=done.message,
+                built=done.built,
+                clean=done.clean,
+                files=[
+                    FileValidation(
+                        file=str(f.file.relative_to(done.run_dir)), ours=f.ours, nvidia=f.nvidia
+                    )
+                    for f in done.files
+                ],
+            )
+
     @server.tool(annotations=LOCAL_WRITE)
     def submit_twin(run: str) -> SubmitReport:
         """Build the twin through the orchestrator. It stores the result and a new twin version

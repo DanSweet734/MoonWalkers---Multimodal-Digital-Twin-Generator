@@ -122,6 +122,7 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
         "set_scale_length",
         "set_size_checks",
         "preview_twin",
+        "dry_run_twin",
         "submit_twin",
     ]
     assert all(t.description and t.output_schema for t in tools.values())
@@ -685,6 +686,49 @@ async def test_a_photo_is_corrected_and_its_cutout_previewed_before_generating(
         assert "already generated its mesh" in await fails(
             client, "set_photo", run=run, source_id="src-b", view="back"
         )
+
+
+@pytest.mark.anyio
+async def test_a_dry_run_builds_a_scratch_copy_and_stores_nothing(setup, photo_run) -> None:
+    """Tool gap 7 (the lab's machines plan): the build and both validators, in data/scratch/."""
+    server, _ = setup
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        await ok(client, "generate_geometry", run=run)
+        await ok(
+            client,
+            "add_joint",
+            run=run,
+            up="+y",
+            front="+z",
+            spindle_axis_yz=[0.0, 0.2],
+            spindle_radius=0.45,
+            spindle_start_x=1.0,
+            method="Axis from the tip slabs; the box's front face is at x = 1.",
+        )
+        await ok(client, "set_scale", run=run)
+
+        tried = await ok(client, "dry_run_twin", run=run)
+        assert tried["built"], tried["message"]
+        assert "built version 1" in tried["message"]
+        copied = Path(tried["scratch_run"])
+        assert copied.is_relative_to(photo_run.data_dir / "scratch")
+        assert copied.parts[-6].endswith("_dry-run-001")
+        files = {f["file"].replace("\\", "/") for f in tried["files"]}
+        assert "twin.usdc" in files and len(files) == 3  # the twin and its two check files
+        assert all(f["nvidia"] is not None for f in tried["files"])  # a dev dependency, installed
+        assert not any(i["severity"] == "error" for f in tried["files"] for i in f["ours"])
+        request = json.loads((copied / "request.json").read_text(encoding="utf-8"))
+        assert request["job_id"].endswith("-dry-run")
+
+        # nothing real was stored: the real build is still version 1
+        assert (await ok(client, "check_knowledge_base", **MACHINE))["versions"] == []
+        assert not (photo_run.data_dir / run / "twin.usdc").exists()
+        second = await ok(client, "dry_run_twin", run=run)
+        assert Path(second["scratch_run"]).parts[-6].endswith("_dry-run-002")
+        submitted = await ok(client, "submit_twin", run=run)
+        assert submitted["twin"]["twin_id"] == "moonwalkers/testindexer@v1"
+        assert "already built its twin" in await fails(client, "dry_run_twin", run=run)
 
 
 @pytest.mark.anyio

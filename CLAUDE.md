@@ -95,8 +95,9 @@ The history below is the record of the PoC and the drill-press plan.
   - Cut parts' holes are closed by the spec's `patches`; parts fixed to the frame are grey. The
     agent's MCP tools set a several-part spec piece by piece (decision 0028; procedure section
     5b).
-  - **Build in a scratch copy of `data/` first** (`build --data`) and run both validators before
-    the real build: a real build stores a version for good (v2's lesson).
+  - **Build in a scratch copy of `data/` first** and run both validators before the real build:
+    a real build stores a version for good (v2's lesson). Since 2026-11-09 one step does it:
+    `... pipelines.b dry-run <run> --reference <file>`, or the MCP tool `dry_run_twin`.
   - Masses stay placeholders: the manual gives only the 108 lb total, and per-part masses need a
     contract change discussed with the pipeline owners first (decision 0024, update). The table
     is locked in every file but `checks/unlocked.usdc`, by design. Daniel's term: "downfeed
@@ -285,6 +286,8 @@ Backend (run from `backend/`):
   `request.json`. Run `uv run python -m moonwalkers.pipelines.b build <run> --reference <facts.json> --gen-root C:\mw-gen`.
   The first build generates the mesh and stops (exit 2) until `geometry_spec.json` exists. The HA5C's
   facts are in `src/moonwalkers/pipelines/b/haas_ha5c.reference.json`.
+- Try a build without storing anything: `uv run python -m moonwalkers.pipelines.b dry-run <run> --reference <facts.json>`
+  builds a copy in `data/scratch/<date>_dry-run-<NNN>/` and runs both validators on every file.
 - Check how the machine is cut out of each photo before generating (decision 0029):
   `uv run python -m moonwalkers.pipelines.b cutouts <run> --gen-root C:\mw-gen` writes
   `<run>/cutouts/sheet.png` in seconds. A photo's `cutout` in `request.json` (SAM box and points,

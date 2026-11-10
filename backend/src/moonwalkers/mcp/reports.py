@@ -290,6 +290,21 @@ class PreviewReport(BaseModel):
     views: dict[str, str] = Field(description="PNG sheets: assembled, body, spindle")
 
 
+class FileValidation(BaseModel):
+    file: str
+    ours: list[Issue]
+    nvidia: list[Issue] | None = Field(description="None: NVIDIA's validator is not installed")
+
+
+class DryRunReport(BaseModel):
+    run: str
+    scratch_run: str = Field(description="the copied run, in a new folder under data/scratch/")
+    message: str = Field(description="the build's message, or why it stopped")
+    built: bool
+    clean: bool = Field(description="built, and no error or warning from either validator")
+    files: list[FileValidation]
+
+
 class SubmitReport(BaseModel):
     run: str
     message: str

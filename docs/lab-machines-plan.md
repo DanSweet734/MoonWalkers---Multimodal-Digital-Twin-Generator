@@ -370,8 +370,9 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
   - [x] item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the
     build and NVIDIA's validator do (2026-11-09: `mesh_tools.mesh_faults`, NVIDIA's definitions,
     the same counts as its own code on 29 meshes; it found v9's 40 zero-area faces again);
-  - item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,
-    storing nothing;
+  - [x] item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,
+    storing nothing (2026-11-09: `dry_run_twin` and `pipelines.b dry-run`; v11's spec dry-ran
+    clean as v12 in a copy);
   - item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice
     would cut through several links;
   - item 2: a tool that corrects or withdraws an issue the agent added (the cause of v10's and

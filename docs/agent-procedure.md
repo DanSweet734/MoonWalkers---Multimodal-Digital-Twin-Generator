@@ -291,20 +291,15 @@ decision 0027 and its updates) is a worked example.
      two: the T33901's table rim at exactly 10 mm gave 40 zero-area faces, at 10.5 mm none;
    - the size checks, and the issues the twin will carry.
 9. **Repeat** until every view is right, no hole is left, and no part has a mesh warning.
-10. **Dry-run the build before `submit_twin`.** A submitted version is stored for good, and the
-    preview now finds zero-area faces and non-manifold points (step 8), but only the build
-    checks the exported files as a whole. No tool does this yet, so from `backend/`:
-    - copy `kb/`, the machine's `inputs/` and the run folder into a scratch data folder with the
-      same layout, such as `data/scratch/<date>_dry-run/data/`;
-    - give the copied `request.json` its own `job_id`, or the store refuses it as already stored;
-    - `uv run python -m moonwalkers.pipelines.b build <copied run> --reference <copied
-      run>/reference_facts.json --data <scratch data> --gen-root <the generator folder>`;
-    - run both validators, `uv run python -m moonwalkers.usd.validate <file>` and
-      `uv run omni_asset_validate <file>`, on `twin.usdc`, every file in `checks/` and, with
-      controls, `programs/<command set>/controls.usdc`.
-
-    Fix what they report through the tools, and repeat. The T33901's agent build needed three dry
-    runs (worklog 2026-11-04). Then `submit_twin`, and validate its files the same way.
+10. **Dry-run the build before `submit_twin`:** `dry_run_twin(run)`. A submitted version is
+    stored for good. The dry run builds the run as `submit_twin` would, but in a new scratch copy
+    of the data folder (`data/scratch/<date>_dry-run-<NNN>/`), and runs our validator and
+    NVIDIA's on the twin, every check file and the controls. Nothing is stored for real.
+    - Fix what it reports through the tools, and dry-run again until `clean` is true. The
+      T33901's agent build needed three dry runs, by hand (worklog 2026-11-04).
+    - **By hand, from `backend/`:**
+      `uv run python -m moonwalkers.pipelines.b dry-run <run> --reference <run>/reference_facts.json`.
+    - Then `submit_twin`.
 
 ## 6. Submit and report
 1. **`submit_twin(run)`** stores the result and a new twin version (needs review), exports
