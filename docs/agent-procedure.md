@@ -254,6 +254,12 @@ decision 0027 and its updates) is a worked example.
    the bounds; **`fit_circles(run, up, front, along, at, yaw_deg)`** for round parts along any
    axis (a column or a quill along z, a hub along y). Use the `round` fits; several slices along
    one part should agree. Write each measurement into the note of what it sets.
+   - When a slice crosses several parts and the one to measure is not the largest (an arm's
+     links), add `within`, ranges on some of the twin's axes (`{"x": [lo, hi]}`, model units),
+     to keep only the surface around it.
+   - For a round part at an angle, set `along` to its direction, `[dx, dy, dz]`: a slice across
+     an axis cuts it in an ellipse. Each position in `at` is then the distance along that unit
+     direction from the origin (lab's machines plan, tool gap 4).
 3. **`set_spec_frame`:** up, front and yaw_deg as inspected; `origin_xy` where the twin's origin
    goes (the spindle's axis); `fixed_part` (the frame, which keeps every face no cut takes); and
    `method`.

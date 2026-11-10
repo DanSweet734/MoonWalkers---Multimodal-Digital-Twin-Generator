@@ -10,7 +10,10 @@ import pytest
 import trimesh
 
 from moonwalkers.pipelines.b.mesh_tools import (
+    box_within,
+    direction_of,
     face_groups,
+    fit_circles_across,
     fit_circles_along,
     footprint_angle,
     load_mesh,
@@ -18,6 +21,7 @@ from moonwalkers.pipelines.b.mesh_tools import (
     radial_profile,
     read_png,
     render_views,
+    slice_axes,
     split_by_cylinder,
     tip_slabs,
     transformed,
@@ -226,3 +230,66 @@ def test_circles_are_fitted_across_any_axis(axis: str) -> None:
     expected = [0.1, -0.2, 0.3]
     expected[index] = position
     assert centre == pytest.approx(expected, abs=0.01)
+
+
+def two_rods() -> tuple[trimesh.Trimesh, np.ndarray]:
+    """A thick upright rod at the origin and a thin rod tilted 30 degrees in x-z, at x = 0.6:
+    a slice across z cuts both, as a slice across an arm cuts several links."""
+    upright = trimesh.creation.cylinder(radius=0.15, height=1.0, sections=96)
+    tilt = trimesh.transformations.rotation_matrix(math.radians(30), (0, 1, 0))
+    tilted = trimesh.creation.cylinder(radius=0.05, height=1.0, sections=96)
+    tilted.apply_transform(tilt)
+    tilted.apply_translation((0.6, 0.0, 0.0))
+    return trimesh.util.concatenate([upright, tilted]), tilt[:3, :3] @ (0.0, 0.0, 1.0)
+
+
+def test_a_box_keeps_one_part_of_a_slice_that_crosses_several() -> None:
+    """The lab's machines plan, tool gap 4."""
+    rods, _ = two_rods()
+    ((whole, _),) = fit_circles_along(rods, "z", [0.0])
+    assert whole.radius == pytest.approx(0.15, abs=0.01)  # the larger part wins
+    box = box_within({"x": (0.3, 1.0)})
+    ((boxed, centre),) = fit_circles_along(rods, "z", [0.0], box=box)
+    assert boxed.radius is not None and boxed.radius > 0.05  # the thin rod's ellipse
+    assert centre == pytest.approx((0.6, 0.0, 0.0), abs=0.01)
+
+
+def test_a_slice_across_a_tilted_part_measures_its_true_radius() -> None:
+    rods, direction = two_rods()
+    position = float(np.dot((0.6, 0.0, 0.1), direction))  # a point on its axis
+    box = box_within({"x": (0.3, 1.0)})
+    ((fit, centre),) = fit_circles_across(rods, direction, [position], box=box)
+    assert fit.round and fit.radius == pytest.approx(0.05, abs=0.002)
+    assert np.dot(centre, direction) == pytest.approx(position, abs=1e-9)
+    base = np.array([0.6, 0.0, 0.0])  # where the rod's axis crosses z = 0
+    axis_point = base + direction * (position - float(base @ direction))
+    assert centre == pytest.approx(tuple(axis_point), abs=0.003)
+
+
+@pytest.mark.parametrize("axis", ["x", "y", "z"])
+def test_slices_across_an_axis_direction_are_the_slices_along_it(axis: str) -> None:
+    rods, _ = two_rods()
+    direction = direction_of(axis)
+    assert fit_circles_across(rods, direction, [0.1]) == fit_circles_along(rods, axis, [0.1])
+
+
+def test_the_slice_axes_are_right_handed_and_square() -> None:
+    for direction in ((1, 2, 3), (0, 0, -1), (-0.2, 0.9, 0.1)):
+        axes = slice_axes(direction)
+        assert axes @ axes.T == pytest.approx(np.eye(3))
+        assert np.linalg.det(axes) == pytest.approx(1.0)
+        assert axes[0] == pytest.approx(np.asarray(direction) / np.linalg.norm(direction))
+
+
+def test_bad_directions_and_ranges_are_refused() -> None:
+    with pytest.raises(ValueError, match="not all zero"):
+        slice_axes((0, 0, 0))
+    with pytest.raises(ValueError, match="x, y, z or a direction"):
+        direction_of("w")
+    with pytest.raises(ValueError, match="three numbers"):
+        direction_of([1.0, 0.0])
+    with pytest.raises(ValueError, match="lowest value first"):
+        box_within({"x": (1.0, 0.0)})
+    with pytest.raises(ValueError, match="an axis, x, y or z"):
+        box_within({"w": (0.0, 1.0)})
+    assert box_within(None) is None and box_within({}) is None

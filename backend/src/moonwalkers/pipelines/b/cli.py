@@ -7,6 +7,7 @@
                                                           [--circle-x X ...]]
     uv run python -m moonwalkers.pipelines.b inspect RUN --up +y --front +z [--yaw DEG]
                                                       --circles-along z --at Z ...
+                                                      [--within z LO HI ...]
     uv run python -m moonwalkers.pipelines.b inspect RUN --preview [--spec FILE]
                                                       [--reference FILE] [--no-photos]
 
@@ -54,7 +55,14 @@ from .inspection import (
     preview_parts,
     preview_parts_spec,
 )
-from .mesh_tools import fit_circles_along, load_mesh, orientation_matrix, transformed
+from .mesh_tools import (
+    box_within,
+    direction_of,
+    fit_circles_across,
+    load_mesh,
+    orientation_matrix,
+    transformed,
+)
 from .parts_spec import PartsSpec
 from .pipeline import (
     CUTOUTS_DIR,
@@ -159,9 +167,18 @@ def _parser() -> argparse.ArgumentParser:
     )
     inspect.add_argument(
         "--circles-along",
-        choices=("x", "y", "z"),
+        metavar="AXIS",
         help="fit circles in slices across this axis instead (the column and the quill stand "
-        "along z), at the positions given with --at",
+        "along z), at the positions given with --at; or across a direction, DX,DY,DZ, for a "
+        "part at an angle, where a position is the distance along it from the origin",
+    )
+    inspect.add_argument(
+        "--within",
+        nargs=3,
+        action="append",
+        metavar=("AXIS", "LO", "HI"),
+        help="with --circles-along: keep only the surface with AXIS between LO and HI (model "
+        "units); repeat for other axes. For a slice that crosses several parts",
     )
     inspect.add_argument("--at", type=float, nargs="+", metavar="POS", help="slice positions")
     inspect.add_argument(
@@ -199,11 +216,24 @@ def _inspect(args: argparse.Namespace) -> int:
             return 0
         print(format_preview(preview_parts(mesh, spec, run_dir / "preview"), reference))
         return 0
+    if args.within and not args.circles_along:
+        raise UsageError("--within goes with --circles-along")
     if args.circles_along:
         if args.up is None or not args.at:
             raise UsageError("--circles-along needs --up, --front and --at")
         oriented = transformed(load_mesh(mesh), orientation_matrix(args.up, args.front, args.yaw))
-        for fit, centre in fit_circles_along(oriented, args.circles_along, args.at):
+        along = args.circles_along
+        if along not in ("x", "y", "z"):
+            try:
+                along = [float(v) for v in along.split(",")]
+            except ValueError as exc:
+                raise UsageError(f"--circles-along takes x, y, z or DX,DY,DZ: {along}") from exc
+        try:
+            direction = direction_of(along)
+            box = box_within({a: (float(lo), float(hi)) for a, lo, hi in args.within or []})
+        except ValueError as exc:
+            raise UsageError(str(exc)) from exc
+        for fit, centre in fit_circles_across(oriented, direction, args.at, box=box):
             where = (
                 "no circle"
                 if centre is None

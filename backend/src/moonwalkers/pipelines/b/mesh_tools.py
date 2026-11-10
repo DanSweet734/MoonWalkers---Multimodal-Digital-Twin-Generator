@@ -10,7 +10,7 @@ import itertools
 import math
 import struct
 import zlib
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -358,6 +358,10 @@ class CircleFit:
     round: bool  # coverage, inliers and rms all good enough to trust the centre
 
 
+# A box in the mesh's frame, (lowest x, y, z) and (highest x, y, z); +-inf leaves a side open.
+Box = tuple[tuple[float, float, float], tuple[float, float, float]]
+
+
 def fit_circles(
     mesh: trimesh.Trimesh,
     xs: Sequence[float],
@@ -366,6 +370,7 @@ def fit_circles(
     samples: int = 400_000,
     iterations: int = 3000,
     seed: int = 0,
+    box: Box | None = None,
 ) -> list[CircleFit]:
     """A circle fitted to the surface in a slice at each x, to find a round part's axis.
 
@@ -374,17 +379,16 @@ def fit_circles(
     samples. So a round platter or nose is found even when feet, a cradle or a bore share the
     slice. Concentric rings (a nose and its bore) give the same centre. Both ``thickness`` and
     ``tolerance`` default to 1% of the mesh's largest extent. Seeded, so repeatable.
+
+    ``box`` keeps only the surface inside it, so a slice that crosses several parts (an arm's
+    links) measures one (the lab's machines plan, tool gap 4).
     """
-    size = float(mesh.extents.max())
-    thickness = 0.01 * size if thickness is None else thickness
-    tolerance = 0.01 * size if tolerance is None else tolerance
-    points, _ = trimesh.sample.sample_surface(mesh, samples, seed=seed)
-    fits = []
-    for x in xs:
-        in_slice = points[np.abs(points[:, 0] - x) <= thickness / 2][:, 1:]
-        rng = np.random.default_rng(seed)
-        fits.append(_fit_circle(float(x), in_slice, tolerance, rng, iterations))
-    return fits
+    return [
+        fit
+        for fit, _ in _fit_across(
+            mesh, np.eye(3), xs, thickness, tolerance, samples, iterations, seed, box
+        )
+    ]
 
 
 # The coordinates in the order that puts the slicing axis first, keeping the frame right-handed.
@@ -397,16 +401,103 @@ def fit_circles_along(
     """``fit_circles`` in slices across any axis, for round parts that are not along X (the
     drill press's column and quill stand along Z). Each fit comes with its centre as a point in
     the mesh's frame, at the slice's position; ``CircleFit.x`` is that position along ``axis``
-    and its ``centre_yz`` holds the other two coordinates in cyclic order (y, z; z, x; x, y)."""
-    order = _ALONG[axis]
-    permuted = trimesh.Trimesh(mesh.vertices[:, order], mesh.faces, process=False)
+    and its ``centre_yz`` holds the other two coordinates in cyclic order (y, z; z, x; x, y).
+    ``box`` (in ``options``) is in the mesh's frame, as for ``fit_circles``."""
+    return _fit_across(mesh, np.eye(3)[list(_ALONG[axis])], positions, **options)
+
+
+def fit_circles_across(
+    mesh: trimesh.Trimesh,
+    direction: Sequence[float],
+    positions: Sequence[float],
+    **options: Any,
+) -> list[tuple[CircleFit, tuple[float, float, float] | None]]:
+    """``fit_circles`` in slices across any direction, for a round part that lies at an angle
+    (an arm's link): a slice across one axis cuts it in an ellipse, which does not fit as round.
+    A position is the distance along the unit ``direction`` from the origin, so the slice holds
+    the points p with p . direction = position. Each fit comes with its centre as a point in the
+    mesh's frame; ``centre_yz`` is in the slice's own axes, and only the point is meant to be
+    used. ``box`` (in ``options``) is in the mesh's frame. Along x, y or z it gives the same fits
+    as ``fit_circles_along`` (tool gap 4)."""
+    return _fit_across(mesh, slice_axes(direction), positions, **options)
+
+
+def direction_of(along: str | Sequence[float]) -> tuple[float, float, float]:
+    """A slicing direction from an axis name, "x", "y" or "z", or three numbers."""
+    if isinstance(along, str):
+        if along not in _ALONG:
+            raise ValueError(f"slice along x, y, z or a direction of three numbers, not {along!r}")
+        e = np.eye(3)[_ALONG[along][0]]
+        return (float(e[0]), float(e[1]), float(e[2]))
+    if len(along) != 3:
+        raise ValueError(f"a slicing direction needs three numbers: {list(along)}")
+    return (float(along[0]), float(along[1]), float(along[2]))
+
+
+def box_within(ranges: Mapping[str, Sequence[float]] | None) -> Box | None:
+    """A box from ranges on some of the axes, {"x": (lo, hi), ...}; the others stay open."""
+    if not ranges:
+        return None
+    lo, hi = [-np.inf] * 3, [np.inf] * 3
+    for axis, bounds in ranges.items():
+        if axis not in _ALONG or len(bounds) != 2:
+            raise ValueError(f"a range is an axis, x, y or z, and (lowest, highest): {axis}")
+        if not float(bounds[0]) < float(bounds[1]):
+            raise ValueError(f"the range on {axis} needs its lowest value first: {list(bounds)}")
+        i = _ALONG[axis][0]
+        lo[i], hi[i] = float(bounds[0]), float(bounds[1])
+    return ((lo[0], lo[1], lo[2]), (hi[0], hi[1], hi[2]))
+
+
+def slice_axes(direction: Sequence[float]) -> np.ndarray:
+    """Three right-handed unit rows: ``direction``, then two across it. Along x, y or z they are
+    the axes in ``_ALONG``'s cyclic order."""
+    d = np.asarray(direction, dtype=float)
+    norm = float(np.linalg.norm(d))
+    if d.shape != (3,) or not np.isfinite(norm) or norm == 0.0:
+        raise ValueError(f"a slicing direction needs three numbers, not all zero: {direction}")
+    d = d / norm
+    for order in _ALONG.values():
+        if np.allclose(np.abs(d), np.eye(3)[order[0]]) and d[order[0]] > 0:
+            return np.eye(3)[list(order)]
+    # The second axis is the world axis least along d, made square to it.
+    helper = np.eye(3)[int(np.argmin(np.abs(d)))]
+    u = helper - d * float(helper @ d)
+    u /= np.linalg.norm(u)
+    return np.vstack([d, u, np.cross(d, u)])
+
+
+def _fit_across(
+    mesh: trimesh.Trimesh,
+    axes: np.ndarray,
+    positions: Sequence[float],
+    thickness: float | None = None,
+    tolerance: float | None = None,
+    samples: int = 400_000,
+    iterations: int = 3000,
+    seed: int = 0,
+    box: Box | None = None,
+) -> list[tuple[CircleFit, tuple[float, float, float] | None]]:
+    """The fits in slices across ``axes[0]``, with ``axes[1:]`` as the slice's own axes."""
+    size = float(mesh.extents.max())
+    thickness = 0.01 * size if thickness is None else thickness
+    tolerance = 0.01 * size if tolerance is None else tolerance
+    points, _ = trimesh.sample.sample_surface(mesh, samples, seed=seed)
+    if box is not None:
+        lo, hi = np.asarray(box[0], dtype=float), np.asarray(box[1], dtype=float)
+        if np.any(lo >= hi):
+            raise ValueError(f"a box needs each lowest value below its highest: {box}")
+        points = points[np.all((points >= lo) & (points <= hi), axis=1)]
+    local = points @ axes.T  # along, then the slice's two axes
     fitted = []
-    for fit in fit_circles(permuted, positions, **options):
+    for t in positions:
+        in_slice = local[np.abs(local[:, 0] - t) <= thickness / 2][:, 1:]
+        rng = np.random.default_rng(seed)
+        fit = _fit_circle(float(t), in_slice, tolerance, rng, iterations)
         centre = None
         if fit.centre_yz is not None:
-            point = [0.0, 0.0, 0.0]
-            point[order[0]], point[order[1]], point[order[2]] = fit.x, *fit.centre_yz
-            centre = (point[0], point[1], point[2])
+            point = axes.T @ np.array([fit.x, *fit.centre_yz])
+            centre = (float(point[0]), float(point[1]), float(point[2]))
         fitted.append((fit, centre))
     return fitted
 

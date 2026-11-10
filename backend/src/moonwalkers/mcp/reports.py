@@ -221,7 +221,10 @@ class CircleAlongReport(BaseModel):
 
 class CirclesReport(BaseModel):
     run: str
-    along: str
+    along: str | Vec3 = Field(description="an axis, or the direction the slices are across")
+    within: dict[str, tuple[float, float]] | None = Field(
+        default=None, description="the box the surface was kept in, model units, twin axes"
+    )
     fits: list[CircleAlongReport]
 
 

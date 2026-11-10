@@ -77,7 +77,9 @@ from moonwalkers.pipelines.b.dry_run import dry_run
 from moonwalkers.pipelines.b.inspection import inspect_mesh, preview_parts, preview_parts_spec
 from moonwalkers.pipelines.b.mesh_tools import (
     CircleFit,
-    fit_circles_along,
+    box_within,
+    direction_of,
+    fit_circles_across,
     load_mesh,
     orientation_matrix,
     render_views,
@@ -844,21 +846,31 @@ def create_server(
         run: str,
         up: AxisName,
         front: AxisName,
-        along: Literal["x", "y", "z"],
+        along: Literal["x", "y", "z"] | tuple[float, float, float],
         at: list[float],
         yaw_deg: float = 0.0,
+        within: dict[Literal["x", "y", "z"], tuple[float, float]] | None = None,
     ) -> CirclesReport:
         """Fit a circle to the oriented mesh's surface in a thin slice across `along` at each
         position in `at` (model units, after orienting and turning by yaw_deg, as
         inspect_geometry): where a round part's axis is when it is not along +x, such as a
         column, a quill or a guard along z, or a hub along y. `round` fits are the ones to
         trust; a fit's centre is a point in the twin's axes, a joint's `point` or a cut
-        cylinder's centre. Several slices along one part agree when it is straight."""
+        cylinder's centre. Several slices along one part agree when it is straight.
+
+        For a part at an angle (an arm's link), `along` can be a direction, [dx, dy, dz]: a
+        slice across an axis cuts a slanted round part in an ellipse. A position in `at` is
+        then the distance along the unit direction from the origin (a point p is in the slice
+        when p . direction = position). `within` keeps only the surface inside a box, as ranges
+        on some of the twin's axes, {"x": [lo, hi], "z": [lo, hi]} (model units): use it when a
+        slice crosses several parts and the part to measure is not the largest."""
         with guarded():
             run_dir = ws.run_dir(run)
             mesh = transformed(
                 load_mesh(generated_mesh(run_dir)), orientation_matrix(up, front, yaw_deg)
             )
+            direction = direction_of(along)
+            box = box_within(within)
             fits = [
                 CircleAlongReport(
                     position=fit.x,
@@ -869,9 +881,14 @@ def create_server(
                     coverage=fit.coverage,
                     round=fit.round,
                 )
-                for fit, centre in fit_circles_along(mesh, along, at)
+                for fit, centre in fit_circles_across(mesh, direction, at, box=box)
             ]
-            return CirclesReport(run=run, along=along, fits=fits)
+            return CirclesReport(
+                run=run,
+                along=along,
+                within={axis: (lo, hi) for axis, (lo, hi) in within.items()} if within else None,
+                fits=fits,
+            )
 
     def generator_input(plan: PhotoPlan | None) -> str:
         if plan is None:

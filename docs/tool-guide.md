@@ -106,7 +106,7 @@ job. Read-only tools change nothing.
 | 12 | `add_issue` | Record a doubt, assumption or disagreement for the reviewer | Run, severity, message, what it concerns | The notes so far |
 | 13 | `generate_geometry` | Turn the photos into a mesh (about a minute on the GPU), or reuse this run's | Run | The mesh, six PNG views, the expected turn |
 | 14 | `inspect_geometry` | Orient and measure the mesh | Run, up and front axes, turn | Sizes, a spindle's axis, warnings, PNG views |
-| 15 | `fit_circles` (read-only) | Find a round part's axis (a column, a quill, a hub) | Run, axis, slice positions | Circle centres and radii, and how round each is |
+| 15 | `fit_circles` (read-only) | Find a round part's axis (a column, a quill, a hub, an arm's link at an angle) | Run, axis or direction, slice positions, optionally a box to keep (`within`) | Circle centres and radii, and how round each is |
 | 16 | `add_joint` | One moving part: define the spindle joint | Run, axis, radius, start, method | The spec's status |
 | 17 | `set_scale` | One moving part: scale from the cited centre height | Run, base plane | The spec's status |
 | 18 | `set_spec_frame` | Several parts: the mesh's axes, the origin, the fixed part | Run, axes, origin, fixed part, method | The spec's status |

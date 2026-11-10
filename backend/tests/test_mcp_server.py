@@ -850,11 +850,40 @@ async def test_a_spec_of_several_parts_is_set_piece_by_piece(drill_press_server,
         circles = await ok(
             client, "fit_circles", run=run, up="+y", front="+z", along="z", at=[0.1, 0.15]
         )
+        # The same, across a direction and within a box round the column (tool gap 4).
+        boxed = await ok(
+            client,
+            "fit_circles",
+            run=run,
+            up="+y",
+            front="+z",
+            along=[0.0, 0.0, 1.0],
+            at=[0.1, 0.15],
+            within={"x": [dp.COLUMN_X - 0.06, dp.COLUMN_X + 0.06]},
+        )
+        assert "lowest value first" in await fails(
+            client,
+            "fit_circles",
+            run=run,
+            up="+y",
+            front="+z",
+            along="z",
+            at=[0.1],
+            within={"x": [1.0, 0.0]},
+        )
     column = [f for f in circles["fits"] if f["round"]]
     assert column and all(
         f["centre"][0] == pytest.approx(dp.COLUMN_X, abs=0.003)
         and f["radius"] == pytest.approx(dp.COLUMN_RADIUS, abs=0.003)
         for f in column
+    )
+    assert boxed["within"] == {"x": [dp.COLUMN_X - 0.06, dp.COLUMN_X + 0.06]}
+    assert [f["samples"] for f in boxed["fits"]] < [f["samples"] for f in circles["fits"]]
+    boxed_column = [f for f in boxed["fits"] if f["round"]]
+    assert boxed_column and all(
+        f["centre"][0] == pytest.approx(dp.COLUMN_X, abs=0.003)
+        and f["radius"] == pytest.approx(dp.COLUMN_RADIUS, abs=0.003)
+        for f in boxed_column
     )
 
 

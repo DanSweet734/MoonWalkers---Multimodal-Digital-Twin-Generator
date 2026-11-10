@@ -373,8 +373,9 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
   - [x] item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,
     storing nothing (2026-11-09: `dry_run_twin` and `pipelines.b dry-run`; v11's spec dry-ran
     clean as v12 in a copy);
-  - item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice
-    would cut through several links;
+  - [x] item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice
+    would cut through several links (2026-11-09: `within`, and `along` as a direction for a link
+    at an angle; the old fits are unchanged);
   - item 2: a tool that corrects or withdraws an issue the agent added (the cause of v10's and
     v11's stale issue);
   - item 6: the dashboard's upload takes photos from more than one folder, and its duplicate check

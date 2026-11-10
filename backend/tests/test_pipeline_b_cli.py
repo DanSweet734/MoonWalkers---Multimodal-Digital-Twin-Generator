@@ -102,6 +102,23 @@ def test_inspect_fits_circles_along_any_axis(generated, capsys) -> None:
     assert "--circles-along needs --up, --front and --at" in capsys.readouterr().err
 
 
+def test_inspect_fits_circles_across_a_direction_within_a_box(generated, capsys) -> None:
+    """The lab's machines plan, tool gap 4."""
+    run_dir = str(generated.run_dir)
+    oriented = ["inspect", run_dir, "--up", "+y", "--front", "+z"]
+    across = [*oriented, "--circles-along", "1,0,0", "--at", "1.3"]
+    assert cli.main([*across, "--within", "z", "-0.5", "1"]) == 0  # holds the spindle
+    assert "centre (+1.3000, +0.0000, +0.2000), radius 0.39" in capsys.readouterr().out
+    assert cli.main([*across, "--within", "z", "5", "6"]) == 0  # misses it
+    assert "1,0,0 = +1.300: no circle (0 samples)" in capsys.readouterr().out
+    assert cli.main([*across, "--within", "z", "1", "0"]) == 1
+    assert "lowest value first" in capsys.readouterr().err
+    assert cli.main([*oriented, "--circles-along", "1,0", "--at", "1.3"]) == 1
+    assert "three numbers" in capsys.readouterr().err
+    assert cli.main([*oriented, "--within", "z", "0", "1"]) == 1
+    assert "--within goes with --circles-along" in capsys.readouterr().err
+
+
 def test_preview_of_several_parts_writes_the_reviewers_views(
     generated, test_reference, tmp_path, capsys
 ) -> None:
