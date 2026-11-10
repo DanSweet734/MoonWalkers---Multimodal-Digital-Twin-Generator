@@ -12,7 +12,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 tool gaps) is under way on branch `feat/lab-phase-1-photos-and-tools`, in the plan chat, on
 Daniel's word.
 - **Done:** the photos are filed. Daniel chose SAM for cutting the machine out, with crop boxes and
-  drawn masks as options. The per-photo cut-out (decision 0029, proposed), its preview and
+  drawn masks as options. The per-photo cut-out (decision 0029, accepted), its preview and
   `set_photo` (tool gap 1) are built.
 - **Left:** tool gaps 2, 4, 5, 6 and 7, and Haas's pages, which Daniel saves.
 

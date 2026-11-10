@@ -1,6 +1,7 @@
 # 0029 - Cutting the machine out of each photo
 
-- **Status:** proposed. The method is Daniel's choice (2026-11-09: "I think having a automatic way
+- **Status:** accepted (by Daniel, 2026-11-09: "I accept Decision 0029 as proposed"). The
+  method is Daniel's choice (2026-11-09: "I think having a automatic way
   with SAM is the best, however it would also be nice to afford the option to draw by hand or by
   crop boxes ... Regardless prioritize B for now"). How it is stored and checked is proposed by
   Claude Code in the lab's machines plan, Phase 1.

@@ -251,7 +251,7 @@ them.
   "igus GmbH" gives `igus-gmbh/...`, so the key code needs "GmbH" dropped, or an alias, before a
   pipeline names the maker that way.
 - **The lab's backgrounds are busy:** benches, other robots, the ceiling, and on the TM-1's back a
-  large sign and a stool in front of it (`134322`, `134329`). The generator's background removal
+  large sign and a stool in front of its right side (`134322`, `134329`; Daniel's views, 2026-11-09). The generator's background removal
   (rembg with `u2net`, `docs/setup/generators.md`) has only seen clean photos so far.
 - **Kept out of the repository:** the serial numbers, the IP address, and the university's asset
   tag on the arm's base (`133326`).
@@ -262,7 +262,7 @@ them.
 | The ReBeL 02's geometry and limits | Joint ranges, speeds, sizes and the zero pose from igus's documentation (version 00's drawing); joint axes and frames from the ROS URDF (00 = 01). The two agree on the limits once the URDF's offsets are added. The twin cites both, with an issue: "version 02 not confirmed to match 00/01" | What changed in 02. igus's configurator, Unchained's STEP files and the ManualsLib manual are not opened. A tape measure at the lab settles the sizes (visit list) |
 | The public models' role | Sources of joint facts (frames, axes, limits) and the score for the generated mesh, never the twin's geometry. Where the photos cannot give the fingers, the maker's model sizes their stand-ins (Daniel, 2026-11-09). The arm's joint frames are cited from the URDF and scored against igus's drawing, a separate source | |
 | Measures for "accurately" | The scorecard below: proposed measures and starting targets, for the weekly meetings to judge (Daniel, 2026-11-09) | The targets |
-| The generator and the views | The arm: its four sides. The TM-1: its four corners (`134300`, `134337` and two back corners). The VF-3: its corners, or its front and a side. Top and detail photos are evidence. **The arm's front** (Daniel, 2026-11-09): where the fingertips point in the photographed pose, which is the side away from its base's connector panel, so `133326` is its back | Whether background removal copes (Phase 1). Daniel's check of each photo's view |
+| The generator and the views | The arm: its four sides. The TM-1: its four corners (`134300`, `134337`, `134329`, `134355`; the back corners confirmed by Daniel, 2026-11-09). The VF-3: its corners, or its front and a side. Top and detail photos are evidence. **The arm's front** (Daniel, 2026-11-09): where the fingertips point in the photographed pose, which is the side away from its base's connector panel, so `133326` is its back | Whether background removal copes (Phase 1). Daniel's check of each photo's view |
 | The arm's zero pose | igus's zero is the arm straight up (p. 6). The twin is built in the photographed pose. Each joint's angle in that pose is measured on the cut mesh and becomes the joint's start; the limits stay about igus's zero | The real angles: the lab's control software can show them (visit list) |
 | Control, level 3 | The mills: a reader of the G-code the programs use, new (Phase 5). The trunnion: two more axes of that reader (above). The arm: joint moves at the cited 45°/s, as iRC runs them; the program format is to be researched (Phase 3). The hand: the maker's SDK commands over CAN; its 5 mimic joints map onto `follows` (decision 0020) [INFERENCE] | Haas's pages (saved by Daniel); iRC's program format; which SDK fits the lab's hand |
 | Sources scripts cannot reach | haascnc.com, the igus factsheet on RobotShop, and DigiKey answer 403. igus's documentation came from Unchained Robotics instead | Daniel saves Haas's pages in a browser (list below) |
@@ -322,8 +322,10 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
       (2026-11-09: 29 photos, each copy's SHA-256 checked twice, by the filing script and by
       `sha256sum`. Daniel confirmed the TM-1's `134346` as its left side and `134355` as its back
       left corner: "I couldn't get a photo directly behind the machine as it was close to the
-      wall". So `134322` and `134329`, read as its back, may show its pendant's side behind the
-      sign: asked.) One `SOURCES.md` line each: what it shows, its view in the operator's words
+      wall". He also confirmed `134322` as its right side, the pendant's, with a sign in the way
+      and "not much room to move it", and `134329` as its back right corner, the back of the
+      pendant above the caution sign. So all four corners are photographed: `134300`, `134337`,
+      `134329`, `134355`.) One `SOURCES.md` line each: what it shows, its view in the operator's words
       (proposed, checked by Daniel), its use (generator or evidence), the date, the SHA-256 and
       the licence note: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the
       team's own photo; internal research only; shows serial numbers, keep out of commits."
@@ -355,7 +357,7 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
       applies it; small separate specks are removed. Built for SAM first, on Daniel's word, with
       `crop` and `mask` in the same change since they share the setting. Clicking boxes and points
       in the dashboard comes later.
-      (2026-11-09: decision 0029, proposed.
+      (2026-11-09: decision 0029, accepted by Daniel the same day.
       - A preview runs only the job's first step, in seconds: the command
         `python -m moonwalkers.pipelines.b cutouts <run>` and the MCP tool `preview_cutouts`.
       - Tried on nine lab photos through the platform. SAM needed the photo shrunk with

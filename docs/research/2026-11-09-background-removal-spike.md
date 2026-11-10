@@ -41,11 +41,11 @@ spike, every orientation-6 photo came out portrait (1200 x 1600).
 | Arm | `133414`, back_operator_left | 18.2% | The arm and base plate, the hand lost |
 | TM-1 | `134300`, front_operator_left | 12.0% | The head; the table and guards ghosted |
 | TM-1 | `134314`, front | 0.1% | **Fails:** almost nothing |
-| TM-1 | `134322`, back | 22.1% | **Fails:** the sign in front, not the machine |
-| TM-1 | `134329`, back | 24.0% | **Fails:** the sign and one guard |
+| TM-1 | `134322`, operator_right (Daniel's view; read as back at first) | 22.1% | **Fails:** the sign in front, not the machine |
+| TM-1 | `134329`, back_operator_right (Daniel's view; read as back at first) | 24.0% | **Fails:** the sign and one guard |
 | TM-1 | `134337`, front_operator_right | 0.3% | **Fails:** almost nothing |
-| TM-1 | `134346`, operator_left (to check) | 23.9% | **Fails:** one side guard only |
-| TM-1 | `134355`, back_operator_left (to check) | 23.5% | **Fails:** the electrical cabinet only |
+| TM-1 | `134346`, operator_left (confirmed) | 23.9% | **Fails:** one side guard only |
+| TM-1 | `134355`, back_operator_left (confirmed) | 23.5% | **Fails:** the electrical cabinet only |
 | VF-3 | `133735`, front | 13.6% | The doors only |
 | VF-3 | `133749`, front_operator_left | 31.8% | **Good:** the enclosure, its shelf and tray |
 | VF-3 | `133812`, operator_right | 30.6% | The side, with the monitor in front of it |
