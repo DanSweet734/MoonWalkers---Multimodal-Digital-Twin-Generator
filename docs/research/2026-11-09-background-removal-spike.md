@@ -74,6 +74,40 @@ the box and points can live in `request.json` beside each photo's view, so a run
 (an amendment to decision 0022). Option A is a subset of it. D is the fallback if SAM's masks are
 poor.
 
+## Update: option B chosen, and a trial (2026-11-09)
+Daniel: "I think having a automatic way with SAM is the best, however it would also be nice to
+afford the option to draw by hand or by crop boxes ... Regardless prioritize B for now." So B comes
+first, and crop boxes (A) and hand-drawn masks (D) are kept as options.
+
+**Downloaded on his choice,** by rembg's own downloader (pooch) on first use, into
+`C:\mw-gen\models\u2net`:
+
+| File | Bytes | SHA-256 (pooch's report) |
+|---|---|---|
+| `sam_vit_b_01ec64.encoder.quant.onnx` | 108,836,115 | `181301ce3500a86c38450b56e2b71dab8008a13b1812a0d6cc812f22651e143a` |
+| `sam_vit_b_01ec64.decoder.quant.onnx` | 8,755,366 | `b11465135b7c93a1fd65141a4e2a96f1ddf2e3dab09b5eeab640bdf5f10aadbe` |
+
+No package was installed.
+
+**The trial** (`data/scratch/2026-11-09_background-spike/sam_trial.py`, `out/sam_trial.jpg`): seven
+of the photos u2net failed on or got partly wrong, each with a box around the machine and two or
+three points picked by eye ("keep" on the machine, "drop" on what stands in front). About 1.5 s a
+photo.
+
+| Photo | u2net | SAM with a box and points |
+|---|---|---|
+| TM-1 `134300` | The head; the table ghosted | The machine, clean |
+| TM-1 `134314` | Almost nothing | The machine, with specks of the white wall behind it |
+| TM-1 `134337` | Almost nothing | The machine, with specks of the wall and ceiling |
+| TM-1 `134355` | The cabinet only | The cabinet, the column and the guard |
+| VF-3 `133812` | The side and the monitor | The side; the monitor dropped, leaving a hole where it hid the machine |
+| Arm `133306` | The arm, the e-stop and a box | The arm and hand; a thin strip of bench edge |
+| Arm `133252` | The arm, the hand faded, the e-stop | The arm and hand, clean |
+
+So SAM keeps the machine where u2net kept the wrong object. What is left is specks, which more
+"drop" points or removing small separate blobs should clear [INFERENCE, to try]. Nothing can fill
+in what an object in front hides (the monitor).
+
 ## Sources
 Accessed 2026-11-09.
 - rembg 2.0.68 as installed in `C:\mw-gen\hunyuan3d-2\.venv` (`rembg/sessions/sam.py`,

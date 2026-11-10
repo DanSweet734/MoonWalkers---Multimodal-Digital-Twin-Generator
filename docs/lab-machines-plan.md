@@ -343,7 +343,16 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
       asked first).
       (2026-11-09: they fail on the TM-1, and are partial on the VF-3 and the arm:
       `docs/research/2026-11-09-background-removal-spike.md`. Recommended: box-prompted SAM,
-      already in the installed rembg, with about 118 MB of weights. Waiting for Daniel's choice)
+      already in the installed rembg, with about 118 MB of weights.
+      Daniel chose it the same day ("prioritize B for now"), and wants crop boxes and hand-drawn
+      masks offered as well. Weights downloaded; a trial on seven photos kept the machine where
+      u2net had kept the wrong object.)
+- [ ] **A cut-out setting per photo** in `request.json`, beside its view and use (amends decision
+      0022): `sam` (a box, with points to keep or drop), `crop` (a box, then the automatic cut),
+      `mask` (a PNG a person drew, in the run), or the automatic cut as today. The generator job
+      applies it; small separate specks are removed. Built for SAM first, on Daniel's word, with
+      `crop` and `mask` in the same change since they share the setting. Clicking boxes and points
+      in the dashboard comes later.
 - [ ] **The tool gaps** (drill-press report, section 7.3):
   - item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated;
   - item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the build

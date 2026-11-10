@@ -25,7 +25,8 @@ C:\mw-gen\
   hunyuan3d-2\.venv\    Python 3.12 environment
   models\tencent\Hunyuan3D-2\hunyuan3d-dit-v2-0\   config.yaml + model.fp16.safetensors
   models\tencent\Hunyuan3D-2mv\hunyuan3d-dit-v2-mv\   the multi-view model (added 2026-10-22)
-  models\u2net\         u2net.onnx, the background-removal model (downloaded on first use)
+  models\u2net\         u2net.onnx, the background-removal model (downloaded on first use);
+                       sam_vit_b_01ec64.*.quant.onnx, SAM for box-prompted cut-outs (2026-11-09)
 ```
 
 `Hunyuan3DConfig.under(root)` expects exactly this layout.
@@ -91,7 +92,7 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
 | `hunyuan3d-2\.venv` | 7.1 GB |
 | `models\tencent` (`model.fp16.safetensors`, 4,928,151,562 bytes) | 4.6 GB |
 | `models\tencent\Hunyuan3D-2mv` (added 2026-10-22; its weights are also 4,928,151,562 bytes) | 4.6 GB more |
-| `models\u2net` | 168 MB |
+| `models\u2net` (with SAM's 117,591,481 bytes from 2026-11-09) | 280 MB |
 | `hunyuan3d-2\repo` | 161 MB |
 
 ## Licenses
@@ -104,6 +105,10 @@ hy3dgen 2.0.2 (commit f8db630). Every run also records its versions in `generato
   2026-10-22, the U-2-Net project the model comes from [INFERENCE: rembg names it `u2net`] showed
   the Apache-2.0 license (https://github.com/xuebinqin/U-2-Net). Its page states no separate terms
   for the trained weights.
+- **SAM (`sam_vit_b_01ec64`, quantised, through rembg):** Apache-2.0
+  (https://github.com/facebookresearch/segment-anything). rembg downloaded it on Daniel's
+  choice on 2026-11-09; the SHA-256 of both files is in
+  `docs/research/2026-11-09-background-removal-spike.md`.
 - **The rest:** not reviewed one by one. On 2026-10-17 the PyPI entries of the current releases of
   torch, torchvision, diffusers, transformers, accelerate, einops, omegaconf and opencv-python listed
   BSD, Apache-2.0 or MIT licenses; the older pinned versions were not checked.
