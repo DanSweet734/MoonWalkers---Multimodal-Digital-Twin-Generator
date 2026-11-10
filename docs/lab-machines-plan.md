@@ -514,8 +514,14 @@ can go again if a phase finds a need (2026-11-09). Items 1 and 2 are the likelie
 haascnc.com refuses scripts (403):
 - the TM-1's and the VF-3's specification pages, or archived sheets for 2006 and 2014;
 - the mill operator's manual for each machine's control, with its G and M code chapters;
-- links found by a search on 2026-11-09, for Daniel to open (not opened by a script; the
-  search's summaries are not used as sources):
+- **Filed on 2026-11-09** (`SOURCES.md` of each mill): Haas's PDFs under `/content/dam/` answer
+  scripts, so on Daniel's permission Claude Code fetched the Toolroom Series sheet and three mill
+  manuals: 96-8000 Rev Y (2009) and Rev AP (2012) for the Classic Haas Control, and the 2023 one
+  for the Next Generation Control. Haas's HTML pages still answered 403. **Left for Daniel**, in
+  a browser ("Save Page As", which keeps the text): the TM-1's product page and pre-install
+  guide, and the VF-3's product page. Which control each mill has is still to read off its
+  screen (lab visit, item 5).
+- links found by a search on 2026-11-09 (the search's summaries are not used as sources):
   - https://www.haascnc.com/machines/vertical-mills/toolroom-mills/models/tm-1.html
   - https://haascnc.com/content/dam/haascnc/machines/vertical-mills/toolroom/assets/Vertical_ToolroomSeries.pdf
   - https://www.haascnc.com/owners/pre-install-guide/mills-pre-install/TM-1.html

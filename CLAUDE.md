@@ -19,7 +19,9 @@ Daniel's word, and waits for his review in its pull request.
   - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, accepted). The MCP server has 28
     tools: `correct_issue`, and `fit_circles` with `within` and a direction; mesh warnings in
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
-- **Left:** Haas's pages, which Daniel saves; then Phase 2, the ReBeL arm, in a new chat.
+- **Left:** Haas's three product pages, which Daniel saves in a browser (the mill manuals and the
+  Toolroom sheet are filed: Haas's PDFs answer scripts); then Phase 2, the ReBeL arm, in a new
+  chat.
 
 The history below is the record of the PoC and the drill-press plan.
 
