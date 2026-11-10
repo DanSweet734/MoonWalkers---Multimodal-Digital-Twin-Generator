@@ -1,6 +1,8 @@
 # Windows 11 development setup
 
-Machine: Windows 11, NVIDIA GeForce RTX 4090 (24 GB). Each step lists its source.
+The record of Daniel's machine, which builds and checks twins: Windows 11, NVIDIA GeForce RTX 4090
+(24 GB). Each step lists its source. **Setting up to work on a pipeline or the platform?** Start
+with [team-setup.md](team-setup.md) instead.
 
 ## Claude Code
 - Install (PowerShell): `irm https://claude.ai/install.ps1 | iex`, then check with `claude --version`
