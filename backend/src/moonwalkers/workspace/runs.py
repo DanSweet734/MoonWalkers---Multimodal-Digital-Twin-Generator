@@ -30,7 +30,7 @@ import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
@@ -42,6 +42,7 @@ from moonwalkers.pipelines.b.assemble import AxisName, GeometrySpec
 from moonwalkers.pipelines.b.build import REQUEST_FILE
 from moonwalkers.pipelines.b.part_cuts import PartCut
 from moonwalkers.pipelines.b.parts_spec import (
+    HoldDrive,
     PartsSpec,
     ScaleReference,
     SizeCheck,
@@ -85,6 +86,8 @@ class PartsFrame(BaseModel):
     origin_xy: tuple[float, float]
     base_z: float | None = None
     fixed_part: str
+    hold_drive: HoldDrive | None = None  # decision 0032
+    self_collision: Literal["off", "check", "on"] = "off"  # decision 0032
     decided_by: str
     method: str
 

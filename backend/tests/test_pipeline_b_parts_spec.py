@@ -294,6 +294,33 @@ def test_a_cut_part_is_patched_where_a_removed_part_met_it(tmp_path: Path) -> No
     assert "where the lid was" in patched[0].message
 
 
+def test_a_cut_part_can_drop_its_loose_pieces(tmp_path: Path) -> None:
+    """A box with a loose strand and a loose bit, as the arm's generated links have."""
+    body = trimesh.creation.box(extents=(1.0, 1.0, 1.0)).subdivide().subdivide()
+    strand = trimesh.creation.box(extents=(0.05, 0.05, 0.8))
+    strand.apply_translation((0.7, 0.0, 0.0))
+    bit = trimesh.creation.icosphere(subdivisions=1, radius=0.03)
+    bit.apply_translation((0.0, 0.0, 1.0))
+    mesh_path = tmp_path / "mesh.glb"
+    trimesh.util.concatenate([body, strand, bit]).export(mesh_path)
+    spec = {"up": "+z", "front": "+x", "origin_xy": [0.0, 0.0],
+            "scale": {"fact": "overall_height", "how": "the mesh's height"},
+            "fixed_part": "frame", "cuts": [],
+            "parts": [{"part_id": "frame", "name": "frame", "kind": "cut", "note": "the body",
+                       "loose_pieces": "remove"}],
+            "joints": [], "decided_by": "test", "method": "test"}  # fmt: skip
+    model = assemble_parts(mesh_path, PartsSpec.model_validate(spec), 1.0, tmp_path / "out")
+    (frame,) = model.parts
+    assert frame.faces == len(body.faces)
+    assert model.removed_faces == {"frame (loose pieces)": len(strand.faces) + len(bit.faces)}
+    issues = parts_issues(PartsSpec.model_validate(spec), model)
+    (issue,) = [i for i in issues if i.message.startswith("Its loose")]
+    assert issue.message.startswith("Its loose pieces are cut out of the twin (92 faces of")
+    spec["parts"][0] |= {"kind": "removed", "name": "x"}
+    with pytest.raises(ValidationError, match="only a cut part has loose pieces"):
+        PartsSpec.model_validate(spec)
+
+
 # ------------------------------------------------------------------------------ the pipeline
 def test_the_result_has_every_part_joint_and_stand_in_cited(
     photo_run, spec_run, drill_press_generator, clock
@@ -365,6 +392,51 @@ def test_a_build_writes_a_check_file_per_behaviour_and_the_views(
     notes = (run_dir / "RUN.md").read_text(encoding="utf-8")
     assert "## Stand-ins and known inaccuracies" in notes and "`views/parts.png`" in notes
     assert "`checks/unlocked.usdc`" in notes and "record_joints.py" in notes
+
+
+def drive_gains(path: Path, joint_id: str) -> tuple[float, float]:
+    from pxr import Usd, UsdPhysics
+
+    stage = Usd.Stage.Open(str(path))
+    prim = next(p for p in stage.Traverse() if p.GetName() == joint_id)
+    drive = UsdPhysics.DriveAPI(prim, "angular")
+    return drive.GetStiffnessAttr().Get(), drive.GetDampingAttr().Get()
+
+
+def filtered_pairs(path: Path) -> int:
+    from pxr import Usd, UsdPhysics
+
+    stage = Usd.Stage.Open(str(path))
+    return sum(p.HasAPI(UsdPhysics.FilteredPairsAPI) for p in stage.Traverse())
+
+
+def test_a_specs_hold_drive_and_self_collision_check_reach_the_twin_and_its_checks(
+    photo_run, spec_run, drill_press_generator, kb
+) -> None:
+    run_dir = photo_run.run_dir
+    hold = {"stiffness": 10000.0, "damping": 200.0, "why": "test"}
+    spec_run(hold_drive=hold, self_collision="check")
+    request = JobRequest(job_id="job-1", sources=[photo_run.photo])
+    (run_dir / "request.json").write_text(request.model_dump_json(), encoding="utf-8")
+    outcome = build.build_run(
+        run_dir, photo_run.data_dir, run_dir / "request.json", reference_facts(), None,
+        drill_press_generator, kb,
+    )  # fmt: skip
+    checks = {p.name: p for p in outcome.check_files}
+    assert drive_gains(outcome.twin_file, "spindle_rotation") == (10000.0, 200.0)
+    assert drive_gains(checks["unlocked.usdc"], "spindle_rotation") == (10000.0, 200.0)
+    assert drive_gains(checks["spin.usdc"], "spindle_rotation") == (0.0, 20.0)  # its own drive
+    # "check": the twin keeps decision 0017's filter; one more file lets unjoined parts collide
+    assert filtered_pairs(outcome.twin_file) > 0
+    assert filtered_pairs(checks["self_collision.usdc"]) == 0
+    assert drive_gains(checks["self_collision.usdc"], "spindle_rotation") == (0.0, 20.0)
+    assert "`checks/self_collision.usdc`" in (run_dir / "RUN.md").read_text(encoding="utf-8")
+
+
+def test_without_a_hold_drive_the_exporters_default_holds(photo_run, spec_run) -> None:
+    spec_run()
+    assert build.hold_drive(photo_run.run_dir) == build.DriveSettings.hold(0.0)
+    assert build.self_collision(photo_run.run_dir) == "off"
 
 
 def test_check_files_follow_the_joints_behaviour() -> None:

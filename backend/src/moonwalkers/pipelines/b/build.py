@@ -22,7 +22,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from importlib.metadata import version as package_version
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from moonwalkers.contracts.pipeline_result import (
     Citation,
@@ -89,10 +89,11 @@ class CheckFile:
     name: str
     shows: str
     look_for: str
-    drive: DriveSettings = field(default_factory=lambda: DriveSettings.hold(0.0))
+    drive: DriveSettings | None = None  # None: the twin's own hold (``hold_drive``)
     machine: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     settings: Mapping[str, JointSettings] = field(default_factory=dict)
     starts: Mapping[str, float] = field(default_factory=dict)
+    collide_unjoined: bool | None = None  # None: as the twin (decision 0032)
 
     def results(self, results: Sequence[PipelineResult]) -> list[PipelineResult]:
         """The results with this check's machine changes, validated again."""
@@ -325,24 +326,29 @@ def build_run(
             )
         programs = program_files(results)  # a program that cannot run fails before any file
         controls = controls_files(results)  # so do controls whose specs cannot be read
-        export_twin(twin, results, path, DriveSettings.hold(0.0), data_dir)
+        hold = hold_drive(run_dir)
+        collide = self_collision(run_dir) == "on"
+        export_twin(twin, results, path, hold, data_dir, collide_unjoined=collide)
         written = [path]
         try:
             findings.extend(validate_file(path))
             errors = [i for i in findings if i.severity == "error"]
             if errors:
                 raise ExportError(f"the exported twin failed validation: {errors[0].message}")
-            for check in check_files(results):
+            for check in run_checks(run_dir, results):
                 path_ = run_dir / CHECKS_DIR / check.name
                 written.append(path_)
                 export_twin(
                     twin,
                     check.results(results),
                     path_,
-                    check.drive,
+                    check.drive or hold,
                     data_dir,
                     joint_settings=check.settings,
                     starts=check.starts,
+                    collide_unjoined=(
+                        collide if check.collide_unjoined is None else check.collide_unjoined
+                    ),
                 )
                 failed = [i for i in validate_file(path_) if i.severity == "error"]
                 if failed:
@@ -388,6 +394,49 @@ def write_views(run_dir: Path) -> dict[str, Path]:
     views = write_spec_views(mesh, spec, scale, Path(run_dir) / VIEWS_DIR, photos)
     shutil.copyfile(RECORDER, Path(run_dir) / RECORDER_FILE)
     return views
+
+
+def self_collision(run_dir: Path) -> Literal["off", "check", "on"]:
+    """Whether parts that no joint joins collide: a several-part spec's ``self_collision``
+    (decision 0032), else "off" (decision 0017)."""
+    spec = read_spec(Path(run_dir) / SPEC_FILE)
+    return spec.self_collision if isinstance(spec, PartsSpec) else "off"
+
+
+def run_checks(run_dir: Path, results: Sequence[PipelineResult]) -> list[CheckFile]:
+    """The run's check files: ``check_files``, and with ``self_collision`` "check" one more
+    where the parts no joint joins collide while the driven joints turn (decision 0032)."""
+    checks = check_files(results)
+    if self_collision(run_dir) != "check":
+        return checks
+    spin = next((c for c in checks if c.name == "spin.usdc"), None)
+    checks.append(
+        CheckFile(
+            "self_collision.usdc",
+            "the parts that no joint joins collide with each other"
+            + (", while the driven joints turn at 30 deg/s" if spin else ""),
+            "On Play nothing jumps or flies apart (no two parts' convex hulls overlap in the "
+            "modelled pose); as the joints turn, parts stop where they meet instead of passing "
+            "through each other.",
+            settings=spin.settings if spin else {},
+            collide_unjoined=True,
+        )
+    )
+    return checks
+
+
+def hold_drive(run_dir: Path) -> DriveSettings:
+    """How the twin's driven joints hold a position: the spec's ``hold_drive`` when a
+    several-part spec gives one (decision 0032), else the exporter's default drive."""
+    spec = read_spec(Path(run_dir) / SPEC_FILE)
+    if isinstance(spec, PartsSpec) and spec.hold_drive is not None:
+        return DriveSettings(
+            mode="position",
+            target=0.0,
+            stiffness=spec.hold_drive.stiffness,
+            damping=spec.hold_drive.damping,
+        )
+    return DriveSettings.hold(0.0)
 
 
 def program_files(results: Sequence[PipelineResult]) -> list[ProgramFile]:
@@ -440,8 +489,9 @@ def _write_run_files(
     record_path = run_dir / GENERATOR_DIR / GENERATOR_RECORD
     generator = json.loads(record_path.read_text(encoding="utf-8"))
     lines = _run_notes(
-        job, stored, generator, request, request_path, reference_path, reference, findings, views
-    )
+        job, stored, generator, request, request_path, reference_path, reference, findings, views,
+        checks=run_checks(run_dir, stored),
+    )  # fmt: skip
     (run_dir / "RUN.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -455,6 +505,7 @@ def _run_notes(
     reference: ReferenceFacts | None,
     findings: list[Issue],
     views: Mapping[str, Path] | None = None,
+    checks: Sequence[CheckFile] | None = None,
 ) -> list[str]:
     twin = job.twin
     details = generator["details"]
@@ -532,7 +583,7 @@ def _run_notes(
         lines += [f"- `{i.ref or '-'}`: {i.message}" for i in warnings]
         lines += ["", f"## Views (`{VIEWS_DIR}/`, decision 0023)", ""]
         lines += [f"- `{VIEWS_DIR}/{path.name}`" for path in views.values()]
-    checks = check_files(results)
+    checks = check_files(results) if checks is None else checks
     lines += ["", "## Isaac Sim check (fill in)", "", "- Isaac Sim version/build:"]
     if checks and all(not c.look_for for c in checks):  # the PoC's single spindle
         lines += [

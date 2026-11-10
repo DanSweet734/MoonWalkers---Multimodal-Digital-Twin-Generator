@@ -88,6 +88,7 @@ from moonwalkers.pipelines.b.mesh_tools import (
 from moonwalkers.pipelines.b.part_cuts import PartCut
 from moonwalkers.pipelines.b.parts_spec import (
     EXTENT_FACTS,
+    HoldDrive,
     PartsSpec,
     SizeCheck,
     SpecJoint,
@@ -1130,6 +1131,8 @@ def create_server(
         method: str,
         yaw_deg: float = 0.0,
         base_z: float | None = None,
+        hold_drive: HoldDrive | None = None,
+        self_collision: Literal["off", "check", "on"] = "off",
         decided_by: str = "Claude Code (agent)",
     ) -> SpecStatus:
         """Start or change a spec of several parts and joints (decision 0027): how the mesh is
@@ -1137,8 +1140,13 @@ def create_server(
         y the machine's own left, z up), the twin's origin (on the base plane, base_z or the
         lowest point, under origin_xy in model units: the spindle's axis on a drill press), the
         part that stays fixed and keeps every face no cut takes, and `method`: how the spec was
-        made, from which measurements and photos ([INFERENCE] for judgement). Then
-        set_cut_list, set_spec_part and set_spec_joint for each, set_scale_length."""
+        made, from which measurements and photos ([INFERENCE] for judgement). `hold_drive`
+        (decision 0032) holds driven joints stiffer than the exporter's default (stiffness 100,
+        damping 20), for an arm whose links sag under gravity: stiffness 10000 and damping 200,
+        with `why`. `self_collision`: parts no joint joins pass through each other ("off",
+        decision 0017), get a check file where they collide ("check"), or collide in the twin
+        ("on", once a person's check of that file shows no jam). Then set_cut_list,
+        set_spec_part and set_spec_joint for each, set_scale_length."""
         with guarded():
             run_dir = ws.run_dir(run)
             frame = {
@@ -1148,6 +1156,8 @@ def create_server(
                 "origin_xy": list(origin_xy),
                 "base_z": base_z,
                 "fixed_part": fixed_part,
+                "hold_drive": hold_drive.model_dump() if hold_drive else None,
+                "self_collision": self_collision,
                 "decided_by": decided_by,
                 "method": method,
             }

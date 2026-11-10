@@ -37,6 +37,8 @@ Several joints (decision 0017):
   a machine's own parts are held by its joints and limits, and a convex hull can enclose a part
   that sits inside another (the spindle inside the head). Joined parts already do not collide (the
   joint's ``collisionEnabled`` fallback is false). A twin of two parts gets no filtered pairs.
+  ``collide_unjoined`` leaves the filter out, so an arm cannot pass through itself (decision
+  0032); joined parts still do not collide.
 * ``JointSettings`` gives one joint its own drive, limits (a lock or a depth stop), starting
   position or coupling to another joint (decisions 0018 and 0019). Joints without settings get
   ``drive`` (revolute) or a hold at 0 (prismatic), as before.
@@ -349,6 +351,7 @@ def export_twin(
     starts: Mapping[str, float] | None = None,
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
+    collide_unjoined: bool = False,
 ) -> Path:
     """Write the twin to ``path``; returns the path.
 
@@ -358,7 +361,8 @@ def export_twin(
     parts are relative to it (contract). ``joint_settings`` maps joint ids to settings that replace
     what the contract asks for, ``starts`` maps joint ids to starting positions, and
     ``coupling_method`` writes the contract's links (decision 0019). ``keep_awake`` (the default)
-    stops PhysX from putting the articulation to sleep (decision 0017).
+    stops PhysX from putting the articulation to sleep (decision 0017). ``collide_unjoined``
+    lets parts that no joint joins collide with each other (decision 0032; off by default).
     """
     path = Path(path)
     if path.suffix not in (".usda", ".usdc"):
@@ -373,6 +377,7 @@ def export_twin(
         starts=starts,
         coupling_method=coupling_method,
         keep_awake=keep_awake,
+        collide_unjoined=collide_unjoined,
     )
     return write_stage(stage, path)
 
@@ -406,6 +411,7 @@ def build_stage(
     starts: Mapping[str, float] | None = None,
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
+    collide_unjoined: bool = False,
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout)."""
     drive = drive or DriveSettings()
@@ -467,7 +473,8 @@ def build_stage(
         for joint_id, joint_setting in settings.items():
             if joint_setting.coupling is not None:
                 _write_coupling(stage, joints, joint_paths, body_paths, joint_id, joint_setting)
-        _filter_unjoined_pairs(stage, body_paths, joints)
+        if not collide_unjoined:
+            _filter_unjoined_pairs(stage, body_paths, joints)
 
     UsdPhysics.Scene.Define(stage, SCENE_PATH)  # default gravity: earth, opposite the up axis
     return stage

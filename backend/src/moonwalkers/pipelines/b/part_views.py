@@ -21,7 +21,7 @@ import trimesh
 
 from . import photo_marks
 from .mesh_tools import VIEWS, read_png
-from .parts_spec import PartsSpec, cut_part_mesh, face_parts
+from .parts_spec import PartsSpec, cut_part_mesh, face_parts, removed_labels
 from .stand_ins import placed, shape_mesh
 
 # Where each generator slot's camera stands once the mesh is oriented, before the yaw: degrees
@@ -238,7 +238,7 @@ def write_spec_views(
     - ``on_<slot>_photo.png``: the twin's parts over each fed photo."""
     out_dir = Path(out_dir)
     labels = face_parts(mesh, spec)
-    removed = {p.part_id for p in spec.parts if p.kind == "removed"}
+    removed = removed_labels(spec)
     shown = np.array([f"{REMOVED} {x}" if x in removed else x for x in labels], dtype=object)
     views = {"cuts": render_parts(mesh, shown, out_dir / "cuts", size, spec.fixed_part)}
     scene, names = twin_scene(mesh, spec, scale)

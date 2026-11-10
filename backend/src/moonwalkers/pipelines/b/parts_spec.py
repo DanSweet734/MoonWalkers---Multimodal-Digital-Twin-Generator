@@ -36,7 +36,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, model_validato
 from moonwalkers.contracts.pipeline_result import AdjustableStop, Citation, JointLink, JointMode
 
 from .assemble import AxisName, Vec3
-from .mesh_tools import load_mesh, orientation_matrix, transformed
+from .mesh_tools import face_groups, load_mesh, orientation_matrix, transformed
 from .part_cuts import PartCut, PartSeams, assign, seams
 from .stand_ins import Shape, placed, shape_mesh
 
@@ -71,6 +71,9 @@ class SpecPart(_Model):
     replaces: str | None = None  # the removed part a stand-in takes the place of
     citations: list[Citation] = Field(default_factory=list)  # cited sizes, matched photos
     patches: list[HolePatch] = Field(default_factory=list)  # a cut part's holes, closed flat
+    # "remove": a cut part keeps only its largest connected piece; the generator's loose bits
+    # and strands in it are cut out of the twin (decision 0032)
+    loose_pieces: Literal["keep", "remove"] = "keep"
 
     @model_validator(mode="after")
     def _check(self) -> SpecPart:
@@ -83,6 +86,8 @@ class SpecPart(_Model):
             raise ValueError(f"only a stand-in takes a shape, 'at' or 'replaces' ({self.part_id})")
         if self.patches and self.kind != "cut":
             raise ValueError(f"only a cut part has holes to patch ({self.part_id})")
+        if self.loose_pieces == "remove" and self.kind != "cut":
+            raise ValueError(f"only a cut part has loose pieces to remove ({self.part_id})")
         return self
 
 
@@ -117,6 +122,16 @@ class SizeCheck(_Model):
     how: str
 
 
+class HoldDrive(_Model):
+    """The position drive that holds a driven joint where it is told (decision 0032): a
+    simulation setting chosen by us, not a fact. With the exporter's acceleration drives,
+    stiffness is w^2 and damping 2w for a critically damped hold at w rad/s."""
+
+    stiffness: PositiveFloat
+    damping: PositiveFloat
+    why: str  # what the default drive did that this one fixes, and who chose it
+
+
 class PartsSpec(_Model):
     up: AxisName
     front: AxisName
@@ -129,6 +144,10 @@ class PartsSpec(_Model):
     parts: list[SpecPart] = Field(min_length=1)
     joints: list[SpecJoint]
     size_checks: list[SizeCheck] = Field(default_factory=list)
+    hold_drive: HoldDrive | None = None  # None: the exporter's default drive (decision 0032)
+    # Parts no joint joins: "off" do not collide (decision 0017); "check" adds a check file
+    # where they do; "on" makes them collide in the twin and its checks (decision 0032)
+    self_collision: Literal["off", "check", "on"] = "off"
     decided_by: str
     method: str
 
@@ -211,9 +230,33 @@ def measured_scale_length(mesh: trimesh.Trimesh, spec: PartsSpec) -> float:
     return float(mesh.extents[EXTENT_FACTS[spec.scale.fact]])
 
 
+def loose_label(part_id: str) -> str:
+    """The label of a cut part's loose pieces, cut out of the twin (decision 0032)."""
+    return f"{part_id} (loose pieces)"
+
+
+def removed_labels(spec: PartsSpec) -> set[str]:
+    """The face labels cut out of the twin: removed parts, and the loose pieces of cut parts
+    that remove theirs."""
+    removed = {p.part_id for p in spec.parts if p.kind == "removed"}
+    return removed | {loose_label(p.part_id) for p in spec.parts if p.loose_pieces == "remove"}
+
+
 def face_parts(mesh: trimesh.Trimesh, spec: PartsSpec) -> np.ndarray:
-    """The part of every face of the oriented mesh, removed parts included."""
-    return assign(mesh, spec.cuts, spec.fixed_part)
+    """The part of every face of the oriented mesh, removed parts included. A cut part that
+    removes its loose pieces keeps its largest connected piece; the rest get ``loose_label``."""
+    labels = assign(mesh, spec.cuts, spec.fixed_part)
+    for part in spec.parts:
+        if part.loose_pieces != "remove":
+            continue
+        mine = labels == part.part_id
+        if not mine.any():
+            continue
+        pairs = mesh.face_adjacency
+        groups = face_groups(mesh, mine[pairs[:, 0]] & mine[pairs[:, 1]])
+        largest = np.bincount(groups[mine]).argmax()
+        labels[mine & (groups != largest)] = loose_label(part.part_id)
+    return labels
 
 
 def assemble_parts(
@@ -267,7 +310,6 @@ def assemble_parts(
         for j in spec.joints
     ]
     everything = trimesh.util.concatenate(meshes)
-    removed = [p.part_id for p in spec.parts if p.kind == "removed"]
     return AssembledModel(
         parts=built,
         joints=joints,
@@ -275,7 +317,7 @@ def assemble_parts(
         scale_measured_model_units=float(measured),
         overall_extents_m=_vec(everything.extents),
         seams=seams(mesh, list(labels)),
-        removed_faces={r: int((labels == r).sum()) for r in removed},
+        removed_faces={r: int((labels == r).sum()) for r in sorted(removed_labels(spec))},
         origin_model_units=_vec(origin),
     )
 
