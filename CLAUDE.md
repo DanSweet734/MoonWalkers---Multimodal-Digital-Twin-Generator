@@ -9,7 +9,8 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 ## Current phase: drafting the lab's machines plan (the drill-press plan is done)
 **Start here:** `docs/lab-machines-plan.md`. It holds the hand-off of 2026-11-09, on branch
 `docs/lab-machines-plan`. The plan is drafted below it (2026-11-09: Phases 0-8, a scorecard of
-measures, nine questions for Daniel) and waits for his review, before any build. The history
+measures). Daniel answered eight of its nine questions the same day ("Decided on review" there),
+and the plan waits for his approval, before any build. The history
 below is the record of the PoC and the drill-press plan.
 
 - **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three

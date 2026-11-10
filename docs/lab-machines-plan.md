@@ -4,8 +4,9 @@
 compare with the real machines. These are the advisors' "real-world comparisons" (meeting of
 2026-10-29), and the start of "Evaluate on the standardized test set" on the README's roadmap.
 
-**Status:** drafted on 2026-11-09 for Daniel's review (Phase 0, branch `docs/lab-machines-plan`).
-Nothing is built, filed or installed until he approves it. The hand-off from the chat that closed
+**Status:** drafted on 2026-11-09 for Daniel's review (Phase 0, branch `docs/lab-machines-plan`,
+PR #27). He answered eight of its nine questions the same day ("Decided on review"). Nothing is
+built, filed or installed until he approves it. The hand-off from the chat that closed
 the drill-press plan comes first; the plan follows it, from "The plan (draft of 2026-11-09)".
 
 ## Hand-off (2026-11-09, from the drill-press plan's Phase 7 chat)
@@ -181,6 +182,22 @@ Like the drill-press plan, every phase ends in a pull request and a stop for rev
 new chat with a hand-off written into this file. Every stand-in is labelled in the twin and logged
 as an inaccuracy (Daniel, 2026-10-22 and 2026-10-24).
 
+### Decided on review (2026-11-09)
+Daniel's answers to the questions at the end of this plan, the same day. The phases below carry
+them.
+
+| Question | Answer |
+|---|---|
+| 1. The photos' licence note | The proposed wording: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits." |
+| 2. The machine folders | `igus-rebel6dof02` (the arm and the hand, one twin), `haas-tm1`, `haas-vf3`. "The temp folder may go once the copies are checked" |
+| 3. The hand in the arm's first twin | The recommendation: the generator's fused shape, one labelled part on the flange |
+| 4. The fingers in Phase 7 | "If they can't be modeled from the input photos then stand ins will have to do." So the fingers are cut from the generated mesh where the photos allow, and are otherwise labelled stand-ins sized from the maker's model. The maker's meshes are not imported |
+| 5. The arm's front | "where the hand finger tips are pointing to." Fixed to the base as the photos show it: in `133326` the connector panel faces the camera and the arm reaches straight away from it, so this is also the side away from the panel, the plan's proposal |
+| 6. The scorecard | To the next weekly meeting, "if possible" (Thursday, 2026-11-12) |
+| 7. A lab visit | Not planned now. Daniel just visited, and can go again if a need is found. The visit list stays for that case. Dr. Li wants the three machines worked on |
+| 8. Tool gaps 2 and 6 | Fixed as well, in Phase 1 |
+| 9. The agent's build in Phase 8 | Open. Daniel read the question as the order of machines, which starts with the arm (Phase 2, agreed on 2026-11-09). Phase 8 asks which machine the agent builds unaided at the end. Asked again |
+
 ### What the sources and photos settled since the hand-off
 - **The hand is a LinkerBot hand.** Its back shell reads "LINKERBOT" (photo `133438`, from above).
   The name "Realhand L20" is from Dr. Li's website (Daniel, 2026-11-09). Whether Realhand and
@@ -243,9 +260,9 @@ as an inaccuracy (Daniel, 2026-10-22 and 2026-10-24).
 | Question | What the sources answer | Still open |
 |---|---|---|
 | The ReBeL 02's geometry and limits | Joint ranges, speeds, sizes and the zero pose from igus's documentation (version 00's drawing); joint axes and frames from the ROS URDF (00 = 01). The two agree on the limits once the URDF's offsets are added. The twin cites both, with an issue: "version 02 not confirmed to match 00/01" | What changed in 02. igus's configurator, Unchained's STEP files and the ManualsLib manual are not opened. A tape measure at the lab settles the sizes (visit list) |
-| The public models' role | **Proposed:** sources of joint facts (frames, axes, limits) and the score for the generated mesh, never the twin's geometry, except perhaps the hand's fingers (question 4). The arm's joint frames are cited from the URDF and scored against igus's drawing, a separate source | Daniel's word on the fingers |
+| The public models' role | Sources of joint facts (frames, axes, limits) and the score for the generated mesh, never the twin's geometry. Where the photos cannot give the fingers, the maker's model sizes their stand-ins (Daniel, 2026-11-09). The arm's joint frames are cited from the URDF and scored against igus's drawing, a separate source | |
 | Measures for "accurately" | The scorecard below: proposed measures and starting targets, for the weekly meetings to judge (Daniel, 2026-11-09) | The targets |
-| The generator and the views | The arm: its four sides. The TM-1: its four corners (`134300`, `134337` and two back corners). The VF-3: its corners, or its front and a side. Top and detail photos are evidence. **The arm's front, proposed:** the side facing away from its base's connector panel, so `133326` is its back [INFERENCE] | Whether background removal copes (Phase 1). Daniel's check of each photo's view |
+| The generator and the views | The arm: its four sides. The TM-1: its four corners (`134300`, `134337` and two back corners). The VF-3: its corners, or its front and a side. Top and detail photos are evidence. **The arm's front** (Daniel, 2026-11-09): where the fingertips point in the photographed pose, which is the side away from its base's connector panel, so `133326` is its back | Whether background removal copes (Phase 1). Daniel's check of each photo's view |
 | The arm's zero pose | igus's zero is the arm straight up (p. 6). The twin is built in the photographed pose. Each joint's angle in that pose is measured on the cut mesh and becomes the joint's start; the limits stay about igus's zero | The real angles: the lab's control software can show them (visit list) |
 | Control, level 3 | The mills: a reader of the G-code the programs use, new (Phase 5). The trunnion: two more axes of that reader (above). The arm: joint moves at the cited 45°/s, as iRC runs them; the program format is to be researched (Phase 3). The hand: the maker's SDK commands over CAN; its 5 mimic joints map onto `follows` (decision 0020) [INFERENCE] | Haas's pages (saved by Daniel); iRC's program format; which SDK fits the lab's hand |
 | Sources scripts cannot reach | haascnc.com, the igus factsheet on RobotShop, and DigiKey answer 403. igus's documentation came from Unchained Robotics instead | Daniel saves Haas's pages in a browser (list below) |
@@ -288,8 +305,10 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
 - [x] Looked over the 29 photos, with crops of the trunnion, the hand and the arm's base
 - [x] Research: igus's documentation, the ROS model's versions, LinkerBot's models, the trunnion
       and the TM-1 (the research note's second update)
-- [x] This plan, a worklog entry, PR; stop for Daniel's review
-- [ ] Daniel's answers to the questions at the end, recorded
+- [x] This plan, a worklog entry, PR; stop for Daniel's review (PR #27)
+- [x] Daniel's answers to the questions at the end, recorded ("Decided on review", 2026-11-09).
+      Question 9 is asked again
+- [ ] The scorecard to the weekly meeting of 2026-11-12, and the advisors' answers recorded
 
 **Measured by:** Daniel's review.
 
@@ -300,9 +319,11 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
 - [ ] Copy each photo into `inputs/photos/` unchanged, and check its SHA-256 against the
       original. One `SOURCES.md` line each: what it shows, its view in the operator's words
       (proposed, checked by Daniel), its use (generator or evidence), the date, the SHA-256 and
-      the licence note (Daniel's wording). No serial number, IP address or asset tag in any
-      committed file.
-- [ ] Remove `data/machine photos (temp)/` only on Daniel's word, once the copies check out.
+      the licence note: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the
+      team's own photo; internal research only; shows serial numbers, keep out of commits."
+      No serial number, IP address or asset tag in any committed file.
+- [ ] Remove `data/machine photos (temp)/` once every copy's SHA-256 matches its original
+      (Daniel, 2026-11-09: "the temp folder may go once the copies are checked").
 - [ ] File the cited documents, each with its `SOURCES.md` line: igus's documentation; the ROS
       model at a fixed commit; LinkerBot's and Realhand's L20 models; Haas's pages as Daniel saves
       them.
@@ -317,9 +338,13 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
   - item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,
     storing nothing;
   - item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice
-    would cut through several links.
+    would cut through several links;
+  - item 2: a tool that corrects or withdraws an issue the agent added (the cause of v10's and
+    v11's stale issue);
+  - item 6: the dashboard's upload takes photos from more than one folder, and its duplicate check
+    looks in every photo folder of the machine, `photos/manual/` included.
 
-  Items 2 (correcting an issue) and 6 (the dashboard's one-folder upload) only if Daniel asks.
+  Items 2 and 6 were added on Daniel's word (2026-11-09).
 - [ ] Decision record (the tools, amending 0028), worklog, PR.
 
 **Measured by:** the tests; every copied photo's SHA-256 matching its original; the masks looked
@@ -331,11 +356,12 @@ at; the new tools used in Phase 2.
 - [ ] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
       cited frames, the hand a box. Daniel checks in Isaac Sim that each joint turns through its
       range, and that six driven joints hold a pose under gravity.
-- [ ] The views, the front and the zero pose, in a decision record.
+- [ ] The views, the front (where the fingertips point in the photographed pose, fixed to the
+      base; Daniel, 2026-11-09) and the zero pose, in a decision record.
 - [ ] Generate the mesh from the four sides, and look at it with `inspect_geometry`.
 - [ ] Cut it into seven parts and the hand by cited shapes (decision 0023), with the joint housings
-      measured by `fit_circles`. The hand stays one part on the flange in this phase (question
-      3). The cables fused into the mesh are logged.
+      measured by `fit_circles`. The hand is the generator's fused shape, one labelled part on the
+      flange, until Phase 7 (Daniel, 2026-11-09). The cables fused into the mesh are logged.
 - [ ] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
       straightest link]. Size checks on all the others.
 - [ ] Measure each joint's angle in the photographed pose; set the start pose and the limits.
@@ -400,9 +426,10 @@ at; the new tools used in Phase 2.
 **Measured by:** as Phases 4 and 5, with the trunnion's two axes.
 
 ## Phase 7 - The hand: 21 joints and its commands
-- [ ] Decision record: the fingers' geometry, either labelled stand-ins sized from the maker's
-      model or the maker's meshes imported and labelled (question 4). The hand is scored against
-      the photos either way.
+- [ ] Decision record: the fingers' geometry. They are cut from the generated mesh where the photos
+      allow; otherwise they are labelled stand-ins sized from the maker's model (Daniel,
+      2026-11-09: "If they can't be modeled from the input photos then stand ins will have to
+      do"). The maker's meshes are not imported. The hand is scored against the photos.
 - [ ] The 16 driven and 5 following joints, from the model that matches the lab's hand (visit
       list), with `follows` (decision 0020): one articulation of 27 joints with the arm.
 - [ ] Research note: the SDK's commands (joint positions, preset poses) over CAN. LinkerBot's
@@ -424,7 +451,9 @@ the commanded poses against the plan, and the hand's match with the photos.
 **Measured by:** the scorecard for the agent's build, beside the chat's builds.
 
 ### A planned visit to the lab
-Daniel: measuring "has to be planned in advance". Worth one visit, by priority:
+Daniel: measuring "has to be planned in advance". No visit is planned now: he has just been, and
+can go again if a phase finds a need (2026-11-09). Items 1 and 2 are the likeliest needs (Phases
+6 and 7), so each phase says when it reaches one. What a visit could settle, by priority:
 1. A close photo of the trunnion's plate (its model).
 2. The hand's label or box: maker, model, version, left or right.
 3. The arm's joint angles as its control software shows them, in the photographed pose, if the
@@ -468,6 +497,7 @@ merging Sarkis's branch needs one too.
 - The other arms in the lab's photos.
 
 ### Questions for Daniel
+Answered on 2026-11-09, except question 9 ("Decided on review", above).
 1. **The licence note** for the photos you took in the lab. Proposed: "Photographed by Daniel
    Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows
    serial numbers, keep out of commits."
