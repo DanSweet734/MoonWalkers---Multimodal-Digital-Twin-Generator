@@ -1,0 +1,577 @@
+{
+  "sources": [
+    {
+      "source_id": "src-igus-techdoc",
+      "kind": "file",
+      "input_type": "brochure_datasheet",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/igus-rebel-technical-documentation-2022-08.pdf",
+      "title": "igus GmbH, \"Technical documentation ReBeL\", MAT0075179.25, Stand 08/2022, 8 pages, from https://uploads.unchainedrobotics.de/media/file_upload/Robolink%20ReBeL_DINA5_v11_a8b0f58f.pdf (linked from https://unchainedrobotics.de/en/products/robot/cobot/igus-rebel-6dof-01)",
+      "sha256": "735c2fbea8ab67d90090c3ae4659399c53e7e91af86d7dbf6b3ba9bb34b68fb3",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "© igus GmbH, 'Subject to technical alterations'; the maker's documentation, kept for internal research only"
+    },
+    {
+      "source_id": "src-irc-ros-00",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/models/CommonplaceRobotics_iRC_ROS@41701e6/irc_ros_description/urdf/robots/igus_rebel_6dof_00.description.xacro",
+      "title": "The ReBeL 6DOF version 00 robot description (URDF macro), https://github.com/CommonplaceRobotics/iRC_ROS/blob/41701e6df3398087d217f0f478622e60f694de41/irc_ros_description/urdf/robots/igus_rebel_6dof_00.description.xacro",
+      "sha256": "31d92942b252ae9ea8c49f885ac92ebfc452bf50750680794b113a237d1a16f8",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); the README calls the package 'an early beta version'"
+    },
+    {
+      "source_id": "src-irc-ros-01",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/models/CommonplaceRobotics_iRC_ROS@41701e6/irc_ros_description/urdf/robots/igus_rebel_6dof_01.description.xacro",
+      "title": "The ReBeL 6DOF version 01 robot description, which includes version 00's, https://github.com/CommonplaceRobotics/iRC_ROS/blob/41701e6df3398087d217f0f478622e60f694de41/irc_ros_description/urdf/robots/igus_rebel_6dof_01.description.xacro",
+      "sha256": "76489bd907c4d3ea7f3f1a7b50e60e4920607827a2db02e2d5383d49b030b52f",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-photo-base-label",
+      "kind": "file",
+      "input_type": "nameplate_photo",
+      "uri": "machines/igus-rebel6dof02/inputs/photos/20261105_133326.jpg",
+      "title": "The arm from the back: the label on its base's connector box (photo 20261105_133326)",
+      "sha256": "97cee7089df712323066904a3de8eceb3ff06164c2568645cf0243da531650f8",
+      "retrieved_at": "2026-11-05T21:33:26Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-hand",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/igus-rebel6dof02/inputs/photos/20261105_133438.jpg",
+      "title": "The arm from above: the hand's back shell (photo 20261105_133438)",
+      "sha256": "42e9fa8b7c7ce98a1f14175542f9cf874eeead5fbd8ededae48aed82994e9d7d",
+      "retrieved_at": "2026-11-05T21:34:38Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-daniel-directions",
+      "kind": "user_input",
+      "uri": "user",
+      "title": "Daniel Sweet's directions for the arm's twin (2026-11-09): the arm and the hand are one twin; the arm's front is where the fingertips point in the photographed pose, fixed to the base; the hand is the generator's fused shape, one labelled part on the flange, until Phase 7; the name 'ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper and CobotPump' with a 'Realhand L20 Dexterous Robotic Hand' is from Dr. Li's website; the four generator views confirmed (docs/lab-machines-plan.md, 'Decided on review' and Phase 2)",
+      "retrieved_at": "2026-11-09T00:00:00Z"
+    }
+  ],
+  "identity": {
+    "manufacturer": "igus",
+    "model": "REBEL-6DOF-02",
+    "category": "6-axis collaborative robot arm, with a dexterous hand on its flange",
+    "aliases": [
+      "igus ReBeL 6DOF",
+      "ReBeL-6DOF-02",
+      "ReBeL® 6-DoF Cobot"
+    ],
+    "confidence": 0.9,
+    "citations": [
+      {
+        "source_id": "src-photo-base-label",
+        "locator": "the label on the base's connector box, top line, and its logo",
+        "quote": "REBEL-6DOF-02"
+      },
+      {
+        "source_id": "src-igus-techdoc",
+        "locator": "PDF p. 1",
+        "quote": "Technical documentation ReBeL"
+      },
+      {
+        "source_id": "src-daniel-directions",
+        "locator": "the name on Dr. Li's website (Daniel, 2026-11-09)",
+        "quote": "ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper and CobotPump"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "degrees_of_freedom",
+      "value": 6,
+      "original": "6 DOF",
+      "confidence": 0.95,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the drawing's title",
+          "quote": "6 DOF"
+        },
+        {
+          "source_id": "src-photo-base-label",
+          "locator": "the label on the base's connector box",
+          "quote": "REBEL-6DOF-02"
+        }
+      ]
+    },
+    {
+      "key": "reach",
+      "value": 0.664,
+      "unit": "m",
+      "original": "664 [mm]",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data, Reach (Reichweite): 6 DOF, then 4 DOF",
+          "quote": "664 495 [mm]"
+        }
+      ]
+    },
+    {
+      "key": "max_payload",
+      "value": 2.0,
+      "unit": "kg",
+      "original": "2 [kg]",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data, Max. payload: 6 DOF, then 4 DOF",
+          "quote": "2 3 [kg]*"
+        },
+        {
+          "source_id": "src-photo-base-label",
+          "locator": "the label on the base's connector box, second line",
+          "quote": "Payload: 2 Kg"
+        }
+      ]
+    },
+    {
+      "key": "max_mass",
+      "value": 8.0,
+      "unit": "kg",
+      "original": "< 8 [kg]",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data, Mass (Eigengewicht): 6 DOF, then 4 DOF; an upper bound, not the mass",
+          "quote": "< 8 < 7 [kg]"
+        }
+      ]
+    },
+    {
+      "key": "max_joint_speed",
+      "value": 0.7853981634,
+      "unit": "rad/s",
+      "original": "45 [°/s]",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data",
+          "quote": "Max. speed 45 [°/s]"
+        },
+        {
+          "source_id": "src-irc-ros-00",
+          "locator": "every revolute joint's <limit>",
+          "quote": "velocity=\"${pi*45/180}\""
+        }
+      ]
+    },
+    {
+      "key": "max_linear_speed",
+      "value": 0.2,
+      "unit": "m/s",
+      "original": "200 [mm/s]",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data",
+          "quote": "Linear speed 200 [mm/s]"
+        }
+      ]
+    },
+    {
+      "key": "footprint_diameter",
+      "value": 0.18,
+      "unit": "m",
+      "original": "Ø 180 [mm]",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data",
+          "quote": "Footprint Ø 180 [mm]"
+        },
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the table's column D1, the foot's diameter in the drawing",
+          "quote": "ReBeL-6DOF-00 660 252 237 297 126 180"
+        }
+      ]
+    },
+    {
+      "key": "accuracy",
+      "value": 0.001,
+      "unit": "m",
+      "original": "+-1 [mm]",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Technical data, Accuracy (Positioniergenauigkeit)",
+          "quote": "+-1 [mm]"
+        }
+      ]
+    },
+    {
+      "key": "zero_pose",
+      "value": "the arm straight up (igus's drawing, 'Nullstellung')",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the drawing's caption over the arm drawn straight up",
+          "quote": "Nullstellung"
+        }
+      ]
+    },
+    {
+      "key": "base_to_joint2",
+      "value": 0.252,
+      "unit": "m",
+      "original": "X1 252",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the table under the 'Nullstellung' drawing, column X1; [INFERENCE] read from the drawing: from the foot's underside to joint 2's axis",
+          "quote": "ReBeL-6DOF-00 660 252 237 297 126 180"
+        }
+      ]
+    },
+    {
+      "key": "joint2_to_joint3",
+      "value": 0.237,
+      "unit": "m",
+      "original": "X2 237",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the table under the 'Nullstellung' drawing, column X2; [INFERENCE] read from the drawing: from joint 2's axis to joint 3's",
+          "quote": "ReBeL-6DOF-00 660 252 237 297 126 180"
+        }
+      ]
+    },
+    {
+      "key": "joint3_to_joint5",
+      "value": 0.297,
+      "unit": "m",
+      "original": "X3 297",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the table under the 'Nullstellung' drawing, column X3; [INFERENCE] read from the drawing: from joint 3's axis to joint 5's (the wrist)",
+          "quote": "ReBeL-6DOF-00 660 252 237 297 126 180"
+        }
+      ]
+    },
+    {
+      "key": "joint5_to_flange",
+      "value": 0.126,
+      "unit": "m",
+      "original": "X4 126",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the table under the 'Nullstellung' drawing, column X4; [INFERENCE] read from the drawing: from joint 5's axis to the flange's face",
+          "quote": "ReBeL-6DOF-00 660 252 237 297 126 180"
+        }
+      ]
+    },
+    {
+      "key": "joint2_to_flange",
+      "value": 0.66,
+      "unit": "m",
+      "original": "L1 660",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 6, the table under the 'Nullstellung' drawing, column L1; [INFERENCE] read from the drawing: from joint 2's axis to the flange's face, X2 + X3 + X4",
+          "quote": "ReBeL-6DOF-00 660 252 237 297 126 180"
+        }
+      ]
+    },
+    {
+      "key": "joint1_lower",
+      "value": -3.1241393611,
+      "unit": "rad",
+      "original": "-179°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J1: -179° bis to +179°"
+        },
+        {
+          "source_id": "src-irc-ros-00",
+          "locator": "joint1's <limit>",
+          "quote": "lower=\"${-pi*179/180}\" upper=\"${pi*179/180}\""
+        }
+      ]
+    },
+    {
+      "key": "joint1_upper",
+      "value": 3.1241393611,
+      "unit": "rad",
+      "original": "+179°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J1: -179° bis to +179°"
+        }
+      ]
+    },
+    {
+      "key": "joint2_lower",
+      "value": -1.3962634016,
+      "unit": "rad",
+      "original": "-80°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J2: -80° bis to +140°"
+        }
+      ]
+    },
+    {
+      "key": "joint2_upper",
+      "value": 2.4434609528,
+      "unit": "rad",
+      "original": "+140°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J2: -80° bis to +140°"
+        }
+      ]
+    },
+    {
+      "key": "joint3_lower",
+      "value": -1.3962634016,
+      "unit": "rad",
+      "original": "-80°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J3: -80° bis to +140°"
+        }
+      ]
+    },
+    {
+      "key": "joint3_upper",
+      "value": 2.4434609528,
+      "unit": "rad",
+      "original": "+140°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J3: -80° bis to +140°"
+        }
+      ]
+    },
+    {
+      "key": "joint4_lower",
+      "value": -3.1241393611,
+      "unit": "rad",
+      "original": "-179°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J4: -179° bis to +179°"
+        }
+      ]
+    },
+    {
+      "key": "joint4_upper",
+      "value": 3.1241393611,
+      "unit": "rad",
+      "original": "+179°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J4: -179° bis to +179°"
+        }
+      ]
+    },
+    {
+      "key": "joint5_lower",
+      "value": -1.6580627894,
+      "unit": "rad",
+      "original": "-95°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J5: -95° bis to + 95°"
+        }
+      ]
+    },
+    {
+      "key": "joint5_upper",
+      "value": 1.6580627894,
+      "unit": "rad",
+      "original": "+95°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J5: -95° bis to + 95°"
+        }
+      ]
+    },
+    {
+      "key": "joint6_lower",
+      "value": -3.1241393611,
+      "unit": "rad",
+      "original": "-179°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J6: -179° bis to +179°"
+        }
+      ]
+    },
+    {
+      "key": "joint6_upper",
+      "value": 3.1241393611,
+      "unit": "rad",
+      "original": "+179°",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-igus-techdoc",
+          "locator": "PDF p. 2, Joint Movement (Gelenkbewegung)",
+          "quote": "J6: -179° bis to +179°"
+        }
+      ]
+    },
+    {
+      "key": "urdf_base_to_joint1",
+      "value": 0.1,
+      "unit": "m",
+      "original": "0.100",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-irc-ros-00",
+          "locator": "joint1's <origin>, from base_link",
+          "quote": "<origin rpy=\"0.0 0.0 0.0\" xyz=\"0.0 0 0.100\"/>"
+        }
+      ]
+    },
+    {
+      "key": "urdf_joint3_to_joint4",
+      "value": 0.119,
+      "unit": "m",
+      "original": "${0.149 - 0.03}",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-irc-ros-00",
+          "locator": "joint4's <origin>, from joint 3; the file's comment: 'TODO The 0.03m offset are most likely caused by the mesh file (Issue 15)'",
+          "quote": "<origin rpy=\"0.0 0.0 0.0\" xyz=\"0.0 0 ${0.149 - 0.03}\"/>"
+        }
+      ]
+    },
+    {
+      "key": "urdf_joint2_zero_offset",
+      "value": 0.5235987756,
+      "unit": "rad",
+      "original": "${pi/6}",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-irc-ros-00",
+          "locator": "joint2's <origin>: its frame turned +30 degrees about y; joint3's is the same",
+          "quote": "<origin rpy=\"0.0 ${pi/6} 0.0\" xyz=\"0.0 0 0.149\"/>"
+        }
+      ]
+    },
+    {
+      "key": "urdf_joint5_zero_offset",
+      "value": -0.1308996939,
+      "unit": "rad",
+      "original": "${-pi/24}",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-irc-ros-00",
+          "locator": "joint5's <origin>: its frame turned -7.5 degrees about y",
+          "quote": "<origin rpy=\"0.0 ${-pi/24} 0.0\" xyz=\"0.0 0 ${0.14 + 0.03}\"/>"
+        }
+      ]
+    },
+    {
+      "key": "end_effector",
+      "value": "a dexterous hand alone on the flange; its back shell reads LINKERBOT; named 'Realhand L20 Dexterous Robotic Hand' on Dr. Li's website",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-photo-hand",
+          "locator": "the hand's back shell, seen from above",
+          "quote": "LINKERBOT"
+        },
+        {
+          "source_id": "src-daniel-directions",
+          "locator": "the name on Dr. Li's website (Daniel, 2026-11-09)",
+          "quote": "Realhand L20 Dexterous Robotic Hand"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Version 02 not confirmed to match 00/01. igus's drawing (p. 6) is of 'ReBeL-6DOF-00', and the ROS model's version 01 includes version 00's description. No public page describing 6DOF-02 was found (docs/research/2026-11-06-lab-machines.md, second update). The lab's arm has a connector box on its foot's back, which igus's drawing does not show; 02 may be the version with control in the base [INFERENCE]."
+    },
+    {
+      "severity": "info",
+      "message": "[INFERENCE, by arithmetic] The URDF's limits agree with igus's once its origin offsets are added: joints 2 and 3 are limited to +-110 degrees about origins turned +30 degrees, which gives -80 to +140 degrees from the straight-up zero; joint 5 to -87.5 to +102.5 degrees about an origin turned -7.5 degrees, which gives +-95 degrees. That the offsets are measured from igus's zero is the inference."
+    },
+    {
+      "severity": "info",
+      "message": "The URDF's link offsets (0.249, 0.2384, 0.289 and 0.122 m, foot to joint 2, joint 2 to 3, joint 3 to 5, joint 5 to the flange) differ from igus's X1 to X4 (252, 237, 297, 126 mm) by 1 to 8 mm, and two carry the comment 'TODO The 0.03m offset are most likely caused by the mesh file (Issue 15)'. The twin's sizes are checked against igus's drawing; its joint axes follow the URDF."
+    },
+    {
+      "severity": "warning",
+      "ref": "joint1",
+      "message": "Not confirmed: where joint 1's zero points on the base. The twin takes it as the arm's front, the side away from the connector box (Daniel, 2026-11-09) [INFERENCE]. The lab's control software shows the real angles (the plan's visit list)."
+    },
+    {
+      "severity": "info",
+      "message": "Which hand model matches the lab's hand is not confirmed: LinkerBot's and Realhand's L20 models differ in joint names and limits (docs/lab-machines-plan.md). The hand is one labelled part on the flange until Phase 7 (Daniel, 2026-11-09)."
+    },
+    {
+      "severity": "info",
+      "message": "The name on Dr. Li's website lists a SCHUNK EGP gripper and a CobotPump; neither is on the arm in the photos of 2026-11-05, where the hand alone is on the flange."
+    }
+  ]
+}
