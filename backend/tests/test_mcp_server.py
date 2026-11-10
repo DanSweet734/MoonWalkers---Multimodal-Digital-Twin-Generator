@@ -109,6 +109,7 @@ async def test_the_tools_are_listed_with_their_schemas(setup) -> None:
         "add_fact",
         "add_control",
         "add_issue",
+        "correct_issue",
         "generate_geometry",
         "inspect_geometry",
         "fit_circles",
@@ -304,6 +305,42 @@ async def test_mistakes_come_back_as_readable_tool_errors(setup, photo_run) -> N
 
 
 @pytest.mark.anyio
+async def test_an_issue_is_corrected_or_withdrawn_before_the_build(setup, photo_run) -> None:
+    """The lab's machines plan, tool gap 2: v10's and v11's stale note of a flap."""
+    server, _ = setup
+    async with Client(server) as client:
+        run = await prepared_run(client, photo_run)
+        for message, ref in (("a thin flap on the arm's collar", "arm"), ("belts hidden", None)):
+            notes = await ok(
+                client, "add_issue", run=run, severity="info", message=message, ref=ref
+            )
+        assert [(i["number"], i["message"]) for i in notes["issue_list"]] == [
+            (1, "a thin flap on the arm's collar"),
+            (2, "belts hidden"),
+        ]
+        notes = await ok(client, "correct_issue", run=run, number=1, severity="warning", ref="")
+        first = notes["issue_list"][0]
+        assert (first["severity"], first["message"], first["ref"]) == (
+            "warning",
+            "a thin flap on the arm's collar",
+            None,
+        )
+        notes = await ok(client, "correct_issue", run=run, number=1, withdraw=True)
+        assert notes["issues"] == 1
+        assert notes["issue_list"] == [
+            {"number": 1, "severity": "info", "message": "belts hidden", "ref": None}
+        ]
+        assert "no issue 2" in await fails(client, "correct_issue", run=run, number=2, ref="x")
+        assert "nothing to correct" in await fails(client, "correct_issue", run=run, number=1)
+        assert "not both" in await fails(
+            client, "correct_issue", run=run, number=1, withdraw=True, message="x"
+        )
+        assert "withdraw it instead" in await fails(
+            client, "correct_issue", run=run, number=1, message="  "
+        )
+
+
+@pytest.mark.anyio
 async def test_a_built_run_cannot_be_changed(setup, photo_run) -> None:
     server, _ = setup
     async with Client(server) as client:
@@ -325,6 +362,9 @@ async def test_a_built_run_cannot_be_changed(setup, photo_run) -> None:
         )
         assert "already built its twin" in await fails(
             client, "add_issue", run=run, severity="info", message="late note"
+        )
+        assert "already built its twin" in await fails(
+            client, "correct_issue", run=run, number=1, withdraw=True
         )
         rebuild = (await ok(client, "start_run", **MACHINE, new_version=True))["run"]
         assert rebuild.endswith("_run-002")

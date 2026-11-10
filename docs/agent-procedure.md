@@ -186,7 +186,10 @@ the job is done. Otherwise the job waits for you:
      build plans every scenario: a step the manual does not allow fails the build, with its
      number. It then writes `programs/<command set>/`, which holds `controls.usdc` and its runner.
      Also add an `add_issue` warning for the stand-ins, as the T33901's reference does.
-6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see.
+6. **`add_issue`** for disagreements, assumptions and doubts a reviewer should see. The summary
+   numbers them (`issue_list`). **`correct_issue(run, number, ...)`** corrects one that turned out
+   wrong, or withdraws it (`withdraw=True`), until the twin is built: after that the issues are
+   part of its record for good.
 
 ## 4. Generate and inspect the geometry
 1. **`generate_geometry(run)`.** It takes about a minute on the GPU the first time, and reuses the
@@ -295,7 +298,9 @@ decision 0027 and its updates) is a worked example.
      non-manifold points, the points given in model units after orienting, where the cut list's
      boxes are. Move the cut boundary or the stand-in's size that makes them, by a millimetre or
      two: the T33901's table rim at exactly 10 mm gave 40 zero-area faces, at 10.5 mm none;
-   - the size checks, and the issues the twin will carry.
+   - the size checks, and the issues the twin will carry. An issue of yours that a later change
+     made stale (v10's and v11's note of a flap that v10's cuts had removed) is withdrawn or
+     corrected with `correct_issue`.
 9. **Repeat** until every view is right, no hole is left, and no part has a mesh warning.
 10. **Dry-run the build before `submit_twin`:** `dry_run_twin(run)`. A submitted version is
     stored for good. The dry run builds the run as `submit_twin` would, but in a new scratch copy

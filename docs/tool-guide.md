@@ -10,7 +10,7 @@ guides named in each row.
 **Contents**
 1. [Outside software](#outside-software)
 2. [Our own modules](#our-own-modules)
-3. [The agent's 27 MCP tools](#the-agents-27-mcp-tools)
+3. [The agent's 28 MCP tools](#the-agents-28-mcp-tools)
 4. [Commands people run](#commands-people-run)
 5. [Scripts that run inside Isaac Sim](#scripts-that-run-inside-isaac-sim)
 
@@ -18,7 +18,7 @@ guides named in each row.
 | Tool | What it is | What it does for us | In | Out | Version and source |
 |---|---|---|---|---|---|
 | **Claude Code** | Anthropic's AI coding agent | It is the platform's agent. It reads the documents, records cited facts, inspects the mesh, writes the geometry spec, and builds the twin through our MCP tools (decision 0003; confirmed by the advisors on 2026-10-22) | A person's request, documents, photos, tool results | Calls to our MCP tools, and cited notes and specs in the run folder | `.mcp.json`; `docs/agent-procedure.md` |
-| **MCP** (Model Context Protocol) **Python SDK** | A standard way for an AI agent to call a program's functions | Gives Claude Code our 27 tools | Tool calls with typed arguments | Typed results, or a readable error | `mcp` 2.3.0 (decision 0013) |
+| **MCP** (Model Context Protocol) **Python SDK** | A standard way for an AI agent to call a program's functions | Gives Claude Code our 28 tools | Tool calls with typed arguments | Typed results, or a readable error | `mcp` 2.3.0 (decision 0013) |
 | **Hunyuan3D-2mv** and **Hunyuan3D-2** | Tencent's image-to-3D models | Turn the machine's photos into one 3D mesh. The multi-view model takes 2-4 photos with their views; the single-image model takes 1 | Photos, each in a slot (front, left, back, right) | `mesh.glb`, untextured, in its own axes and units | hy3dgen 2.0.2, commit f8db630, under the Tencent Hunyuan 3D 2.0 Community License; installed in `C:\mw-gen`, its own Python environment (`docs/setup/generators.md`) |
 | **PyTorch** | A machine-learning framework that runs models on the GPU | Runs the Hunyuan3D models on the RTX 4090 | Model weights, prepared photos | The mesh, through the generator | torch 2.8.0 for CUDA 12.6, with diffusers 0.35.2 and transformers 4.57.1, in the generator's environment (`docs/setup/generators.md`, "Installed versions") |
 | **Hugging Face Hub** (`hf`) | Hugging Face's model hosting and its download tool | Downloads the Hunyuan3D weights once, and checks their SHA-256 | A model name | The weight files in `C:\mw-gen\models\` | huggingface-hub 0.36.0 (`docs/setup/generators.md`) |
@@ -47,7 +47,7 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | `workspace` | The data folder as the shared workspace of the agent and the dashboard: run folders are jobs, and their files say how far each has got | Uploads, run folders | Job lists, saved inputs, status |
 | `api` | The dashboard's API: jobs, twins, sources, reviews and files (decision 0014). `security.py` keeps it to this computer (it answers on 127.0.0.1 only and checks each request's host); `typescript.py` writes the dashboard's types from its schema, so they are never copied by hand | HTTP requests | JSON and files; `dashboard/src/api/types.gen.ts` |
 | `dashboard/` (React) | The web pages people use | Clicks, uploads | Jobs started, reviews recorded |
-| `mcp` (with `reports.py`) | The MCP server that gives Claude Code its 27 tools ([below](#the-agents-27-mcp-tools)); `reports.py` defines what each tool returns | Tool calls | Run folders, notes, specs, builds |
+| `mcp` (with `reports.py`) | The MCP server that gives Claude Code its 28 tools ([below](#the-agents-28-mcp-tools)); `reports.py` defines what each tool returns | Tool calls | Run folders, notes, specs, builds |
 | `orchestrator` (with `router.py`, `photos.py`) | Sends each input to its pipeline, then reuses a stored twin or stores a new version and has it exported. It is the only writer to the knowledge base | A job's request | A twin version, or the reused one |
 | `kb` (`json_store.py`, `keys.py`, `reviews.py`) | The knowledge base: one JSON file per record, behind an interface Neo4j can replace (decisions 0005, 0008). `keys.py` turns a maker and model into one key, aliases included; `reviews.py` keeps people's approvals and rejections as append-only records (decision 0015) | Results, twin versions, reviews | The same, by machine key (`grizzly/t33901`) |
 | `pipelines` (A, C, D; `fixture_stub.py`, `cli.py`) | The teammates' pipelines: nameplates and data sheets (A, Ava), drawings and schematics (C, Kiran), catalogs and online resources (D, Sarkis). Until theirs are in, `fixture_stub.py` stands in for them in the tests only, and `cli.py` lets an owner run theirs alone (decision 0021) | Their input types | A `PipelineResult` each |
@@ -86,7 +86,7 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | `controls_export.py` | Writes the controls folder, with the controls in Isaac Sim's Property panel | Twin, behaviours | `controls.usdc`, `run_controls.py`, `PROGRAM.md` |
 | `compare.py` | Measures a recording against its plan | Recording CSV, trajectory JSON | A table of measured against planned |
 
-## The agent's 27 MCP tools
+## The agent's 28 MCP tools
 Claude Code calls these through the MCP server (`moonwalkers.mcp`). "Run" is a run folder, the
 job. Read-only tools change nothing.
 
@@ -104,21 +104,22 @@ job. Read-only tools change nothing.
 | 10 | `add_fact` | Record one specification value | Run, key, value, SI unit, original text, citations | The notes so far |
 | 11 | `add_control` | Record how the machine is controlled: a program, a switch, a speed table, the operator's commands; checked at once | Run, kind, spec, joints driven, citations | The notes so far |
 | 12 | `add_issue` | Record a doubt, assumption or disagreement for the reviewer | Run, severity, message, what it concerns | The notes so far |
-| 13 | `generate_geometry` | Turn the photos into a mesh (about a minute on the GPU), or reuse this run's | Run | The mesh, six PNG views, the expected turn |
-| 14 | `inspect_geometry` | Orient and measure the mesh | Run, up and front axes, turn | Sizes, a spindle's axis, warnings, PNG views |
-| 15 | `fit_circles` (read-only) | Find a round part's axis (a column, a quill, a hub, an arm's link at an angle) | Run, axis or direction, slice positions, optionally a box to keep (`within`) | Circle centres and radii, and how round each is |
-| 16 | `add_joint` | One moving part: define the spindle joint | Run, axis, radius, start, method | The spec's status |
-| 17 | `set_scale` | One moving part: scale from the cited centre height | Run, base plane | The spec's status |
-| 18 | `set_spec_frame` | Several parts: the mesh's axes, the origin, the fixed part | Run, axes, origin, fixed part, method | The spec's status |
-| 19 | `set_cut_list` | Several parts: the ordered cut shapes | Run, cuts with notes | The spec's status |
-| 20 | `set_spec_part` | Add or replace a part: cut, removed or a labelled stand-in | Run, part | The spec's status |
-| 21 | `set_spec_joint` | Add or replace a joint, with its behaviour (driven, spring return, locked, free, follows) | Run, joint | The spec's status |
-| 22 | `remove_spec_entry` | Take a part or joint out of the spec | Run, which, id | The spec's status |
-| 23 | `set_scale_length` | Scale by any cited length | Run, fact, measured length, how | The spec's status |
-| 24 | `set_size_checks` | Compare more cited lengths with the model | Run, checks | The spec's status |
-| 25 | `preview_twin` | Try the spec without storing anything | Run | Parts, sizes, holes, PNG views to look at, and each part NVIDIA's validator would warn about (zero-area faces, non-manifold points) |
-| 26 | `dry_run_twin` | Try the build without storing anything (the lab's plan, tool gap 7) | Run | The build's message, and our and NVIDIA's validators' findings on every file, from a scratch copy of the data folder |
-| 27 | `submit_twin` | Build and store the twin, or reuse it | Run | The twin version, its files, and the validators' findings |
+| 13 | `correct_issue` | Correct or withdraw one of its issues before the build, when it turned out wrong or went stale (the lab's plan, tool gap 2) | Run, the issue's number, what changes, or withdraw | The notes so far, with the issues numbered |
+| 14 | `generate_geometry` | Turn the photos into a mesh (about a minute on the GPU), or reuse this run's | Run | The mesh, six PNG views, the expected turn |
+| 15 | `inspect_geometry` | Orient and measure the mesh | Run, up and front axes, turn | Sizes, a spindle's axis, warnings, PNG views |
+| 16 | `fit_circles` (read-only) | Find a round part's axis (a column, a quill, a hub, an arm's link at an angle) | Run, axis or direction, slice positions, optionally a box to keep (`within`) | Circle centres and radii, and how round each is |
+| 17 | `add_joint` | One moving part: define the spindle joint | Run, axis, radius, start, method | The spec's status |
+| 18 | `set_scale` | One moving part: scale from the cited centre height | Run, base plane | The spec's status |
+| 19 | `set_spec_frame` | Several parts: the mesh's axes, the origin, the fixed part | Run, axes, origin, fixed part, method | The spec's status |
+| 20 | `set_cut_list` | Several parts: the ordered cut shapes | Run, cuts with notes | The spec's status |
+| 21 | `set_spec_part` | Add or replace a part: cut, removed or a labelled stand-in | Run, part | The spec's status |
+| 22 | `set_spec_joint` | Add or replace a joint, with its behaviour (driven, spring return, locked, free, follows) | Run, joint | The spec's status |
+| 23 | `remove_spec_entry` | Take a part or joint out of the spec | Run, which, id | The spec's status |
+| 24 | `set_scale_length` | Scale by any cited length | Run, fact, measured length, how | The spec's status |
+| 25 | `set_size_checks` | Compare more cited lengths with the model | Run, checks | The spec's status |
+| 26 | `preview_twin` | Try the spec without storing anything | Run | Parts, sizes, holes, PNG views to look at, and each part NVIDIA's validator would warn about (zero-area faces, non-manifold points) |
+| 27 | `dry_run_twin` | Try the build without storing anything (the lab's plan, tool gap 7) | Run | The build's message, and our and NVIDIA's validators' findings on every file, from a scratch copy of the data folder |
+| 28 | `submit_twin` | Build and store the twin, or reuse it | Run | The twin version, its files, and the validators' findings |
 
 ## Commands people run
 From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
@@ -142,7 +143,7 @@ From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
 | `moonwalkers.contracts.json_schema` | Write the contract's JSON Schema after a contract change | The contract | `pipeline_result.schema.json` |
 | `moonwalkers.api.typescript` | Regenerate the dashboard's types after an API or contract change | The API's schema | `dashboard/src/api/types.gen.ts` |
 | `moonwalkers.api` | Start the API and the dashboard | Data folder | http://127.0.0.1:8000/ |
-| `moonwalkers.mcp` | Start the MCP server by hand (Claude Code normally starts it) | (stdio) | The 27 tools |
+| `moonwalkers.mcp` | Start the MCP server by hand (Claude Code normally starts it) | (stdio) | The 28 tools |
 
 ## Scripts that run inside Isaac Sim
 Pasted into Isaac Sim's Script Editor (`docs/setup/isaac-sim-check.md`).

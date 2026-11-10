@@ -376,8 +376,9 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
   - [x] item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice
     would cut through several links (2026-11-09: `within`, and `along` as a direction for a link
     at an angle; the old fits are unchanged);
-  - item 2: a tool that corrects or withdraws an issue the agent added (the cause of v10's and
-    v11's stale issue);
+  - [x] item 2: a tool that corrects or withdraws an issue the agent added (the cause of v10's and
+    v11's stale issue) (2026-11-09: `correct_issue`, with the issues numbered in the notes'
+    summary; refused once the twin is built);
   - item 6: the dashboard's upload takes photos from more than one folder, and its duplicate check
     looks in every photo folder of the machine, `photos/manual/` included.
 

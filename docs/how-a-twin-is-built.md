@@ -22,7 +22,7 @@ flowchart LR
     end
     subgraph PLATFORM["MoonWalkers backend (Python)"]
         API["API<br/>FastAPI"]
-        MCP["MCP server<br/>27 tools"]
+        MCP["MCP server<br/>28 tools"]
         RUN[("Run folder<br/>request.json, notes, spec")]
         ROUTER["Input Router"]
         PB["Pipeline B<br/>photos"]
@@ -85,7 +85,7 @@ flowchart LR
 flowchart LR
     DOC["Manual PDF, web page,<br/>or what a person said"] -->|"add_reference_source"| SRC["Sources<br/>with SHA-256 and access date"]
     SRC --> NOTES["Reading notes<br/>reference.json"]
-    A["Claude Code reads the pages"] -->|"identify_machine, add_fact,<br/>add_control, add_issue"| NOTES
+    A["Claude Code reads the pages"] -->|"identify_machine, add_fact,<br/>add_control, add_issue,<br/>correct_issue"| NOTES
     NOTES -->|"every quote"| QC["Quote checker<br/>pypdf"]
     QC -->|"found on its cited page or not"| A
     PDF["PDF pages and figures"] -->|"pypdfium2"| PNG["Rendered pages<br/>for reading figures"]
@@ -193,7 +193,7 @@ flowchart TB
     SR --> AI["add_input<br/>each photo with its view"]
     AI --> PC["preview_cutouts; set_photo<br/>to correct a view or a cut-out"]
     PC --> RS["add_reference_source"]
-    RS --> ID["identify_machine, add_fact,<br/>add_control, add_issue"]
+    RS --> ID["identify_machine, add_fact,<br/>add_control, add_issue,<br/>correct_issue"]
     ID --> GG["generate_geometry"]
     GG --> IG["inspect_geometry, fit_circles"]
     IG --> ONE{"one moving part<br/>or several?"}

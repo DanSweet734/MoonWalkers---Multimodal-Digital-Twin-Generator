@@ -134,6 +134,7 @@ from .reports import (
     JobList,
     JointPreview,
     KnowledgeBaseReport,
+    NumberedIssue,
     PartPreview,
     PartsPreviewReport,
     PreviewReport,
@@ -282,6 +283,10 @@ def create_server(
             facts=[f.key for f in reference.facts],
             control=[b.behavior_id for b in reference.control],
             issues=len(reference.issues),
+            issue_list=[
+                NumberedIssue(number=n, severity=i.severity, message=i.message, ref=i.ref)
+                for n, i in enumerate(reference.issues, start=1)
+            ],
         )
 
     def save_notes(run_dir: Path, change: Callable[[dict[str, Any]], None]) -> ReferenceFacts:
@@ -733,6 +738,50 @@ def create_server(
 
             def put(data: dict[str, Any]) -> None:
                 data["issues"].append(issue.model_dump(mode="json"))
+
+            return summary(run_dir, save_notes(run_dir, put))
+
+    @server.tool(annotations=LOCAL_WRITE)
+    def correct_issue(
+        run: str,
+        number: int,
+        severity: Literal["info", "warning", "error"] | None = None,
+        message: str | None = None,
+        ref: str | None = None,
+        withdraw: bool = False,
+    ) -> ReferenceSummary:
+        """Correct or withdraw an issue in the reading notes, before the twin is built: one that
+        turned out wrong, or went stale when a later change fixed what it described (v10's and
+        v11's note of a flap that v10's cuts removed). `number` is its place in the summary's
+        issue_list, from 1. Give only what changes; ref="" clears what it concerns. withdraw
+        takes it out, which renumbers the ones after it. Only issues added with add_issue are
+        here: the build's own (stand-ins, patches, checks) come from the spec and cannot be
+        corrected, only made unneeded. A built twin's issues are part of its record for good."""
+        with guarded():
+            run_dir = ws.run_dir(run)
+            need_reference(run_dir)
+            changes = {
+                k: v
+                for k, v in (("severity", severity), ("message", message), ("ref", ref))
+                if v is not None
+            }
+            if withdraw and changes:
+                raise ToolError("withdraw an issue, or correct it, not both")
+            if not withdraw and not changes:
+                raise ToolError("nothing to correct: give severity, message or ref, or withdraw")
+            if "ref" in changes and changes["ref"] == "":
+                changes["ref"] = None
+            if message is not None and not message.strip():
+                raise ToolError("an issue needs a message: withdraw it instead")
+
+            def put(data: dict[str, Any]) -> None:  # after the refusal of a built run
+                held = len(data["issues"])
+                if not 1 <= number <= held:
+                    raise ToolError(f"no issue {number}: the notes hold {held}, numbered from 1")
+                if withdraw:
+                    del data["issues"][number - 1]
+                else:
+                    data["issues"][number - 1] |= changes
 
             return summary(run_dir, save_notes(run_dir, put))
 

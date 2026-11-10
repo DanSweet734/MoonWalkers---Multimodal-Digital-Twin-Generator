@@ -108,6 +108,13 @@ class CutoutPreview(BaseModel):
     seconds: float
 
 
+class NumberedIssue(BaseModel):
+    number: int = Field(description="its place in the notes, from 1: correct_issue's `number`")
+    severity: str
+    message: str
+    ref: str | None
+
+
 class ReferenceSummary(BaseModel):
     run: str
     sources: list[str]
@@ -115,6 +122,9 @@ class ReferenceSummary(BaseModel):
     facts: list[str] = Field(description="fact keys")
     control: list[str] = Field(description="control behaviour ids")
     issues: int
+    issue_list: list[NumberedIssue] = Field(
+        default_factory=list, description="the issues in the notes, numbered"
+    )
 
 
 class GenerationReport(BaseModel):
