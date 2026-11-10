@@ -168,7 +168,18 @@ def test_ranges_are_read_from_joint_recordings(tmp_path: Path, fixed_time: datet
     assert ranges["joint5"].within_target
     assert ranges["joint5"].reached_min_deg == pytest.approx(arm.RANGES["joint5"][0])
     assert not ranges["joint2"].within_target  # held still at 5.7 degrees
+    assert ranges["joint2"].verdict == "lower not reached; upper not reached"
     assert "joint1" not in ranges  # no recording names it
+
+
+def test_each_end_of_a_range_is_scored_on_its_own(tmp_path: Path, fixed_time: datetime) -> None:
+    _, result = arm.build_test_arm(fixed_time)
+    upper = math.radians(arm.RANGES["joint5"][1])
+    lines = ["time_s,joint5 (rad)"] + [f"{t / 10},{upper * t / 10}" for t in range(11)]
+    (tmp_path / "spin.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (joint5,) = score.range_scores(result, [tmp_path / "spin.csv"])  # from 0 up only
+    assert (joint5.lower_reached, joint5.upper_reached) == (False, True)
+    assert joint5.verdict == "lower not reached; upper reached"
 
 
 def test_the_arms_score_file_maps_every_part_and_joint_in_its_photographed_pose() -> None:
@@ -187,7 +198,7 @@ def test_the_arms_score_file_maps_every_part_and_joint_in_its_photographed_pose(
 def test_a_score_report_lists_every_measure(tmp_path: Path) -> None:
     result = score.Score(twin="x/y@v1", run="machines/x/runs/r")
     result.sizes = [score.SizeScore("reach", 0.7, 0.66, 0.06, True, False)]
-    result.ranges = [score.RangeScore("joint1", -179.0, 179.0, -178.5, 178.9, True)]
+    result.ranges = [score.RangeScore("joint1", -179.0, 179.0, -178.5, 178.9, True, True)]
     data, report = score.write_score(result, tmp_path / "score")
     text = report.read_text(encoding="utf-8")
     for heading in ("## Sizes", "## Match with the photos", "## Shape", "## Parts and joints",

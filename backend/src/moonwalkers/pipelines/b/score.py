@@ -394,7 +394,18 @@ class RangeScore:
     upper_deg: float
     reached_min_deg: float
     reached_max_deg: float
-    within_target: bool
+    lower_reached: bool  # within RANGE_TARGET_DEG of the lower limit
+    upper_reached: bool
+
+    @property
+    def within_target(self) -> bool:
+        return self.lower_reached and self.upper_reached
+
+    @property
+    def verdict(self) -> str:
+        """Each end on its own: a check that drives a joint one way reaches one end only."""
+        ends = {"lower": self.lower_reached, "upper": self.upper_reached}
+        return "; ".join(f"{end} {'reached' if ok else 'not reached'}" for end, ok in ends.items())
 
 
 @dataclass
@@ -555,7 +566,8 @@ def range_scores(result: PipelineResult, recordings: Sequence[Path]) -> list[Ran
                 round(upper, 2),
                 round(low, 2),
                 round(high, 2),
-                abs(low - lower) <= RANGE_TARGET_DEG and abs(high - upper) <= RANGE_TARGET_DEG,
+                abs(low - lower) <= RANGE_TARGET_DEG,
+                abs(high - upper) <= RANGE_TARGET_DEG,
             )
         )
     return scores
@@ -691,7 +703,7 @@ def format_score(score: Score) -> str:
         lines += ["| Joint | Limits (deg) | Reached (deg) | |", "|---|---|---|---|"]
         lines += [
             f"| {r.joint} | {r.lower_deg:+.2f} to {r.upper_deg:+.2f} | {r.reached_min_deg:+.2f} "
-            f"to {r.reached_max_deg:+.2f} | {'within' if r.within_target else 'outside'} |"
+            f"to {r.reached_max_deg:+.2f} | {r.verdict} |"
             for r in score.ranges
         ]
     else:
