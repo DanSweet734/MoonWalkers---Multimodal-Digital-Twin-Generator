@@ -428,7 +428,8 @@ at; the new tools used in Phase 2.
 
 ## Phase 4 - The Haas TM-1: levels 1 and 2
 - [ ] Sources: Haas's pages saved by Daniel, and dealers' listings as second-hand, with their
-      disagreements named. Which part carries which axis is cited, not assumed. The control's
+      disagreements named. One is known (2026-11-09): the TM-1's Y travel, 12 in on Haas's 2018
+      Toolroom sheet and the listings of 2006-07 units, 16 in on today's page (`SOURCES.md`). Which part carries which axis is cited, not assumed. The control's
       generation is read from the pendant's photos.
 - [ ] No box test: the drill press proved sliding joints and chains (decisions 0017-0019).
 - [ ] Generate from the four corners; the sign and stool at the back are logged where they show.
@@ -517,10 +518,10 @@ haascnc.com refuses scripts (403):
 - **Filed on 2026-11-09** (`SOURCES.md` of each mill): Haas's PDFs under `/content/dam/` answer
   scripts, so on Daniel's permission Claude Code fetched the Toolroom Series sheet and three mill
   manuals: 96-8000 Rev Y (2009) and Rev AP (2012) for the Classic Haas Control, and the 2023 one
-  for the Next Generation Control. Haas's HTML pages still answered 403. **Left for Daniel**, in
-  a browser ("Save Page As", which keeps the text): the TM-1's product page and pre-install
-  guide, and the VF-3's product page. Which control each mill has is still to read off its
-  screen (lab visit, item 5).
+  for the Next Generation Control. Haas's HTML pages still answered 403, so Daniel saved the
+  TM-1's product page and pre-install guide and the VF-3's product page in a browser the same
+  evening; Claude Code checked each (the page itself, with its specs). Which control each mill
+  has is still to read off its screen (lab visit, item 5).
 - links found by a search on 2026-11-09 (the search's summaries are not used as sources):
   - https://www.haascnc.com/machines/vertical-mills/toolroom-mills/models/tm-1.html
   - https://haascnc.com/content/dam/haascnc/machines/vertical-mills/toolroom/assets/Vertical_ToolroomSeries.pdf
