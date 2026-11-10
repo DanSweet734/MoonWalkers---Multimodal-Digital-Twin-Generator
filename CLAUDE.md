@@ -6,12 +6,12 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 1 (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`. The plan was approved and merged on 2026-11-09 (PR
-#27; Daniel's answers in its "Decided on review"). Phase 1 (file the photos and sources, close the
-tool gaps) is done on branch `feat/lab-phase-1-photos-and-tools`, built in the plan chat on
-Daniel's word, and waits for his review in its pull request.
-- **Done:**
+## Current phase: the lab's machines plan, Phase 2, the ReBeL arm (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 2", whose hand-off comes first. Phase 2 runs on
+branch `feat/lab-phase-2-rebel-arm`, from `main` after PR #28; its first commit is the hand-off.
+The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
+**Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
+- **Done in Phase 1:**
   - the photos are filed;
   - Daniel chose SAM for cutting the machine out, with crop boxes and drawn masks as options. The
     per-photo cut-out (decision 0029, accepted), its preview and `set_photo` (tool gap 1) are
@@ -19,9 +19,10 @@ Daniel's word, and waits for his review in its pull request.
   - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, accepted). The MCP server has 28
     tools: `correct_issue`, and `fit_circles` with `within` and a direction; mesh warnings in
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
-- **Left:** nothing in Phase 1 once PR #28 is merged. Haas's sources are filed: the mill manuals
-  and the Toolroom sheet fetched (its PDFs answer scripts), its three web pages saved by Daniel.
-  Then Phase 2, the ReBeL arm, in a new chat.
+  - Haas's sources are filed: the mill manuals and the Toolroom sheet fetched (its PDFs answer
+    scripts), its three web pages saved by Daniel.
+- **Next:** Phase 2, the ReBeL arm, levels 1 and 2. Restart the MCP server (`/mcp`) before an
+  agent uses the new tools.
 
 The history below is the record of the PoC and the drill-press plan.
 
