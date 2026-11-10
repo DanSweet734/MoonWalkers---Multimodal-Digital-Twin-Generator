@@ -364,7 +364,7 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
         antialiasing first: rembg's own shrink kept the wall.
       - What is left is per photo: more points, and a drawn mask for the TM-1's shiny guards. It
         belongs to each machine's phase (the research note's second update).)
-- [ ] **The tool gaps** (drill-press report, section 7.3):
+- [x] **The tool gaps** (drill-press report, section 7.3):
   - [x] item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated
     (2026-11-09: `set_photo`, which also sets the cut-out; decision 0029);
   - [x] item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the
@@ -379,8 +379,10 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
   - [x] item 2: a tool that corrects or withdraws an issue the agent added (the cause of v10's and
     v11's stale issue) (2026-11-09: `correct_issue`, with the issues numbered in the notes'
     summary; refused once the twin is built);
-  - item 6: the dashboard's upload takes photos from more than one folder, and its duplicate check
-    looks in every photo folder of the machine, `photos/manual/` included.
+  - [x] item 6: the dashboard's upload takes photos from more than one folder, and its duplicate check
+    looks in every photo folder of the machine, `photos/manual/` included (2026-11-09: each pick
+    adds to the photos chosen, with "Remove"; checked in headless Edge with four photos from two
+    folders, which the job took from where they were filed).
 
   Items 2 and 6 were added on Daniel's word (2026-11-09).
 - [ ] Decision record (the tools, amending 0028), worklog, PR.

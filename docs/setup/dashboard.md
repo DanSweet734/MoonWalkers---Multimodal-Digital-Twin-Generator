@@ -79,10 +79,13 @@ Then, in the dashboard:
    one.
 5. **Refusals.** Try uploading a PDF (pick "All files" in the file dialog): "the photo must be a
    JPEG or PNG image".
-6. **Several photos (decision 0022).** Start a job: manufacturer `Grizzly`, model `T33901`, and
-   choose four files from `data/machines/grizzly-t33901/inputs/photos/`: `front_operator_left.jpeg`,
-   `front_operator_right.png`, `table_top.png` and
-   `manual/manual_p05_studio_front-operator-left.jpg`.
+6. **Several photos (decision 0022).** Start a job: manufacturer `Grizzly`, model `T33901`.
+   Choose three files from `data/machines/grizzly-t33901/inputs/photos/`:
+   `front_operator_left.jpeg`, `front_operator_right.png` and `table_top.png`. Then choose again,
+   in `photos/manual/`, `manual_p05_studio_front-operator-left.jpg`.
+   - **Each pick adds to the photos chosen** (the lab's machines plan, tool gap 6), and the label
+     says how many are chosen. Pick `front_operator_left.jpeg` once more: the form says it is
+     already chosen and leaves it out. Each photo has a "Remove" link.
    - One row per photo appears, with a preview and a sketch of where to stand. Until each photo
      has a view, the form says "With several photos, say where you stood for each one." and
      "Start job" stays disabled.
@@ -95,8 +98,11 @@ Then, in the dashboard:
    - Start the job. Its page lists **Photos (4)**: the two corners "Used to make the 3D model",
      the other two "Kept as evidence", and the first step says "4 photos added".
 
-   Checked this way on 2026-10-24, with a script driving headless Edge on a scratch data folder
-   (worklog of that day).
+   - **No copies:** these photos are already in the machine's photo folders, so the job's sources
+     point to them, `photos/manual/` included, and `inputs/SOURCES.md` gains no line.
+
+   Checked this way on 2026-10-24, and again with the picks and the removal on 2026-11-09, each
+   time with a script driving headless Edge on a scratch data folder (worklogs of those days).
 
 Delete the copy afterwards: `Remove-Item "$env:TEMP\mw-data-try" -Recurse`.
 

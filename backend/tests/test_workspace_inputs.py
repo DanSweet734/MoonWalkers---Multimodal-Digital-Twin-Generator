@@ -55,6 +55,25 @@ def test_a_photo_is_saved_once_and_listed_in_sources(tmp_path: Path, fixed_time)
     assert (machine / "inputs" / "SOURCES.md").read_text(encoding="utf-8") == sources
 
 
+def test_a_photo_filed_in_any_photo_folder_is_found_again(tmp_path: Path, fixed_time) -> None:
+    """The manual's figures in photos/manual/, and photos filed by hand in folders of their own,
+    are the same photo when uploaded again (the lab's machines plan, tool gap 6)."""
+    machine = tmp_path / "machines" / "grizzly-t33901"
+    figure = machine / "inputs" / "photos" / "manual" / "p09_fig-1.png"
+    filed = machine / "inputs" / "photos" / "2026-11-05" / "front.jpg"
+    for path, data in ((figure, PNG), (filed, JPEG)):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    for path, data in ((figure, PNG), (filed, JPEG)):
+        again = save_photo(machine, data, "upload.jpg", "the dashboard", None, fixed_time)
+        assert again.already_saved and again.path == path
+    assert not (machine / "inputs" / "SOURCES.md").exists()  # nothing new to list
+    assert sorted(p.name for p in (machine / "inputs" / "photos").iterdir()) == [
+        "2026-11-05",
+        "manual",
+    ]
+
+
 def test_a_different_photo_with_a_taken_name_gets_a_number(tmp_path: Path, fixed_time) -> None:
     machine = tmp_path / "machines" / "haas-ha5c"
     sources = machine / "inputs" / "SOURCES.md"
