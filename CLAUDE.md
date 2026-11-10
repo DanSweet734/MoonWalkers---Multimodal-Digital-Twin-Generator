@@ -8,8 +8,9 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 
 ## Current phase: drafting the lab's machines plan (the drill-press plan is done)
 **Start here:** `docs/lab-machines-plan.md`. It holds the hand-off of 2026-11-09, on branch
-`docs/lab-machines-plan`. The plan is drafted below it for Daniel's review, before any build. The
-history below is the record of the PoC and the drill-press plan.
+`docs/lab-machines-plan`. The plan is drafted below it (2026-11-09: Phases 0-8, a scorecard of
+measures, nine questions for Daniel) and waits for his review, before any build. The history
+below is the record of the PoC and the drill-press plan.
 
 - **The PoC is complete.** An agent built a Haas HA5C twin from one photo, and it reached all three
   success levels: a scaled model with cited facts; a spindle joint that rotates; an indexing
@@ -144,8 +145,11 @@ history below is the record of the PoC and the drill-press plan.
     which Daniel shares for the weekly meeting.
     Logged, not built: the crank passes into the base at the table's lowest setting (an issue for
     the next version), and v10 and v11 carry a stale issue from the agent's notes.
-- **Next: the lab's machines** (meeting of 2026-11-05; report, section 7.1). The plan is not
-  written yet: `docs/lab-machines-plan.md` holds its hand-off.
+- **Next: the lab's machines** (meeting of 2026-11-05; report, section 7.1). The plan is drafted
+  in `docs/lab-machines-plan.md`, below its hand-off, for Daniel's review (2026-11-09).
+  - **Found while drafting it:** the hand reads "LINKERBOT", and LinkerBot publishes its own L20
+    models; igus's documentation gives the arm's sizes, ranges and zero pose; the VF-3's
+    trunnion runs as the mill's own axes [INFERENCE]. Research note, second update.
   - **Daniel photographed three, with nameplates:** a "ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper
     and CobotPump" with a "Realhand L20 Dexterous Robotic Hand" attached, a Haas VF-3 and a Haas
     TM-1. The order is ours to choose. Public sources: `docs/research/2026-11-06-lab-machines.md`.

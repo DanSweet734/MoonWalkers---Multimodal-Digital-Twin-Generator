@@ -4,9 +4,9 @@
 compare with the real machines. These are the advisors' "real-world comparisons" (meeting of
 2026-10-29), and the start of "Evaluate on the standardized test set" on the README's roadmap.
 
-**Status:** not written yet. This file holds only the hand-off from the chat that closed the
-drill-press plan. The plan itself is drafted below it, for Daniel's review, before anything is
-built.
+**Status:** drafted on 2026-11-09 for Daniel's review (Phase 0, branch `docs/lab-machines-plan`).
+Nothing is built, filed or installed until he approves it. The hand-off from the chat that closed
+the drill-press plan comes first; the plan follows it, from "The plan (draft of 2026-11-09)".
 
 ## Hand-off (2026-11-09, from the drill-press plan's Phase 7 chat)
 - **Start** from `main` after PR #26 (merge commit `d27eb28`, 2026-11-09), on branch
@@ -168,3 +168,319 @@ These are also in CLAUDE.md and the memory notes.
   stores a version for good.
 - **The advisors' page** for the drill-press plan is https://claude.ai/artifact/RttTc4nE7DUYJ6NP2uEziK.
   This plan's report gets a new page in the same design (memory "drill-press-report-page").
+
+## The plan (draft of 2026-11-09)
+Written by Claude Code in the plan chat of 2026-11-09, from the hand-off above, the 29 photos
+(looked at with the scripts in `data/scratch/2026-11-09_lab-photos/` and more crops in the
+session's scratchpad; nothing written to `data/`), and sources read the same day. Those sources
+are in [the research note's second update](research/2026-11-06-lab-machines.md) with their URLs
+and access dates. Photos are named by their time stamp, `20261105_HHMMSS`, shortened here to
+`HHMMSS`.
+
+Like the drill-press plan, every phase ends in a pull request and a stop for review, and runs in a
+new chat with a hand-off written into this file. Every stand-in is labelled in the twin and logged
+as an inaccuracy (Daniel, 2026-10-22 and 2026-10-24).
+
+### What the sources and photos settled since the hand-off
+- **The hand is a LinkerBot hand.** Its back shell reads "LINKERBOT" (photo `133438`, from above).
+  The name "Realhand L20" is from Dr. Li's website (Daniel, 2026-11-09). Whether Realhand and
+  LinkerBot are one maker is still **not confirmed**: retailers sell the "Linker Hand L20" by
+  "Linkerbot", and no page found names Realhand.
+- **LinkerBot publishes its own L20 models.** `linkerbotai/linker_hand_sim` (Apache-2.0) holds
+  `linker_hand_isaac_gym_urdf/l20/left` and `/right`. Its right hand has 21 revolute joints, 5 of
+  them mimic joints, like Realhand's. The two models differ, though: different joint names, and
+  different limits (LinkerBot's first joint -0.297 to 0.683 rad, Realhand's first ±0.17 rad). So
+  which model matches the lab's hand is **not confirmed**. The repository's README says it moved
+  to `linker-bot/linkerhand-sim`, which the GitHub API did not find on 2026-11-09.
+- **A right hand** [INFERENCE]: in `133438` the shell (the back of the hand) faces the camera
+  above, the fingers point away from the base, and the thumb is on the image's left. A right hand
+  held palm down looks like that. To confirm on the hand's label or box.
+- **igus's own technical documentation** for the ReBeL ("Technical documentation ReBeL",
+  MAT0075179.25, "Stand 08/2022", 8 pages, from Unchained Robotics' download):
+  - 6 DOF: reach "664" mm, payload "2" kg, mass "< 8" kg, "Max. speed 45 [°/s]", "Linear speed
+    200 [mm/s]", "Footprint Ø 180 [mm]", accuracy "+-1 [mm]" (p. 2);
+  - "J1: -179° bis to +179° J2: -80° bis to +140° J3: -80° bis to +140° J4: -179° bis to +179°
+    J5: -95° bis to + 95° J6: -179° bis to +179°" (p. 2);
+  - a drawing of the arm straight up, "Nullstellung" (zero position), with "ReBeL-6DOF-00 660 252
+    237 297 126 180" for L1, X1 to X4 and D1 (p. 6). Read from the drawing: X1 runs from the
+    foot to joint 2's axis, X2 to joint 3's, X3 to joint 5's, X4 to the flange; L1 from joint 2's
+    axis to the flange; D1 is the foot's diameter;
+  - "With and without integrated control" in the base (p. 2).
+- **Version 01 of the ROS model is version 00.** `igus_rebel_6dof_01.description.xacro` only
+  includes `igus_rebel_6dof_00`'s description (`CommonplaceRobotics/iRC_ROS`, 2026-11-09).
+- **The URDF's limits agree with igus's** [INFERENCE, by arithmetic]: joints 2 and 3 are limited
+  to ±110° about origins turned +30° (`pi/6`), which gives -80° to +140° from the straight-up
+  zero; joint 5 to -87.5° to +102.5° about an origin turned -7.5° (`-pi/24`), which gives ±95°.
+  The URDF's comment: "pi*2/3 are the physical limits, but to avoid any collisions we set the
+  actual limits lower". Its link offsets (0.249, 0.2384, 0.289 and 0.122 m) are within 1-8 mm of
+  igus's X1 to X4. ManualsLib's "±140° / ±115° / ±90°" (a search listing) is still unread.
+- **Version 02 may be the one with control in the base** [INFERENCE]: the lab's base has a
+  connector panel with a power button, network and USB ports (`133326`), on a base plate with its
+  own label (kept in `data/`). igus's drawing shows a plain foot. Not confirmed: no public page describing
+  "6DOF-02" was found, though DigiKey and Unchained Robotics list the part number.
+- **The VF-3's trunnion** has a cradle carrying a round platter between two end housings
+  (`133959`, `133938`). A small plate on the cradle's base, lower left, may name it; it cannot be
+  read in the photos. Dealers' listings say Haas's TRT160 and TRT210 need "a Haas mill with 4th
+  and 5th axis drives". So its two axes are the mill's own and are programmed in the mill's G-code
+  [INFERENCE from second-hand listings], unlike the HA5C, which has its own control. **So the
+  G-code reader carries over to the trunnion, and decision 0026's indexer controller likely does
+  not.** This corrects the hand-off's inference; to confirm in Haas's manual.
+- **The TM-1, from dealers' listings** (second-hand, years vary): X 30 in, Y 12 in, Z 16 in;
+  a table of about 47.75 by 10.5 in (some say 47.5); a 4000 RPM CAT-40 spindle; a 10-pocket tool
+  changer. The TM-1P is listed at 6000 RPM. The lab's unit shows "Tool Room Mill" and an umbrella
+  tool changer (`134314`).
+- **Machine keys** (decision 0009, `kb/keys.py`, run on 2026-11-09): igus with "REBEL-6DOF-02"
+  gives `igus/rebel6dof02`, Haas with "TM-1" gives `haas/tm1`, Haas with "VF-3" gives `haas/vf3`.
+  "igus GmbH" gives `igus-gmbh/...`, so the key code needs "GmbH" dropped, or an alias, before a
+  pipeline names the maker that way.
+- **The lab's backgrounds are busy:** benches, other robots, the ceiling, and on the TM-1's back a
+  large sign and a stool in front of it (`134322`, `134329`). The generator's background removal
+  (rembg with `u2net`, `docs/setup/generators.md`) has only seen clean photos so far.
+- **Kept out of the repository:** the serial numbers, the IP address, and the university's asset
+  tag on the arm's base (`133326`).
+
+### Answers to the hand-off's questions
+| Question | What the sources answer | Still open |
+|---|---|---|
+| The ReBeL 02's geometry and limits | Joint ranges, speeds, sizes and the zero pose from igus's documentation (version 00's drawing); joint axes and frames from the ROS URDF (00 = 01). The two agree on the limits once the URDF's offsets are added. The twin cites both, with an issue: "version 02 not confirmed to match 00/01" | What changed in 02. igus's configurator, Unchained's STEP files and the ManualsLib manual are not opened. A tape measure at the lab settles the sizes (visit list) |
+| The public models' role | **Proposed:** sources of joint facts (frames, axes, limits) and the score for the generated mesh, never the twin's geometry, except perhaps the hand's fingers (question 4). The arm's joint frames are cited from the URDF and scored against igus's drawing, a separate source | Daniel's word on the fingers |
+| Measures for "accurately" | The scorecard below: proposed measures and starting targets, for the weekly meetings to judge (Daniel, 2026-11-09) | The targets |
+| The generator and the views | The arm: its four sides. The TM-1: its four corners (`134300`, `134337` and two back corners). The VF-3: its corners, or its front and a side. Top and detail photos are evidence. **The arm's front, proposed:** the side facing away from its base's connector panel, so `133326` is its back [INFERENCE] | Whether background removal copes (Phase 1). Daniel's check of each photo's view |
+| The arm's zero pose | igus's zero is the arm straight up (p. 6). The twin is built in the photographed pose. Each joint's angle in that pose is measured on the cut mesh and becomes the joint's start; the limits stay about igus's zero | The real angles: the lab's control software can show them (visit list) |
+| Control, level 3 | The mills: a reader of the G-code the programs use, new (Phase 5). The trunnion: two more axes of that reader (above). The arm: joint moves at the cited 45°/s, as iRC runs them; the program format is to be researched (Phase 3). The hand: the maker's SDK commands over CAN; its 5 mimic joints map onto `follows` (decision 0020) [INFERENCE] | Haas's pages (saved by Daniel); iRC's program format; which SDK fits the lab's hand |
+| Sources scripts cannot reach | haascnc.com, the igus factsheet on RobotShop, and DigiKey answer 403. igus's documentation came from Unchained Robotics instead | Daniel saves Haas's pages in a browser (list below) |
+| Video | Not in this plan. Pipeline B reads no video yet; a video plan follows once the photo results are acceptable (2026-11-05) | |
+| Installs | None needed to start. Perhaps later, each asked first: a COLLADA reader for the ROS model's `.dae` meshes (Phase 2's score), a segmenter if background removal fails (Phase 1) | |
+
+### Success levels (each machine)
+The drill press's three levels, for each machine:
+1. **A scaled model, cut into its moving parts, with cited facts, opens in Isaac Sim.** It is built
+   from the lab's photos, and its sizes are compared with every cited dimension.
+2. **Its joints move as the sources say** in Isaac Sim: each about its cited axis, through its
+   cited range, and holding where it is put.
+3. **Its control drives it:** a program or commands from the machine's own control, run in Isaac
+   Sim and measured against the plan the controller made.
+
+And the HA5C and the T33901 still build and are reused, and every phase keeps the tests passing.
+
+### How "accurately" is measured: the scorecard
+Proposed, for the weekly meetings to judge. A starting target is what the T33901 reached, or none
+where nothing has been measured yet. Several of these are metrics from Dr. Li's deck (methodology,
+"Evaluation").
+
+| Measure | How | Machines | Starting target |
+|---|---|---|---|
+| Sizes | Every cited dimension against the twin's (the size checks) | All | Within 6% (the T33901 reached -5.9% to +5.8%); over 10% flagged |
+| Match with the photos | Each fed photo against the twin's silhouette, placed by `photo_marks.fit_camera`, as IoU | All | None yet: the first builds set a baseline |
+| Shape against the maker's model | Distance from the generated mesh to the maker's mesh in the same pose: mean and 95th percentile, in mm | Arm, hand | None yet |
+| Parts and joints | Parts and joints in the twin against the sources' list (coverage, count accuracy) | All | Every moving part the sources name; each gap logged |
+| Joint axes and places | Each axis's direction (degrees) and position (mm) against the cited frames | Arm and hand; the mills' axes by direction | None yet |
+| Ranges | Each joint's range reached in Isaac Sim, from the joint recorder, against the cited range | All | Within 1° or 1 mm |
+| Control | The recorded motion against the controller's plan (`control compare`), and its time against the cited speeds | All | The T33901's stroke stayed within 0.63 mm of its plan |
+| Evidence | Quotes found on their cited pages (the quote checker); stand-ins and guesses logged | All | Every quote found |
+
+Comparing with the **real** machine's motion needs the real machine moving, which is the video
+trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited speeds.
+
+## Phase 0 - Plan
+- [x] Read the record: CLAUDE.md's "Current phase", the hand-off, the research note, the worklogs
+      of 2026-11-06 and 2026-11-09, and the drill-press report and plan
+- [x] Looked over the 29 photos, with crops of the trunnion, the hand and the arm's base
+- [x] Research: igus's documentation, the ROS model's versions, LinkerBot's models, the trunnion
+      and the TM-1 (the research note's second update)
+- [x] This plan, a worklog entry, PR; stop for Daniel's review
+- [ ] Daniel's answers to the questions at the end, recorded
+
+**Measured by:** Daniel's review.
+
+## Phase 1 - File the photos and sources, and close the tool gaps
+- [ ] Machine folders `data/machines/igus-rebel6dof02/` (the arm and its hand, one twin),
+      `haas-tm1/` and `haas-vf3/`, by decision 0009's key. The "GmbH" fix in `kb/keys.py`, with
+      a test.
+- [ ] Copy each photo into `inputs/photos/` unchanged, and check its SHA-256 against the
+      original. One `SOURCES.md` line each: what it shows, its view in the operator's words
+      (proposed, checked by Daniel), its use (generator or evidence), the date, the SHA-256 and
+      the licence note (Daniel's wording). No serial number, IP address or asset tag in any
+      committed file.
+- [ ] Remove `data/machine photos (temp)/` only on Daniel's word, once the copies check out.
+- [ ] File the cited documents, each with its `SOURCES.md` line: igus's documentation; the ROS
+      model at a fixed commit; LinkerBot's and Realhand's L20 models; Haas's pages as Daniel saves
+      them.
+- [ ] **A background spike:** run the generator's background removal on every photo planned for
+      the generator, and look at each mask. If they fail, Daniel chooses between a crop box per
+      photo in `request.json` (amending decision 0022; no install) and a segmenter (an install,
+      asked first).
+- [ ] **The tool gaps** (drill-press report, section 7.3):
+  - item 1: a tool that corrects a photo's view or use in a job, before the mesh is generated;
+  - item 5: `preview_twin` reports zero-area faces and non-manifold points per part, as the build
+    and NVIDIA's validator do;
+  - item 7: a tool that builds a run in a scratch copy of `data/` and runs both validators,
+    storing nothing;
+  - item 4: `fit_circles` within a box, since the arm's links lie at angles and a whole slice
+    would cut through several links.
+
+  Items 2 (correcting an issue) and 6 (the dashboard's one-folder upload) only if Daniel asks.
+- [ ] Decision record (the tools, amending 0028), worklog, PR.
+
+**Measured by:** the tests; every copied photo's SHA-256 matching its original; the masks looked
+at; the new tools used in Phase 2.
+
+## Phase 2 - The ReBeL arm: levels 1 and 2
+- [ ] Reference facts for `igus/rebel6dof02`, each quoted from igus's documentation or the URDF,
+      with the issue "version 02 not confirmed to match 00/01".
+- [ ] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
+      cited frames, the hand a box. Daniel checks in Isaac Sim that each joint turns through its
+      range, and that six driven joints hold a pose under gravity.
+- [ ] The views, the front and the zero pose, in a decision record.
+- [ ] Generate the mesh from the four sides, and look at it with `inspect_geometry`.
+- [ ] Cut it into seven parts and the hand by cited shapes (decision 0023), with the joint housings
+      measured by `fit_circles`. The hand stays one part on the flange in this phase (question
+      3). The cables fused into the mesh are logged.
+- [ ] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
+      straightest link]. Size checks on all the others.
+- [ ] Measure each joint's angle in the photographed pose; set the start pose and the limits.
+- [ ] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
+- [ ] The score: a small scorer for the measures above. The shape distance needs the ROS model's
+      `.dae` meshes read, which may need an install (asked first).
+- [ ] Decision records, worklog, `RUN.md`, PR.
+
+**Measured by:** the scorecard's sizes, photo match, shape, parts and joints, axes and ranges.
+
+## Phase 3 - The ReBeL arm: level 3
+- [ ] Research note: what an igus Robot Control (iRC) program holds (joint and linear moves,
+      speeds), and CRI, from igus's and Commonplace Robotics' documentation.
+- [ ] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
+      behaviour. Linear moves need inverse kinematics: left out unless a source makes them simple.
+- [ ] The lab's own program if it shares one (the best comparison, later, on video); otherwise a
+      short labelled test program.
+- [ ] Daniel's Isaac Sim check; `control compare` against the plan.
+- [ ] Decision record, worklog, PR.
+
+**Measured by:** each joint's recorded motion against the plan; the move times against 45°/s.
+
+## Phase 4 - The Haas TM-1: levels 1 and 2
+- [ ] Sources: Haas's pages saved by Daniel, and dealers' listings as second-hand, with their
+      disagreements named. Which part carries which axis is cited, not assumed. The control's
+      generation is read from the pendant's photos.
+- [ ] No box test: the drill press proved sliding joints and chains (decisions 0017-0019).
+- [ ] Generate from the four corners; the sign and stool at the back are logged where they show.
+- [ ] Parts: the frame, the axes' carriages, the head, the spindle and the tool carousel. Fixed:
+      the guards and the pendant. Stand-ins where the mesh gets a visible part wrong.
+- [ ] Level 2: each axis slides its cited travel, the spindle turns, the carousel indexes its
+      cited pockets.
+- [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+
+**Measured by:** the scorecard's sizes, photo match, parts and joints, and ranges.
+
+## Phase 5 - Mill programs, and the TM-1's level 3
+- [ ] Research note: Haas's G and M codes, from the mill manual's pages Daniel saves.
+- [ ] Decision record: a reader of the codes the programs use (moves, arcs, units, absolute and
+      incremental, spindle, tool change, end), written here with no library; a library only on
+      Daniel's approval.
+- [ ] `moonwalkers.control` learns it: a program becomes the axes' motion at cited rapid and feed
+      rates; accelerations are stand-ins unless cited.
+- [ ] A program from Haas's manual, and the lab's own if it shares one.
+- [ ] Daniel's Isaac Sim check; the tool tip's recorded path against the program's.
+- [ ] Worklog, PR.
+
+**Measured by:** the tool tip's distance from the programmed path, in mm; the time against the plan.
+
+## Phase 6 - The Haas VF-3 with its trunnion: levels 1 to 3
+- [ ] Sources as for the TM-1, and the trunnion's once its plate is read (visit list). Until then
+      the trunnion is a labelled stand-in, sized from the photos against the table's cited size.
+- [ ] The enclosure from the generator. The moving parts inside are stand-ins matched to the four
+      inside photos, since the enclosure hides them. A check file without the enclosure shows the
+      axes.
+- [ ] The trunnion's tilt and turn as two joints, with Haas's axis names cited.
+- [ ] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
+      program's tool change is logged, not simulated.
+- [ ] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
+- [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+
+**Measured by:** as Phases 4 and 5, with the trunnion's two axes.
+
+## Phase 7 - The hand: 21 joints and its commands
+- [ ] Decision record: the fingers' geometry, either labelled stand-ins sized from the maker's
+      model or the maker's meshes imported and labelled (question 4). The hand is scored against
+      the photos either way.
+- [ ] The 16 driven and 5 following joints, from the model that matches the lab's hand (visit
+      list), with `follows` (decision 0020): one articulation of 27 joints with the arm.
+- [ ] Research note: the SDK's commands (joint positions, preset poses) over CAN. LinkerBot's
+      Python SDK has no licence on GitHub, so it is read and cited, not copied.
+- [ ] A grasp: the hand closes and opens on the SDK's commands in Isaac Sim.
+- [ ] Daniel's check; worklog, PR.
+
+**Measured by:** the joint count against the cited 21 (5 following), the finger ranges reached,
+the commanded poses against the plan, and the hand's match with the photos.
+
+## Phase 8 - The agent builds one, and the report
+- [ ] The agent builds one lab machine from a dashboard job through the MCP tools, as in the drill
+      press's Phase 7. **Proposed: the TM-1,** which has no public model, so it is the hardest
+      test of photos to twin.
+- [ ] The plan's report: results per machine and level, the scorecard, the inaccuracies, the open
+      questions and the tool gaps; a new advisors' page in the drill-press page's design.
+- [ ] A hand-off for the video plan.
+
+**Measured by:** the scorecard for the agent's build, beside the chat's builds.
+
+### A planned visit to the lab
+Daniel: measuring "has to be planned in advance". Worth one visit, by priority:
+1. A close photo of the trunnion's plate (its model).
+2. The hand's label or box: maker, model, version, left or right.
+3. The arm's joint angles as its control software shows them, in the photographed pose, if the
+   lab will turn it on. They are the answer key for the zero pose.
+4. A tape measure on the arm: X1 to X4 and the foot, to compare version 02 with igus's drawing
+   of 00.
+5. Each mill's control version from its screen, and the VF-3's tool changer.
+6. The TM-1's sides square on, and the VF-3's back, without the sign in front.
+7. Whether the lab will share a program each machine really runs.
+
+### Sources for Daniel to save in a browser
+haascnc.com refuses scripts (403):
+- the TM-1's and the VF-3's specification pages, or archived sheets for 2006 and 2014;
+- the mill operator's manual for each machine's control, with its G and M code chapters;
+- the trunnion's page once its model is known, and how a Haas rotary is set up as a 4th and 5th
+  axis.
+
+For the arm: the igus manual on ManualsLib (https://www.manualslib.de/manual/949812/Igus-Rebel.html)
+and igus's product page (https://www.igus.de/product/21465), both search listings, not opened.
+
+### Decision records this plan needs
+Numbered when written, from the newest `main`: 0029 is the next free number on `main` today, and
+merging Sarkis's branch needs one too.
+
+| Title | Phase |
+|---|---|
+| The tools for the lab's builds (amends 0028) | 1 |
+| Crop boxes or masks for busy photos, if the spike needs one (amends 0022) | 1 |
+| A robot arm: its front, zero pose, and the public models' role | 2 |
+| An arm's joint programs | 3 |
+| Mill programs: a G-code reader | 5 |
+| The VF-3's trunnion axes | 6 |
+| The hand's geometry and joints | 7 |
+| The scorecard, once the meetings have judged it | 8 |
+
+### Not in this plan
+- Video input (its own plan, once the photo results are acceptable); Pipelines A, C and D (their
+  owners'); Neo4j, Celery and Codex.
+- Masses, a bonus (Dr. Lu, 2026-11-05). igus gives only the arm's total ("< 8" kg). Per-part
+  masses need a contract change, discussed with the pipeline owners first (decision 0024, update).
+- The other arms in the lab's photos.
+
+### Questions for Daniel
+1. **The licence note** for the photos you took in the lab. Proposed: "Photographed by Daniel
+   Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows
+   serial numbers, keep out of commits."
+2. **The machine folders:** `igus-rebel6dof02` (the arm and the hand, one twin), `haas-tm1` and
+   `haas-vf3`. And may the temp folder go once the copies check out?
+3. **The hand in the arm's first twin** (the hand-off's reading): the generator's fused shape as one
+   labelled part on the flange (recommended: it is what the photos give), or a labelled stand-in?
+   Its 21 joints come in Phase 7.
+4. **The fingers in Phase 7:** labelled stand-ins sized from the maker's model, or the maker's
+   meshes imported and labelled? Stand-ins keep the photos-to-twin path; the meshes are closer to
+   the real hand but are not generated. Perhaps a question for the advisors too.
+5. **The arm's front:** the side away from its base's connector panel?
+6. **The scorecard:** take it to the next weekly meeting as proposed?
+7. **The lab visit:** worth planning, and with which items?
+8. **The tool gaps:** items 1, 4, 5 and 7 in Phase 1. Items 2 and 6 as well?
+9. **Phase 8's agent build:** the TM-1, or another machine?
