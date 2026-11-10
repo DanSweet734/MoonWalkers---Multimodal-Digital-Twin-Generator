@@ -16,7 +16,7 @@ Daniel's word, and waits for his review in its pull request.
   - Daniel chose SAM for cutting the machine out, with crop boxes and drawn masks as options. The
     per-photo cut-out (decision 0029, accepted), its preview and `set_photo` (tool gap 1) are
     built;
-  - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, proposed). The MCP server has 28
+  - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, accepted). The MCP server has 28
     tools: `correct_issue`, and `fit_circles` with `within` and a direction; mesh warnings in
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
 - **Left:** Haas's pages, which Daniel saves; then Phase 2, the ReBeL arm, in a new chat.

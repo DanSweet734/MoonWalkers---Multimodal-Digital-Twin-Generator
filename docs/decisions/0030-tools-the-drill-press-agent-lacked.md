@@ -1,7 +1,7 @@
 # 0030 - The tools the drill press's agent lacked: correct, measure, check and try before storing
 
-- **Status:** proposed (by Claude Code in the lab's machines plan, Phase 1, 2026-11-09), for
-  Daniel's review with the phase's pull request.
+- **Status:** accepted (by Daniel, 2026-11-09: "Yes I accept decison 0030"). Proposed by
+  Claude Code in the lab's machines plan, Phase 1, with the phase's pull request (#28).
 - **Date:** 2026-11-09
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0028 (the MCP tools for a several-part spec). Decision 0029 covers tool gap

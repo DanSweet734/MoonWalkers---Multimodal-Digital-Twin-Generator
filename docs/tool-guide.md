@@ -4,8 +4,9 @@ Every tool the platform uses, by the name you will hear it called: what it is, w
 us, what goes in and what comes out. The diagrams of how they fit together are in
 [how-a-twin-is-built.md](how-a-twin-is-built.md).
 
-Written on 2026-11-02. Versions are from `backend/uv.lock`, `dashboard/package.json` and the setup
-guides named in each row.
+Written on 2026-11-02, updated on 2026-11-09 for the lab's machines plan, Phase 1 (decisions
+0029 and 0030). Versions are from `backend/uv.lock`, `dashboard/package.json` and the setup guides
+named in each row.
 
 **Contents**
 1. [Outside software](#outside-software)
@@ -22,10 +23,11 @@ guides named in each row.
 | **Hunyuan3D-2mv** and **Hunyuan3D-2** | Tencent's image-to-3D models | Turn the machine's photos into one 3D mesh. The multi-view model takes 2-4 photos with their views; the single-image model takes 1 | Photos, each in a slot (front, left, back, right) | `mesh.glb`, untextured, in its own axes and units | hy3dgen 2.0.2, commit f8db630, under the Tencent Hunyuan 3D 2.0 Community License; installed in `C:\mw-gen`, its own Python environment (`docs/setup/generators.md`) |
 | **PyTorch** | A machine-learning framework that runs models on the GPU | Runs the Hunyuan3D models on the RTX 4090 | Model weights, prepared photos | The mesh, through the generator | torch 2.8.0 for CUDA 12.6, with diffusers 0.35.2 and transformers 4.57.1, in the generator's environment (`docs/setup/generators.md`, "Installed versions") |
 | **Hugging Face Hub** (`hf`) | Hugging Face's model hosting and its download tool | Downloads the Hunyuan3D weights once, and checks their SHA-256 | A model name | The weight files in `C:\mw-gen\models\` | huggingface-hub 0.36.0 (`docs/setup/generators.md`) |
-| **rembg** | A background remover | Cuts the machine out of each photo before the generator sees it | A photo | The photo with its background removed | rembg 2.0.68, in the generator's environment (`docs/setup/generators.md`) |
+| **rembg** | A background remover | Cuts the machine out of each photo before the generator sees it: automatically (its default model, `u2net`), or with Meta's Segment Anything (SAM) from a box and points a person or the agent gives (decision 0029) | A photo, and its cut-out setting if any | The photo with its background removed | rembg 2.0.68, in the generator's environment; SAM is the quantised `sam_vit_b_01ec64`, Apache-2.0 (`docs/setup/generators.md`) |
+| **SciPy** | Scientific Python | Drops the small specks a cut-out leaves (`ndimage.label`), keeping the pieces of the machine | A cut-out's mask | The cleaned mask | scipy 1.16.3, in the generator's environment |
 | **OpenUSD** (usd-core, `pxr`) | Pixar's scene format, with its physics schema UsdPhysics | Writes and reads the twin: parts, joints, drives, limits and couplings that Isaac Sim simulates | Our parts and joints in SI units | `twin.usdc` and check files (binary `.usdc` or text `.usda`) | `usd-core` 26.8 (decision 0010) |
 | **NVIDIA Isaac Sim** (with PhysX) | NVIDIA's robotics simulator on Omniverse | Where a person checks that the twin moves and is controlled as the manual says | A `.usdc` file, plus our runner and recorder scripts | What the person sees, and recordings of every joint | Isaac Sim Full 6.2.0, Kit 110.4.0, build 386251 (`docs/setup/isaac-sim-check.md`) |
-| **NVIDIA Omniverse Asset Validator** | NVIDIA's checker for USD files | A second check of every twin file, besides ours | A `.usd` file | Errors and warnings, or "No issues found." | `omniverse-asset-validator` 1.18.0 (`omni_asset_validate`) |
+| **NVIDIA Omniverse Asset Validator** | NVIDIA's checker for USD files | A second check of every twin file, besides ours: by hand, and in every dry run through its Python API. `preview_twin`'s mesh warnings follow its definitions | A `.usd` file | Errors and warnings, or "No issues found." | `omniverse-asset-validator` 1.18.0 (`omni_asset_validate`), a development dependency |
 | **trimesh** and **NumPy** | Python mesh and maths libraries | Orient, measure, cut, patch and scale the generated mesh, and mesh the stand-ins | Meshes, cut shapes | Part meshes (GLB), measurements, PNG views | `trimesh` 5.1.1, `numpy` 2.5.4 |
 | **pypdf** | A PDF text reader | Reads manuals and checks that every quote is on its cited page | A PDF | Each page's text | `pypdf` 6.21.1 |
 | **pypdfium2** | A PDF renderer (Google's PDFium) | Renders manual pages and figures so they can be read, for example exploded views and speed charts | A PDF page | A PNG | `pypdfium2` 5.14.0 (installed on 2026-10-22) |
@@ -33,7 +35,7 @@ guides named in each row.
 | **FastAPI** and **uvicorn** | A Python web framework and server | The API behind the dashboard, on 127.0.0.1 only | HTTP requests | JSON, files, and the built dashboard | `fastapi` 0.146.0, `uvicorn` 0.54.0 (decision 0014) |
 | **React**, **Vite**, **TypeScript**, **Oxlint** | Web UI library, build tool, typed JavaScript, linter | The dashboard: upload photos, see jobs and twins with their sources, approve or reject a version | What a person clicks and uploads | Pages, and requests to the API | React 19.2, Vite 8.3, TypeScript 6.0, Oxlint 1.81 (decision 0007) |
 | **Node.js** and **npm** | JavaScript runtime and package manager | Install and build the dashboard, and run its tests | `package.json`, `package-lock.json` | `dashboard/dist/`, which the API serves | Node.js 24.20.0 with npm 11.19.0 (`docs/setup/windows-dev-setup.md`) |
-| **pytest** and **Ruff** | Python test runner and linter/formatter | Run 696 quick tests and keep the code consistent | The code | Pass or fail; lint findings | `pytest` 9.1.1, `ruff` 0.17.1 |
+| **pytest** and **Ruff** | Python test runner and linter/formatter | Run 737 quick tests (743 in all, 2026-11-09) and keep the code consistent | The code | Pass or fail; lint findings | `pytest` 9.1.1, `ruff` 0.17.1 |
 | **uv** | A Python package and environment manager | Installs the backend's exact versions from `uv.lock` | `pyproject.toml`, `uv.lock` | `backend/.venv` (Python 3.12.15) | uv 0.13.1 (`docs/setup/windows-dev-setup.md`) |
 | **Git**, **GitHub**, **GitHub CLI** | Version control, hosting, command line | Branches, pull requests and reviews of every phase | Commits | The repository's history and PRs | GitHub CLI 2.102.0 (`docs/setup/windows-dev-setup.md`) |
 
@@ -44,9 +46,9 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | Module | What it does | In | Out |
 |---|---|---|---|
 | `contracts` (`pipeline_result.py`, `json_schema.py`) | The contract every pipeline returns (`PipelineResult`, v0.2.0): sources, identity, facts, parts, joints, control behaviours and issues, all cited. `json_schema.py` writes it as a JSON Schema for the teammates | What a pipeline found | A checked result; `pipeline_result.schema.json` |
-| `workspace` | The data folder as the shared workspace of the agent and the dashboard: run folders are jobs, and their files say how far each has got | Uploads, run folders | Job lists, saved inputs, status |
+| `workspace` | The data folder as the shared workspace of the agent and the dashboard: run folders are jobs, and their files say how far each has got. An uploaded photo already filed in any folder under the machine's `inputs/photos/` is used where it is, not saved again; a photo's view, use and cut-out can be corrected until the mesh is generated | Uploads, run folders | Job lists, saved inputs, status |
 | `api` | The dashboard's API: jobs, twins, sources, reviews and files (decision 0014). `security.py` keeps it to this computer (it answers on 127.0.0.1 only and checks each request's host); `typescript.py` writes the dashboard's types from its schema, so they are never copied by hand | HTTP requests | JSON and files; `dashboard/src/api/types.gen.ts` |
-| `dashboard/` (React) | The web pages people use | Clicks, uploads | Jobs started, reviews recorded |
+| `dashboard/` (React) | The web pages people use. The upload form adds each pick of photos to the ones chosen, so they can come from several folders (`src/lib/picks.ts`) | Clicks, uploads | Jobs started, reviews recorded |
 | `mcp` (with `reports.py`) | The MCP server that gives Claude Code its 28 tools ([below](#the-agents-28-mcp-tools)); `reports.py` defines what each tool returns | Tool calls | Run folders, notes, specs, builds |
 | `orchestrator` (with `router.py`, `photos.py`) | Sends each input to its pipeline, then reuses a stored twin or stores a new version and has it exported. It is the only writer to the knowledge base | A job's request | A twin version, or the reused one |
 | `kb` (`json_store.py`, `keys.py`, `reviews.py`) | The knowledge base: one JSON file per record, behind an interface Neo4j can replace (decisions 0005, 0008). `keys.py` turns a maker and model into one key, aliases included; `reviews.py` keeps people's approvals and rejections as append-only records (decision 0015) | Results, twin versions, reviews | The same, by machine key (`grizzly/t33901`) |
@@ -57,7 +59,7 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 |---|---|---|---|
 | `photos.py` | Picks which photos feed the generator, in which slot, from their views (decision 0022) | The run's photos and views | Generator slots |
 | `generators/` (`hunyuan3d.py`, `subprocess_job.py`, `scripts/hunyuan3d_shape_job.py`) | Runs the image-to-3D model in its own environment: a JSON job goes in to the generator's Python, a JSON result comes back, so its libraries never mix with ours. It first turns each photo upright and cuts the machine out (automatically, or by the photo's SAM box, crop box or drawn mask; decision 0029) | Photos, with any cut-outs | `generator/mesh.glb` and a record of versions |
-| `inspection.py`, `mesh_tools.py` | Orient the mesh and measure it: extents, round parts, PNG views | `mesh.glb`, up/front axes | Measurements and views |
+| `inspection.py`, `mesh_tools.py` | Orient the mesh and measure it: extents, round parts, PNG views. Circle fits slice across an axis or any direction, optionally within a box. `mesh_faults` finds, per part, what NVIDIA's validator would warn about (zero-area faces, edges with more than two faces, non-manifold points, winding) | `mesh.glb`, up/front axes | Measurements, views and mesh warnings |
 | `parts_spec.py` | The geometry spec of several parts: frame, cuts, parts, stand-ins, joints, scale, size checks, all cited (decisions 0023, 0027) | `geometry_spec.json` | A checked spec |
 | `part_cuts.py` | Cuts the mesh into parts by the spec's ordered list of shapes | Mesh, cut list | One mesh per part |
 | `stand_ins.py` | Builds labelled stand-in shapes where the mesh hides or gets a part wrong (a table with T-slots, a chuck, handles) | Cited sizes | Stand-in meshes |
@@ -65,6 +67,7 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | `assemble.py`, `pipeline.py` | Put it together: scale by a cited length, check sizes, cite every part and joint | Mesh, spec, reference facts | A `PipelineResult` |
 | `quotes.py` | Checks every quote in a reference file against its cited PDF page | Reference and spec files | Found, elsewhere or not found, per quote |
 | `build.py`, `cli.py` | Build a run folder through the orchestrator, with its check files, programs and `RUN.md` | A run folder | A stored twin version and its files |
+| `dry_run.py` | Builds a run in a new scratch copy of the data folder, holding only what the build reads, then runs both validators on every file; nothing is stored for real | A run folder | A scratch build in `data/scratch/<date>_dry-run-<NNN>/`, and each file's findings |
 | `part_spike.py`, `mesh_segments.py`, `synthetic_parts.py` | Phase 4's comparison of four ways to cut a mesh into parts, scored on a synthetic drill press whose right answer is known face by face (decision 0023) | A mesh, or the synthetic one | Scores and views (`docs/research/2026-10-24-part-cutting-spike.md`) |
 
 ### Export and validation (`usd/`)
@@ -121,6 +124,11 @@ job. Read-only tools change nothing.
 | 27 | `dry_run_twin` | Try the build without storing anything (the lab's plan, tool gap 7) | Run | The build's message, and our and NVIDIA's validators' findings on every file, from a scratch copy of the data folder |
 | 28 | `submit_twin` | Build and store the twin, or reuse it | Run | The twin version, its files, and the validators' findings |
 
+**Not yet used in an agent's build** (2026-11-09): `set_photo`, `preview_cutouts`,
+`correct_issue`, `dry_run_twin`, `fit_circles`'s box and direction, and `preview_twin`'s mesh
+warnings. Their tests pass, and `dry_run_twin`'s steps dry-ran v11 clean. The ReBeL arm (the lab's
+plan, Phase 2) is their first use, and its report will say how they did.
+
 ## Commands people run
 From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
 
@@ -128,7 +136,7 @@ From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
 |---|---|---|---|
 | `moonwalkers.pipelines.b build` | Build a run folder | Run folder, reference facts | A twin version and its files |
 | `moonwalkers.pipelines.b cutouts` | Cut the machine out of each fed photo as the generator will, without generating (decision 0029) | Run folder | `cutouts/sheet.png` and the cut-outs |
-| `moonwalkers.pipelines.b inspect` | Inspect a mesh or try a spec | Run folder | Measurements, PNGs |
+| `moonwalkers.pipelines.b inspect` | Inspect a mesh or try a spec. `--circles-along x\|y\|z` or `DX,DY,DZ` with `--at` fits circles; `--within AXIS LO HI` keeps only the surface in a box | Run folder | Measurements, PNGs |
 | `moonwalkers.pipelines.b dry-run` | Build a run in a scratch copy of the data folder and run both validators | Run folder, reference facts | A scratch build and every file's findings; exit 1 unless clean |
 | `moonwalkers.pipelines.b.quotes` | Check quotes against their PDF pages | Reference and spec files | Found or not, per quote |
 | `moonwalkers.usd.validate` | Our validator | A `.usd` file | Findings |
