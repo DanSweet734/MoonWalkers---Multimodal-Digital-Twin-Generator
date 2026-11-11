@@ -710,17 +710,28 @@ at; the new tools used in Phase 2.
 - **Tests:** `pytest -m "not gpu and not slow"`: 799 passed in about 4.3 min.
 
 ### Phase 4's checklist
-- [ ] Sources: Haas's pages saved by Daniel, and dealers' listings as second-hand, with their
+- [x] Sources: Haas's pages saved by Daniel, and dealers' listings as second-hand, with their
       disagreements named. One is known (2026-11-09): the TM-1's Y travel, 12 in on Haas's 2018
       Toolroom sheet and the listings of 2006-07 units, 16 in on today's page (`SOURCES.md`). Which part carries which axis is cited, not assumed. The control's
       generation is read from the pendant's photos.
-- [ ] No box test: the drill press proved sliding joints and chains (decisions 0017-0019).
-- [ ] Generate from the four corners; the sign and stool at the back are logged where they show.
-- [ ] Parts: the frame, the axes' carriages, the head, the spindle and the tool carousel. Fixed:
+      Done 2026-11-11: [the research note](research/2026-11-11-haas-tm1-sources.md); 12 in of Y,
+      from Haas's 2002 addendum; the Classic control [INFERENCE].
+- [x] No box test: the drill press proved sliding joints and chains (decisions 0017-0019).
+- [x] Generate from the four corners; the sign and stool at the back are logged where they show.
+      Done from **three** corners (2026-11-11): the four-corner trial put the pendant at the
+      back, pulled by the back right photo, which the sign and the stool hide below 60%; the
+      three-corner mesh follows the photos. Logged in the twin and the
+      [worklog](worklog/2026-11-11.md).
+- [x] Parts: the frame, the axes' carriages, the head, the spindle and the tool carousel. Fixed:
       the guards and the pendant. Stand-ins where the mesh gets a visible part wrong.
+      Done: the head cut from the mesh; the saddle, the table with its chip guard, the spindle
+      nose and the 10-pocket carousel are stand-ins (`haas/tm1@v2`, run `2026-11-11_run-002`).
 - [ ] Level 2: each axis slides its cited travel, the spindle turns, the carousel indexes its
-      cited pockets.
+      cited pockets. Built: `checks/slide.usdc` (new, a tool gap), `checks/spin.usdc`, and the
+      carousel by its drive's target; waits for Daniel's check.
 - [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+      Dry runs, validators and builds done (v1, v2); the check waits
+      ([isaac-sim-check.md](setup/isaac-sim-check.md), section 11).
 
 **Measured by:** the scorecard's sizes, photo match, parts and joints, and ranges.
 
