@@ -15,6 +15,7 @@ check of level 3 (methodology, "Evaluation"):
 from __future__ import annotations
 
 import csv
+import itertools
 import math
 import statistics
 from bisect import bisect_left
@@ -25,6 +26,8 @@ from typing import Any
 
 HOME_TOLERANCE_M = 0.001  # within 1 mm of the rest position counts as home
 STOP_TOLERANCE_M = 0.0005  # within 0.5 mm of the stop counts as at the stop
+ARM_KIND = "irc_joint_program"  # an arm's trajectory.json (decision 0033)
+ARRIVE_DEG = 0.5  # within half a degree of a move's target counts as arrived
 
 
 @dataclass(frozen=True)
@@ -48,7 +51,10 @@ def read_recording(path: Path) -> dict[str, list[float]]:
 
 
 def compare(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any]) -> list[Measure]:
-    """The measures of ``recording`` against ``plan`` (a trajectory JSON, loaded)."""
+    """The measures of ``recording`` against ``plan`` (a trajectory JSON, loaded): an arm's iRC
+    program (decision 0033), else a manual machine's scenario (decision 0025)."""
+    if plan.get("kind") == ARM_KIND:
+        return compare_arm(recording, plan)
     times = list(recording["time_s"])
     quill = plan["quill"]
     spindle = plan["spindle"]
@@ -154,6 +160,86 @@ def _spindle_measures(
         )
         out.append(
             Measure("spindle below 1% after the stop", _s(_minus(stopped, off)), "coast-down")
+        )
+    return out
+
+
+def compare_arm(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any]) -> list[Measure]:
+    """An arm's iRC program (decision 0033): each joint against its planned angle over time, its
+    top speed against the cited one, where it ended, and when each move's joints all arrived."""
+    times = list(recording["time_s"])
+    plan_t = list(plan["times"])
+    end = plan["duration_s"]
+    out: list[Measure] = []
+    arrived: dict[str, list[float]] = {}
+    for joint in plan["joints"]:
+        joint_id = joint["joint_id"]
+        rad = _column(recording, f"{joint_id} (rad)")
+        if rad is None:
+            out.append(Measure(f"{joint_id}", "not recorded", "a column '<joint> (rad)'"))
+            continue
+        deg = [math.degrees(v) for v in rad]
+        arrived[joint_id] = deg
+        planned = list(zip(plan_t, plan["twin_deg"][joint_id], strict=True))
+        during = [(t, v) for t, v in zip(times, deg, strict=True) if t <= end]
+        worst = max(((abs(v - _at(planned, t)), t) for t, v in during), default=(0.0, 0.0))
+        out.append(
+            Measure(
+                f"{joint_id}: largest distance from the plan",
+                f"{worst[0]:.2f} deg (at {worst[1]:.2f} s)",
+                "0",
+            )
+        )
+        after = [v for t, v in zip(times, deg, strict=True) if t >= end]
+        final = planned[-1][1]
+        out.append(
+            Measure(
+                f"{joint_id}: where it ended",
+                "not recorded (the recording stops before the plan ends)"
+                if not after
+                else f"{statistics.median(after):.2f} deg",
+                f"{final:.2f} deg",
+            )
+        )
+        speed = _column(recording, f"{joint_id} (rad/s)")
+        if speed is not None:
+            peak = max((abs(math.degrees(v)) for v in speed), default=0.0)
+            pieces = itertools.pairwise(planned)
+            top = max(
+                (abs(b - a) / (t1 - t0) for (t0, a), (t1, b) in pieces if t1 > t0), default=0.0
+            )
+            out.append(
+                Measure(
+                    f"{joint_id}: top speed",
+                    f"{peak:.2f} deg/s",
+                    f"{top:.2f} deg/s (cited top speed {joint['top_speed_deg_s']:g})",
+                )
+            )
+    for event in plan["events"]:
+        if event["command"] != "Joint" or event["end_s"] <= event["start_s"]:
+            continue
+        targets = [
+            v - p for v, p in zip(event["to_deg"], plan["pose_deg"], strict=True)
+        ]  # the twin's angles
+        ids = [j for j in plan["joint_ids"] if j in arrived]
+        if not ids:
+            break
+        index = {j: i for i, j in enumerate(plan["joint_ids"])}
+        at = next(
+            (
+                t
+                for k, t in enumerate(times)
+                if t >= event["start_s"]
+                and all(abs(arrived[j][k] - targets[index[j]]) <= ARRIVE_DEG for j in ids)
+            ),
+            None,
+        )
+        out.append(
+            Measure(
+                f"move Nr {event['nr']}: all joints within {ARRIVE_DEG:g} deg of its target",
+                _s(at),
+                _s(event["end_s"]),
+            )
         )
     return out
 

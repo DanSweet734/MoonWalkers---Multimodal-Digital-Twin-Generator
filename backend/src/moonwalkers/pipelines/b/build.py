@@ -356,11 +356,13 @@ def build_run(
             for program in programs:  # level 3: the program drives the joint (decision 0016)
                 folder = run_dir / PROGRAMS_DIR / program.name
                 written.append(folder)
-                write_program_folder(folder, program, twin, results, data_dir)
+                write_program_folder(  # holding and colliding as the twin does (0032, 0033)
+                    folder, program, twin, results, data_dir, hold=hold, collide_unjoined=collide
+                )
             for control in controls:  # level 3 for a manual machine (decision 0025)
                 folder = run_dir / PROGRAMS_DIR / control.name
                 written.append(folder)
-                write_controls_folder(folder, control, twin, results, data_dir)
+                write_controls_folder(folder, control, twin, results, data_dir, hold, collide)
         except BaseException:  # nothing is stored, so leave no files that claim otherwise
             for item in written:
                 shutil.rmtree(item) if item.is_dir() else item.unlink(missing_ok=True)

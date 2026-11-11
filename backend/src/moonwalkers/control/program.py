@@ -167,6 +167,17 @@ def runnable_behaviors(control: Sequence[ControlBehavior]) -> list[ControlBehavi
     return [b for b in control if b.kind == "program_interpreter" and PROGRAM_KEY in b.spec]
 
 
+def check_program(behavior: ControlBehavior) -> None:
+    """Refuse a program that cannot be run: an iRC program for an arm (decision 0033) when its
+    ``spec["program"]`` says ``"format": "irc_xml"``, else the HA5C's step table."""
+    from .irc import IrcProgram, is_irc  # irc imports this module
+
+    if is_irc(behavior):
+        IrcProgram.from_behavior(behavior)
+    else:
+        IndexProgram.from_behavior(behavior)
+
+
 class ProgramFile(BaseModel):
     """A program kept as a file: the behaviour that holds it and the sources it cites."""
 
@@ -182,8 +193,15 @@ class ProgramFile(BaseModel):
         unknown = sorted({c.source_id for c in self.behavior.citations} - known)
         if unknown:
             raise ValueError(f"the behaviour cites unknown sources: {unknown}")
-        self.program()  # refuses a program that cannot be run
+        check_program(self.behavior)  # refuses a program that cannot be run
         return self
+
+    @property
+    def is_irc(self) -> bool:
+        """An iRC program for an arm (decision 0033), not an HA5C step table."""
+        from .irc import is_irc
+
+        return is_irc(self.behavior)
 
     def program(self) -> IndexProgram:
         return IndexProgram.from_behavior(self.behavior)

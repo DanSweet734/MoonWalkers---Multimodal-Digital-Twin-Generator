@@ -40,7 +40,9 @@ from moonwalkers.usd.exporter import (
 )
 from moonwalkers.usd.validate import validate_file
 
+from .arm_export import write_arm_program_folder
 from .interpreter import RunSettings, Trajectory, run_program
+from .irc import ArmSettings, ArmTrajectory
 from .isaac_runner import (
     ANGLES,
     CYCLE_START,
@@ -63,9 +65,9 @@ RUNNER = Path(__file__).with_name("isaac_runner.py")
 @dataclass(frozen=True)
 class ProgramOutput:
     folder: Path
-    joint_id: str
-    trajectory: Trajectory
-    settings: RunSettings
+    joint_id: str  # for an arm's iRC program: its joints, comma-separated
+    trajectory: Trajectory | ArmTrajectory
+    settings: RunSettings | ArmSettings
 
 
 def write_program_folder(
@@ -75,9 +77,21 @@ def write_program_folder(
     results: Sequence[PipelineResult],
     data_dir: Path,
     settings: RunSettings | None = None,
+    *,
+    arm_settings: ArmSettings | None = None,
+    hold: DriveSettings | None = None,
+    collide_unjoined: bool = False,
 ) -> ProgramOutput:
-    """Run ``program`` on ``twin``'s driven joint and write the folder ``out_dir``."""
+    """Run ``program`` on ``twin``'s driven joint and write the folder ``out_dir``. An iRC
+    program for an arm (decision 0033) goes to ``write_arm_program_folder`` with
+    ``arm_settings``. ``hold`` is the twin's own drive (decision 0032: its stiffness and damping;
+    the target is the program's start), and ``collide_unjoined`` its collisions."""
     out_dir = Path(out_dir)
+    if program.is_irc:
+        folder, _, arm_trajectory, used = write_arm_program_folder(
+            out_dir, program, twin, results, data_dir, arm_settings, hold, collide_unjoined
+        )
+        return ProgramOutput(folder, ", ".join(arm_trajectory.joint_ids), arm_trajectory, used)
     if out_dir.exists():
         raise ExportError(f"{out_dir} exists; program folders are never overwritten")
     joint = driven_joint(program, results)
@@ -86,10 +100,16 @@ def write_program_folder(
         settings = settings.model_copy(update={"joint_max_deg_s": math.degrees(joint.max_velocity)})
     trajectory = run_program(program.program(), settings)
 
-    hold = DriveSettings.hold(math.radians(settings.start_deg))
-    stage = build_stage(twin, results, hold, data_dir)
+    start = math.radians(settings.start_deg)
+    if hold is None:
+        drive = DriveSettings.hold(start)
+    else:
+        drive = DriveSettings(
+            mode="position", target=start, stiffness=hold.stiffness, damping=hold.damping
+        )
+    stage = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
     _add_program(_joint_prim(stage, joint.joint_id), program, trajectory, settings)
-    native = build_stage(twin, results, hold, data_dir)
+    native = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
     _add_native(_joint_prim(native, joint.joint_id), trajectory)
 
     tmp = out_dir.with_name(f".{out_dir.name}.tmp")

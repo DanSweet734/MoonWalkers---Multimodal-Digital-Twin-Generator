@@ -24,8 +24,11 @@ def test_the_manual_examples_ship_with_their_citations() -> None:
         "ha5c-manual-example-5",
         "ha5c-manual-example-5-subroutine",
         "ha5c-manual-example-6",
+        "rebel-test-joint-moves",  # an arm's iRC program (decision 0033), tested on its own
     ]
-    for path in programs.values():
+    for name, path in programs.items():
+        if not name.startswith("ha5c-"):
+            continue
         program = ProgramFile.load(path)
         assert program.behavior.kind == "program_interpreter"
         assert program.behavior.drives_joints == ["spindle_rotation"]

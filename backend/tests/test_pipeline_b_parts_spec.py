@@ -14,6 +14,7 @@ import trimesh
 from pydantic import ValidationError
 
 from moonwalkers.contracts.pipeline_result import Citation, Fact, Joint, MachineIdentity, Source
+from moonwalkers.control import ProgramFile, packaged_programs
 from moonwalkers.orchestrator import JobRequest
 from moonwalkers.pipelines.b import build
 from moonwalkers.pipelines.b.mesh_tools import load_mesh
@@ -418,12 +419,21 @@ def test_a_specs_hold_drive_and_self_collision_check_reach_the_twin_and_its_chec
     spec_run(hold_drive=hold, self_collision="check")
     request = JobRequest(job_id="job-1", sources=[photo_run.photo])
     (run_dir / "request.json").write_text(request.model_dump_json(), encoding="utf-8")
+    program = ProgramFile.load(packaged_programs()["ha5c-manual-example-3"])
+    reference = reference_facts()
+    reference = reference.model_copy(
+        update={"sources": [*reference.sources, *program.sources], "control": [program.behavior]}
+    )
     outcome = build.build_run(
-        run_dir, photo_run.data_dir, run_dir / "request.json", reference_facts(), None,
+        run_dir, photo_run.data_dir, run_dir / "request.json", reference, None,
         drill_press_generator, kb,
     )  # fmt: skip
     checks = {p.name: p for p in outcome.check_files}
     assert drive_gains(outcome.twin_file, "spindle_rotation") == (10000.0, 200.0)
+    # a program folder holds and collides as the twin does (decision 0033)
+    program_usd = run_dir / "programs" / "index-program" / "program.usdc"
+    assert drive_gains(program_usd, "spindle_rotation") == (10000.0, 200.0)
+    assert filtered_pairs(program_usd) == filtered_pairs(outcome.twin_file)
     assert drive_gains(checks["unlocked.usdc"], "spindle_rotation") == (10000.0, 200.0)
     assert drive_gains(checks["spin.usdc"], "spindle_rotation") == (0.0, 20.0)  # its own drive
     # "check": the twin keeps decision 0017's filter; one more file lets unjoined parts collide
