@@ -6,9 +6,11 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 2, the ReBeL arm, in review (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 2", whose hand-off comes first. Phase 2 runs on
-branch `feat/lab-phase-2-rebel-arm`, from `main` after PR #28; its first commit is the hand-off.
+## Current phase: the lab's machines plan, Phase 3, the ReBeL arm's control logic (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 3", whose hand-off comes first. Phase 3 runs on
+branch `feat/lab-phase-3-rebel-arm-control`, from `main` after PR #29; its first commit is the
+hand-off. Phase 3 brings the arm to level 3: a program of joint moves at no more than the cited
+45 deg/s, driving `igus/rebel6dof02@v3`.
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
 **Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
 - **Done in Phase 1:**
@@ -21,7 +23,7 @@ The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
   - Haas's sources are filed: the mill manuals and the Toolroom sheet fetched (its PDFs answer
     scripts), its three web pages saved by Daniel.
-- **Phase 2 is built and in review** (branch `feat/lab-phase-2-rebel-arm`, its PR open):
+- **Phase 2 is done** (PR #29, merged on 2026-11-10 on Daniel's word; branch `feat/lab-phase-2-rebel-arm`):
   - `igus/rebel6dof02@v1` (run `2026-11-09_run-001`): seven parts on six joints, posed as
     photographed; position 0 is that pose and igus's limits are shifted by each joint's angle
     in it (decision 0031, accepted 2026-11-10). Reference facts: `pipelines/b/igus_rebel6dof02.reference.json`.

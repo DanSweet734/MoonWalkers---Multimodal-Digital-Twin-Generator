@@ -581,6 +581,56 @@ at; the new tools used in Phase 2.
 **Measured by:** the scorecard's sizes, photo match, shape, parts and joints, axes and ranges.
 
 ## Phase 3 - The ReBeL arm: level 3
+
+### Hand-off (2026-11-10, from the plan's Phase 2 chat)
+- **Where you start:** from `main` after PR #29 (merge commit `3f78fbf`, 2026-11-11T02:21Z), on
+  branch `feat/lab-phase-3-rebel-arm-control`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-2-rebel-arm` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request.
+- **Read first:**
+  - CLAUDE.md "Current phase";
+  - this phase's checklist, and Phase 2's above it;
+  - decisions [0031](decisions/0031-the-arms-views-front-and-zero-pose.md) (the zero pose and the
+    shifted limits) and [0032](decisions/0032-an-arms-hold-its-loose-pieces-and-self-collision.md)
+    (the hold, the loose pieces, self-collision), both accepted on 2026-11-10;
+  - decisions 0016, 0025 and 0026 for how control behaviours, programs and the Isaac Sim
+    controller already work (the HA5C's program interpreter, the T33901's controls);
+  - [the worklog of 2026-11-10](worklog/2026-11-10.md), by its headings.
+
+#### What Phase 2 left for this phase
+- **The twin to drive: `igus/rebel6dof02@v3`** (run `2026-11-10_run-002`; needs review in the
+  dashboard, which is Daniel's to do). Daniel's check (2026-11-10): "Overall I think it's in a
+  good spot". It holds within 0.043 degrees (recording `recordings/twin_2026-11-10_180451.csv`).
+  Reference facts: `backend/src/moonwalkers/pipelines/b/igus_rebel6dof02.reference.json`; the
+  cited speeds are `max_joint_speed` (45 deg/s) and `max_linear_speed` (200 mm/s).
+- **Angles: the twin's 0 is the photographed pose, not igus's zero** (decision 0031). An angle in
+  igus's terms (an iRC program, igus's documentation) becomes the twin's by subtracting the pose:
+  joint 2 -21.81, joint 3 +118.82, joint 5 +10.46; joints 1, 4 and 6 are taken as 0 (not
+  confirmed: the lab's control software would settle them). So igus's joint 3 range, -80 to
+  +140, is the twin's -198.82 to +21.18. A program must convert, and say so.
+- **Two things the control exports do not carry yet** [INFERENCE from the code, not tried]:
+  - **the hold:** `control/export.py` and `control/controls_export.py` build their stages with
+    `DriveSettings.hold`, the exporter's default (stiffness 100, damping 20), not the twin's
+    `hold_drive` (10000/200, decision 0032, "Consequences"). An arm's program sags 1.1 to 1.5
+    degrees under the default (the box arm's recordings);
+  - **self-collision:** they call `build_stage` without `collide_unjoined`, so the program's
+    stage would let parts pass through each other, unlike the twin (`self_collision` "on").
+- **Moves can jam:** in v3's `checks/spin.usdc` (all six joints at once, 30 deg/s) parts meeting
+  stop joint 2 at +78.9 degrees and push joint 3 back from its +21.18 limit
+  (`checks/recordings/spin_2026-11-10_180709.csv`). A test program should keep clear of such
+  poses, and a stop where the plan expects motion is a collision, not a drive fault.
+- **Measuring:** the joint recorder (`record_joints.py` in each run) writes `time_s`, each
+  joint's position (rad) and velocity (rad/s); `control compare <recording.csv>
+  <folder>/trajectory_<scenario>.json` measures it against a plan. The scorer
+  (`pipelines.b.score ... --recording <csv>`) reads ranges from recordings.
+- **Left for later, logged** (Daniel, 2026-11-10: "these can be ironed out later if requested"):
+  a wire or two still attached (a stub on joint 2's housing, a knot on link 1's dome), and gaps
+  on the backs of the joints, likely the cut list's open seams [INFERENCE]. Still open from PR
+  #29: whether version 02 matches igus's 00/01 models.
+- **Rules that still hold:** the connector panel photo (`133326`) shows the arm's IP address, and
+  the nameplates show serial numbers: keep both out of commits.
+
+### Phase 3's checklist
 - [ ] Research note: what an igus Robot Control (iRC) program holds (joint and linear moves,
       speeds), and CRI, from igus's and Commonplace Robotics' documentation.
 - [ ] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
