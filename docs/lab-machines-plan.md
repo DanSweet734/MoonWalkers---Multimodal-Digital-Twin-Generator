@@ -534,6 +534,12 @@ at; the new tools used in Phase 2.
 #### Waiting, beside this phase
 - **The weekly meeting of Thursday 2026-11-12:**
   - the scorecard goes to it "if possible" (Decided on review, 6);
+  - **ask the lab for the ReBeL arm's own iRC program** (Daniel, 2026-11-10: "I'll ask at the
+    meeting this week"): the `.xml` file iRC saves, or a screenshot of its program list. With
+    it, decision 0033 is revisited (Daniel accepted it "as is until we know if we get the
+    program from the lab") and the program runs on the twin in place of the test program.
+    Also wanted, if they can: the arm's angles shown in iRC in the photographed pose (joints 1,
+    4 and 6 are taken as 0, decision 0031);
   - afterwards, ask Daniel for the advisors' answers and record them the same day.
 - **Question 9,** which machine the agent builds in Phase 8, is still open.
 - **The items "Carried over, none blocking"** in the first hand-off still stand.
@@ -640,16 +646,23 @@ at; the new tools used in Phase 2.
 - [x] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
       behaviour. Linear moves need inverse kinematics: left out unless a source makes them simple.
       None does, so they are refused with the reason. Decision
-      [0033](decisions/0033-an-arms-joint-programs.md) (proposed): `control/irc.py` reads iRC's
+      [0033](decisions/0033-an-arms-joint-programs.md) (accepted 2026-11-10): `control/irc.py` reads iRC's
       own XML and plans synchronised moves from the twin's photographed pose;
       `control/arm_export.py` writes the folder, which holds and collides as the twin does.
 - [x] The lab's own program if it shares one (the best comparison, later, on video); otherwise a
       short labelled test program. None shared, so `rebel-test-joint-moves` (16 moves, 24.36 s),
       written to `data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`.
-      Asking the lab for theirs stays on the visit list (item 7).
-- [ ] Daniel's Isaac Sim check (`docs/setup/isaac-sim-check.md`, section 10); `control compare`
-      against the plan.
-- [ ] Decision record, worklog, PR.
+      Asking the lab for theirs stays on the visit list (item 7), and Daniel asks at the weekly
+      meeting of 2026-11-12 (Phase 2's "Waiting, beside this phase").
+- [x] Daniel's Isaac Sim check (`docs/setup/isaac-sim-check.md`, section 10); `control compare`
+      against the plan. **Level 3 (2026-11-10).** `program.usdc` with the runner: every joint
+      within 0.29° of the plan, top speed 45.00°/s on each, every move arrived 0.07-0.09 s
+      before its planned end (counted at 0.5°, inside the deceleration), ended within 0.02° of
+      the photographed pose; "no collisions". `program_native.usdc`: the same moves, trailing
+      by 0.83-1.01°. Logged: "some motions cause certain parts of the mesh to move where it
+      shouldn't have" (v3's cut list [INFERENCE]; which motions is asked of Daniel).
+- [x] Decision record (0033, accepted by Daniel on 2026-11-10 "as is until we know if we get
+      the program from the lab"), worklog, PR.
 
 **Measured by:** each joint's recorded motion against the plan; the move times against 45°/s.
 

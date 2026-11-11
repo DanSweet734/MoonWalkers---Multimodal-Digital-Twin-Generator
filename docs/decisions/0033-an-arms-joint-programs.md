@@ -1,7 +1,9 @@
 # 0033 - An arm's joint programs: iRC's own XML, run as synchronised joint moves
 
-- **Status:** proposed (the lab's machines plan, Phase 3), for Daniel's review with the phase's
-  pull request.
+- **Status:** accepted by Daniel on 2026-11-10 (the lab's machines plan, Phase 3): "I've looked
+  over the parts of decision 0033 and all seem good for now. I'll accept it as is until we know
+  if we get the program from the lab." He asks the lab for its program at the weekly meeting of
+  2026-11-12; if one comes, this decision is revisited against it.
 - **Date:** 2026-11-10
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0016 and 0026 (programs, the runner), 0031 (the arm's zero pose), 0032
@@ -114,3 +116,28 @@ shared no program.
 - **Reversing it:** `moonwalkers.control` dispatches on `"format": "irc_xml"`; removing `irc.py`
   and `arm_export.py` leaves decision 0016's programs as they were. The hold and collisions are
   two optional arguments.
+
+## Isaac Sim check (Daniel, 2026-11-10)
+Isaac Sim 6.2.0; folder `data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`
+(record in its `PROGRAM.md`; `docs/setup/isaac-sim-check.md`, section 10). Measured by `control
+compare` against `trajectory.json`:
+
+| | `program.usdc` with the runner (191.5 s recorded) | `program_native.usdc`, no script (53.5 s) |
+|---|---|---|
+| Largest distance from the plan, per joint | 0.02-0.29° | 0.83-1.01° (trailing) |
+| Top speed, per joint (cited 45 °/s) | 45.00 °/s | 42.25-45.00 °/s |
+| Every move's joints within 0.5° of target | 0.07-0.09 s before the planned end | the same |
+| Where it ended | within 0.02° of the photographed pose | the same |
+
+- The native file trails by about the hold drive's damping over its stiffness times the speed,
+  200 / 10000 s x 45 °/s = 0.9° [INFERENCE: a drive with a target and no target velocity].
+- Arrivals counted at 0.5° fall inside each move's deceleration, so they come before the planned
+  end; they are the same for every move, so the joints of a move do arrive together.
+- After the program the arm held within 0.02° (joints 1-6: 0.000, 0.010, 0.019, -0.009, 0.015,
+  -0.009°).
+- Daniel: "program.usdc had no collisions, some motions cause certain parts of the mesh to move
+  where it shouldn't have but other than that it looked great". The second is v3's, not the
+  program's: likely faces given to the wrong part by its cut list [INFERENCE], logged in v3's
+  `RUN.md`; which motions and parts is asked of him.
+- **Level 3 for the arm,** with the test program; the lab's own program is the better test once
+  shared.

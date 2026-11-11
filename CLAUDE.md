@@ -12,13 +12,19 @@ branch `feat/lab-phase-3-rebel-arm-control`, from `main` after PR #29; its first
 hand-off. Phase 3 brings the arm to level 3: a program of joint moves at no more than the cited
 45 deg/s, driving `igus/rebel6dof02@v3`.
 **Phase 3 so far (2026-11-10):** the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
-decision 0033 (proposed): iRC's own XML, read by `control/irc.py` and planned as synchronised
+decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from
+the lab"): iRC's own XML, read by `control/irc.py` and planned as synchronised
 joint moves from the twin's photographed pose, written by `control/arm_export.py`; program and
 controls folders now hold and collide as their twin does. The lab shared no program, so a
 labelled test program, `rebel-test-joint-moves`, is in
-`data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`. **Waiting for
-Daniel's Isaac Sim check** (`docs/setup/isaac-sim-check.md`, section 10), then `control compare`
-and the PR.
+`data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`. **Level 3 met**
+(Daniel's Isaac Sim check, 2026-11-10): joints within 0.29° of the plan at 45.00°/s, no
+collisions; logged: "some motions cause certain parts of the mesh to move where it shouldn't
+have" (v3's cut list [INFERENCE]). **The PR waits for Daniel's review.**
+**For the weekly meeting of 2026-11-12:** Daniel asks the lab for the arm's own iRC program
+(and, if they can, its angles in iRC in the photographed pose); if it comes, decision 0033 is
+revisited and the program runs on the twin. The plan lists it under Phase 2's "Waiting, beside
+this phase".
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
 **Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
 - **Done in Phase 1:**

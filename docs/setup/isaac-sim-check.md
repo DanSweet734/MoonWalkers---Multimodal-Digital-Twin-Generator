@@ -442,6 +442,14 @@ angles and the twin's.
 **If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top of the pasted
 runner.
 
+**Result (Daniel, 2026-11-10, Isaac Sim 6.2.0): level 3.** With the runner (`simulation_manager`,
+first physics step at t = 0.017 s), every joint stayed within 0.29° of the plan, reached 45.00 °/s,
+and ended within 0.02° of the photographed pose; every move's joints arrived 0.07-0.09 s before its
+planned end (counted at 0.5°, inside the deceleration). "program.usdc had no collisions".
+`program_native.usdc` "did the same motions and looked good", trailing by 0.83-1.01°. Seen and
+logged: "some motions cause certain parts of the mesh to move where it shouldn't have" (v3's cut
+list [INFERENCE]). The record is the folder's `PROGRAM.md`.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:
