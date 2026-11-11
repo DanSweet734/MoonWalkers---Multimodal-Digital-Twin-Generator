@@ -560,7 +560,7 @@ at; the new tools used in Phase 2.
 - [x] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
       straightest link]. Size checks on all the others. (X4 is -17.9%, a warning.)
 - [x] Measure each joint's angle in the photographed pose; set the start pose and the limits.
-- [ ] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
+- [x] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
       (v1 built, both validators clean; Daniel's checks of 2026-11-10: both ends of every range
       reached within 0.01 degrees; the arm folds through itself, loose bits float, extra cable
       strands and a duplicate thumb. `igus/rebel6dof02@v2` (run `2026-11-10_run-001`, decision
@@ -568,7 +568,10 @@ at; the new tools used in Phase 2.
       check of v2 (2026-11-10): no movement under Shift+drag; the collision file clean, no dots,
       most wires gone. Decisions 0031 and 0032 accepted. `igus/rebel6dof02@v3` (run
       `2026-11-10_run-002`): the remaining strands cut by measured boxes, collisions on in the
-      twin. Dry run clean; Daniel's check of v3 waits.)
+      twin. Dry run clean. Daniel's check of v3 (2026-11-10): no free hanging wires, "a wire or
+      two attached"; the spin's parts do not pass through each other; gaps on the backs of the
+      joints, for later. Recordings: the twin holds within 0.043 degrees; in the spin, parts
+      meeting stop joint 2 at +78.9 degrees and push joint 3 back from its limit.)
 - [x] The score: a small scorer for the measures above. The shape distance needs the ROS model's
       `.dae` meshes read, which may need an install (asked first). (`pipelines/b/score.py`,
       standard library and numpy; nothing installed. Ranges wait for recordings.)

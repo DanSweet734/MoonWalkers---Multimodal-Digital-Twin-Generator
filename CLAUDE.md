@@ -36,7 +36,9 @@ The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on
     (it holds; no folding, flying apart or floating dots).
   - `igus/rebel6dof02@v3` (run `2026-11-10_run-002`, `compose_v3.py` there): the strands v2
     left cut by measured boxes, and collisions on in the twin (`self_collision` "on"). Daniel's
-    check of v3 waits.
+    check of v3 (2026-11-10): "in a good spot"; parts no longer pass through each other, and it
+    holds within 0.043 degrees. Left for later: a wire or two still attached, and gaps on the
+    backs of the joints (likely the cut list's open seams [INFERENCE]).
   - The scorer: `uv run python -m moonwalkers.pipelines.b.score <run> --maker
     src/moonwalkers/pipelines/b/igus_rebel6dof02.score.json [--recording <csv> ...]` writes
     `<run>/score/SCORE.md`.
