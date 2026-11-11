@@ -13,7 +13,14 @@ import pytest
 import trimesh
 from pydantic import ValidationError
 
-from moonwalkers.contracts.pipeline_result import Citation, Fact, Joint, MachineIdentity, Source
+from moonwalkers.contracts.pipeline_result import (
+    Citation,
+    Fact,
+    Joint,
+    JointMode,
+    MachineIdentity,
+    Source,
+)
 from moonwalkers.control import ProgramFile, packaged_programs
 from moonwalkers.orchestrator import JobRequest
 from moonwalkers.pipelines.b import build
@@ -468,6 +475,25 @@ def test_check_files_follow_the_joints_behaviour() -> None:
     assert positions["table_height"] == pytest.approx(dp.TABLE_TRAVEL / 2)
     assert positions["table_tilt"] == pytest.approx(math.radians(30))
     assert set(checks["spin.usdc"].settings) == {"spindle_rotation"}
+
+
+def test_a_driven_slide_runs_its_whole_travel_at_its_top_speed() -> None:
+    _, result = dp.build_test_drill_press(NOW)
+    driven = JointMode(kind="driven", citations=[Citation(source_id=dp.SYNTHETIC, locator="t")])
+    joints = [
+        j.model_copy(update={"mode": driven, "max_velocity": 0.08})
+        if j.joint_id == "table_height"
+        else j
+        for j in result.joints
+    ]
+    checks = {c.name: c for c in build.check_files([result.model_copy(update={"joints": joints})])}
+    slide = checks["slide.usdc"]
+    height = next(j for j in joints if j.joint_id == "table_height")
+    assert slide.starts == {"table_height": pytest.approx(height.lower_limit)}
+    drive = slide.settings["table_height"].drive
+    assert drive.mode == "velocity" and drive.target == pytest.approx(0.08)
+    assert drive.stiffness == 0.0 and drive.damping == build.SLIDE_DAMPING
+    assert "slide.usdc" not in {c.name for c in build.check_files([result])}  # none driven
 
 
 def test_a_twin_without_behaviour_keeps_the_pocs_two_checks(example_result) -> None:

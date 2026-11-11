@@ -77,6 +77,12 @@ VIEWS_DIR = "views"  # coloured views and photo overlays of a several-part twin 
 RECORDER_FILE = "record_joints.py"  # the joint recorder for the Isaac Sim check (Phase 1)
 SLOW_SPIN = math.radians(30.0)  # for the eye; chosen by us, not a machine fact
 SETTING_TURN = math.radians(30.0)  # where a check locks a turning joint, within its limits
+# A driven sliding joint's check runs it at its cited top speed, else at this one (chosen by us).
+SLIDE_SPEED = 0.025  # m/s
+# The slide check's velocity drive (an acceleration drive, like the exporter's): its speed error
+# under gravity is g / damping, 1 mm/s here, where the spin check's damping of 20 would let a
+# rising head fall (lab's machines plan, Phase 4). Chosen by us, not a machine fact.
+SLIDE_DAMPING = 10_000.0
 
 
 @dataclass(frozen=True)
@@ -144,6 +150,11 @@ def check_files(results: Sequence[PipelineResult]) -> list[CheckFile]:
         return j.mode is not None and j.mode.kind == name
 
     driven = [j for j in joints if kind(j, "driven") and j.joint_type == "revolute"]
+    sliding = [
+        j
+        for j in joints
+        if kind(j, "driven") and j.joint_type == "prismatic" and None not in stopped_limits(j)
+    ]
     springs = [j for j in joints if kind(j, "spring_return")]
     stops = [j for j in joints if j.adjustable_stop is not None and j.lower_limit is not None]
     locked = [j for j in joints if kind(j, "locked")]
@@ -170,6 +181,33 @@ def check_files(results: Sequence[PipelineResult]) -> list[CheckFile]:
                 f"the driven joints ({_names(driven)}) turn at 30 deg/s, for the eye",
                 "They turn slowly and steadily; nothing else moves.",
                 settings=spin,
+            )
+        )
+    if sliding:
+        checks.append(
+            CheckFile(
+                "slide.usdc",
+                f"the driven sliding joints ({_names(sliding)}) run their whole travel",
+                "On Play "
+                + "; ".join(
+                    f"'{j.joint_id}' starts at {_amount(j, stopped_limits(j)[0])} and slides to "
+                    f"{_amount(j, stopped_limits(j)[1])} at {_slide_speed(j) * 1000:.1f} mm/s"
+                    for j in sliding
+                )
+                + ". Each stops at its upper limit and stays there; nothing else moves.",
+                settings={
+                    j.joint_id: JointSettings(
+                        drive=DriveSettings(
+                            mode="velocity",
+                            target=_slide_speed(j),
+                            stiffness=0.0,
+                            damping=SLIDE_DAMPING,
+                        ),
+                        note="a run through the whole travel, for the check",
+                    )
+                    for j in sliding
+                },
+                starts={j.joint_id: stopped_limits(j)[0] for j in sliding},
             )
         )
     if springs:
@@ -259,6 +297,11 @@ def _far_end(joint: Joint) -> float:
     if not ends:
         raise ExportError(f"joint '{joint.joint_id}' has no limits to start a check from")
     return max(ends, key=lambda e: abs(e - rest))
+
+
+def _slide_speed(joint: Joint) -> float:
+    """A sliding joint's speed in the slide check: its cited top speed, else ``SLIDE_SPEED``."""
+    return joint.max_velocity if joint.max_velocity else SLIDE_SPEED
 
 
 def _lock_setting(joint: Joint) -> float:
