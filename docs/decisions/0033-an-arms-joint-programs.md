@@ -138,6 +138,6 @@ compare` against `trajectory.json`:
 - Daniel: "program.usdc had no collisions, some motions cause certain parts of the mesh to move
   where it shouldn't have but other than that it looked great". The second is v3's, not the
   program's: likely faces given to the wrong part by its cut list [INFERENCE], logged in v3's
-  `RUN.md`; which motions and parts is asked of him.
+  `RUN.md`; Daniel: when the joint between the first and second segments turns (joint 2 [INFERENCE]), "part of the first section came with".
 - **Level 3 for the arm,** with the test program; the lab's own program is the better test once
   shared.

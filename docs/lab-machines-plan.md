@@ -660,7 +660,7 @@ at; the new tools used in Phase 2.
       before its planned end (counted at 0.5°, inside the deceleration), ended within 0.02° of
       the photographed pose; "no collisions". `program_native.usdc`: the same moves, trailing
       by 0.83-1.01°. Logged: "some motions cause certain parts of the mesh to move where it
-      shouldn't have" (v3's cut list [INFERENCE]; which motions is asked of Daniel).
+      shouldn't have" (v3's cut list [INFERENCE]; Daniel: when joint 2 turns, "part of the first section came with", seen as thin sheets under joint 2's housing in v3's link 2 view).
 - [x] Decision record (0033, accepted by Daniel on 2026-11-10 "as is until we know if we get
       the program from the lab"), worklog, PR.
 
