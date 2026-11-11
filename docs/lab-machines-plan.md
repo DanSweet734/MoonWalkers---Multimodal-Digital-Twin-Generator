@@ -667,6 +667,49 @@ at; the new tools used in Phase 2.
 **Measured by:** each joint's recorded motion against the plan; the move times against 45°/s.
 
 ## Phase 4 - The Haas TM-1: levels 1 and 2
+
+### Hand-off (2026-11-10, from the plan's Phase 3 chat)
+- **Where you start:** from `main` after PR #30 (merge commit `3f545bc`, 2026-11-11T04:12Z), on
+  branch `feat/lab-phase-4-tm1`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-3-rebel-arm-control` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request.
+- **Read first:**
+  - CLAUDE.md "Current phase";
+  - this phase's checklist; Phase 1's notes on the TM-1 ("Decided in the Phase 1 chat" and
+    "Haas's sources, for Phases 4 to 6", above Phase 2's checklist), and its pitfalls;
+  - decisions 0017-0019 (sliding joints, locks, chains), 0023, 0027 and 0028 (cutting one mesh
+    into parts, stand-ins, the spec piece by piece), 0029 (cut-outs) and 0032 (`hold_drive`,
+    `loose_pieces`, `self_collision`);
+  - [the worklog of 2026-11-10](worklog/2026-11-10.md), by its headings.
+
+#### What Phase 3 left
+- **The arm reached level 3** with the labelled test program `rebel-test-joint-moves`
+  (decision 0033, accepted by Daniel "as is until we know if we get the program from the lab").
+  The lab's own program is asked for at the weekly meeting of 2026-11-12 (Phase 2's "Waiting,
+  beside this phase"); if it comes, file it under `data/machines/igus-rebel6dof02/inputs/`, wrap
+  its XML in a program file with its sources, as `control/programs/rebel-test-joint-moves.json`
+  does (`control run` loads that JSON form, not a bare `.xml`), run it with `control run <file>
+  --twin igus/rebel6dof02@v3`, and revisit decision 0033. This is beside Phase 4, not part of it.
+- **Logged against the arm's v3, not fixed:** when joint 2 turns, part of the column (link 1)
+  comes with the upper arm; v3's `views/part_link2.png` shows thin sheets below joint 2's housing
+  [INFERENCE]. With v3's wire stubs and the gaps on the joints' backs, for the arm's next version.
+- **v3 still needs Daniel's review in the dashboard** (his to do).
+
+#### What carries over to the TM-1 [INFERENCE from the code, not tried on a mill]
+- **Program and controls folders now take the twin's `hold_drive` and `self_collision`**
+  (`pipelines/b/build.py` passes them; decision 0033, "Consequences"). If the TM-1's spec sets
+  them, Phase 5's program folders follow without more work.
+- **A drive with a target lags a moving target** by about damping / stiffness x speed (the arm's
+  `program_native.usdc`: 200 / 10000 s x 45 deg/s = 0.9 deg, measured 0.83-1.01). The same holds
+  for a sliding axis driven in mm/s; worth knowing when Phase 5 measures the tool tip.
+- **`control compare` on a joint program** counts a move as arrived at 0.5 deg (`ARRIVE_DEG`),
+  which falls inside the deceleration, so arrivals come 0.07-0.09 s early at 45 deg/s. A sliding
+  axis would need its own threshold in mm (Phase 5).
+- **Isaac Sim's session logs** confirm the build and the files Daniel opened (memory
+  "isaac-sim-logs"); the 6.2.0 build on 2026-11-10 was Kit 110.4.0+feature.386251.187cf21b.gl.
+- **Tests:** `pytest -m "not gpu and not slow"`: 799 passed in about 4.3 min.
+
+### Phase 4's checklist
 - [ ] Sources: Haas's pages saved by Daniel, and dealers' listings as second-hand, with their
       disagreements named. One is known (2026-11-09): the TM-1's Y travel, 12 in on Haas's 2018
       Toolroom sheet and the listings of 2006-07 units, 16 in on today's page (`SOURCES.md`). Which part carries which axis is cited, not assumed. The control's

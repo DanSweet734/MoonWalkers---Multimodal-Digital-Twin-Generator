@@ -6,12 +6,13 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 3, the ReBeL arm's control logic (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 3", whose hand-off comes first. Phase 3 runs on
-branch `feat/lab-phase-3-rebel-arm-control`, from `main` after PR #29; its first commit is the
-hand-off. Phase 3 brings the arm to level 3: a program of joint moves at no more than the cited
-45 deg/s, driving `igus/rebel6dof02@v3`.
-**Phase 3 so far (2026-11-10):** the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
+## Current phase: the lab's machines plan, Phase 4, the Haas TM-1 (levels 1 and 2; the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 4", whose hand-off comes first. Phase 4 runs on
+branch `feat/lab-phase-4-tm1`, from `main` after PR #30; its first commit is the hand-off. Phase 4
+builds `haas/tm1` from its four corner photos: the frame, the axes' carriages, the head, the
+spindle and the tool carousel, each axis sliding its cited travel.
+**Phase 3 is done** (PR #30, merged on 2026-11-10 on Daniel's word; branch
+`feat/lab-phase-3-rebel-arm-control`): the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
 decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from
 the lab"): iRC's own XML, read by `control/irc.py` and planned as synchronised
 joint moves from the twin's photographed pose, written by `control/arm_export.py`; program and
@@ -20,7 +21,7 @@ labelled test program, `rebel-test-joint-moves`, is in
 `data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`. **Level 3 met**
 (Daniel's Isaac Sim check, 2026-11-10): joints within 0.29° of the plan at 45.00°/s, no
 collisions; logged: "some motions cause certain parts of the mesh to move where it shouldn't
-have" (v3's cut list [INFERENCE]). **The PR waits for Daniel's review.**
+have": when joint 2 turns, part of the column comes with it (v3's cut list [INFERENCE]).
 **For the weekly meeting of 2026-11-12:** Daniel asks the lab for the arm's own iRC program
 (and, if they can, its angles in iRC in the photographed pose); if it comes, decision 0033 is
 revisited and the program runs on the twin. The plan lists it under Phase 2's "Waiting, beside
