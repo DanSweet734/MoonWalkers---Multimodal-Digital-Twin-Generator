@@ -6,7 +6,11 @@ pipeline runs is decision 0021, still to be agreed with you. Its questions for y
 
 ## Pipeline D status
 
-Pipeline D now registers an Octopart adapter. See [setup, inputs and limitations](setup/pipeline-d-octopart.md). Its real path is `backend/src/moonwalkers/pipelines/d/`. PDF catalog processing remains unsupported; the manual example below is illustrative, not an implemented PDF reader.
+Pipeline D registers an Octopart adapter and, since 2026-11-11, reads PDF catalog files
+(decision 0034, proposed). See [setup, inputs and limitations](setup/pipeline-d-octopart.md). Its
+real path is `backend/src/moonwalkers/pipelines/d/`. A PDF's labelled values come back as text
+facts cited to their page, not as SI values and not as the machine's identity, so the example
+below (an identity and `spindle_travel` in metres) is still illustrative.
 
 ## What you build
 - **One class** that implements `Pipeline.run(job_id, sources) -> PipelineResult`

@@ -1,21 +1,25 @@
-# Pipeline D: Octopart catalog extraction
+# Pipeline D: Octopart pages and PDF catalogs
 
 Pipeline D lives at `backend/src/moonwalkers/pipelines/d/`. Its `create_pipeline()` now returns
 `CatalogPipeline`, so the existing default registry, input router and orchestrator can run it.
 The historical HA5C stub remains available to tests only. No shared contract or backend
-requirements changed. Design: [decision 0024](../decisions/0024-pipeline-d-octopart.md).
+requirements changed. Design: [decision 0024](../decisions/0024-pipeline-d-octopart.md)
+(Octopart) and [decision 0034](../decisions/0034-pipeline-d-pdf-catalogs.md) (PDF catalogs).
 
 ## What it accepts
 
-Use `online_resource` sources whose `kind` is `url`, with either:
+**PDF catalogs:** `pdf_catalog` sources whose `kind` is `file`, a PDF inside the data folder
+(see [PDF catalogs](#pdf-catalogs) below). A PDF given as a URL is not downloaded.
+
+**Octopart:** `online_resource` sources whose `kind` is `url`, with either:
 
 - an HTTPS Octopart product-page URL copied from your browser; or
 - `https://octopart.com/search?q=LM358DR`, where `q` is an exact part number.
 
 Search examines only the first result page. Case and surrounding whitespace are ignored;
 punctuation is significant. No match or multiple exact links produces a review issue. Use a
-specific product URL to resolve manufacturer ambiguity. PDF catalogs, local files, other sites,
-and HTTP URLs produce explicit issues; they are not silently handled as Octopart inputs.
+specific product URL to resolve manufacturer ambiguity. Other sites, HTTP URLs and local files
+that are not `pdf_catalog` produce explicit issues; they are not silently handled.
 
 ## Browser environment
 
@@ -98,15 +102,73 @@ not identify a machine from the components in its catalog. Only the orchestrator
 The official API is a separate future option, not implemented here:
 https://www.altium.com/documentation/altium-developer-center/quick-starts/octopart-api
 
+## PDF catalogs
+
+Since 2026-11-11 `CatalogPipeline` reads `pdf_catalog` files (decision 0034). It starts
+`d/catalog_worker.py` in the environment named by `MOONWALKERS_OCTOPART_PYTHON`, the same one as
+the browser worker's. The worker runs `d/catalog_parser.py` and returns each page's text.
+
+**Set up once.** The parser needs pdfminer.six (MIT, https://github.com/pdfminer/pdfminer.six,
+accessed 2026-11-10). It was installed with Sarkis's approval in `C:\mw-octopart` on 2026-11-10,
+not in the backend's environment. It is now in the same `requirements.txt` as Playwright:
+
+```powershell
+C:\mw-octopart\Scripts\python.exe -m pip install "pdfminer.six[image]"
+$env:MOONWALKERS_OCTOPART_PYTHON = "C:\mw-octopart\Scripts\python.exe"
+```
+
+**Run it,** from `backend/`, on a PDF saved under the data folder:
+
+```powershell
+uv run python -m moonwalkers.pipelines run D --input-type pdf_catalog ../data/machines/grizzly-t33901/inputs/documents/t33901_ds.pdf --out ../data/machines/grizzly-t33901/pipeline_tries/<date>_d.json
+```
+
+**What comes back:**
+- **Labelled values.** Each printed "label ..... value" line is one fact. Its value is the text
+  as printed, with no unit and no conversion to SI. Its key is
+  `catalog_<source hash>_p<page>_<heading>_<label>`, and it cites `PDF p. N` with the line as
+  its quote. For example, `..._p001_operation_information_spindle_travel` is "3-1/4 in.",
+  quoting "Spindle Travel ... 3-1/4 in." (`t33901_ds.pdf`, p. 1).
+- **Part-number candidates.** Each value after a "Part No", "Model" or "SKU" label that holds
+  a digit is one fact, cited to the first three pages that print it.
+- **Issues.** One info issue with the counts, and one warning that this is evidence and not
+  the machine's identity. More issues name pages without text, pages left out as contents or
+  quantity lists, and facts dropped past the limit of 500 per PDF.
+
+**Limits:**
+- Tables without leader dots are not read, so the parts list's part numbers give no facts.
+- Drawings, text inside images and scanned pages are not read. There is no OCR.
+- Embedded images are counted and not imported.
+- A manual's tool and quantity lists come through as facts too, and a heading may be a
+  fragment of a sentence. Check each fact against its page.
+- Without `MOONWALKERS_OCTOPART_PYTHON`, every PDF gets one error issue and no facts.
+
+**The parser on its own** still writes `catalog.json`, `catalog.txt` and `images/` to a new
+folder:
+
+```powershell
+C:\mw-octopart\Scripts\python.exe backend/src/moonwalkers/pipelines/d/catalog_parser.py <file.pdf> --output <new folder>
+C:\mw-octopart\Scripts\python.exe -m unittest discover -s backend/tests -p test_catalog_parser.py -v
+```
+
+Under the backend's `uv run pytest`, the 13 tests of `test_catalog_parser.py` skip themselves,
+because pdfminer.six is not there. The pipeline's own PDF tests (`test_pipeline_d.py`) fake the
+worker and run everywhere. Results on Grizzly's T33901 PDFs: `docs/worklog/2026-11-10.md`
+(parser) and `docs/worklog/2026-11-11.md` (pipeline).
+
 ## Files and functions
 
 | File | Purpose |
 |---|---|
 | `d/__init__.py` | Registers the real pipeline through `create_pipeline()` |
-| `d/pipeline.py` | `CatalogPipeline.run()` maps sources to cited contract facts/issues; `BrowserReader.read()` invokes the bounded subprocess |
+| `d/pipeline.py` | `CatalogPipeline.run()` maps sources to cited contract facts/issues; `BrowserReader.read()` and `CatalogReader.read()` invoke the bounded subprocesses (`run_worker()`) |
+| `d/catalog_parser.py` | `parse_catalog()` reads a PDF's text, text boxes and images (pdfminer.six); `part_candidates()` finds labelled part numbers |
+| `d/catalog_worker.py` | `read()` runs the parser in a temporary folder; `main()` handles the isolated worker protocol |
+| `d/catalog_facts.py` | `labelled_values()` reads "label ..... value" lines and their headings from page text; no PDF library |
 | `d/octopart.py` | `input_url()` validates inputs; `candidates()` finds exact links; `extract()` reads unique Product metadata |
 | `d/browser_worker.py` | `collect()` drives navigation/extraction; `main()` handles the isolated worker protocol |
-| `tests/test_pipeline_d.py` | Offline parser, worker, adapter, contract, registration and orchestrator checks |
+| `tests/test_pipeline_d.py` | Offline parser, worker, adapter, contract, registration and orchestrator checks, for Octopart and for PDF catalogs |
+| `tests/test_catalog_parser.py` | The PDF parser and its worker on PDFs built in memory; needs pdfminer.six |
 
 ## Verification
 

@@ -117,9 +117,8 @@ def extract(html: str, query: str | None, url: str) -> dict[str, Any]:
             continue
         if not isinstance(mpn, str) or not mpn.strip():
             continue
-        if query is None or normalize(mpn) == normalize(query):
-            if item not in products:
-                products.append(item)
+        if (query is None or normalize(mpn) == normalize(query)) and item not in products:
+            products.append(item)
     if len(products) != 1:
         return {
             "status": "needs_review",
@@ -134,11 +133,9 @@ def extract(html: str, query: str | None, url: str) -> dict[str, Any]:
     for href, label in parser.links:
         link = urljoin(url, href)
         parsed = urlsplit(link)
-        if parsed.scheme == "https" and (
-            "datasheet" in label.casefold() or parsed.path.casefold().endswith(".pdf")
-        ):
-            if link not in sheets:
-                sheets.append(link)
+        is_sheet = "datasheet" in label.casefold() or parsed.path.casefold().endswith(".pdf")
+        if parsed.scheme == "https" and is_sheet and link not in sheets:
+            sheets.append(link)
     return {
         "status": "extracted",
         "url": url,

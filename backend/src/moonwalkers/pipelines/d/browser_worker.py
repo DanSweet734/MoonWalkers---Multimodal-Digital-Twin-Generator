@@ -98,7 +98,7 @@ def main() -> int:
             "status": "error",
             "message": "Browser environment needs Playwright and Chromium.",
         }
-    except Exception:
+    except Exception:  # noqa: BLE001 - any failure becomes one issue, not a trace
         # Do not expose browser traces, local profile paths or credentials in pipeline results.
         result = {"status": "error", "message": "Browser extraction failed or access was blocked."}
     print(json.dumps(result, ensure_ascii=False))

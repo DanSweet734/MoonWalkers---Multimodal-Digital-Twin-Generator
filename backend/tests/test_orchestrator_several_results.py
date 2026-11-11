@@ -25,7 +25,7 @@ from moonwalkers.orchestrator import (
     OrchestratorError,
     PipelineUnavailableError,
 )
-from moonwalkers.pipelines import Pipeline, default_pipelines, result_id_for
+from moonwalkers.pipelines import Pipeline, result_id_for
 
 FactSpec = tuple[str, float | int | str | bool, str | None]
 
@@ -92,7 +92,8 @@ def run(kb: KnowledgeBase, clock, sources: list[Source], *pipelines: FakePipelin
 def test_a_document_for_a_pipeline_not_in_yet_is_refused_and_names_its_owner(
     kb: KnowledgeBase, make_source, clock
 ) -> None:
-    orchestrator = Orchestrator(kb, default_pipelines(), clock=clock)
+    # No pipelines: Pipeline D is in since decision 0024, so the default registry would run it.
+    orchestrator = Orchestrator(kb, {}, clock=clock)
     request = JobRequest(job_id="job-1", sources=[make_source("manual", InputType.PDF_CATALOG)])
     with pytest.raises(PipelineUnavailableError) as raised:
         orchestrator.run_job(request)

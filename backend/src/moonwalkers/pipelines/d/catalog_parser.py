@@ -5,8 +5,8 @@ Run: python catalog_parser.py catalog.pdf --output catalog_output
 
 Writes catalog.txt, catalog.json, and images/. Output directory must be new.
 Analysis is deliberately basic: page counts, words, image dimensions, and
-explicitly labeled part/model/SKU candidates. Candidates are not validated
-products. Text blocks retain bounding boxes in PDF points (bottom-left origin).
+explicitly labeled part/model/SKU candidates that contain a digit. Candidates
+are not validated products. Text blocks retain bounding boxes in PDF points (bottom-left origin).
 Images are extracted, not interpreted; no OCR, table reconstruction, vector
 rendering, or automatic product-to-image matching is performed. Some uncommon
 image encodings export as raw .img data rather than viewable pictures.
@@ -21,12 +21,20 @@ from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.layout import LAParams, LTContainer, LTImage, LTTextContainer
 
-
 PART_LABEL = re.compile(
     r"\b(?:part\s*(?:number|no\.?|#)|model(?:\s*(?:number|no\.?|#))?|SKU)"
     r"[ \t]*[:#-]?[ \t]+([A-Za-z0-9][A-Za-z0-9._/-]*)",
     re.IGNORECASE,
 )
+
+
+def part_candidates(text):
+    """Labeled part/model/SKU values that contain a digit, without trailing punctuation.
+
+    The digit keeps ordinary words out: "this model is quiet" names no part.
+    """
+    found = (match.rstrip(".,;:/-") for match in PART_LABEL.findall(text))
+    return sorted({value for value in found if any(char.isdigit() for char in value)})
 
 
 def walk_layout(element):
@@ -70,25 +78,29 @@ def parse_catalog(pdf_path, output_dir):
                     info["file"] = f"images/{filename}"
                     if filename.endswith(".img"):
                         warnings.append(f"{filename}: raw image data; may need decoding.")
-                except Exception as error:
+                except Exception as error:  # noqa: BLE001 - pdfminer raises many types
                     # An unsupported image should not discard the page's text.
                     info["error"] = f"{type(error).__name__}: {error}"
                     warnings.append(f"Image export failed: {element.name}")
                 images.append(info)
         text = "\n".join(block["text"].rstrip() for block in blocks)
         if not text.strip():
-            warnings.append("No extractable text; this may be a scan or blank page. OCR is not included.")
-        pages.append({
-            "page": number,
-            "width_points": layout.width,
-            "height_points": layout.height,
-            "text": text,
-            "text_blocks": blocks,
-            "word_count": len(text.split()),
-            "part_number_candidates": sorted(set(PART_LABEL.findall(text))),
-            "images": images,
-            "warnings": warnings,
-        })
+            warnings.append(
+                "No extractable text; this may be a scan or blank page. OCR is not included."
+            )
+        pages.append(
+            {
+                "page": number,
+                "width_points": layout.width,
+                "height_points": layout.height,
+                "text": text,
+                "text_blocks": blocks,
+                "word_count": len(text.split()),
+                "part_number_candidates": part_candidates(text),
+                "images": images,
+                "warnings": warnings,
+            }
+        )
     result = {
         "source": pdf_path.name,
         "summary": {
@@ -118,7 +130,7 @@ def main():
     args = parser.parse_args()
     try:
         result = parse_catalog(args.pdf, args.output)
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - report any failure, then exit 1
         parser.exit(1, f"Error: {error}\nIf output was created, it may contain partial images.\n")
     print(json.dumps(result["summary"], indent=2))
     print(f"Saved to {args.output.resolve()}")
