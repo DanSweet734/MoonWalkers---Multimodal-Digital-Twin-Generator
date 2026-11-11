@@ -564,8 +564,11 @@ at; the new tools used in Phase 2.
       (v1 built, both validators clean; Daniel's checks of 2026-11-10: both ends of every range
       reached within 0.01 degrees; the arm folds through itself, loose bits float, extra cable
       strands and a duplicate thumb. `igus/rebel6dof02@v2` (run `2026-11-10_run-001`, decision
-      0032): stiffer holds, the strands and bits cut out, a self-collision check file. Dry run
-      clean; Daniel's check of v2 waits.)
+      0032): stiffer holds, the strands and bits cut out, a self-collision check file. Daniel's
+      check of v2 (2026-11-10): no movement under Shift+drag; the collision file clean, no dots,
+      most wires gone. Decisions 0031 and 0032 accepted. `igus/rebel6dof02@v3` (run
+      `2026-11-10_run-002`): the remaining strands cut by measured boxes, collisions on in the
+      twin. Dry run clean; Daniel's check of v3 waits.)
 - [x] The score: a small scorer for the measures above. The shape distance needs the ROS model's
       `.dae` meshes read, which may need an install (asked first). (`pipelines/b/score.py`,
       standard library and numpy; nothing installed. Ranges wait for recordings.)
@@ -706,8 +709,8 @@ merging Sarkis's branch needs one too.
 |---|---|
 | The tools for the lab's builds (amends 0028) | 1 |
 | Crop boxes or masks for busy photos, if the spike needs one (amends 0022) | 1 |
-| A robot arm: its front, zero pose, and the public models' role: [0031](decisions/0031-the-arms-views-front-and-zero-pose.md), proposed | 2 |
-| An arm's hold, its loose pieces and its self-collision: [0032](decisions/0032-an-arms-hold-its-loose-pieces-and-self-collision.md), proposed | 2 |
+| A robot arm: its front, zero pose, and the public models' role: [0031](decisions/0031-the-arms-views-front-and-zero-pose.md), accepted | 2 |
+| An arm's hold, its loose pieces and its self-collision: [0032](decisions/0032-an-arms-hold-its-loose-pieces-and-self-collision.md), accepted | 2 |
 | An arm's joint programs | 3 |
 | Mill programs: a G-code reader | 5 |
 | The VF-3's trunnion axes | 6 |

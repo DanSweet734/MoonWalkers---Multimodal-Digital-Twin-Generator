@@ -24,15 +24,19 @@ The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on
 - **Phase 2 is built and in review** (branch `feat/lab-phase-2-rebel-arm`, its PR open):
   - `igus/rebel6dof02@v1` (run `2026-11-09_run-001`): seven parts on six joints, posed as
     photographed; position 0 is that pose and igus's limits are shifted by each joint's angle
-    in it (decision 0031, proposed). Reference facts: `pipelines/b/igus_rebel6dof02.reference.json`.
+    in it (decision 0031, accepted 2026-11-10). Reference facts: `pipelines/b/igus_rebel6dof02.reference.json`.
   - A box-and-cylinder arm (`python -m moonwalkers.usd.primitive_arm <run>`, run
     `moonwalkers-testarm/runs/2026-11-09_run-001`), checked by Daniel on 2026-11-10: every
     joint through its range; the default drive sags 1.1-1.5 degrees, the stiff one 0.06.
   - v1 checked the same day: both ends of every range reached. Its flaws (folds through itself,
-    loose bits, extra cable strands, a duplicate thumb) led to decision 0032 (proposed): a
+    loose bits, extra cable strands, a duplicate thumb) led to decision 0032 (accepted 2026-11-10): a
     per-twin `hold_drive`, `loose_pieces: "remove"` and `self_collision` in the spec.
     `igus/rebel6dof02@v2` (run `2026-11-10_run-001`, set up by
-    `part_cutting/2026-11-10_spec/compose_v2.py`) applies them; Daniel's check of v2 waits.
+    `part_cutting/2026-11-10_spec/compose_v2.py`) applies them. Daniel's check of v2 was clean
+    (it holds; no folding, flying apart or floating dots).
+  - `igus/rebel6dof02@v3` (run `2026-11-10_run-002`, `compose_v3.py` there): the strands v2
+    left cut by measured boxes, and collisions on in the twin (`self_collision` "on"). Daniel's
+    check of v3 waits.
   - The scorer: `uv run python -m moonwalkers.pipelines.b.score <run> --maker
     src/moonwalkers/pipelines/b/igus_rebel6dof02.score.json [--recording <csv> ...]` writes
     `<run>/score/SCORE.md`.

@@ -1,7 +1,8 @@
 # 0031 - The arm's views, its front, its zero pose and the public models' role
 
-- **Status:** proposed (Claude Code, the lab's machines plan, Phase 2; for Daniel's review in the
-  phase's pull request). The views and the front are Daniel's (2026-11-09).
+- **Status:** accepted by Daniel on 2026-11-10 ("I think decisions 0031 and 0032 are good so I
+  accept them"), after his Isaac Sim checks of v1 and v2. Proposed by Claude Code in the lab's
+  machines plan, Phase 2; the views and the front are Daniel's (2026-11-09).
 - **Date:** 2026-11-09
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0022 (views), 0023 and 0027 (cut parts and joints), 0029 (cut-outs)

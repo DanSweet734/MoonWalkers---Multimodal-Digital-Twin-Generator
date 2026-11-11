@@ -1,7 +1,8 @@
 # 0032 - An arm's hold, its loose pieces and its self-collision
 
-- **Status:** proposed (Claude Code, the lab's machines plan, Phase 2; for Daniel's review in the
-  phase's pull request). The three choices in it are Daniel's (2026-11-10).
+- **Status:** accepted by Daniel on 2026-11-10 ("I think decisions 0031 and 0032 are good so I
+  accept them"). The three choices in it are Daniel's (2026-11-10). Proposed by Claude Code in the
+  lab's machines plan, Phase 2.
 - **Date:** 2026-11-10
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0010 (export), 0017 (joints, unjoined pairs), 0020 (the exporter decides
@@ -94,3 +95,20 @@ that date, both runs' `RUN.md`) found four things that the drill press never sho
 - A twin's collisions between unjoined parts follow the setting in its spec, so a later machine
   with nested parts (a spindle in a head) keeps the default.
 - Reversing it: delete the three fields from a spec, and it builds as before.
+
+## Update (2026-11-10): Daniel's check of v2, and v3
+- **v2 in Isaac Sim** (Daniel): `twin.usdc` could not be moved "at all with shift + drag at
+  least from what I could see"; `checks/self_collision.usdc` showed "no jumping or flying apart,
+  no folding in on itself, and no more floating dots ... along with most of the hanging wires".
+- **So the twin collides** (`self_collision` "on" from v3), as the decision says once that check
+  is clean. With "on", there is no separate collision file: the twin and every check file
+  collide, and `checks/spin.usdc` is the scenario `self_collision.usdc` was.
+- **v3** (run `2026-11-10_run-002`, `part_cutting/2026-11-10_spec/compose_v3.py`): the strands
+  v2 left are cut by measured boxes (option 1, which works where a strand stands clear of the
+  body). Each box was measured on projections of a part's face centres with a 0.1 grid, then
+  checked by counting every part's faces inside it. The strand over joint 2's housing left a
+  hole, patched flat. Left, logged: a short stub against the housing's end ring and a knot on
+  link 1's dome, fused to those surfaces.
+- **Tried and dropped for finding strands:** curvature (how far a face's normal turns within
+  0.03 units). The generated surface is noisy and double-walled, so half of each link turns
+  sharply.
