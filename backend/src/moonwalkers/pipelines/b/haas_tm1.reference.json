@@ -1,0 +1,689 @@
+{
+  "sources": [
+    {
+      "source_id": "src-tm-addendum-2002",
+      "kind": "file",
+      "input_type": "brochure_datasheet",
+      "uri": "machines/haas-tm1/inputs/documents/haas_toolroom-mill-operators-addendum_96-0041-rev-b_2002.pdf",
+      "title": "Haas Automation, Tool Room Mill \"OPERATORS ADDENDUM\", 96-0041 rev B, 2/02, 16 pages, from https://www.haascnc.com/content/dam/haascnc/en/service/manual/supplement/96-0041B-Toolroom-Mill.pdf",
+      "sha256": "6e450055973200d031d36ffa498be611c8296d2237a1ca2317d0e5fe71a61150",
+      "retrieved_at": "2026-11-11T08:51:28Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-tm-addendum-2009",
+      "kind": "file",
+      "input_type": "brochure_datasheet",
+      "uri": "machines/haas-tm1/inputs/documents/haas_toolroom-mill-operators-addendum_96-0041-rev-t_2009.pdf",
+      "title": "Haas Automation, Toolroom Mill \"OPERATOR'S ADDENDUM\", 96-0041 Rev T, January 2009, 25 pages, from https://www.haascnc.com/content/dam/haascnc/en/service/manual/supplement/english---toolroom-mill-operator%27s-manual-supplement---2009.pdf",
+      "sha256": "8c94d9f3918510197a1f42c4abc4af12f69d80f5d3385d51f052001a67f4c460",
+      "retrieved_at": "2026-11-11T08:51:28Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-mill-manual-2009",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-tm1/inputs/documents/haas_mill-operators-manual_96-8000-rev-y_2009.pdf",
+      "title": "Haas Automation, \"Mill Operator's Manual 96-8000 Rev Y December 2009\" (the Classic Haas Control), 264 pages",
+      "sha256": "d697c7122ec53bd597246c78489210f4577ef6c31b23d53b7e2f6919cbc5cd06",
+      "retrieved_at": "2026-11-10T05:35:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-toolroom-sheet-2018",
+      "kind": "file",
+      "input_type": "brochure_datasheet",
+      "uri": "machines/haas-tm1/inputs/documents/haas_vertical-mills-toolroom-series.pdf",
+      "title": "Haas Automation, \"Vertical Mills: Toolroom Series\", V20180208, 2 pages (today's models, not this 2006 unit)",
+      "sha256": "8ab32f8d0cdc6ed0760e0c3183a5305118faa60d6ee20f3818f4d68669e6e119",
+      "retrieved_at": "2026-11-10T05:33:00Z",
+      "license_note": "© Haas Automation; the maker's brochure, kept for internal research only"
+    },
+    {
+      "source_id": "src-tm1-layout-2023",
+      "kind": "file",
+      "input_type": "layout_drawing",
+      "uri": "machines/haas-tm1/inputs/documents/haas_tm-1-tm-1p_machine-layout-drawing_2023-03.pdf",
+      "title": "Haas Automation, \"Machine Layout Drawing TM-1/TM-1P\", 3/6/2023, 5 pages (today's enclosed TM-1, not this 2006 open-framed unit), from https://pub-aem.haascnc.com/content/dam/haascnc/pdp_feed/mld/tm-1_1p_mld_03_2023.PDF",
+      "sha256": "963c9526e6df1acdd47426ef0459cb515d0d8475ea03a4aabd504c6f9e2fdf2d",
+      "retrieved_at": "2026-11-11T08:49:39Z",
+      "license_note": "© Haas Automation; the maker's drawing, kept for internal research only"
+    },
+    {
+      "source_id": "src-tm1-product-page",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/haas-tm1/inputs/documents/TM-1 _ 40-Taper Mill _ Toolroom Mills _ Vertical Mills – Haas CNC Machines.htm",
+      "title": "Haas Automation, \"TM-1 | 40-Taper Mill\" product page, https://haascnc.com/machines/vertical-mills/toolroom-mills/models/tm-1, saved by Daniel in a browser (today's TM-1)",
+      "sha256": "979d0a4ddc70f430a14e1e07386c383d0dddd3798066b49018cae785321fa2e0",
+      "retrieved_at": "2026-11-10T05:40:00Z",
+      "license_note": "© Haas Automation; the maker's web page, kept for internal research only"
+    },
+    {
+      "source_id": "src-listing-2007",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://surplusrecord.com/listing/haas-tm-1-cnc-toolroom-mill-47-5-x-10-5-table-30-x-12-y-16-z-7-5-hp-4000-rpm-10-automatic-tool-changer-cat-40-4th-axis-enabled-rigid-tapping-2007-1141865/",
+      "title": "A dealer's listing of a used 2007 Haas TM-1 (Surplus Record), second-hand",
+      "retrieved_at": "2026-11-11T08:55:00Z",
+      "license_note": "A dealer's web page; short quotes for internal research"
+    },
+    {
+      "source_id": "src-photo-nameplate",
+      "kind": "file",
+      "input_type": "nameplate_photo",
+      "uri": "machines/haas-tm1/inputs/photos/20261105_134411.jpg",
+      "title": "The TM-1's nameplate (photo 20261105_134411); its serial number stays in data/",
+      "sha256": "7cac589eee148aad9e9ec17f9fe90162cca020589890a1f1e1459543f4c95c3a",
+      "retrieved_at": "2026-11-05T21:44:11Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-front",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/haas-tm1/inputs/photos/20261105_134314.jpg",
+      "title": "The TM-1 from the front: 'Tool Room Mill' on the head, the umbrella tool changer, the pendant (photo 20261105_134314)",
+      "sha256": "a2bbd6764014fb9a9978e8df2002b6d8f12d8c6d03722d93a5abc072da8ed9cf",
+      "retrieved_at": "2026-11-05T21:43:14Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-front-right",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/haas-tm1/inputs/photos/20261105_134337.jpg",
+      "title": "The TM-1's front right corner: the carousel's pockets 6, 5, 4, the saddle's two red handles (photo 20261105_134337)",
+      "sha256": "144ecdec76a666f03f2253ec9b72f57f4708dab700e7123eeda24713eefddf93",
+      "retrieved_at": "2026-11-05T21:43:37Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "TM-1",
+    "category": "CNC toolroom mill, 40 taper, open-framed, with an umbrella tool changer",
+    "aliases": [
+      "Haas TM-1",
+      "Tool Room Mill",
+      "Toolroom Mill"
+    ],
+    "confidence": 0.95,
+    "citations": [
+      {
+        "source_id": "src-photo-nameplate",
+        "locator": "the nameplate's model",
+        "quote": "TM-1"
+      },
+      {
+        "source_id": "src-photo-front",
+        "locator": "the head's cover",
+        "quote": "Tool Room Mill"
+      },
+      {
+        "source_id": "src-tm-addendum-2002",
+        "locator": "PDF p. 4, 1. INTRODUCTION",
+        "quote": "The Tool Room Mill includes features aimed at the machinist"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "x_travel",
+      "value": 0.762,
+      "unit": "m",
+      "original": "X - 30 inches",
+      "confidence": 0.95,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Travels: X - 30 inches"
+        },
+        {
+          "source_id": "src-toolroom-sheet-2018",
+          "locator": "PDF p. 2, Available Models, TM-1",
+          "quote": "30” x 12\" x 16\""
+        },
+        {
+          "source_id": "src-tm1-product-page",
+          "locator": "Specs, Travels (its JSON-LD)",
+          "quote": "\"name\":\"X Axis\",\"value\":762,\"unitText\":\"mm\",\"description\":\"30.00 in\""
+        }
+      ]
+    },
+    {
+      "key": "y_travel",
+      "value": 0.3048,
+      "unit": "m",
+      "original": "Y - 12 inches",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Y - 12 inches"
+        },
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 13, JOG TRAVEL LIMITS",
+          "quote": "(X=30, Y=12, Z=16)"
+        },
+        {
+          "source_id": "src-toolroom-sheet-2018",
+          "locator": "PDF p. 2, Available Models, TM-1",
+          "quote": "30” x 12\" x 16\""
+        },
+        {
+          "source_id": "src-listing-2007",
+          "locator": "the listing's title, as its URL gives it",
+          "quote": "30-x-12-y-16-z"
+        }
+      ]
+    },
+    {
+      "key": "z_travel",
+      "value": 0.4064,
+      "unit": "m",
+      "original": "Z - 16 inches",
+      "confidence": 0.95,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Z - 16 inches"
+        },
+        {
+          "source_id": "src-tm1-product-page",
+          "locator": "Specs, Travels (its JSON-LD)",
+          "quote": "\"name\":\"Z Axis\",\"value\":406,\"unitText\":\"mm\",\"description\":\"16.00 in\""
+        }
+      ]
+    },
+    {
+      "key": "spindle_nose_to_table_min",
+      "value": 0.1016,
+      "unit": "m",
+      "original": "4 inches",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Spindle Nose To Table: 4 inches to 20 inches."
+        }
+      ]
+    },
+    {
+      "key": "spindle_nose_to_table_max",
+      "value": 0.508,
+      "unit": "m",
+      "original": "20 inches",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Spindle Nose To Table: 4 inches to 20 inches."
+        }
+      ]
+    },
+    {
+      "key": "table_length",
+      "value": 1.21285,
+      "unit": "m",
+      "original": "Length - 47.75 inches",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Length - 47.75 inches"
+        }
+      ]
+    },
+    {
+      "key": "table_width",
+      "value": 0.2667,
+      "unit": "m",
+      "original": "Width - 10.5 inches",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Width - 10.5 inches"
+        }
+      ]
+    },
+    {
+      "key": "number_of_t_slots",
+      "value": 3,
+      "original": "Quantity: 3 T-Slots.",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Quantity: 3 T-Slots."
+        }
+      ]
+    },
+    {
+      "key": "t_slot_width",
+      "value": 0.015875,
+      "unit": "m",
+      "original": "Width - 0.625 inches",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "T-Slots: Width - 0.625 inches"
+        }
+      ]
+    },
+    {
+      "key": "t_slot_spacing",
+      "value": 0.1016,
+      "unit": "m",
+      "original": "Center Distance - 4.00 inches (101 mm)",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Center Distance - 4.00 inches (101 mm)"
+        }
+      ]
+    },
+    {
+      "key": "table_capacity",
+      "value": 136.077711,
+      "unit": "kg",
+      "original": "Capacity: 300 lbs.",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Capacity: 300 lbs."
+        }
+      ]
+    },
+    {
+      "key": "spindle_taper",
+      "value": "#40 Taper",
+      "original": "Taper Size - #40 Taper",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Taper Size - #40 Taper"
+        }
+      ]
+    },
+    {
+      "key": "max_spindle_speed",
+      "value": 418.87902,
+      "unit": "rad/s",
+      "original": "Speed - 0-4000 RPM",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Speed - 0-4000 RPM"
+        },
+        {
+          "source_id": "src-toolroom-sheet-2018",
+          "locator": "PDF p. 2, SPINDLES, STANDARD",
+          "quote": "4000-rpm, Belt Drive (TM)"
+        }
+      ]
+    },
+    {
+      "key": "spindle_drive",
+      "value": "Direct-Speed Belt Drive",
+      "original": "Transmission - Direct-Speed Belt Drive.",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Transmission - Direct-Speed Belt Drive."
+        }
+      ]
+    },
+    {
+      "key": "spindle_motor_power",
+      "value": 5592.749025,
+      "unit": "W",
+      "original": "Spindle Motor Rating: 7.5HP peak",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Spindle Motor Rating: 7.5HP peak"
+        }
+      ]
+    },
+    {
+      "key": "rapid_x",
+      "value": 0.084667,
+      "unit": "m/s",
+      "original": "Rapid on X-Axis - 200 ipm",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Rapid on X-Axis - 200 ipm"
+        }
+      ]
+    },
+    {
+      "key": "rapid_y",
+      "value": 0.084667,
+      "unit": "m/s",
+      "original": "Rapid on Y-Axis - 200 ipm",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Rapid on Y-Axis - 200 ipm"
+        }
+      ]
+    },
+    {
+      "key": "rapid_z",
+      "value": 0.084667,
+      "unit": "m/s",
+      "original": "Rapid on Z-Axis - 200 ipm",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Rapid on Z-Axis - 200 ipm"
+        }
+      ]
+    },
+    {
+      "key": "max_cutting_feed",
+      "value": 0.084667,
+      "unit": "m/s",
+      "original": "Maximum Cutting Feed Rate - 200 ipm.",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Maximum Cutting Feed Rate - 200 ipm."
+        }
+      ]
+    },
+    {
+      "key": "overall_width",
+      "value": 2.286,
+      "unit": "m",
+      "original": "Operating Dimensions Width - 90 inches",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Operating Dimensions Width - 90 inches,"
+        }
+      ]
+    },
+    {
+      "key": "overall_depth",
+      "value": 1.6256,
+      "unit": "m",
+      "original": "Depth - 64 inches",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Depth - 64 inches,"
+        }
+      ]
+    },
+    {
+      "key": "overall_height",
+      "value": 2.7686,
+      "unit": "m",
+      "original": "Height - 109 inches",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Height - 109 inches."
+        }
+      ]
+    },
+    {
+      "key": "weight",
+      "value": 1496.854821,
+      "unit": "kg",
+      "original": "Weight - 3300 lb",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 5, SPECIFICATIONS",
+          "quote": "Weight - 3300 lb"
+        }
+      ]
+    },
+    {
+      "key": "axes_layout",
+      "value": "the table moves in X on the saddle, the saddle in Y on the base, the head in Z on the column",
+      "original": "X&Y-AXIS TRAVEL; Z-AXIS TRAVEL",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-tm1-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance: the table drawn at both ends of X and of Y, the head's spindle at both ends of Z (today's TM-1/TM-1P)",
+          "quote": "X&Y-AXIS TRAVEL"
+        },
+        {
+          "source_id": "src-tm-addendum-2009",
+          "locator": "PDF p. 12, the TM-1 figure: the Z ballnut and guide on the column side of the head, the X and Y ballnuts and guides on the saddle",
+          "quote": "TM-1 pictured."
+        }
+      ]
+    },
+    {
+      "key": "table_centre_under_spindle_at_mid_travel",
+      "value": "yes, in X and in Y",
+      "original": "the table's two drawn positions are centred about the spindle",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-tm1-layout-2023",
+          "locator": "PDF p. 4, X&Y-AXIS TRAVEL [INFERENCE, measured on the drawing: the two tables' centres at x 641 and 1165 px of a 2754 px render, the spindle at 900; at y 655 and 370 px, the spindle at 510]",
+          "quote": "30in"
+        }
+      ]
+    },
+    {
+      "key": "tool_changer",
+      "value": "umbrella",
+      "original": "Tool Changer (Umbrella Type)",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2009",
+          "locator": "PDF p. 19, Introduction, the mill's features",
+          "quote": "Tool Changer (Umbrella Type)"
+        },
+        {
+          "source_id": "src-photo-front",
+          "locator": "the round white carousel beside the head"
+        }
+      ]
+    },
+    {
+      "key": "tool_pockets",
+      "value": 10,
+      "original": "10-automatic-tool-changer",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-listing-2007",
+          "locator": "the listing's title, as its URL gives it (a 2007 TM-1)",
+          "quote": "10-automatic-tool-changer"
+        },
+        {
+          "source_id": "src-toolroom-sheet-2018",
+          "locator": "PDF p. 2, TOOL CHANGERS, STANDARD (today's TM-P)",
+          "quote": "10-Station Carousel (TM-P)"
+        },
+        {
+          "source_id": "src-photo-front-right",
+          "locator": "the pocket numbers 6, 5, 4 under the carousel, about 31 to 32 degrees apart on its pocket ring [INFERENCE, measured on the photo: 36 degrees for 10 pockets]",
+          "quote": "6 5 4"
+        }
+      ]
+    },
+    {
+      "key": "carousel_to_spindle",
+      "value": 0.395,
+      "unit": "m",
+      "original": "15.6in [395mm]",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-tm1-layout-2023",
+          "locator": "PDF p. 4, X&Y-AXIS TRAVEL: the carousel's centre to the spindle's, on the operator's left (today's TM-1P's 10-pocket carousel)",
+          "quote": "15.6in"
+        }
+      ]
+    },
+    {
+      "key": "tool_changer_commands",
+      "value": "ATC FWD and ATC REV turn the carousel to the next or previous pocket",
+      "original": "ATC FWD / REV - Rotates the tool turret to the next / previous tool.",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2009",
+          "locator": "PDF p. 30, Function keys",
+          "quote": "ATC FWD / REV - Rotates the tool turret to the next / previous tool."
+        }
+      ]
+    },
+    {
+      "key": "manual_handles",
+      "value": "X and Y",
+      "original": "Manual jogging on the X and Y-axis",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 12, OPERATION",
+          "quote": "Manual jogging on the X and Y-axis"
+        },
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 4, INTRODUCTION",
+          "quote": "Manual handles on the Tool Room"
+        },
+        {
+          "source_id": "src-photo-front-right",
+          "locator": "two red handwheels on the saddle [INFERENCE: these are the manual handles]"
+        }
+      ]
+    },
+    {
+      "key": "chip_guard",
+      "value": "on the table, its height adjustable",
+      "original": "The height of the chip guard is adjustable.",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2009",
+          "locator": "PDF p. 12, CHIP GUARD OPTION [INFERENCE: it moves with the table, since it needs clearance from the pendant at the table's end]",
+          "quote": "The height of the chip guard is adjustable. This may be helpful to gain additional clearance from the operator pendant."
+        }
+      ]
+    },
+    {
+      "key": "open_frame",
+      "value": "yes: guards, no enclosure; a hand held safety switch",
+      "original": "As with any open frame mill, chip screens are highly recommended.",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-tm-addendum-2002",
+          "locator": "PDF p. 4, Safety",
+          "quote": "As with any open frame mill, chip screens are highly recommended."
+        },
+        {
+          "source_id": "src-tm-addendum-2009",
+          "locator": "PDF p. 9, SAFETY SWITCH",
+          "quote": "The TM-1 and TM-2 are equipped with a hand held safety switch."
+        }
+      ]
+    },
+    {
+      "key": "control",
+      "value": "Classic Haas Control [INFERENCE]",
+      "original": "HAAS AUTOMATION",
+      "confidence": 0.5,
+      "citations": [
+        {
+          "source_id": "src-photo-front",
+          "locator": "the pendant: POWER ON, POWER OFF, an analogue SPINDLE LOAD meter, EMERGENCY STOP, HANDLE JOG, CYCLE START, FEED HOLD, F1-F4, DISPLAY, CURSOR and OVERRIDES keys [INFERENCE: the Classic control's key groups in the 2009 manual]"
+        },
+        {
+          "source_id": "src-mill-manual-2009",
+          "locator": "PDF p. 23, PENDANT KEYBOARD INTRODUCTION",
+          "quote": "The keyboard is broken up into eight sections: Function Keys, Jog Keys, Over"
+        }
+      ]
+    },
+    {
+      "key": "date_of_manufacture",
+      "value": "11/06",
+      "original": "11/06",
+      "confidence": 0.95,
+      "citations": [
+        {
+          "source_id": "src-photo-nameplate",
+          "locator": "the nameplate's date of manufacture"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "The sources disagree on the Y travel: 12 in in the Tool Room Mill's own addendum of 2/02 (p. 5 and p. 13), on the 2018 Toolroom sheet and on dealers' listings of 2006-07 units; 16 in on today's product page, pre-install guide and layout drawing (3/6/2023). 12 in is used: the 2002 addendum is Haas's own document of the TM-1 before this 11/06 unit, and today's pages describe today's enclosed TM-1 (docs/research/2026-11-11-haas-tm1-sources.md). Not measured on the machine."
+    },
+    {
+      "severity": "warning",
+      "message": "The tool changer's 10 pockets are second-hand: a dealer's listing of a 2007 TM-1, and the 2018 sheet's 10-station carousel of today's TM-P (the 2018 TM-1 has none as standard). The photos show pockets numbered up to 9, about 36 degrees apart [INFERENCE]; the highest number was not photographed."
+    },
+    {
+      "severity": "info",
+      "message": "Which control this unit runs (Classic or Next Generation) is not confirmed: the pendant's keys match the 2009 Classic manual [INFERENCE]; read it off the screen at a visit (plan, visit list item 5)."
+    },
+    {
+      "severity": "info",
+      "message": "Today's TM-1 pages (product page, pre-install guide, layout drawing) describe today's enclosed machine: 16 in of Y, 4440 lb shipping weight, a 47.8 in table. They are cited only where the 2006 unit's own sources say nothing: the axes' layout and the carousel's place (layout drawing, p. 4)."
+    },
+    {
+      "severity": "info",
+      "message": "The operating dimensions (90 x 64 x 109 in) are the 2002 addendum's for the Tool Room Mill; whether they include the pendant's arm and the cable conduit is not stated."
+    }
+  ]
+}
