@@ -4,8 +4,9 @@
 compare with the real machines. These are the advisors' "real-world comparisons" (meeting of
 2026-10-29), and the start of "Evaluate on the standardized test set" on the README's roadmap.
 
-**Status:** drafted on 2026-11-09 for Daniel's review (Phase 0, branch `docs/lab-machines-plan`,
-PR #27). He answered eight of its nine questions the same day ("Decided on review"). Nothing is
+**Status (2026-11-09):** approved (PR #27). Phase 1 is done (PR #28, merged). Phase 2, the
+ReBeL arm, is built (`igus/rebel6dof02@v1`) and waits for Daniel's Isaac Sim checks and review. The plan was drafted on 2026-11-09 for Daniel's
+review (Phase 0, branch `docs/lab-machines-plan`, PR #27). He answered eight of its nine questions the same day ("Decided on review"). Nothing is
 built, filed or installed until he approves it. The hand-off from the chat that closed
 the drill-press plan comes first; the plan follows it, from "The plan (draft of 2026-11-09)".
 
@@ -385,31 +386,196 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
     folders, which the job took from where they were filed).
 
   Items 2 and 6 were added on Daniel's word (2026-11-09).
-- [ ] Decision record (the tools, amending 0028), worklog, PR. (2026-11-09: decision 0030
-      proposed, the worklog written, the PR opened for Daniel's review.)
+- [x] Decision record (the tools, amending 0028), worklog, PR. (2026-11-09: decision 0030
+      accepted; PR #28 merged on Daniel's word.)
 
 **Measured by:** the tests; every copied photo's SHA-256 matching its original; the masks looked
 at; the new tools used in Phase 2.
 
 ## Phase 2 - The ReBeL arm: levels 1 and 2
-- [ ] Reference facts for `igus/rebel6dof02`, each quoted from igus's documentation or the URDF,
-      with the issue "version 02 not confirmed to match 00/01".
-- [ ] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
+
+### Hand-off (2026-11-09, from the plan's Phase 1 chat)
+- **Where you start:** from `main` after PR #28 (merge commit `6c0078d`, 2026-11-10T05:49Z), on
+  branch `feat/lab-phase-2-rebel-arm`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-1-photos-and-tools` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request.
+- **Read first:**
+  - CLAUDE.md "Current phase";
+  - this phase's checklist;
+  - above, "What the sources and photos settled since the hand-off", "Decided on review" and "How
+    'accurately' is measured: the scorecard";
+  - decisions [0029](decisions/0029-cutting-the-machine-out-of-each-photo.md) and
+    [0030](decisions/0030-tools-the-drill-press-agent-lacked.md);
+  - `docs/agent-procedure.md`. Its new steps are 2.4 (`set_photo`), 2.5 (check the cut-outs),
+    3.6 (`correct_issue`), 5b.2 (`fit_circles` with `within` or a direction), 5b.8 (mesh
+    warnings) and 5b.10 (`dry_run_twin`);
+  - the [cut-out research note](research/2026-11-09-background-removal-spike.md), "Second
+    update";
+  - [the worklog of 2026-11-09](worklog/2026-11-09.md). It is long, so read it by its headings.
+
+#### What Phase 1 left for this phase
+- **The arm's inputs,** in `data/machines/igus-rebel6dof02/inputs/` (key `igus/rebel6dof02`):
+  - **10 photos** with `SOURCES.md` lines. The proposed generator views are:
+    - `133252` operator_left;
+    - `133306` front: the hand faces the camera, since the front is where the fingertips point;
+    - `133317` operator_right;
+    - `133326` back: the connector panel. It shows the arm's IP address, so it stays out of
+      commits.
+
+    The corners and the two top views are evidence.
+  - **The views are Claude Code's reading** of the photos. Daniel checked the TM-1's views, not
+    the arm's, so **ask him to confirm the arm's four before generating**. `set_photo` corrects
+    them until the mesh is made, and refuses after that.
+  - **`documents/`** holds igus's technical documentation (08/2022), and the iRC_ROS, LinkerBot
+    and Realhand models at fixed commits, each with a `MANIFEST.sha256`.
+  - **The temp folder** `data/machine photos (temp)/` is gone: the copies were checked first, as
+    Daniel allowed.
+- **Cutting the arm out of its photos** (decision 0029; cut-out trial, second update):
+  - **The boxes tried** (fractions of the upright photo, x0, y0, x1, y1; from
+    `data/scratch/2026-11-09_background-spike/cutout_trial_runs.py`):
+    - `133252`: SAM, box (0.24, 0.20, 0.90, 0.88), keep (0.35, 0.5) and (0.8, 0.43), drop
+      (0.5, 0.82). Result: **clean**, the arm and the hand.
+    - `133306`: SAM, box (0.33, 0.20, 0.78, 0.80), keep (0.52, 0.45), drop (0.32, 0.82) and
+      (0.55, 0.95). Result: **the hand and base kept, the middle of the arm lost.** The arm is
+      end-on to the camera here; try more keep points along it.
+    - `133317`: a crop box alone, (0.18, 0.08, 0.88, 1.0). Result: the forearm and hand lost,
+      so use SAM there.
+    - `133326`: not tried.
+  - **What to drop with points:** the e-stop, the foam box, the bench edge and the cables in front
+    (first trial's table).
+  - **Each try takes 2 to 4 s a photo** with `preview_cutouts` or
+    `python -m moonwalkers.pipelines.b cutouts <run>`. The sheet is `<run>/cutouts/sheet.png`.
+- **The new tools' first real use is this phase.** The MCP server has 28 tools, and a server
+  started before 2026-11-09 does not list them: **restart it (`/mcp`, reconnect)** before an
+  agent uses them. What to know about each:
+  - **`fit_circles`:**
+    - `along` is an axis or `[dx, dy, dz]`. A position in `at` is then p · d for the unit d, in
+      model units, after orienting and turning by `yaw_deg`.
+    - `within` is ranges on the twin's axes, in model units.
+    - **The slice's thickness and the fit's tolerance are not arguments.** Both are 1% of the
+      mesh's largest extent. For the arm's thin links that may be too coarse [INFERENCE]. If it
+      is, log it as a tool gap, or expose them (they are already `fit_circles` options in
+      `mesh_tools`).
+  - **`correct_issue`:** numbered from 1, as in the notes summary's `issue_list`. A withdrawal
+    renumbers the ones after it, and a built run is refused.
+  - **`preview_twin`'s mesh warnings:** one per part, with points in model units. Moving a cut
+    or a stand-in's size by a millimetre or two clears them; the T33901's table rim did.
+  - **`dry_run_twin`:**
+    - it took 3.5 min on the T33901, mostly NVIDIA's validator on the large parts;
+    - it leaves `data/scratch/<date>_dry-run-<NNN>/` each time, to clean by hand;
+    - a run that has built its twin is refused;
+    - "clean" means no error or warning from either validator.
+  - **This phase's PR says which of them were used and how they did** (the checklist's last
+    item). Phase 8 then brings `docs/tool-guide.md` up to date (Daniel, 2026-11-09).
+- **Other inputs for this phase:**
+  - **The scale:** X2, 237 mm (igus's p. 6 drawing).
+  - **The score's shape distance** needs the ROS model's `.dae` meshes read, which may need an
+    install. Ask Daniel first, with what it is, why, its licence and its size.
+  - **The maker's name:** "igus" and "igus GmbH" now give the same key, `igus/rebel6dof02`
+    (decision 0009, update; Phase 1's first item).
+
+#### Decided in the Phase 1 chat (2026-11-09)
+- **Decision 0029** (accepted): an optional `cutout` per photo in `request.json`: a SAM box and
+  points, a crop box, or a drawn mask. SAM is the first choice.
+- **Decision 0030** (accepted): `correct_issue`; `fit_circles` with `within` and a direction;
+  mesh warnings in `preview_twin`; `dry_run_twin`; uploads from several folders.
+- **The TM-1's shiny guards:** SAM leaves holes in them. Daniel agreed that a hand-drawn mask
+  fixes them in the TM-1's phase (Phase 4).
+- **The tool guide** documents every new tool now, and names the ones no agent build has used
+  yet. Phase 8 updates it once they have proven themselves (Daniel).
+- **The upload form:** Daniel checked it by hand (repeat, "Remove", the count in the label).
+  After a dashboard change, rebuild `dashboard/dist/` (`npm run build`), and ask him to
+  hard-refresh: he saw the label only after a refresh.
+
+#### Haas's sources, for Phases 4 to 6 (filed in `data/`; `SOURCES.md` per mill)
+- **What answers a script:** haascnc.com's HTML pages answer 403, its PDFs under `/content/dam/`
+  answer 200 (memory "haas-site-access").
+- **The TM-1's folder** holds:
+  - the Toolroom Series sheet (2018);
+  - the Classic-control mill manual 96-8000 Rev Y (2009);
+  - the 2023 manual for the Next Generation Control, which serves both mills (G-codes from
+    p. 163, M-codes from p. 177);
+  - the product page and pre-install guide, saved by Daniel.
+- **The VF-3's folder** holds the Classic manual Rev AP (2012) and the product page, saved by
+  Daniel.
+- **Daniel's Firefox-printed copy** of the 2023 manual was deleted on his word. Its text did not
+  extract.
+- **Not confirmed:** whether each mill runs the Classic Haas Control or the Next Generation
+  Control. Read it off the screen at the next visit (visit list, item 5).
+- **A disagreement to settle in Phase 4:** the TM-1's Y travel is 12 in on the 2018 sheet and
+  the dealers' listings of 2006-07 units, and 16 in on today's page and pre-install guide.
+  Today's pages describe today's models. For example, today's TM-1 has no tool changer, and the
+  lab's has an umbrella one.
+
+#### Pitfalls found in this chat
+- **The backend has no Pillow:**
+  - pypdfium2's `to_pil()` fails, and the backend's `write_png` takes only an H x W uint8
+    (grey) array;
+  - for colour images or contact sheets, use the generator environment's Python:
+    `C:\mw-gen\hunyuan3d-2\.venv\Scripts\python.exe -I`.
+- **Console output:** `python -I` ignores `PYTHONIOENCODING`, and the console is cp1252. A
+  script that prints non-ASCII text needs `sys.stdout.reconfigure(encoding="utf-8")`.
+- **Bash:**
+  - a heredoc holding Python triple quotes fails, so write scripts with the Write tool into the
+    session's scratchpad (memory "bash-script-pitfalls");
+  - a `cat > file` with nothing piped in waits until the tool's timeout.
+- **Driving the dashboard by script:**
+  - run headless Edge (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+    --headless=new --remote-debugging-port=9333 --user-data-dir=<scratch>`);
+  - drive it from Node's built-in WebSocket over the DevTools protocol: `DOM.setFileInputFiles`
+    for picks, and React's inputs need the native `value` setter plus an `input` or `change`
+    event;
+  - nothing to install. The 2026-11-09 script was in the session's scratchpad and is not kept.
+- **Test times on this machine:**
+  - `pytest -m "not gpu and not slow"`: 737 tests in about 4 min;
+  - `-m "not gpu"`: 742 tests in about 7.5 min;
+  - the GPU test: 57 s, with `MOONWALKERS_GEN_ROOT=C:\mw-gen`.
+
+#### Waiting, beside this phase
+- **The weekly meeting of Thursday 2026-11-12:**
+  - the scorecard goes to it "if possible" (Decided on review, 6);
+  - afterwards, ask Daniel for the advisors' answers and record them the same day.
+- **Question 9,** which machine the agent builds in Phase 8, is still open.
+- **The items "Carried over, none blocking"** in the first hand-off still stand.
+
+### Phase 2's checklist
+- [x] Reference facts for `igus/rebel6dof02`, each quoted from igus's documentation or the URDF,
+      with the issue "version 02 not confirmed to match 00/01". (31 facts; 34 of 40 quotes found
+      on their page, the other 6 photo labels and Daniel's words.)
+- [x] A box-and-cylinder arm first, as in the drill press's Phase 1: six joints in series on the
       cited frames, the hand a box. Daniel checks in Isaac Sim that each joint turns through its
-      range, and that six driven joints hold a pose under gravity.
-- [ ] The views, the front (where the fingertips point in the photographed pose, fixed to the
-      base; Daniel, 2026-11-09) and the zero pose, in a decision record.
-- [ ] Generate the mesh from the four sides, and look at it with `inspect_geometry`.
-- [ ] Cut it into seven parts and the hand by cited shapes (decision 0023), with the joint housings
+      range, and that six driven joints hold a pose under gravity. (Run
+      `moonwalkers-testarm/runs/2026-11-09_run-001`, Daniel's checks of 2026-11-10: every joint
+      reaches its upper limit within 0.001 degrees; the default drive sags 1.1 to 1.5 degrees,
+      the stiff one 0.06, so the arm holds with the stiff one, decision 0032.)
+- [x] The views, the front (where the fingertips point in the photographed pose, fixed to the
+      base; Daniel, 2026-11-09) and the zero pose, in a decision record: decision 0031,
+      proposed.
+- [x] Generate the mesh from the four sides, and look at it with `inspect_geometry`. (Each photo
+      cut out by a mask made from SAM's cut-out; worklog 2026-11-09, Phase 2.)
+- [x] Cut it into seven parts and the hand by cited shapes (decision 0023), with the joint housings
       measured by `fit_circles`. The hand is the generator's fused shape, one labelled part on the
       flange, until Phase 7 (Daniel, 2026-11-09). The cables fused into the mesh are logged.
-- [ ] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
-      straightest link]. Size checks on all the others.
-- [ ] Measure each joint's angle in the photographed pose; set the start pose and the limits.
-- [ ] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
-- [ ] The score: a small scorer for the measures above. The shape distance needs the ROS model's
-      `.dae` meshes read, which may need an install (asked first).
-- [ ] Decision records, worklog, `RUN.md`, PR. The PR says which of Phase 1's new tools were
+      (Seven bodies: the URDF's flange is a 1.2 mm disc, merged into the hand; decision 0031.)
+- [x] Scale by a cited length between two fitted joint axes: X2, 237 mm [INFERENCE: the
+      straightest link]. Size checks on all the others. (X4 is -17.9%, a warning.)
+- [x] Measure each joint's angle in the photographed pose; set the start pose and the limits.
+- [x] Dry run, both validators, the real build; Daniel's Isaac Sim check with the joint recorder.
+      (v1 built, both validators clean; Daniel's checks of 2026-11-10: both ends of every range
+      reached within 0.01 degrees; the arm folds through itself, loose bits float, extra cable
+      strands and a duplicate thumb. `igus/rebel6dof02@v2` (run `2026-11-10_run-001`, decision
+      0032): stiffer holds, the strands and bits cut out, a self-collision check file. Daniel's
+      check of v2 (2026-11-10): no movement under Shift+drag; the collision file clean, no dots,
+      most wires gone. Decisions 0031 and 0032 accepted. `igus/rebel6dof02@v3` (run
+      `2026-11-10_run-002`): the remaining strands cut by measured boxes, collisions on in the
+      twin. Dry run clean. Daniel's check of v3 (2026-11-10): no free hanging wires, "a wire or
+      two attached"; the spin's parts do not pass through each other; gaps on the backs of the
+      joints, for later. Recordings: the twin holds within 0.043 degrees; in the spin, parts
+      meeting stop joint 2 at +78.9 degrees and push joint 3 back from its limit.)
+- [x] The score: a small scorer for the measures above. The shape distance needs the ROS model's
+      `.dae` meshes read, which may need an install (asked first). (`pipelines/b/score.py`,
+      standard library and numpy; nothing installed. Ranges wait for recordings.)
+- [x] Decision records, worklog, `RUN.md`, PR. The PR says which of Phase 1's new tools were
       used and how they did, for the tool guide (Phase 8).
 
 **Measured by:** the scorecard's sizes, photo match, shape, parts and joints, axes and ranges.
@@ -546,7 +712,8 @@ merging Sarkis's branch needs one too.
 |---|---|
 | The tools for the lab's builds (amends 0028) | 1 |
 | Crop boxes or masks for busy photos, if the spike needs one (amends 0022) | 1 |
-| A robot arm: its front, zero pose, and the public models' role | 2 |
+| A robot arm: its front, zero pose, and the public models' role: [0031](decisions/0031-the-arms-views-front-and-zero-pose.md), accepted | 2 |
+| An arm's hold, its loose pieces and its self-collision: [0032](decisions/0032-an-arms-hold-its-loose-pieces-and-self-collision.md), accepted | 2 |
 | An arm's joint programs | 3 |
 | Mill programs: a G-code reader | 5 |
 | The VF-3's trunnion axes | 6 |

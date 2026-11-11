@@ -58,7 +58,7 @@ from moonwalkers.orchestrator.photos import SAM_MODEL, Cutout, InputPhoto
 from ..base import Pipeline, result_id_for
 from .assemble import AssembledParts, GeometrySpec, Vec3, assemble
 from .mesh_tools import load_mesh, render_views
-from .parts_spec import AssembledModel, PartsSpec, assemble_parts
+from .parts_spec import AssembledModel, PartsSpec, assemble_parts, loose_label
 from .photos import PhotoPlan, photo_issues, plan_photos
 
 VERSION = "0.1.0"
@@ -694,6 +694,16 @@ def parts_issues(spec: PartsSpec, model: AssembledModel) -> list[Issue]:
                     ref=part.part_id,
                     message=f"Cut out of the twin ({model.removed_faces[part.part_id]} faces "
                     f"of the generated mesh): {part.note}",
+                )
+            )
+        elif part.loose_pieces == "remove":
+            issues.append(
+                Issue(
+                    severity="info",
+                    ref=part.part_id,
+                    message=f"Its loose pieces are cut out of the twin "
+                    f"({model.removed_faces[loose_label(part.part_id)]} faces of the generated "
+                    f"mesh): only its largest piece is kept. {part.note}",
                 )
             )
         elif pieces[part.part_id].pieces > 1:

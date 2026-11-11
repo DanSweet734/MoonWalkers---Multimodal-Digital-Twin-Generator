@@ -266,9 +266,17 @@ decision 0027 and its updates) is a worked example.
 3. **`set_spec_frame`:** up, front and yaw_deg as inspected; `origin_xy` where the twin's origin
    goes (the spindle's axis); `fixed_part` (the frame, which keeps every face no cut takes); and
    `method`.
+   - **An arm** (decision 0032): `hold_drive` (stiffness 10000, damping 200, with `why`) when
+     driven joints must hold a pose under gravity; the default (100, 20) sags about a degree.
+     `self_collision` "check" adds `checks/self_collision.usdc`, where the parts no joint joins
+     collide; set "on" only after a person's check of that file shows no jam.
 4. **`set_cut_list`:** an ordered list; a face goes to the first entry whose shape holds its
    centre. Give each entry a note naming its evidence.
    - Faces of a part the mesh gets wrong go to a **removed** part, which a stand-in replaces.
+   - Loose bits and strands (cables) the generator left: `loose_pieces: "remove"` on a cut part
+     keeps only its largest connected piece (decision 0032). Strands fused to a surface need
+     shapes: keep the body inside cylinders about its axis, measured where its faces end, and
+     send the rest to a removed part.
    - An entry for the fixed part early in the list keeps its faces out of later, larger shapes
      (the head's wall behind a removed handle hub).
 5. **`set_spec_part`** for every part: `cut`, `removed` or `stand_in`.

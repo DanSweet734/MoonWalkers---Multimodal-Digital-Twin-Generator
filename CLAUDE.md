@@ -6,12 +6,12 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 1 (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`. The plan was approved and merged on 2026-11-09 (PR
-#27; Daniel's answers in its "Decided on review"). Phase 1 (file the photos and sources, close the
-tool gaps) is done on branch `feat/lab-phase-1-photos-and-tools`, built in the plan chat on
-Daniel's word, and waits for his review in its pull request.
-- **Done:**
+## Current phase: the lab's machines plan, Phase 2, the ReBeL arm, in review (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 2", whose hand-off comes first. Phase 2 runs on
+branch `feat/lab-phase-2-rebel-arm`, from `main` after PR #28; its first commit is the hand-off.
+The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
+**Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
+- **Done in Phase 1:**
   - the photos are filed;
   - Daniel chose SAM for cutting the machine out, with crop boxes and drawn masks as options. The
     per-photo cut-out (decision 0029, accepted), its preview and `set_photo` (tool gap 1) are
@@ -19,9 +19,32 @@ Daniel's word, and waits for his review in its pull request.
   - tool gaps 2, 4, 5, 6 and 7 are closed (decision 0030, accepted). The MCP server has 28
     tools: `correct_issue`, and `fit_circles` with `within` and a direction; mesh warnings in
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
-- **Left:** nothing in Phase 1 once PR #28 is merged. Haas's sources are filed: the mill manuals
-  and the Toolroom sheet fetched (its PDFs answer scripts), its three web pages saved by Daniel.
-  Then Phase 2, the ReBeL arm, in a new chat.
+  - Haas's sources are filed: the mill manuals and the Toolroom sheet fetched (its PDFs answer
+    scripts), its three web pages saved by Daniel.
+- **Phase 2 is built and in review** (branch `feat/lab-phase-2-rebel-arm`, its PR open):
+  - `igus/rebel6dof02@v1` (run `2026-11-09_run-001`): seven parts on six joints, posed as
+    photographed; position 0 is that pose and igus's limits are shifted by each joint's angle
+    in it (decision 0031, accepted 2026-11-10). Reference facts: `pipelines/b/igus_rebel6dof02.reference.json`.
+  - A box-and-cylinder arm (`python -m moonwalkers.usd.primitive_arm <run>`, run
+    `moonwalkers-testarm/runs/2026-11-09_run-001`), checked by Daniel on 2026-11-10: every
+    joint through its range; the default drive sags 1.1-1.5 degrees, the stiff one 0.06.
+  - v1 checked the same day: both ends of every range reached. Its flaws (folds through itself,
+    loose bits, extra cable strands, a duplicate thumb) led to decision 0032 (accepted 2026-11-10): a
+    per-twin `hold_drive`, `loose_pieces: "remove"` and `self_collision` in the spec.
+    `igus/rebel6dof02@v2` (run `2026-11-10_run-001`, set up by
+    `part_cutting/2026-11-10_spec/compose_v2.py`) applies them. Daniel's check of v2 was clean
+    (it holds; no folding, flying apart or floating dots).
+  - `igus/rebel6dof02@v3` (run `2026-11-10_run-002`, `compose_v3.py` there): the strands v2
+    left cut by measured boxes, and collisions on in the twin (`self_collision` "on"). Daniel's
+    check of v3 (2026-11-10): "in a good spot"; parts no longer pass through each other, and it
+    holds within 0.043 degrees. Left for later: a wire or two still attached, and gaps on the
+    backs of the joints (likely the cut list's open seams [INFERENCE]).
+  - The scorer: `uv run python -m moonwalkers.pipelines.b.score <run> --maker
+    src/moonwalkers/pipelines/b/igus_rebel6dof02.score.json [--recording <csv> ...]` writes
+    `<run>/score/SCORE.md`.
+  - A fed photo is now fitted on a copy of at most 800 pixels (`part_views.fit_photo`): the
+    lab's 12-megapixel photos made `dry_run_twin` time out. **Restart the MCP server (`/mcp`)**
+    before an agent builds again (it also picks up decision 0032's `set_spec_frame` fields).
 
 The history below is the record of the PoC and the drill-press plan.
 

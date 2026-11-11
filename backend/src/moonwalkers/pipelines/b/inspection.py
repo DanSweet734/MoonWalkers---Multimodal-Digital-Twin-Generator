@@ -55,6 +55,7 @@ from .parts_spec import (
     assemble_parts,
     open_loops,
     oriented_mesh,
+    removed_labels,
 )
 from .pipeline import (
     ReferenceFacts,
@@ -325,7 +326,7 @@ def preview_parts_spec(
         *size_checks(model, reference),
         *spec_size_checks(spec, model.scale_factor, reference),
     ]
-    removed = {p.part_id for p in spec.parts if p.kind == "removed"}
+    removed = removed_labels(spec)
     holes = [loop for loop in open_loops(mesh, spec) if removed & set(loop.across)]
     faults = part_fault_issues(
         [(p.part_id, p.path) for p in model.parts], model.origin_model_units, model.scale_factor

@@ -857,6 +857,21 @@ async def several_parts_run(client: Client, photo_run) -> tuple[str, dict[str, A
 
 
 @pytest.mark.anyio
+async def test_the_frame_sets_a_stiffer_hold(drill_press_server, photo_run) -> None:
+    async with Client(drill_press_server) as client:
+        run, _ = await several_parts_run(client, photo_run)
+        hold = {"stiffness": 10000.0, "damping": 200.0, "why": "an arm sags (decision 0032)"}
+        frame = {"up": "+y", "front": "+z", "origin_xy": [0.0, 0.0], "fixed_part": "frame"}
+        await ok(client, "set_spec_frame", run=run, **frame, method="test", hold_drive=hold)
+        spec_path = photo_run.data_dir / run / "geometry_spec.json"
+        assert json.loads(spec_path.read_text(encoding="utf-8"))["hold_drive"] == hold
+        assert "damping" in await fails(
+            client, "set_spec_frame", run=run, **frame, method="test",
+            hold_drive={"stiffness": 10000.0, "damping": -1.0, "why": "wrong"},
+        )  # fmt: skip
+
+
+@pytest.mark.anyio
 async def test_a_spec_of_several_parts_is_set_piece_by_piece(drill_press_server, photo_run) -> None:
     from moonwalkers.usd import primitive_drill_press as dp
 

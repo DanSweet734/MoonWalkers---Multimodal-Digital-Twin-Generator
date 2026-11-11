@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -227,3 +228,44 @@ def test_the_t33901_reference_facts_load() -> None:
     assert reference.fact("max_spindle_speed").value == pytest.approx(
         2860 * 2 * 3.14159265 / 60, rel=1e-5
     )
+
+
+def test_a_quote_from_a_text_source_is_looked_for_in_the_whole_file(tmp_path: Path) -> None:
+    # A robot description has no pages (the ReBeL's .xacro; lab's machines plan, Phase 2).
+    urdf = tmp_path / "machines" / "arm" / "inputs" / "documents" / "arm.description.xacro"
+    urdf.parent.mkdir(parents=True)
+    urdf.write_text(
+        '<joint name="joint2">\n  <origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0 0.149"/>\n</joint>\n',
+        encoding="utf-8",
+    )
+    source = Source(
+        source_id="urdf",
+        kind="file",
+        uri="machines/arm/inputs/documents/arm.description.xacro",
+        retrieved_at=NOW,
+    )
+    found, missing = check_quotes(
+        [source],
+        [
+            (
+                "a",
+                Citation(
+                    source_id="urdf", quote='<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0 0.149"/>'
+                ),
+            ),
+            ("b", Citation(source_id="urdf", quote='xyz="0.0 0 0.150"')),
+        ],
+        tmp_path,
+    )
+    assert (found.status, found.detail) == ("found", "arm.description.xacro")
+    assert missing.status == "not_found"
+
+
+def test_the_rebel_reference_facts_load() -> None:
+    reference = load_reference(REFERENCES / "igus_rebel6dof02.reference.json")
+    assert reference.identity is not None and reference.identity.model == "REBEL-6DOF-02"
+    assert reference.fact("joint2_to_joint3").value == pytest.approx(0.237)
+    assert reference.fact("joint2_upper").value == pytest.approx(math.radians(140))
+    assert reference.fact("max_joint_speed").value == pytest.approx(math.radians(45))
+    # the issue the plan asks for (Phase 2's first item)
+    assert any("Version 02 not confirmed to match 00/01" in i.message for i in reference.issues)

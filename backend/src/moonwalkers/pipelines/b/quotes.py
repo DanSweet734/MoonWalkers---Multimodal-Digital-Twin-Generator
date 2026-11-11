@@ -3,7 +3,9 @@
 Rule 1 says every fact needs a source; this checks the quotes cheaply. A citation is checked when
 its source is a PDF kept under the data folder: a ``file`` source by its path, or any source with a
 SHA-256 by finding the file with that hash under ``machines/*/inputs/``. The page is the
-locator's "PDF p. N", else its first "p. N".
+locator's "PDF p. N", else its first "p. N". A ``file`` source that is a text file (a robot
+description such as the ReBeL's ``.xacro``, a saved web page; ``TEXT_SUFFIXES``) has no pages,
+so its quote is looked for in the whole file (the lab's machines plan, Phase 2).
 
 pypdf's text is not the page as printed, so a quote is matched loosely (worklog 2026-10-23):
 
@@ -113,6 +115,12 @@ def check_quotes(
             checks.append(QuoteCheck(where, citation, "not_checked", "unknown source"))
             continue
         pdf = local_pdf(source, data_dir)
+        text_file = local_text(source, data_dir) if pdf is None else None
+        if text_file is not None:  # a text source has no pages: the quote is looked for anywhere
+            found = quote_pattern(citation.quote).search(file_text(text_file))
+            status: Status = "found" if found else "not_found"
+            checks.append(QuoteCheck(where, citation, status, text_file.name))
+            continue
         if pdf is None:
             reason = "no local PDF of this source" if source.kind != "user_input" else "user input"
             checks.append(QuoteCheck(where, citation, "not_checked", reason))
@@ -146,6 +154,23 @@ def local_pdf(source: Source, data_dir: Path) -> Path | None:
         if path is not None and path.suffix.lower() == ".pdf":
             return path
     return None
+
+
+TEXT_SUFFIXES = frozenset({".xacro", ".urdf", ".xml", ".txt", ".md", ".html", ".htm"})
+
+
+def local_text(source: Source, data_dir: Path) -> Path | None:
+    """A ``file`` source that is a text file under ``data_dir`` (a robot description, a saved
+    web page), or None."""
+    if source.kind != "file":
+        return None
+    path = (Path(data_dir).resolve() / source.uri).resolve()
+    return path if path.suffix.lower() in TEXT_SUFFIXES and path.is_file() else None
+
+
+@cache
+def file_text(path: Path) -> str:
+    return plain(path.read_text(encoding="utf-8", errors="replace"))
 
 
 @cache
