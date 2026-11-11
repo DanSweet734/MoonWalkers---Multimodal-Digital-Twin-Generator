@@ -41,6 +41,10 @@ C:\mw-octopart\Scripts\python.exe -m playwright install chromium
 $env:MOONWALKERS_OCTOPART_PYTHON = "C:\mw-octopart\Scripts\python.exe"
 ```
 
+If `py -3.12` finds no runtime (Python 3.12 managed by uv only), create the environment with
+`uv venv --python 3.12 --seed C:\mw-octopart` instead. Measured on 2026-11-10 (Windows 11,
+playwright 1.65.0): the venv is 127 MB, Chromium 450 MB and its headless shell 286 MB.
+
 On macOS/Linux, use a Python 3.12 virtual environment outside the repo and its `bin/python`:
 
 ```sh
@@ -124,5 +128,10 @@ The integration's 19 offline tests passed with Python 3.12 and the available Pyd
 Full pytest/ruff checks could not run here because those tools were unavailable. The existing
 CLI import required unavailable `trimesh`; live browser execution needs unavailable Playwright
 and Chromium. The earlier direct Octopart access attempt returned HTTP 403. Live end-to-end
-extraction remains unverified. Before relying on results, run one real product locally and
+extraction remains unverified.
+
+**Live check, 2026-11-10: blocked.** With the environment installed (`C:\mw-octopart`), the
+search for `LM358DR` returned 0 facts and one error issue. Octopart answered the headless
+browser with HTTP 403 and a "Please complete the security check" page. The pipeline stopped
+with an issue, as designed. Worklog: `docs/worklog/2026-11-10.md`. Before relying on results, run one real product locally and
 compare its cited metadata and evidence with the page.
