@@ -12,7 +12,7 @@ The measures, each against the plan's starting target:
 - **joint axes and places:** each twin axis's direction (degrees) and position (mm) against the
   maker's joint frames in the same pose;
 - **ranges:** from joint recordings made in Isaac Sim, the range each joint reached against the
-  twin's limits (within 1 degree);
+  twin's limits (within 1 degree, or 1 mm on a sliding joint);
 - **evidence:** the twin's quotes found on their cited pages (``quotes.check_quotes``), and its
   stand-ins and issues counted.
 
@@ -68,6 +68,7 @@ SCORE_DIR = "score"
 SIZE_TARGET = 0.06  # the T33901 reached -5.9% to +5.8% (the plan's scorecard)
 SIZE_FLAG = 0.10
 RANGE_TARGET_DEG = 1.0
+RANGE_TARGET_MM = 1.0  # a sliding joint's (the plan's scorecard: "within 1 deg or 1 mm")
 SHAPE_SAMPLES = 40_000  # surface samples a part (and a maker's link)
 _CHUNK = 500
 
@@ -389,13 +390,17 @@ class AxisScore:
 
 @dataclass
 class RangeScore:
+    """A joint's limits and the range it reached, in degrees, or millimetres on a sliding
+    joint (``unit``)."""
+
     joint: str
-    lower_deg: float
-    upper_deg: float
-    reached_min_deg: float
-    reached_max_deg: float
-    lower_reached: bool  # within RANGE_TARGET_DEG of the lower limit
+    lower: float
+    upper: float
+    reached_min: float
+    reached_max: float
+    lower_reached: bool  # within RANGE_TARGET_DEG (or _MM) of the lower limit
     upper_reached: bool
+    unit: str = "deg"
 
     @property
     def within_target(self) -> bool:
@@ -541,23 +546,29 @@ def parts_and_joints(result: PipelineResult, maker: MakerModel, model: UrdfModel
 def range_scores(result: PipelineResult, recordings: Sequence[Path]) -> list[RangeScore]:
     """Each joint's reached range over all ``recordings`` (the joint recorder's CSVs) against
     the twin's limits; joints no recording names are left out."""
-    reached: dict[str, list[float]] = {}
+    # the recorder's position columns: "<joint> (rad)" turning, "<joint> (m)" sliding
+    shown = {"rad)": (math.degrees, "deg", RANGE_TARGET_DEG), "m)": (_mm, "mm", RANGE_TARGET_MM)}
+    reached: dict[str, tuple[list[float], str]] = {}
     for path in recordings:
         with open(path, newline="", encoding="utf-8") as f:
             rows = list(csv.reader(f))
         header = rows[0]
         for column, title in enumerate(header):
             name, _, unit = title.partition(" (")
-            if unit != "rad)":
+            if unit not in shown:
                 continue
-            values = [math.degrees(float(r[column])) for r in rows[1:] if r[column]]
-            reached.setdefault(name, []).extend(values)
+            convert, label, _ = shown[unit]
+            values = [convert(float(r[column])) for r in rows[1:] if r[column]]
+            reached.setdefault(name, ([], label))[0].extend(values)
     scores = []
     for joint in result.joints:
-        values = reached.get(joint.joint_id)
-        if not values or joint.lower_limit is None or joint.upper_limit is None:
+        if joint.joint_id not in reached or joint.lower_limit is None or joint.upper_limit is None:
             continue
-        lower, upper = math.degrees(joint.lower_limit), math.degrees(joint.upper_limit)
+        values, label = reached[joint.joint_id]
+        if not values:
+            continue
+        convert, _, target = next(s for s in shown.values() if s[1] == label)
+        lower, upper = convert(joint.lower_limit), convert(joint.upper_limit)
         low, high = min(values), max(values)
         scores.append(
             RangeScore(
@@ -566,11 +577,16 @@ def range_scores(result: PipelineResult, recordings: Sequence[Path]) -> list[Ran
                 round(upper, 2),
                 round(low, 2),
                 round(high, 2),
-                abs(low - lower) <= RANGE_TARGET_DEG,
-                abs(high - upper) <= RANGE_TARGET_DEG,
+                abs(low - lower) <= target,
+                abs(high - upper) <= target,
+                label,
             )
         )
     return scores
+
+
+def _mm(metres: float) -> float:
+    return metres * 1000.0
 
 
 def evidence(result: PipelineResult, spec: PartsSpec, data_dir: Path) -> dict:
@@ -698,12 +714,12 @@ def format_score(score: Score) -> str:
         ]
     else:
         lines.append("- not measured")
-    lines += ["", "## Ranges reached in Isaac Sim (target: within 1 degree)", ""]
+    lines += ["", "## Ranges reached in Isaac Sim (target: within 1 degree or 1 mm)", ""]
     if score.ranges:
-        lines += ["| Joint | Limits (deg) | Reached (deg) | |", "|---|---|---|---|"]
+        lines += ["| Joint | Limits | Reached | |", "|---|---|---|---|"]
         lines += [
-            f"| {r.joint} | {r.lower_deg:+.2f} to {r.upper_deg:+.2f} | {r.reached_min_deg:+.2f} "
-            f"to {r.reached_max_deg:+.2f} | {r.verdict} |"
+            f"| {r.joint} | {r.lower:+.2f} to {r.upper:+.2f} {r.unit} | {r.reached_min:+.2f} "
+            f"to {r.reached_max:+.2f} {r.unit} | {r.verdict} |"
             for r in score.ranges
         ]
     else:
