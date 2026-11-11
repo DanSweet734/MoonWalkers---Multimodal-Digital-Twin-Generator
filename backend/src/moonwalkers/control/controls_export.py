@@ -86,8 +86,12 @@ def write_controls_folder(
     twin: TwinRecord,
     results: Sequence[PipelineResult],
     data_dir: Path,
+    hold: DriveSettings | None = None,
+    collide_unjoined: bool = False,
 ) -> ControlsOutput:
-    """Write the controls folder ``out_dir`` for ``twin``."""
+    """Write the controls folder ``out_dir`` for ``twin``, holding its joints with ``hold`` (the
+    twin's own drive, decision 0032; the exporter's default without one) and its unjoined parts
+    colliding if ``collide_unjoined``."""
     out_dir = Path(out_dir)
     if out_dir.exists():
         raise ExportError(f"{out_dir} exists; controls folders are never overwritten")
@@ -102,7 +106,14 @@ def write_controls_folder(
             note="a velocity drive that run_controls.py sets on every physics step (decision 0025)",
         )
     }
-    stage = build_stage(twin, results, DriveSettings.hold(0.0), data_dir, joint_settings=settings)
+    stage = build_stage(
+        twin,
+        results,
+        hold or DriveSettings.hold(0.0),
+        data_dir,
+        joint_settings=settings,
+        collide_unjoined=collide_unjoined,
+    )
     spec = controller_spec(controls, joints, _joint_paths(stage), twin.twin_id)
     plans = {name: plan_scenario(spec, name) for name in spec["scenarios"]}
     _add_controls_prim(stage, controls, controls_file, spec)

@@ -534,6 +534,12 @@ at; the new tools used in Phase 2.
 #### Waiting, beside this phase
 - **The weekly meeting of Thursday 2026-11-12:**
   - the scorecard goes to it "if possible" (Decided on review, 6);
+  - **ask the lab for the ReBeL arm's own iRC program** (Daniel, 2026-11-10: "I'll ask at the
+    meeting this week"): the `.xml` file iRC saves, or a screenshot of its program list. With
+    it, decision 0033 is revisited (Daniel accepted it "as is until we know if we get the
+    program from the lab") and the program runs on the twin in place of the test program.
+    Also wanted, if they can: the arm's angles shown in iRC in the photographed pose (joints 1,
+    4 and 6 are taken as 0, decision 0031);
   - afterwards, ask Daniel for the advisors' answers and record them the same day.
 - **Question 9,** which machine the agent builds in Phase 8, is still open.
 - **The items "Carried over, none blocking"** in the first hand-off still stand.
@@ -581,14 +587,82 @@ at; the new tools used in Phase 2.
 **Measured by:** the scorecard's sizes, photo match, shape, parts and joints, axes and ranges.
 
 ## Phase 3 - The ReBeL arm: level 3
-- [ ] Research note: what an igus Robot Control (iRC) program holds (joint and linear moves,
+
+### Hand-off (2026-11-10, from the plan's Phase 2 chat)
+- **Where you start:** from `main` after PR #29 (merge commit `3f78fbf`, 2026-11-11T02:21Z), on
+  branch `feat/lab-phase-3-rebel-arm-control`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-2-rebel-arm` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request.
+- **Read first:**
+  - CLAUDE.md "Current phase";
+  - this phase's checklist, and Phase 2's above it;
+  - decisions [0031](decisions/0031-the-arms-views-front-and-zero-pose.md) (the zero pose and the
+    shifted limits) and [0032](decisions/0032-an-arms-hold-its-loose-pieces-and-self-collision.md)
+    (the hold, the loose pieces, self-collision), both accepted on 2026-11-10;
+  - decisions 0016, 0025 and 0026 for how control behaviours, programs and the Isaac Sim
+    controller already work (the HA5C's program interpreter, the T33901's controls);
+  - [the worklog of 2026-11-10](worklog/2026-11-10.md), by its headings.
+
+#### What Phase 2 left for this phase
+- **The twin to drive: `igus/rebel6dof02@v3`** (run `2026-11-10_run-002`; needs review in the
+  dashboard, which is Daniel's to do). Daniel's check (2026-11-10): "Overall I think it's in a
+  good spot". It holds within 0.043 degrees (recording `recordings/twin_2026-11-10_180451.csv`).
+  Reference facts: `backend/src/moonwalkers/pipelines/b/igus_rebel6dof02.reference.json`; the
+  cited speeds are `max_joint_speed` (45 deg/s) and `max_linear_speed` (200 mm/s).
+- **Angles: the twin's 0 is the photographed pose, not igus's zero** (decision 0031). An angle in
+  igus's terms (an iRC program, igus's documentation) becomes the twin's by subtracting the pose:
+  joint 2 -21.81, joint 3 +118.82, joint 5 +10.46; joints 1, 4 and 6 are taken as 0 (not
+  confirmed: the lab's control software would settle them). So igus's joint 3 range, -80 to
+  +140, is the twin's -198.82 to +21.18. A program must convert, and say so.
+- **Two things the control exports do not carry yet** [INFERENCE from the code, not tried]:
+  - **the hold:** `control/export.py` and `control/controls_export.py` build their stages with
+    `DriveSettings.hold`, the exporter's default (stiffness 100, damping 20), not the twin's
+    `hold_drive` (10000/200, decision 0032, "Consequences"). An arm's program sags 1.1 to 1.5
+    degrees under the default (the box arm's recordings);
+  - **self-collision:** they call `build_stage` without `collide_unjoined`, so the program's
+    stage would let parts pass through each other, unlike the twin (`self_collision` "on").
+- **Moves can jam:** in v3's `checks/spin.usdc` (all six joints at once, 30 deg/s) parts meeting
+  stop joint 2 at +78.9 degrees and push joint 3 back from its +21.18 limit
+  (`checks/recordings/spin_2026-11-10_180709.csv`). A test program should keep clear of such
+  poses, and a stop where the plan expects motion is a collision, not a drive fault.
+- **Measuring:** the joint recorder (`record_joints.py` in each run) writes `time_s`, each
+  joint's position (rad) and velocity (rad/s); `control compare <recording.csv>
+  <folder>/trajectory_<scenario>.json` measures it against a plan. The scorer
+  (`pipelines.b.score ... --recording <csv>`) reads ranges from recordings.
+- **Left for later, logged** (Daniel, 2026-11-10: "these can be ironed out later if requested"):
+  a wire or two still attached (a stub on joint 2's housing, a knot on link 1's dome), and gaps
+  on the backs of the joints, likely the cut list's open seams [INFERENCE]. Still open from PR
+  #29: whether version 02 matches igus's 00/01 models.
+- **Rules that still hold:** the connector panel photo (`133326`) shows the arm's IP address, and
+  the nameplates show serial numbers: keep both out of commits.
+
+### Phase 3's checklist
+- [x] Research note: what an igus Robot Control (iRC) program holds (joint and linear moves,
       speeds), and CRI, from igus's and Commonplace Robotics' documentation.
-- [ ] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
+      [2026-11-10-irc-programs-and-cri.md](research/2026-11-10-irc-programs-and-cri.md): iRC's
+      programs are XML; a Joint move gives degrees and Vel % of the top speed; how several joints
+      share a move is inferred (all start and stop together); no source gives the ReBeL's
+      acceleration; CRI is a TCP interface (port 3920) through which programs reach the arm.
+- [x] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
       behaviour. Linear moves need inverse kinematics: left out unless a source makes them simple.
-- [ ] The lab's own program if it shares one (the best comparison, later, on video); otherwise a
-      short labelled test program.
-- [ ] Daniel's Isaac Sim check; `control compare` against the plan.
-- [ ] Decision record, worklog, PR.
+      None does, so they are refused with the reason. Decision
+      [0033](decisions/0033-an-arms-joint-programs.md) (accepted 2026-11-10): `control/irc.py` reads iRC's
+      own XML and plans synchronised moves from the twin's photographed pose;
+      `control/arm_export.py` writes the folder, which holds and collides as the twin does.
+- [x] The lab's own program if it shares one (the best comparison, later, on video); otherwise a
+      short labelled test program. None shared, so `rebel-test-joint-moves` (16 moves, 24.36 s),
+      written to `data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`.
+      Asking the lab for theirs stays on the visit list (item 7), and Daniel asks at the weekly
+      meeting of 2026-11-12 (Phase 2's "Waiting, beside this phase").
+- [x] Daniel's Isaac Sim check (`docs/setup/isaac-sim-check.md`, section 10); `control compare`
+      against the plan. **Level 3 (2026-11-10).** `program.usdc` with the runner: every joint
+      within 0.29° of the plan, top speed 45.00°/s on each, every move arrived 0.07-0.09 s
+      before its planned end (counted at 0.5°, inside the deceleration), ended within 0.02° of
+      the photographed pose; "no collisions". `program_native.usdc`: the same moves, trailing
+      by 0.83-1.01°. Logged: "some motions cause certain parts of the mesh to move where it
+      shouldn't have" (v3's cut list [INFERENCE]; Daniel: when joint 2 turns, "part of the first section came with", seen as thin sheets under joint 2's housing in v3's link 2 view).
+- [x] Decision record (0033, accepted by Daniel on 2026-11-10 "as is until we know if we get
+      the program from the lab"), worklog, PR.
 
 **Measured by:** each joint's recorded motion against the plan; the move times against 45°/s.
 

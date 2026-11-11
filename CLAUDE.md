@@ -6,9 +6,25 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 2, the ReBeL arm, in review (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 2", whose hand-off comes first. Phase 2 runs on
-branch `feat/lab-phase-2-rebel-arm`, from `main` after PR #28; its first commit is the hand-off.
+## Current phase: the lab's machines plan, Phase 3, the ReBeL arm's control logic (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 3", whose hand-off comes first. Phase 3 runs on
+branch `feat/lab-phase-3-rebel-arm-control`, from `main` after PR #29; its first commit is the
+hand-off. Phase 3 brings the arm to level 3: a program of joint moves at no more than the cited
+45 deg/s, driving `igus/rebel6dof02@v3`.
+**Phase 3 so far (2026-11-10):** the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
+decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from
+the lab"): iRC's own XML, read by `control/irc.py` and planned as synchronised
+joint moves from the twin's photographed pose, written by `control/arm_export.py`; program and
+controls folders now hold and collide as their twin does. The lab shared no program, so a
+labelled test program, `rebel-test-joint-moves`, is in
+`data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`. **Level 3 met**
+(Daniel's Isaac Sim check, 2026-11-10): joints within 0.29° of the plan at 45.00°/s, no
+collisions; logged: "some motions cause certain parts of the mesh to move where it shouldn't
+have" (v3's cut list [INFERENCE]). **The PR waits for Daniel's review.**
+**For the weekly meeting of 2026-11-12:** Daniel asks the lab for the arm's own iRC program
+(and, if they can, its angles in iRC in the photographed pose); if it comes, decision 0033 is
+revisited and the program runs on the twin. The plan lists it under Phase 2's "Waiting, beside
+this phase".
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
 **Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
 - **Done in Phase 1:**
@@ -21,7 +37,7 @@ The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on
     `preview_twin`; `dry_run_twin`. The dashboard's upload adds picks from several folders.
   - Haas's sources are filed: the mill manuals and the Toolroom sheet fetched (its PDFs answer
     scripts), its three web pages saved by Daniel.
-- **Phase 2 is built and in review** (branch `feat/lab-phase-2-rebel-arm`, its PR open):
+- **Phase 2 is done** (PR #29, merged on 2026-11-10 on Daniel's word; branch `feat/lab-phase-2-rebel-arm`):
   - `igus/rebel6dof02@v1` (run `2026-11-09_run-001`): seven parts on six joints, posed as
     photographed; position 0 is that pose and igus's limits are shifted by each joint's angle
     in it (decision 0031, accepted 2026-11-10). Reference facts: `pipelines/b/igus_rebel6dof02.reference.json`.
@@ -335,6 +351,10 @@ Backend (run from `backend/`):
   (the HA5C manual's examples), `... show <program>`, and `... run <program> --twin haas/ha5c[@vN]`,
   which writes `data/machines/<machine>/programs/<date>_<program>_v<N>/` (open its `PROGRAM.md`).
   A build writes `programs/<behaviour>/` into the run when a control behaviour carries `spec["program"]`.
+  An arm's program in igus Robot Control's XML (decision 0033):
+  `... run rebel-test-joint-moves --twin igus/rebel6dof02@v3 [--override 50] [--acceleration 0]`;
+  `... control compare <recording.csv> <folder>/trajectory.json` measures its recording.
+  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 10.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
 - A manual machine's controls (level 3, decision 0025): a switch, a speed table and the operator's
   commands with scenarios, as three control behaviours (the T33901's are in its reference file).

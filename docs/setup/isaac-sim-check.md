@@ -405,6 +405,51 @@ spring brings it home, now without the bounces v3-v7 had.
 report that. **If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top
 of the pasted runner.
 
+## 10. Lab plan, Phase 3: an iRC program drives the ReBeL arm (success level 3)
+The program is a labelled test program in igus Robot Control's own XML (decision 0033), not the
+lab's: from the photographed pose, each joint alone out and back at 45 °/s (joint 1 back at half
+speed), then all six together at half speed, and home. It runs on `igus/rebel6dof02@v3`, which
+holds with its stiff drive and collides with itself, as the twin does. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\igus-rebel6dof02\programs\2026-11-10_rebel-test-joint-moves_v3\`.
+Its `PROGRAM.md` lists the 16 moves with their start and end times (24.36 s in all), in iRC's
+angles and the twin's.
+
+1. **Open the file.** File > Open that folder's `program.usdc`. The arm opens in its photographed
+   pose.
+2. **Start the runner.** Paste the whole of `run_program.py` from the folder into Window > Script
+   Editor and click **Run**. It prints one line per joint (`'rebel-test-joint-moves' on
+   .../joint1: 1080 points over 24.356 s`, and so on) and the physics API.
+3. **Start the recorder.** In a second Script Editor tab, paste `record_joints.py` from the same
+   folder and click **Run**. It prints the articulation it will record.
+4. **Press Play** and let it run about 30 s. The arm should:
+   - turn its base to one side (+45°), across to the other (-45°), and back slowly;
+   - lean the upper arm back and return; raise the forearm and return;
+   - turn the forearm, tilt the hand, turn the hand, each out and back;
+   - from about 19.8 s, move all six joints together, every joint starting and stopping at the
+     same moment, then go home by 24.4 s.
+
+   The runner prints `finished at 24.356 s` once per joint. Then press Stop; the recorder writes
+   `recordings\program_<date>_<time>.csv` in the folder and prints its path.
+5. **Watch for collisions:** a joint that stops short of a move while the others go on is parts
+   meeting (as v3's spin check did at joint 2's +78.9°), not a drive fault. Note which move.
+6. **Optional: no script.** In a new Isaac Sim session, open `program_native.usdc` and press Play
+   without the runner. It should make the same moves, trailing slightly.
+7. **Send Claude Code** the recording's path and what you saw. It runs
+   `uv run python -m moonwalkers.control compare <recording.csv> <folder>\trajectory.json`: each
+   joint's largest distance from the plan, where it ended, its top speed against 45 °/s, and when
+   each move's joints all arrived.
+
+**If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top of the pasted
+runner.
+
+**Result (Daniel, 2026-11-10, Isaac Sim 6.2.0): level 3.** With the runner (`simulation_manager`,
+first physics step at t = 0.017 s), every joint stayed within 0.29° of the plan, reached 45.00 °/s,
+and ended within 0.02° of the photographed pose; every move's joints arrived 0.07-0.09 s before its
+planned end (counted at 0.5°, inside the deceleration). "program.usdc had no collisions".
+`program_native.usdc` "did the same motions and looked good", trailing by 0.83-1.01°. Seen and
+logged: "some motions cause certain parts of the mesh to move where it shouldn't have" (v3's cut
+list [INFERENCE]). The record is the folder's `PROGRAM.md`.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

@@ -38,7 +38,7 @@ from moonwalkers.contracts.pipeline_result import (
     TwinRecord,
 )
 from moonwalkers.control.manual import check_behavior
-from moonwalkers.control.program import IndexProgram, runnable_behaviors
+from moonwalkers.control.program import check_program, runnable_behaviors
 from moonwalkers.generators.base import (
     CutoutRun,
     GeneratorError,
@@ -694,11 +694,15 @@ def create_server(
         spec["program"]["rows"], one row per step as the manual prints it: [step,
         step_size_deg, feed_deg_s (or the Step# for G96), loop_count, g_code], for example the
         manual's programming examples. It is checked now, and the build writes a program folder
-        for Isaac Sim. A manual machine (decision 0025; docs/agent-procedure.md) takes three:
-        a "state_machine" switch (spec inputs, on_when, start_input, off_why, not_described), a
-        "lookup_table" of speeds (spec joint, switch, rows of rpm, initial_rpm, change_only_when,
-        run_up_s, coast_down_s) and a "command_set" of the operator's commands with scenarios
-        (spec switch, speed, quill, commands, scenarios, default_scenario), each checked here;
+        for Isaac Sim. A robot arm's program in igus Robot Control's own XML (decision 0033)
+        goes in spec["program"] as {"format": "irc_xml", "xml": the .xml file's text, "axes":
+        {"A1": joint id, ..., "A6": joint id}}: Joint moves (a1-a6 in degrees, velPercent,
+        acc), Wait, Output and an endless Loop; linear moves are refused. A manual machine
+        (decision 0025; docs/agent-procedure.md) takes three: a "state_machine" switch (spec
+        inputs, on_when, start_input, off_why, not_described), a "lookup_table" of speeds
+        (spec joint, switch, rows of rpm, initial_rpm, change_only_when, run_up_s,
+        coast_down_s) and a "command_set" of the operator's commands with scenarios (spec
+        switch, speed, quill, commands, scenarios, default_scenario), each checked here;
         the build then writes a controls folder with live controls for Isaac Sim."""
         with guarded():
             run_dir = ws.run_dir(run)
@@ -714,7 +718,7 @@ def create_server(
                 citations=citations,
             )
             if runnable_behaviors([behavior]):
-                IndexProgram.from_behavior(behavior)  # refuses a program that cannot run
+                check_program(behavior)  # refuses a program that cannot run (0016, 0033)
 
             def put(data: dict[str, Any]) -> None:
                 kept = [b for b in data["control"] if b["behavior_id"] != behavior_id]

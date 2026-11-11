@@ -87,7 +87,9 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | `export.py`, `isaac_runner.py` | Write a program folder, and the runner that drives the joint in Isaac Sim | Twin, program | `program.usdc`, `run_program.py`, `PROGRAM.md` |
 | `manual.py`, `isaac_controls.py` | A manual machine's controls: a switch, a speed table and the operator's commands, run by one controller in the tests and in Isaac Sim (decision 0025) | Three control behaviours | Plans per scenario; live control |
 | `controls_export.py` | Writes the controls folder, with the controls in Isaac Sim's Property panel | Twin, behaviours | `controls.usdc`, `run_controls.py`, `PROGRAM.md` |
-| `compare.py` | Measures a recording against its plan | Recording CSV, trajectory JSON | A table of measured against planned |
+| `irc.py` | A robot arm's program in igus Robot Control's own XML: reads its joint moves, waits, outputs and endless loop, refuses linear moves (no inverse kinematics), and plans synchronised moves at Vel % of the cited 45 °/s from the twin's photographed pose (decision 0033) | An iRC `.xml` program and the twin's joints | Each joint's targets over time, in iRC's and the twin's angles |
+| `arm_export.py` | Writes an arm's program folder; every joint runs with the same runner, holding and colliding as its twin does | Twin, iRC program | `program.usdc`, `program.xml`, `run_program.py`, `record_joints.py`, `PROGRAM.md` |
+| `compare.py` | Measures a recording against its plan: a drill press's scenario, or an arm's program (each joint against the plan, its top speed, each move's arrival) | Recording CSV, trajectory JSON | A table of measured against planned |
 
 ## The agent's 28 MCP tools
 Claude Code calls these through the MCP server (`moonwalkers.mcp`). "Run" is a run folder, the
@@ -143,8 +145,8 @@ From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
 | `moonwalkers.pipelines.b.quotes` | Check quotes against their PDF pages | Reference and spec files | Found or not, per quote |
 | `moonwalkers.usd.validate` | Our validator | A `.usd` file | Findings |
 | `omni_asset_validate` | NVIDIA's validator | A `.usd` file | Findings |
-| `moonwalkers.control list`, `show` | List the HA5C manual's example programs, or print what one does | A program's name | Its steps and timeline |
-| `moonwalkers.control run` | Run an HA5C program on a stored twin | Program, twin, settings | A program folder |
+| `moonwalkers.control list`, `show` | List the packaged programs (the HA5C manual's examples, the arm's iRC test program), or print what one does | A program's name | Its steps and timeline (an iRC program: its commands) |
+| `moonwalkers.control run` | Run an HA5C or an iRC program on a stored twin, holding and colliding as the twin does | Program, twin, settings (`--override`, `--acceleration`, `--loop-passes` for iRC) | A program folder |
 | `moonwalkers.control controls` | Write a manual machine's controls for a stored twin | Twin | A controls folder |
 | `moonwalkers.control compare` | Measure an Isaac Sim recording against its plan | Recording, trajectory | Measured against planned |
 | `moonwalkers.pipelines run` | Run a teammate's pipeline outside the tests | Files or URLs | A checked result, nothing stored |

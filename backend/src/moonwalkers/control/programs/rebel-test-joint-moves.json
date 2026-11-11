@@ -1,0 +1,148 @@
+{
+  "name": "rebel-test-joint-moves",
+  "sources": [
+    {
+      "source_id": "src-irc-command-reference",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://www.igus.com.br/contentData/wpck/pdf/global/igus_Robot_Control_iRC_RZ_screen.pdf",
+      "title": "igus GmbH, \"Robot Control Command reference\", igus Robot Control - V902-11-005, MAT0074869.20, Issue 06/2020, 9 pages",
+      "sha256": "d725e65de2e188d9b02101acf8270aa26add91a7bdbccde6fd10f68b94ffb702",
+      "retrieved_at": "2026-11-10T00:00:00Z",
+      "license_note": "(c) igus GmbH, 'Subject to technical alterations'; local copy in data/machines/igus-rebel6dof02/inputs/documents/irc/ for internal research only"
+    },
+    {
+      "source_id": "src-irc-user-guide",
+      "kind": "url",
+      "input_type": "brochure_datasheet",
+      "uri": "https://a.storyblok.com/f/298593/x/c429ad6e9d/userguide_irc_v14.pdf",
+      "title": "Commonplace Robotics, iRC user guide, Version 14.5, January 15, 2025, 99 pages",
+      "sha256": "93b62cd49367f1f8ea31aef39904594aede96d76783dad90e411fcb0d0e956d1",
+      "retrieved_at": "2026-11-10T00:00:00Z",
+      "license_note": "(c) 2025 igus GmbH / Commonplace Robotics GmbH; local copy for internal research only"
+    },
+    {
+      "source_id": "src-cpr-wiki-programs",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://wiki.cpr-robots.com/index.php/Transferring_Robot_Programs_via_CRI",
+      "title": "CPR wiki, \"Transferring Robot Programs via CRI\" (last edited on 11 August 2025): an iRC program's XML",
+      "sha256": "6661130121533ba2a3e60f94f873c6dd589032342580c63c2197d39ed6fda73f",
+      "retrieved_at": "2026-11-10T00:00:00Z",
+      "license_note": "Commonplace Robotics' public wiki; a saved copy for internal research only"
+    },
+    {
+      "source_id": "src-irc-ros-control",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/CommonplaceRobotics/iRC_ROS/blob/41701e6df3398087d217f0f478622e60f694de41/irc_ros_description/urdf/robots/igus_rebel_6dof_00.ros2_control.xacro",
+      "title": "iRC_ROS, the ReBeL 6DOF version 00's ros2_control description (joints 1 to 6, their CRI offsets)",
+      "sha256": "3e0a940f2604cb83f9dfe6612f9e4fe002493892bab8e69b567fc3b9a34dccc7",
+      "retrieved_at": "2026-11-10T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-irc-ros-limits",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/CommonplaceRobotics/iRC_ROS/blob/41701e6df3398087d217f0f478622e60f694de41/irc_ros_moveit_config/config/joint_limits.yaml",
+      "title": "iRC_ROS, MoveIt joint limits for the ReBeL (velocity and acceleration per joint)",
+      "sha256": "74999e3ae0493089ad8f4f63c2b6338689d5f561a84e587e94496586a8e4d041",
+      "retrieved_at": "2026-11-10T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-igus-techdoc",
+      "kind": "file",
+      "input_type": "brochure_datasheet",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/igus-rebel-technical-documentation-2022-08.pdf",
+      "title": "igus GmbH, \"Technical documentation ReBeL\", MAT0075179.25, Stand 08/2022, 8 pages, from https://uploads.unchainedrobotics.de/media/file_upload/Robolink%20ReBeL_DINA5_v11_a8b0f58f.pdf",
+      "sha256": "735c2fbea8ab67d90090c3ae4659399c53e7e91af86d7dbf6b3ba9bb34b68fb3",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "(c) igus GmbH, 'Subject to technical alterations'; the maker's documentation, kept for internal research only"
+    },
+    {
+      "source_id": "src-plan-phase-3",
+      "kind": "user_input",
+      "uri": "user",
+      "title": "Daniel Sweet's plan for the lab's machines, Phase 3's checklist (docs/lab-machines-plan.md, approved 2026-11-09, PR #27): the lab's own program if it shares one, otherwise a short labelled test program. The moves are Claude Code's choice (2026-11-10)",
+      "retrieved_at": "2026-11-10T00:00:00Z"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "irc_test_joint_moves",
+    "name": "A test program of joint moves for the ReBeL twin (labelled: not the lab's)",
+    "kind": "program_interpreter",
+    "description": "A labelled test program in iRC's XML, written by Claude Code because the lab has shared no program: from the photographed pose, each joint alone out and back, then all six together and home, at 100 % (45 deg/s) and 50 %, Acc 40 %. Not tried on the real arm.",
+    "drives_joints": [
+      "joint1",
+      "joint2",
+      "joint3",
+      "joint4",
+      "joint5",
+      "joint6"
+    ],
+    "spec": {
+      "program": {
+        "format": "irc_xml",
+        "axes": {
+          "A1": "joint1",
+          "A2": "joint2",
+          "A3": "joint3",
+          "A4": "joint4",
+          "A5": "joint5",
+          "A6": "joint6"
+        },
+        "xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- A test program for the twin igus/rebel6dof02, written by Claude Code for the lab's\n     machines plan, Phase 3 (decision 0033). Not the lab's program; not tried on the real\n     arm. Angles in degrees, as iRC's (igus's, from the arm straight up). -->\n<Program>\n<Joint AbortCondition=\"False\" Nr=\"1\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Start: the photographed pose, the twin's 0 (no motion on the twin)\" />\n<Joint AbortCondition=\"False\" Nr=\"2\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"45\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 1 alone to +45\" />\n<Joint AbortCondition=\"False\" Nr=\"3\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"-45\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 1 alone to -45: 90 deg at 45 deg/s\" />\n<Joint AbortCondition=\"False\" Nr=\"4\" Source=\"Numerical\" velPercent=\"50\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 1 back to 0 at half speed\" />\n<Joint AbortCondition=\"False\" Nr=\"5\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-45\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 2 leans back\" />\n<Joint AbortCondition=\"False\" Nr=\"6\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 2 back\" />\n<Joint AbortCondition=\"False\" Nr=\"7\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"90\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 3 raises the forearm\" />\n<Joint AbortCondition=\"False\" Nr=\"8\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 3 back\" />\n<Joint AbortCondition=\"False\" Nr=\"9\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"45\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 4 turns the forearm\" />\n<Joint AbortCondition=\"False\" Nr=\"10\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 4 back\" />\n<Joint AbortCondition=\"False\" Nr=\"11\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"-30\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 5 tilts the hand\" />\n<Joint AbortCondition=\"False\" Nr=\"12\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 5 back\" />\n<Joint AbortCondition=\"False\" Nr=\"13\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"90\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 6 turns the hand\" />\n<Joint AbortCondition=\"False\" Nr=\"14\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"Joint 6 back\" />\n<Joint AbortCondition=\"False\" Nr=\"15\" Source=\"Numerical\" velPercent=\"50\" acc=\"40\" smooth=\"0\" a1=\"30\" a2=\"-35\" a3=\"100\" a4=\"30\" a5=\"-20\" a6=\"60\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"All six together at half speed\" />\n<Joint AbortCondition=\"False\" Nr=\"16\" Source=\"Numerical\" velPercent=\"100\" acc=\"40\" smooth=\"0\" a1=\"0\" a2=\"-21.81\" a3=\"118.82\" a4=\"0\" a5=\"10.46\" a6=\"0\" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"All six back to the photographed pose\" />\n</Program>"
+      }
+    },
+    "confidence": 0.6,
+    "citations": [
+      {
+        "source_id": "src-plan-phase-3",
+        "locator": "docs/lab-machines-plan.md, Phase 3's checklist",
+        "quote": "otherwise a short labelled test program"
+      },
+      {
+        "source_id": "src-irc-command-reference",
+        "locator": "PDF p. 2 (printed p. 3), 2.2 Program Location",
+        "quote": "Robot programs are .xml files in the /Data/Programs/ folder."
+      },
+      {
+        "source_id": "src-irc-command-reference",
+        "locator": "PDF p. 4 (printed p. 7), 6.1 Joint Motion",
+        "quote": "Vel: Velocity in percent of the max joint velocities"
+      },
+      {
+        "source_id": "src-irc-command-reference",
+        "locator": "PDF p. 4 (printed p. 7), 6.1 Joint Motion",
+        "quote": "The joint velocities during the motion are constant."
+      },
+      {
+        "source_id": "src-irc-user-guide",
+        "locator": "PDF p. 47 (printed p. 45), 10.4.5 Joint Motion to Cartesian Position",
+        "quote": "The robot moves as fast as the slowest joint allows."
+      },
+      {
+        "source_id": "src-cpr-wiki-programs",
+        "locator": "the example program, its Joint lines",
+        "quote": "velPercent=\"100\" acc=\"40\" smooth=\"0\""
+      },
+      {
+        "source_id": "src-igus-techdoc",
+        "locator": "PDF p. 2, Technical data",
+        "quote": "Max. speed 45 [°/s]"
+      },
+      {
+        "source_id": "src-irc-ros-control",
+        "locator": "above joint2, the joints' names joint1 to joint6",
+        "quote": "Position limit difference with iRC files due to 30 degree offset in joint 2 and 3"
+      },
+      {
+        "source_id": "src-irc-ros-limits",
+        "locator": "joint_limits, every joint: a stand-in for iRC's maximum joint acceleration",
+        "quote": "max_acceleration: 5.240"
+      }
+    ]
+  }
+}
