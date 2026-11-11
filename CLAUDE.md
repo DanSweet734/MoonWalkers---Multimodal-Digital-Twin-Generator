@@ -11,6 +11,14 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 branch `feat/lab-phase-3-rebel-arm-control`, from `main` after PR #29; its first commit is the
 hand-off. Phase 3 brings the arm to level 3: a program of joint moves at no more than the cited
 45 deg/s, driving `igus/rebel6dof02@v3`.
+**Phase 3 so far (2026-11-10):** the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
+decision 0033 (proposed): iRC's own XML, read by `control/irc.py` and planned as synchronised
+joint moves from the twin's photographed pose, written by `control/arm_export.py`; program and
+controls folders now hold and collide as their twin does. The lab shared no program, so a
+labelled test program, `rebel-test-joint-moves`, is in
+`data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`. **Waiting for
+Daniel's Isaac Sim check** (`docs/setup/isaac-sim-check.md`, section 10), then `control compare`
+and the PR.
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
 **Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
 - **Done in Phase 1:**
@@ -337,6 +345,10 @@ Backend (run from `backend/`):
   (the HA5C manual's examples), `... show <program>`, and `... run <program> --twin haas/ha5c[@vN]`,
   which writes `data/machines/<machine>/programs/<date>_<program>_v<N>/` (open its `PROGRAM.md`).
   A build writes `programs/<behaviour>/` into the run when a control behaviour carries `spec["program"]`.
+  An arm's program in igus Robot Control's XML (decision 0033):
+  `... run rebel-test-joint-moves --twin igus/rebel6dof02@v3 [--override 50] [--acceleration 0]`;
+  `... control compare <recording.csv> <folder>/trajectory.json` measures its recording.
+  Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 10.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
 - A manual machine's controls (level 3, decision 0025): a switch, a speed table and the operator's
   commands with scenarios, as three control behaviours (the T33901's are in its reference file).

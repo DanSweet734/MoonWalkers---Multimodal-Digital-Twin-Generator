@@ -631,13 +631,24 @@ at; the new tools used in Phase 2.
   the nameplates show serial numbers: keep both out of commits.
 
 ### Phase 3's checklist
-- [ ] Research note: what an igus Robot Control (iRC) program holds (joint and linear moves,
+- [x] Research note: what an igus Robot Control (iRC) program holds (joint and linear moves,
       speeds), and CRI, from igus's and Commonplace Robotics' documentation.
-- [ ] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
+      [2026-11-10-irc-programs-and-cri.md](research/2026-11-10-irc-programs-and-cri.md): iRC's
+      programs are XML; a Joint move gives degrees and Vel % of the top speed; how several joints
+      share a move is inferred (all start and stop together); no source gives the ReBeL's
+      acceleration; CRI is a TCP interface (port 3920) through which programs reach the arm.
+- [x] A program of joint moves at no more than the cited 45°/s, as a `program_interpreter`
       behaviour. Linear moves need inverse kinematics: left out unless a source makes them simple.
-- [ ] The lab's own program if it shares one (the best comparison, later, on video); otherwise a
-      short labelled test program.
-- [ ] Daniel's Isaac Sim check; `control compare` against the plan.
+      None does, so they are refused with the reason. Decision
+      [0033](decisions/0033-an-arms-joint-programs.md) (proposed): `control/irc.py` reads iRC's
+      own XML and plans synchronised moves from the twin's photographed pose;
+      `control/arm_export.py` writes the folder, which holds and collides as the twin does.
+- [x] The lab's own program if it shares one (the best comparison, later, on video); otherwise a
+      short labelled test program. None shared, so `rebel-test-joint-moves` (16 moves, 24.36 s),
+      written to `data/machines/igus-rebel6dof02/programs/2026-11-10_rebel-test-joint-moves_v3/`.
+      Asking the lab for theirs stays on the visit list (item 7).
+- [ ] Daniel's Isaac Sim check (`docs/setup/isaac-sim-check.md`, section 10); `control compare`
+      against the plan.
 - [ ] Decision record, worklog, PR.
 
 **Measured by:** each joint's recorded motion against the plan; the move times against 45°/s.

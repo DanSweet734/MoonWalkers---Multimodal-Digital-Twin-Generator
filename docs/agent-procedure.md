@@ -166,6 +166,13 @@ the job is done. Otherwise the job waits for you:
      then writes `programs/<behaviour>/` in the run folder, which holds `program.usdc` and the
      runner for Isaac Sim.
    - Ready-made programs from the HA5C manual: `uv run python -m moonwalkers.control list`.
+   - **A robot arm with igus Robot Control** (decision 0033): the program stays in iRC's own
+     XML. `spec["program"]` is `{"format": "irc_xml", "xml": <the .xml file's text>, "axes":
+     {"A1": "joint1", ..., "A6": "joint6"}}`. Joint moves (`a1`-`a6` in degrees, `velPercent`,
+     `acc`), `Wait`, `Output` and an endless `Loop` are read; linear and circular moves are
+     refused (no inverse kinematics). Angles are iRC's (igus's); the twin's pose angles come from
+     its facts `jointN_lower`/`jointN_upper` (decision 0031). Example:
+     `control/programs/rebel-test-joint-moves.json`.
    - **A manual machine** (no program, an operator at the controls; decision 0025) takes three
      behaviours, recorded in this order. Each cites the manual's words for every rule:
      - a `state_machine` for its switch. Its spec holds `inputs` (each with two states, off then
