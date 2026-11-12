@@ -105,6 +105,18 @@ def test_prismatic_joint_without_settings_holds_at_zero_with_a_linear_drive(slid
     assert (drive.GetStiffnessAttr().Get(), drive.GetDampingAttr().Get()) == (100.0, 20.0)
 
 
+def test_a_slide_holds_at_zero_as_stiffly_as_the_twins_hold(slider) -> None:
+    """A twin's ``hold_drive`` reaches its slides (the TM-1's head sank 98 mm on 2026-11-11
+    without it), but not the hold's target, an angle; a spin leaves the slide at the default."""
+    twin, result = slider
+    stiff = DriveSettings(target=math.radians(90), stiffness=100_000.0, damping=632.5)
+    for drive, want in ((stiff, (100_000.0, 632.5)), (DriveSettings.spin(1.0), (100.0, 20.0))):
+        stage = build_stage(twin, [result], drive)
+        linear = UsdPhysics.DriveAPI(stage.GetPrimAtPath(f"{JOINTS}/slide_travel"), "linear")
+        assert linear.GetTargetPositionAttr().Get() == 0.0
+        assert (linear.GetStiffnessAttr().Get(), linear.GetDampingAttr().Get()) == want
+
+
 def test_a_chain_is_one_articulation_from_the_root(slider) -> None:
     stage = stage_with(slider)
     parsed = UsdPhysics.UsdPhysicsLoadStageFromPrimRange(stage, [Sdf.Path.absoluteRootPath])

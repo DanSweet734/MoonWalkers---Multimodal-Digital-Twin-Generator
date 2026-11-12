@@ -12,6 +12,7 @@ import trimesh
 
 from moonwalkers.pipelines.b import score
 from moonwalkers.usd import primitive_arm as arm
+from moonwalkers.usd import primitive_drill_press as dp
 
 PACKAGE = Path(score.__file__).parent
 
@@ -166,7 +167,8 @@ def test_ranges_are_read_from_joint_recordings(tmp_path: Path, fixed_time: datet
     (tmp_path / "sweep.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
     ranges = {r.joint: r for r in score.range_scores(result, [tmp_path / "sweep.csv"])}
     assert ranges["joint5"].within_target
-    assert ranges["joint5"].reached_min_deg == pytest.approx(arm.RANGES["joint5"][0])
+    assert ranges["joint5"].reached_min == pytest.approx(arm.RANGES["joint5"][0])
+    assert ranges["joint5"].unit == "deg"
     assert not ranges["joint2"].within_target  # held still at 5.7 degrees
     assert ranges["joint2"].verdict == "lower not reached; upper not reached"
     assert "joint1" not in ranges  # no recording names it
@@ -180,6 +182,25 @@ def test_each_end_of_a_range_is_scored_on_its_own(tmp_path: Path, fixed_time: da
     (joint5,) = score.range_scores(result, [tmp_path / "spin.csv"])  # from 0 up only
     assert (joint5.lower_reached, joint5.upper_reached) == (False, True)
     assert joint5.verdict == "lower not reached; upper reached"
+
+
+def test_a_sliding_joints_range_is_scored_in_millimetres(
+    tmp_path: Path, fixed_time: datetime
+) -> None:
+    _, result = dp.build_test_drill_press(fixed_time)
+    quill = next(j for j in result.joints if j.joint_id == "quill_travel")
+    lower, upper = quill.lower_limit, quill.upper_limit
+    lines = ["time_s,quill_travel (m)"]
+    lines += [f"{t / 10},{lower + (upper - 0.0005 - lower) * t / 10}" for t in range(11)]
+    (tmp_path / "slide.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (quill_score,) = score.range_scores(result, [tmp_path / "slide.csv"])
+    assert quill_score.unit == "mm"
+    assert quill_score.upper == pytest.approx(upper * 1000, abs=0.01)
+    assert quill_score.within_target  # 0.5 mm short of the upper limit is within 1 mm
+    lines[-1] = f"1.0,{upper - 0.002}"  # 2 mm short
+    (tmp_path / "slide.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (quill_score,) = score.range_scores(result, [tmp_path / "slide.csv"])
+    assert quill_score.verdict == "lower reached; upper not reached"
 
 
 def test_the_arms_score_file_maps_every_part_and_joint_in_its_photographed_pose() -> None:

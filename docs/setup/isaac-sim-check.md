@@ -450,6 +450,61 @@ planned end (counted at 0.5°, inside the deceleration). "program.usdc had no co
 logged: "some motions cause certain parts of the mesh to move where it shouldn't have" (v3's cut
 list [INFERENCE]). The record is the folder's `PROGRAM.md`.
 
+## 11. Lab plan, Phase 4: the Haas TM-1's axes, spindle and carousel (success levels 1 and 2)
+`haas/tm1@v3` (run `2026-11-11_run-003`) is the generated frame (base, column, guards, chip pan,
+pendant) with the head cut from it, and stand-ins for the saddle, the table with its chip guard,
+the spindle nose and the 10-pocket carousel. Check v3. v2 (run `2026-11-11_run-002`) is the same
+build, checked by Daniel on 2026-11-11: its head sank 100 mm, because the exporter gave sliding
+joints the default hold (fixed in v3). v1 (run `2026-11-11_run-001`) has no `checks/slide.usdc`.
+The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-tm1\runs\2026-11-11_run-003\`.
+Its `RUN.md` lists every stand-in and inaccuracy; `views/on_*_photo.png` show the parts on the fed
+photos.
+
+Every driven joint, turning or sliding, holds with a stiff drive (stiffness 100000, damping
+632.5; the spec's `hold_drive`), so the head should not sag under its weight (about 0.1 mm).
+The moving parts: the **head** (`z_axis`, up and down the column), the **saddle** (`y_axis`,
+front to back on the base), the **table** with its chip guard (`x_axis`, left to right on the
+saddle), the **spindle** nose under the head (`spindle_rotation`) and the **tool carousel** left
+of the head (`carousel_index`). Parts do not collide with each other
+(`self_collision` "off"): at X's operator-left end the table passes about 2 in into the left guard,
+which the generator placed too close (logged).
+
+1. **`twin.usdc`, level 1.** Open it and press Play. The machine stands on the ground, nothing
+   moves, nothing sags. Look it over against the photos: the left guard, the carousel left of the
+   head, the head with its conduit, the pendant on its arm and the right guard, left to right from
+   the front; the table near its operator-left end, its chip guard in front, the saddle with two
+   red handwheels under it.
+2. **`checks/slide.usdc`, level 2: each axis runs its cited travel.** Before Play, paste
+   `record_joints.py` from the run folder into Window > Script Editor and click **Run**. Press
+   Play and let it run about 12 s. All three start at their lower limits and slide at the cited
+   200 ipm (84.7 mm/s):
+   - `y_axis`, the saddle and table, front to back: -6 to +6 in (12 in, about 3.6 s);
+   - `x_axis`, the table, left to right: -4.6 to +25.4 in (30 in, about 9 s);
+   - `z_axis`, the head, down to the 4 in and up to the 20 in nose-to-table: -6 to +10 in (16 in,
+     about 4.8 s).
+
+   Each stops at its upper limit and stays there. Press Stop; the recorder writes
+   `recordings\slide_<date>_<time>.csv`.
+3. **`checks/spin.usdc`: the spindle and the carousel turn.** Run the recorder again on the newly
+   opened file, then Play: both turn at 30 °/s; the spindle's two drive keys and the carousel's
+   tab by pocket 1 show it.
+4. **Index the carousel by hand (level 2: one pocket is 36°).** Open `twin.usdc`, press Play, and
+   select `/haas_tm1/joints/carousel_index` in the Stage panel. In the Property panel, under the
+   angular drive, set **Target Position** to `36`: the carousel turns one pocket and holds; `72`
+   two pockets, `-36` back one. The tool holders land where their neighbours were.
+5. **The axes' lower ends (level 2).** `slide.usdc` starts each axis at its lower limit, before
+   the recorder's first row, so record them by target, **in `twin.usdc`, not `slide.usdc`**:
+   `slide.usdc`'s axes have speed drives with no stiffness, which ignore a Target Position (seen
+   on 2026-11-11). Open `twin.usdc`, run the recorder, press Play, then set each linear
+   **Target Position** (in metres) to its lower limit and wait until it stops:
+   `z_axis` `-0.1524`, `y_axis` `-0.1524`, `x_axis` `-0.1168`. Each slides at 84.7 mm/s and
+   holds there; at X's end the table passes into the left guard (logged). Shift+drag the head:
+   it holds.
+6. **Send Claude Code** the recordings' paths and what you saw. It runs
+   `uv run python -m moonwalkers.pipelines.b.score <run> --recording <csv> ...`, which measures
+   each joint's range against its limits (the scorecard's 1 mm target).
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

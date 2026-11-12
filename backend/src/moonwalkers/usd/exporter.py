@@ -41,7 +41,8 @@ Several joints (decision 0017):
   0032); joined parts still do not collide.
 * ``JointSettings`` gives one joint its own drive, limits (a lock or a depth stop), starting
   position or coupling to another joint (decisions 0018 and 0019). Joints without settings get
-  ``drive`` (revolute) or a hold at 0 (prismatic), as before.
+  ``drive`` (revolute) or a hold at 0 (prismatic) with ``drive``'s stiffness, damping and type
+  when it is a position drive, so a twin's ``hold_drive`` holds its slides too (decision 0034).
 * Twins stay awake (decision 0017, Daniel, 2026-10-23): the articulation root gets PhysX's
   ``PhysxArticulationAPI`` with ``physxArticulation:sleepThreshold = 0``. Otherwise PhysX puts a
   slowly moving twin to sleep, and its drives stop. ``keep_awake=False`` writes nothing.
@@ -214,8 +215,9 @@ def contract_settings(
 ) -> JointSettings | None:
     """The settings a joint's ``mode`` or ``follows`` ask for (contract v0.2.0, decision 0020), or
     None when it states neither, or is ``driven``: then it gets the default drive, as before
-    (``drive`` on a revolute joint, a hold at 0 on a prismatic one). An ``adjustable_stop`` needs
-    no setting: every joint's limits include its stop (``stopped_limits``)."""
+    (``drive`` on a revolute joint, a hold at 0 on a prismatic one, ``_joint_drive``). An
+    ``adjustable_stop`` needs no setting: every joint's limits include its stop
+    (``stopped_limits``)."""
     if joint.joint_type == "fixed":
         return None
     if joint.follows is not None:
@@ -795,12 +797,17 @@ def _joint_drive(
     joint: Joint, drive: DriveSettings, setting: JointSettings | None
 ) -> DriveSettings | None:
     """The joint's own drive if it has settings; otherwise ``drive`` on a revolute joint and a
-    hold at 0 on a prismatic one. Fixed joints have none."""
+    hold at 0 on a prismatic one. The hold takes a position drive's stiffness, damping and type
+    (a twin's ``hold_drive``: before 2026-11-11 a slide got the default 100 and 20, and the TM-1's
+    head sank g / 100 = 98 mm; decision 0034), but not its target, which is an angle. Fixed joints
+    have none."""
     if joint.joint_type == "fixed":
         return None
     if setting is not None:
         return setting.drive
-    return drive if joint.joint_type == "revolute" else DriveSettings.hold(0.0)
+    if joint.joint_type == "revolute":
+        return drive
+    return replace(drive, target=0.0) if drive.mode == "position" else DriveSettings.hold(0.0)
 
 
 def _drive_kind(joint: Joint) -> Literal["angular", "linear"]:
