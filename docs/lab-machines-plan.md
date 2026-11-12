@@ -749,6 +749,64 @@ not the velocity column.
 **Measured by:** the scorecard's sizes, photo match, parts and joints, and ranges.
 
 ## Phase 5 - Mill programs, and the TM-1's level 3
+
+### Hand-off (2026-11-11, from the plan's Phase 4 chat)
+- **Where you start:** from `main` after PR #31 (merge commit `62cad5b`, 2026-11-12T00:59Z), on
+  branch `feat/lab-phase-5-mill-programs`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-4-tm1` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request.
+- **Read first:**
+  - CLAUDE.md "Current phase";
+  - this phase's checklist, and Phase 4's checklist with its note "For Phase 5" just below it;
+  - decisions 0016 (indexing programs), 0025 and 0026 (control behaviours, the HA5C's
+    controller), 0033 (the arm's program: a reader, a plan, a program folder) and 0034 (the TM-1,
+    with its two updates);
+  - [the TM-1's research note](research/2026-11-11-haas-tm1-sources.md) and
+    `backend/src/moonwalkers/pipelines/b/haas_tm1.reference.json`;
+  - [the worklog of 2026-11-11](worklog/2026-11-11.md), by its headings.
+
+#### What Phase 4 left
+- **The twin is `haas/tm1@v3`** (run `data/machines/haas-tm1/runs/2026-11-11_run-003`), level 2
+  met (Daniel's check, 2026-11-11). Joints, under `/haas_tm1/joints/`:
+  - `x_axis` (saddle -> table), -0.1168 to +0.6452 m; `y_axis` (frame -> saddle), ±0.1524 m;
+    `z_axis` (frame -> head), -0.1524 to +0.2540 m; each `max_velocity` the cited 200 ipm rapid
+    (0.08467 m/s);
+  - `spindle_rotation` to the cited 4000 rpm and `carousel_index` (36 deg a pocket, 10 pockets),
+    both without limits.
+  - **Position 0 is the photographed pose** (decision 0031's rule, 0034): the table's centre
+    10.4 in to the operator's left of the spindle (so it is under the spindle at `x_axis`
+    +0.2642 m); the spindle nose 10 in over the table; Y at mid-travel, not measured.
+  - **Not confirmed:** which way Haas's +X and +Y move against the joints' positive directions,
+    and where Haas's machine zero (home) is in the travel. A program's coordinates need both:
+    cite them from the manuals, or label them as stand-ins.
+- **The manuals are filed** in `data/machines/haas-tm1/inputs/documents/` (see `SOURCES.md`): the
+  2009 Mill Operator's Manual 96-8000 Rev Y (the Classic Haas Control, the edition nearest this
+  2006 TM-1, which the pendant's keys suggest [INFERENCE]) and the 2023 one (Next Generation
+  Control; G codes from p. 163, M codes from p. 177). The checklist's "pages Daniel saves" may
+  not be needed: read these first, render pages with pypdfium2 (CLAUDE.md).
+- **Under the stiff hold (100000 / 632.5), a target stepped in one go outruns the cited rapid:**
+  up to 224 mm/s by the positions, while the recorder's velocity column reads 88 mm/s
+  (`recordings/twin_2026-11-11_164839.csv` in run-003). So:
+  - the program runner must move the target along the planned path every step, as the arm's does
+    (decision 0033), never jump it to the end point;
+  - measure the tool tip by the recorded positions, not the velocity column;
+  - decision 0034's lag estimate (0.0063 s x 84.7 mm/s = 0.5 mm at a rapid) is untested.
+- **`control compare`** counts an arm's move as arrived within 0.5 deg (`ARRIVE_DEG`); a sliding
+  axis needs its own threshold in mm.
+- **The carousel indexes in about 0.05 s:** no index time is cited. A tool change (M06) needs a
+  cited time or a labelled stand-in.
+- **In Isaac Sim:** a Target Position typed in the Property panel works only after Play and only
+  in `twin.usdc`; `slide.usdc`'s speed drives ignore it (seen 2026-11-11). The recorder's first
+  row comes about 0.05 s after Play.
+- **Rebuilding:** `data/machines/haas-tm1/part_cutting/2026-11-11_spec/copy_run.py <old run> <new
+  run>` sets up a new run from an earlier one (new job id, `new_version`); dry-run it first.
+  The exporter changed in Phase 4, so **restart the MCP server (`/mcp`)** before an agent builds.
+- **Beside this phase:** the weekly meeting of 2026-11-12 (the lab's iRC program for the arm,
+  the scorecard). Ask Daniel for the advisors' answers and record them (memory
+  "meeting-2026-11-12-items").
+- **Tests:** `pytest -m "not gpu and not slow"`: 802 passed in about 4.2 min.
+
+### Phase 5's checklist
 - [ ] Research note: Haas's G and M codes, from the mill manual's pages Daniel saves.
 - [ ] Decision record: a reader of the codes the programs use (moves, arcs, units, absolute and
       incremental, spindle, tool change, end), written here with no library; a library only on

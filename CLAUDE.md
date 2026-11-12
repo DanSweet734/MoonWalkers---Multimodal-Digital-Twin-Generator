@@ -6,24 +6,24 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 4, the Haas TM-1 (levels 1 and 2; the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 4", whose hand-off comes first. Phase 4 runs on
-branch `feat/lab-phase-4-tm1`, from `main` after PR #30; its first commit is the hand-off. Phase 4
-builds `haas/tm1` from its four corner photos: the frame, the axes' carriages, the head, the
-spindle and the tool carousel, each axis sliding its cited travel.
-**Phase 4 so far (2026-11-11):** sources in `docs/research/2026-11-11-haas-tm1-sources.md` (Y travel
-12 in, from Haas's 2002 addendum; today's pages say 16) and `pipelines/b/haas_tm1.reference.json`.
-`haas/tm1@v3` (run `2026-11-11_run-003`; spec by `data/machines/haas-tm1/part_cutting/2026-11-11_spec/compose_spec.py`)
-is generated from **three** corners (the back right one, hidden by a sign and a stool, pulled
-the pendant to the back in a four-corner trial), with the head cut and stand-ins for the saddle,
-the table, the spindle nose and the 10-pocket carousel; decision 0034 (accepted by Daniel
-2026-11-11). The build now writes `checks/slide.usdc` for driven sliding joints, and the scorer
-reads their ranges in mm. Daniel's check of v2 (run-002): ranges and carousel good, but the head
-sank 100 mm: the exporter gave slides the default hold, not `hold_drive` (fixed, v3). v1
-(run-001) has no slide check. **Level 2 met by v3** (Daniel's check, 2026-11-11): the head holds
-within 0.014 mm, every axis reaches both ends within 0.01 mm, the carousel indexes 36 deg. For
-Phase 5: a target stepped by hand moves an axis up to 224 mm/s, over the cited 84.7 (the stiff
-hold; the plan's note under Phase 4). **Waiting:** Daniel's review of PR #31.
+## Current phase: the lab's machines plan, Phase 5, mill programs and the TM-1's level 3 (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 5", whose hand-off comes first. Phase 5 runs on
+branch `feat/lab-phase-5-mill-programs`, from `main` after PR #31; its first commit is the
+hand-off. Phase 5 reads Haas's G and M codes into the axes' motion at cited rapid and feed rates
+and runs a program on `haas/tm1@v3`, measured by the tool tip's path.
+**Phase 4 is done** (PR #31, merged on 2026-11-11 on Daniel's word; branch `feat/lab-phase-4-tm1`):
+sources in `docs/research/2026-11-11-haas-tm1-sources.md` (Y travel 12 in, from Haas's 2002
+addendum; today's pages say 16) and `pipelines/b/haas_tm1.reference.json`. `haas/tm1@v3` (run
+`2026-11-11_run-003`; spec by `data/machines/haas-tm1/part_cutting/2026-11-11_spec/compose_spec.py`)
+is generated from **three** corners (the back right one, hidden by a sign and a stool, pulled the
+pendant to the back in a four-corner trial), with the head cut and stand-ins for the saddle, the
+table, the spindle nose and the 10-pocket carousel; decision 0034 (accepted by Daniel
+2026-11-11). Builds write `checks/slide.usdc` for driven sliding joints; the scorer reads their
+ranges in mm; sliding joints now hold with the twin's `hold_drive` (v2's head sank 100 mm without
+it). **Level 2 met by v3** (Daniel's check, 2026-11-11): the head holds within 0.014 mm, every
+axis reaches both ends within 0.01 mm, the carousel indexes 36 deg. A target stepped by hand
+moves an axis up to 224 mm/s, over the cited 84.7 (the stiff hold): programs move the target
+along their path (Phase 5's hand-off).
 **Phase 3 is done** (PR #30, merged on 2026-11-10 on Daniel's word; branch
 `feat/lab-phase-3-rebel-arm-control`): the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
 decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from
