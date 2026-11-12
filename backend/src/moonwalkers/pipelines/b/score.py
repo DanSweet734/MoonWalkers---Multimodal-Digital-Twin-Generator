@@ -743,7 +743,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Score a built twin by the plan's scorecard.")
     parser.add_argument("run_dir", type=Path, help="data/machines/<machine>/runs/<run>")
     parser.add_argument("--maker", type=Path, help="the score file: the maker's model, mapped")
-    parser.add_argument("--recording", type=Path, nargs="*", default=[], help="joint recordings")
+    parser.add_argument(
+        "--recording", type=Path, nargs="+", action="extend", default=[], help="joint recordings"
+    )
     parser.add_argument("--no-photos", action="store_true", help="skip the photo match")
     parser.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
     args = parser.parse_args(argv)
