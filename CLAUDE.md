@@ -23,7 +23,7 @@ sank 100 mm: the exporter gave slides the default hold, not `hold_drive` (fixed,
 (run-001) has no slide check. **Level 2 met by v3** (Daniel's check, 2026-11-11): the head holds
 within 0.014 mm, every axis reaches both ends within 0.01 mm, the carousel indexes 36 deg. For
 Phase 5: a target stepped by hand moves an axis up to 224 mm/s, over the cited 84.7 (the stiff
-hold; the plan's note under Phase 4). **Waiting:** Daniel's review of the PR.
+hold; the plan's note under Phase 4). **Waiting:** Daniel's review of PR #31.
 **Phase 3 is done** (PR #30, merged on 2026-11-10 on Daniel's word; branch
 `feat/lab-phase-3-rebel-arm-control`): the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
 decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from
