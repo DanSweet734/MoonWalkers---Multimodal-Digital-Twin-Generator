@@ -23,6 +23,8 @@ from moonwalkers.pipelines.d.octopart import candidates, extract, input_url
 from moonwalkers.pipelines.d.pipeline import BrowserReader, CatalogPipeline, CatalogReader
 
 NOW = datetime(2026, 11, 4, tzinfo=UTC)
+# OCTOPART-SEARCH (to the end of BrowserTests): the Octopart website search (decision 0024).
+# Blocked by Octopart's security check (HTTP 403, 2026-11-10).
 URL = "https://octopart.com/abc-1-maker-123"
 SEARCH = "https://octopart.com/search?q=ABC-1"
 PRODUCT = {
@@ -236,6 +238,7 @@ class BrowserTests(unittest.TestCase):
             collect(page, URL)
 
 
+# End of the OCTOPART-SEARCH tests; PDF catalog tests follow.
 DOTS = "." * 30
 SHEET = "\n".join(
     [

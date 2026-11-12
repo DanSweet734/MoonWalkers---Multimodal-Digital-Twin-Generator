@@ -23,7 +23,7 @@ from moonwalkers.contracts.pipeline_result import (
 
 from ..base import Pipeline, result_id_for
 from .catalog_facts import labelled_values, line_with, slug
-from .octopart import input_url
+from .octopart import input_url  # OCTOPART-SEARCH
 
 PYTHON_VARIABLE = "MOONWALKERS_OCTOPART_PYTHON"
 MAX_FACTS_PER_PDF = 500
@@ -72,6 +72,8 @@ def run_worker(
     return result
 
 
+# OCTOPART-SEARCH (to the end of BrowserReader): the Octopart website search (decision 0024).
+# Blocked by Octopart's security check (HTTP 403, 2026-11-10).
 class Reader(Protocol):
     def read(self, url: str) -> dict[str, Any]: ...
 
@@ -147,6 +149,7 @@ class CatalogPipeline(Pipeline):
                 facts.extend(pdf_facts)
                 issues.extend(pdf_issues)
                 continue
+            # OCTOPART-SEARCH (to the end of this loop): an Octopart online_resource URL.
             if source.kind != "url" or source.input_type != InputType.ONLINE_RESOURCE:
                 issues.append(
                     Issue(
@@ -376,6 +379,7 @@ class CatalogPipeline(Pipeline):
             )
         return facts, issues
 
+    # OCTOPART-SEARCH: the Octopart page's facts.
     @staticmethod
     def _facts(record: dict[str, Any], source_id: str, suffix: str) -> list[Fact]:
         facts = []

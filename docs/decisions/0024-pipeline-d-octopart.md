@@ -1,3 +1,4 @@
+<!-- OCTOPART-SEARCH: this whole file is about the Octopart website search (decision 0024); blocked by Octopart's security check, HTTP 403, 2026-11-10. -->
 # 0024 - Pipeline D Octopart component enrichment
 
 - **Status:** proposed (implemented for Sarkis's requested integration; team review pending)

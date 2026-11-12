@@ -1,5 +1,7 @@
 # Pipeline D: Octopart pages and PDF catalogs
 
+<!-- OCTOPART-SEARCH: every section here except "PDF catalogs" is about the Octopart website search. -->
+
 Pipeline D lives at `backend/src/moonwalkers/pipelines/d/`. Its `create_pipeline()` now returns
 `CatalogPipeline`, so the existing default registry, input router and orchestrator can run it.
 The historical HA5C stub remains available to tests only. No shared contract or backend

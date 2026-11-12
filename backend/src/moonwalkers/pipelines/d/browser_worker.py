@@ -1,3 +1,5 @@
+# OCTOPART-SEARCH: this whole file is the Octopart website search (decision 0024).
+# Blocked by Octopart's security check (HTTP 403, 2026-11-10).
 """One JSON request on stdin, one JSON response on stdout; run in a browser environment.
 
 This file can run directly without importing the backend or Pydantic. Never prompts for input.

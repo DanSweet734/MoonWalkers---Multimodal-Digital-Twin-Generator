@@ -1,5 +1,5 @@
 # Pipeline D's own environment only; do not add to the backend environment.
-# Octopart browser worker:
+# Octopart browser worker (OCTOPART-SEARCH):
 playwright>=1.45,<2
 # PDF catalog parser (catalog_parser.py, catalog_worker.py):
 pdfminer.six[image]>=20260107

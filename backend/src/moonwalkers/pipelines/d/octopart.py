@@ -1,3 +1,5 @@
+# OCTOPART-SEARCH: this whole file is the Octopart website search (decision 0024).
+# Blocked by Octopart's security check (HTTP 403, 2026-11-10).
 """Pure Octopart parsing, shared by the backend and the isolated browser worker."""
 
 from __future__ import annotations
