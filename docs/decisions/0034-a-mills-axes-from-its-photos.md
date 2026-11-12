@@ -1,7 +1,8 @@
 # 0034 - A mill's axes from its photos: the fed views, stand-in carriages, the pose and the slide check
 
-- **Status:** proposed by Claude Code in the lab's machines plan, Phase 4 (2026-11-11), for
-  Daniel's review with his Isaac Sim check of `haas/tm1@v2`.
+- **Status:** accepted by Daniel on 2026-11-11 with his Isaac Sim check of `haas/tm1@v2`:
+  "your departures and your reasoning all make sense to me and I approve". Proposed by Claude
+  Code in the lab's machines plan, Phase 4 (2026-11-11).
 - **Date:** 2026-11-11
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0012 (the twin frame), 0022 (views and the corner grid), 0023, 0027 and
@@ -86,3 +87,15 @@ ranges in millimetres.
   checks are unchanged (tests).
 - **To reverse:** feed the four corners and cut the carriages from the mesh in a new run; drop
   `slide.usdc` from `pipelines/b/build.py`.
+
+## Update (2026-11-11): the hold reaches the slides
+Daniel's check of v2: the head "sagged and slowly dropped down", 100 mm in about 5 s
+(`z_axis` in his recording). The spec's `hold_drive` reached the turning joints only: the
+exporter (`usd/exporter.py`, `_joint_drive`) gave every sliding joint without its own settings
+a hold at 0 with the default 100 and 20, a rule from the first sliding joint (2026-10-22), when
+no twin had its own hold. g / 100 = 98 mm. Now a slide holds at 0 with the given drive's
+stiffness, damping and type when that drive holds a position; not its target, which is an angle
+(the quarter-turn checks hold 90°). The drill press is unchanged (no `hold_drive`; its quill and
+table have their own settings), as is the arm (no slides). **`haas/tm1@v3`** (run
+`2026-11-11_run-003`) is v2's build with the fix. The scorer's `--recording` may now be repeated
+(before, only the last one counted).

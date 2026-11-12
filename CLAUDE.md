@@ -13,13 +13,15 @@ builds `haas/tm1` from its four corner photos: the frame, the axes' carriages, t
 spindle and the tool carousel, each axis sliding its cited travel.
 **Phase 4 so far (2026-11-11):** sources in `docs/research/2026-11-11-haas-tm1-sources.md` (Y travel
 12 in, from Haas's 2002 addendum; today's pages say 16) and `pipelines/b/haas_tm1.reference.json`.
-`haas/tm1@v2` (run `2026-11-11_run-002`; spec by `data/machines/haas-tm1/part_cutting/2026-11-11_spec/compose_spec.py`)
+`haas/tm1@v3` (run `2026-11-11_run-003`; spec by `data/machines/haas-tm1/part_cutting/2026-11-11_spec/compose_spec.py`)
 is generated from **three** corners (the back right one, hidden by a sign and a stool, pulled
 the pendant to the back in a four-corner trial), with the head cut and stand-ins for the saddle,
-the table, the spindle nose and the 10-pocket carousel; decision 0034 (proposed). The build now
-writes `checks/slide.usdc` for driven sliding joints, and the scorer reads their ranges in mm.
-v1 (run-001) is the same build without the slide check. **Waiting:** Daniel's Isaac Sim check
-(`docs/setup/isaac-sim-check.md`, section 11), then the PR.
+the table, the spindle nose and the 10-pocket carousel; decision 0034 (accepted by Daniel
+2026-11-11). The build now writes `checks/slide.usdc` for driven sliding joints, and the scorer
+reads their ranges in mm. Daniel's check of v2 (run-002): ranges and carousel good, but the head
+sank 100 mm: the exporter gave slides the default hold, not `hold_drive` (fixed, v3). v1
+(run-001) has no slide check. **Waiting:** Daniel's check of v3
+(`docs/setup/isaac-sim-check.md`, section 11, with step 5's lower ends), then the PR.
 **Phase 3 is done** (PR #30, merged on 2026-11-10 on Daniel's word; branch
 `feat/lab-phase-3-rebel-arm-control`): the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
 decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from

@@ -728,10 +728,13 @@ at; the new tools used in Phase 2.
       nose and the 10-pocket carousel are stand-ins (`haas/tm1@v2`, run `2026-11-11_run-002`).
 - [ ] Level 2: each axis slides its cited travel, the spindle turns, the carousel indexes its
       cited pockets. Built: `checks/slide.usdc` (new, a tool gap), `checks/spin.usdc`, and the
-      carousel by its drive's target; waits for Daniel's check.
+      carousel by its drive's target. Daniel's check of v2 (2026-11-11): every axis reached its
+      upper limit exactly at 84.7 mm/s, the spindle and carousel turned, the carousel indexed
+      36, 72 and -36 and held; but the head sank 100 mm (the exporter's hold for slides, fixed
+      in `haas/tm1@v3`, run `2026-11-11_run-003`). v3's check waits, with the lower ends.
 - [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
-      Dry runs, validators and builds done (v1, v2); the check waits
-      ([isaac-sim-check.md](setup/isaac-sim-check.md), section 11).
+      Dry runs, validators and builds done (v1, v2, v3); decision 0034 accepted (2026-11-11);
+      v3's check waits ([isaac-sim-check.md](setup/isaac-sim-check.md), section 11).
 
 **Measured by:** the scorecard's sizes, photo match, parts and joints, and ranges.
 

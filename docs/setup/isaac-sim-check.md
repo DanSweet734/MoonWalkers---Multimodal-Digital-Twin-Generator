@@ -451,16 +451,22 @@ logged: "some motions cause certain parts of the mesh to move where it shouldn't
 list [INFERENCE]). The record is the folder's `PROGRAM.md`.
 
 ## 11. Lab plan, Phase 4: the Haas TM-1's axes, spindle and carousel (success levels 1 and 2)
-`haas/tm1@v2` (run `2026-11-11_run-002`) is the generated frame (base, column, guards, chip pan,
+`haas/tm1@v3` (run `2026-11-11_run-003`) is the generated frame (base, column, guards, chip pan,
 pendant) with the head cut from it, and stand-ins for the saddle, the table with its chip guard,
-the spindle nose and the 10-pocket carousel. v1 (run `2026-11-11_run-001`) is the same build
-without `checks/slide.usdc`; check v2. The folder is
-`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-tm1\runs\2026-11-11_run-002\`.
+the spindle nose and the 10-pocket carousel. Check v3. v2 (run `2026-11-11_run-002`) is the same
+build, checked by Daniel on 2026-11-11: its head sank 100 mm, because the exporter gave sliding
+joints the default hold (fixed in v3). v1 (run `2026-11-11_run-001`) has no `checks/slide.usdc`.
+The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-tm1\runs\2026-11-11_run-003\`.
 Its `RUN.md` lists every stand-in and inaccuracy; `views/on_*_photo.png` show the parts on the fed
 photos.
 
-Every driven joint holds with a stiff drive (stiffness 100000, damping 632.5; the spec's
-`hold_drive`), so the head should not sag under its weight. Parts do not collide with each other
+Every driven joint, turning or sliding, holds with a stiff drive (stiffness 100000, damping
+632.5; the spec's `hold_drive`), so the head should not sag under its weight (about 0.1 mm).
+The moving parts: the **head** (`z_axis`, up and down the column), the **saddle** (`y_axis`,
+front to back on the base), the **table** with its chip guard (`x_axis`, left to right on the
+saddle), the **spindle** nose under the head (`spindle_rotation`) and the **tool carousel** left
+of the head (`carousel_index`). Parts do not collide with each other
 (`self_collision` "off"): at X's operator-left end the table passes about 2 in into the left guard,
 which the generator placed too close (logged).
 
@@ -487,8 +493,12 @@ which the generator placed too close (logged).
    select `/haas_tm1/joints/carousel_index` in the Stage panel. In the Property panel, under the
    angular drive, set **Target Position** to `36`: the carousel turns one pocket and holds; `72`
    two pockets, `-36` back one. The tool holders land where their neighbours were.
-5. **Optional:** the same way, set `x_axis`'s linear **Target Position** (in metres, e.g. `0.3`)
-   and watch the table go there and hold; or Shift+drag the head: it holds.
+5. **The axes' lower ends (level 2).** `slide.usdc` starts each axis at its lower limit, before
+   the recorder's first row, so record them by target: with the recorder running in `twin.usdc`,
+   set each linear **Target Position** (in metres) to its lower limit and wait until it stops:
+   `z_axis` `-0.1524`, `y_axis` `-0.1524`, `x_axis` `-0.1168`. Each slides at 84.7 mm/s and
+   holds there; at X's end the table passes into the left guard (logged). Shift+drag the head:
+   it holds.
 6. **Send Claude Code** the recordings' paths and what you saw. It runs
    `uv run python -m moonwalkers.pipelines.b.score <run> --recording <csv> ...`, which measures
    each joint's range against its limits (the scorecard's 1 mm target).
