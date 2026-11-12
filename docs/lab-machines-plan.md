@@ -726,15 +726,25 @@ at; the new tools used in Phase 2.
       the guards and the pendant. Stand-ins where the mesh gets a visible part wrong.
       Done: the head cut from the mesh; the saddle, the table with its chip guard, the spindle
       nose and the 10-pocket carousel are stand-ins (`haas/tm1@v2`, run `2026-11-11_run-002`).
-- [ ] Level 2: each axis slides its cited travel, the spindle turns, the carousel indexes its
+- [x] Level 2: each axis slides its cited travel, the spindle turns, the carousel indexes its
       cited pockets. Built: `checks/slide.usdc` (new, a tool gap), `checks/spin.usdc`, and the
       carousel by its drive's target. Daniel's check of v2 (2026-11-11): every axis reached its
       upper limit exactly at 84.7 mm/s, the spindle and carousel turned, the carousel indexed
       36, 72 and -36 and held; but the head sank 100 mm (the exporter's hold for slides, fixed
-      in `haas/tm1@v3`, run `2026-11-11_run-003`). v3's check waits, with the lower ends.
-- [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+      in `haas/tm1@v3`, run `2026-11-11_run-003`). **Level 2 met by v3** (Daniel's check,
+      2026-11-11): the head holds within 0.014 mm; each axis reaches both ends of its travel
+      within 0.01 mm (`slide.usdc`, and the lower ends by target in `twin.usdc`); the spindle and
+      the carousel turn at 30 deg/s; the carousel indexes 36, 72 and -36 deg and holds.
+- [x] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
       Dry runs, validators and builds done (v1, v2, v3); decision 0034 accepted (2026-11-11);
-      v3's check waits ([isaac-sim-check.md](setup/isaac-sim-check.md), section 11).
+      Daniel's checks of v2 and v3 ([isaac-sim-check.md](setup/isaac-sim-check.md), section 11).
+
+**For Phase 5, from v3's check:** under the stiff hold, a target set in one step moves an axis
+faster than the cited 200 ipm: its positions show up to 224 mm/s, while the joint's own velocity
+reads 88 mm/s, so `maxJointVelocity` does not cap it [INFERENCE: the stiff drive's position
+correction]. Under v2's weak hold the cap held (84.67 mm/s by positions). Phase 5's programs
+move the target along a planned path at the cited rapid and feed, and are measured by positions,
+not the velocity column.
 
 **Measured by:** the scorecard's sizes, photo match, parts and joints, and ranges.
 

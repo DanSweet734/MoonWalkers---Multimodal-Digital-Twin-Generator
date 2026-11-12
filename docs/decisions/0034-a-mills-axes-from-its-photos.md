@@ -99,3 +99,12 @@ stiffness, damping and type when that drive holds a position; not its target, wh
 table have their own settings), as is the arm (no slides). **`haas/tm1@v3`** (run
 `2026-11-11_run-003`) is v2's build with the fix. The scorer's `--recording` may now be repeated
 (before, only the last one counted).
+
+## Update (2026-11-11): v3's check, level 2 met
+Daniel's check of v3: the head holds within 0.014 mm; each axis reaches both ends of its travel
+within 0.01 mm, and the carousel indexes by 36 deg and holds. **Found:** a target set in one step
+(the Property panel) moves an axis at up to 224 mm/s by its positions, over the cited 84.7, while
+the joint's velocity reads 88 mm/s: the cap does not bind a stiffness-100000 drive's step
+[INFERENCE: PhysX's position correction]. The machine's own control never steps a target; Phase
+5's programs move it along a path at the cited rates, so the hold's choice stands, and Phase 5
+measures the path by positions.

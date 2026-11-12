@@ -494,8 +494,10 @@ which the generator placed too close (logged).
    angular drive, set **Target Position** to `36`: the carousel turns one pocket and holds; `72`
    two pockets, `-36` back one. The tool holders land where their neighbours were.
 5. **The axes' lower ends (level 2).** `slide.usdc` starts each axis at its lower limit, before
-   the recorder's first row, so record them by target: with the recorder running in `twin.usdc`,
-   set each linear **Target Position** (in metres) to its lower limit and wait until it stops:
+   the recorder's first row, so record them by target, **in `twin.usdc`, not `slide.usdc`**:
+   `slide.usdc`'s axes have speed drives with no stiffness, which ignore a Target Position (seen
+   on 2026-11-11). Open `twin.usdc`, run the recorder, press Play, then set each linear
+   **Target Position** (in metres) to its lower limit and wait until it stops:
    `z_axis` `-0.1524`, `y_axis` `-0.1524`, `x_axis` `-0.1168`. Each slides at 84.7 mm/s and
    holds there; at X's end the table passes into the left guard (logged). Shift+drag the head:
    it holds.
