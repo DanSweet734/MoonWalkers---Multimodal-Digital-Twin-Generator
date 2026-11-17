@@ -11,7 +11,7 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 branch `feat/lab-phase-5-mill-programs`, from `main` after PR #31; its first commit is the
 hand-off. Phase 5 reads Haas's G and M codes into the axes' motion at cited rapid and feed rates
 and runs a program on `haas/tm1@v3`, measured by the tool tip's path.
-**Phase 5's work is done, in its pull request for Daniel's review** (2026-11-16): research note
+**Phase 5's work is done, in PR #32 for Daniel's review** (2026-11-16): research note
 `docs/research/2026-11-16-haas-mill-programs.md` (+X, +Y, +Z, home and the tool tip from the
 manuals' pages; X home a stand-in); decision 0035 (accepted by Daniel 2026-11-16): our own
 reader of Haas's codes, no library (`control/haas_gcode.py`), program folders by
