@@ -13,6 +13,22 @@ Phase 6 builds `haas/vf3` from its photos (levels 1 and 2, as the TM-1 in Phase 
 tilt and turn as two joints, and runs a Haas program on it (level 3, as Phase 5); the reader's two
 extra axes need decision 0036. The VF-3's level 3 comes before the trunnion's axes if time runs
 short (the advisors want both mills at level 3 before video).
+**Phase 6's work is done, in review** (2026-11-17): `haas/vf3@v1` (run `2026-11-16_run-001`, spec
+by `data/machines/haas-vf3/part_cutting/2026-11-16_spec/compose_spec.py`): the generated
+enclosure, scaled by its cited 78.8 in height, with stand-ins inside for the saddle, the table,
+the head, the nose and the TR160 trunnion (`a_axis` ±120°, `b_axis` unlimited, 80 °/s). The spec's
+`hidden_in_checks` hides the enclosure in check files and program folders, never in `twin.usdc`
+(`checks/inside.usdc` is the twin with it hidden). **Level 2 met** (Daniel's check, 2026-11-17):
+every limit within 0.01 mm or 0.01°, the head holds within 0.019 mm. A `b_axis` target typed in
+Isaac Sim goes a turn at a time (360 from 90 went back to 0). Decision 0036 (**proposed**, waiting
+for Daniel's acceptance): A and B in the Haas reader (G00 at the top speed, G01 on one rotary axis
+at Settings 34 and 79's diameter, simultaneous moves refused as needing G93, M10-M13 logged, an
+unlimited joint planned within ±180°), and the stock and path on the platter. Programs
+`haas-o40001-basic-program-vf3` and the labelled test `moonwalkers-vf3-test-tilt-and-turn`, in
+`data/machines/haas-vf3/programs/2026-11-17_*_v1/`. **Level 3 met for the VF-3** (Daniel's check,
+2026-11-17): the tip within 0.021 mm of the path, A and B within 0.004° of the plan; +A's and +B's
+directions and homes are stand-ins until the lab's jog (meeting of 2026-11-19 items). The MCP tool
+`set_spec_frame` cannot set `hidden_in_checks` yet (a tool gap for Phase 8).
 **Phase 5 is done** (PR #32, merged on 2026-11-16 on Daniel's word; branch
 `feat/lab-phase-5-mill-programs`): research note
 `docs/research/2026-11-16-haas-mill-programs.md` (+X, +Y, +Z, home and the tool tip from the
@@ -392,6 +408,8 @@ Backend (run from `backend/`):
   `... run haas-o40006-cutter-comp --twin haas/tm1@v3 [--acceleration <mm/s^2, 0 for none>]
   [--pocket-time <s>]`; `... compare <recording.csv> <folder>/trajectory.json` measures the tool
   tip. Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 12.
+  With a trunnion's A and B (decision 0036): `... run moonwalkers-vf3-test-tilt-and-turn --twin
+  haas/vf3@v1`; compare also measures A and B in degrees, unwrapped. Section 14.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
 - A manual machine's controls (level 3, decision 0025): a switch, a speed table and the operator's
   commands with scenarios, as three control behaviours (the T33901's are in its reference file).

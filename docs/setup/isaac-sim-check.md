@@ -747,6 +747,25 @@ Check **O40001 first**, then the test, each in a fresh stage, with the steps of 
 **If nothing moves on Play:** set `API = "omni.physx"` near the top of the pasted runner and run
 it again, as in section 7.
 
+**Result (Daniel, 2026-11-17, Isaac Sim 6.2.0): level 3 for both programs.** "Both looked great
+and the two direction guesses at least seem accurate to what would be expected." The runner used
+`simulation_manager` with six joints, first physics step at t = 0.017 s, and the session log
+(`kit_20261117_011912.log`) shows no errors. Measured from the recordings:
+- the tip within 0.021 mm of the programmed path (O40001) and 0.019 mm (the test, through the arc
+  and the tilted cut);
+- A and B within 0.004° of the plan;
+- every block's move (the tip within 0.1 mm, A and B within 0.05°) within 0.02 s of its planned
+  end;
+- X, Y and Z at the cited 423.3 mm/s and B at the TR160's 80 °/s. A's 30° tilt peaks at 69 °/s at
+  the stand-in acceleration and never reaches 80;
+- the spindle at 1000 rpm while cutting.
+
+Z lags the plan by up to 1.5 mm while the head rises at the rapid, along the path, as on the TM-1.
+Besides the warnings listed below, the log shows the three `omni.fabric.plugin` warnings of
+section 12 once, when the first program file opened, and "Unable to deregister callback" twice,
+when the second program's runner and recorder replaced the first's (they print "stopped the
+earlier runner").
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

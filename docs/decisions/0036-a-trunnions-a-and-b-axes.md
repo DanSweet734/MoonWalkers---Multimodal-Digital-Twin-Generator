@@ -132,4 +132,27 @@ so nothing inside it shows in the twin or its checks.
   gap, logged for the agent's build in Phase 8).
 
 ## Seen in Daniel's Isaac Sim check
-(to fill in after the level-3 check, `docs/setup/isaac-sim-check.md`, section 14)
+On 2026-11-17 (Isaac Sim 6.2.0, `docs/setup/isaac-sim-check.md`, section 14) Daniel ran both
+programs on `haas/vf3@v1`, from `data/machines/haas-vf3/programs/2026-11-17_*_v1/`, and recorded
+them: "Both looked great and the two direction guesses at least seem accurate to what would be
+expected". **Level 3 is met for the VF-3.** `control compare` on his recordings:
+
+| Measure | O40001 on the platter | The test that tilts and turns |
+| --- | --- | --- |
+| Tip from the programmed path, largest | 0.021 mm | 0.019 mm (the arc and the tilted cut included) |
+| Tip from the plan at the same time, cutting | 0.019 mm | 0.022 mm |
+| A and B from the plan, largest | 0.000° (held home) | A 0.003°, B 0.004° |
+| Each block's arrival against the plan | within 0.01 s | within 0.02 s |
+| Top speeds from positions | X, Y, Z 423.3 mm/s (cited) | X, Y, Z 423.3 mm/s; B 80.00 °/s (cited); A 66.5 °/s |
+| Spindle while cutting | 1000 rpm | 1000 rpm |
+
+- **The directions:** +B turned the platter clockwise from above, and +A turned its face towards
+  the column, as section 14 described. Daniel finds them as he would expect. They stay stand-ins
+  until the lab's jog of +A and +B (option 5).
+- **A's top speed:** the 30° tilt never reaches 80 °/s at the 160 °/s² stand-in. Its plan peaks
+  at √(30 × 160) = 69.3 °/s. The recorded 66.5 °/s is the speed over 0.05 s around that sharp
+  peak [INFERENCE: that span takes about 2 °/s off a peak this sharp; A stays within 0.003° of the
+  plan].
+- **Z's lag:** Z lags the plan by up to 1.52 mm (O40001) and 1.48 mm (the test) while the head
+  rises at the rapid, along the path, as on the TM-1 (decision 0035).
+- **The head's hold:** it ends 0.019 mm low, as in v1's level-2 check.

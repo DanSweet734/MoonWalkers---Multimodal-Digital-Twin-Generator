@@ -999,9 +999,11 @@ not the velocity column.
       rotary axis alone, the feed at Settings 34 and 79's diameter; simultaneous moves refused,
       since they need G93. Two programs: Haas's O40001 on the platter, and the labelled test
       `moonwalkers-vf3-test-tilt-and-turn`, folders `data/machines/haas-vf3/programs/2026-11-17_*_v1/`.)
-- [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
-      (The program folders were written in scratch first, both validators clean; decision 0036
-      is written; the check is `docs/setup/isaac-sim-check.md`, section 14.)
+- [x] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+      (The program folders were written in scratch first, both validators clean. **Level 3 met
+      for the VF-3** (Daniel's check, 2026-11-17, section 14): the tip within 0.021 mm of the
+      path, A and B within 0.004° of the plan, every block within 0.02 s. Decision 0036 is
+      written and waits for Daniel's acceptance.)
 
 **Measured by:** as Phases 4 and 5, with the trunnion's two axes.
 
