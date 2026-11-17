@@ -35,6 +35,23 @@ How it plans, with the manual's words:
   machine zero, Z then X and Y, as POWER UP does before a program runs ("the axes will return to
   the machine zero position", PDF p. 24; the order of HOME G28 on the Tool Room Mill, its 2002
   addendum p. 14).
+
+A trunnion's A and B (decision 0036; the 2012 Classic manual, 96-8000 Rev AP, PDF pages):
+
+- "A and B axes are always programmed in degrees" (p. 172), in G00, G01 (p. 181), G28 (p. 191)
+  and G53, absolute or incremental. Their work offsets are 0 (not read).
+- **Which way:** the machine map gives the axis about which + turns the *tool* against the work
+  by the right hand rule; a table-side joint turns the other way ("the fingers will point
+  opposite of the positive rotary table movement", the 2011 rotary manual, p. 34). Home is a
+  stated joint angle.
+- **G00** moves A and B at their top speed, each on its own, with X, Y and Z (p. 181).
+- **G01** turns one rotary axis alone, its F in units per minute at the part's diameter
+  (Settings 34 and 79, pp. 271 and 277), a set-up stand-in. A G01 that moves a rotary axis with
+  another is refused: "G93 inverse time must be in effect for simultaneous 5-axis motion"
+  (p. 172), and G93 is not read.
+- **M10-M13** (the A and B brakes, p. 172) are logged: the twin's hold stands in for them.
+- A turning joint without limits stays within ``WRAP_LIMIT_DEG``: Isaac Sim takes a typed target
+  on it a turn at a time (seen 2026-11-17).
 """
 
 from __future__ import annotations
@@ -55,6 +72,9 @@ from .program import PROGRAM_KEY, ProgramError
 
 FORMAT = "haas_gcode"
 AXES = ("X", "Y", "Z")
+ROTARY = ("A", "B")
+ROTARY_ACCELERATION_SPEEDS = 2.0  # a stand-in: twice the top speed per second (decision 0026)
+WRAP_LIMIT_DEG = 180.0  # an unlimited turning joint's plan stays within this (decision 0036)
 INCH_M = 0.0254
 MM_M = 0.001
 ACCELERATION_STAND_IN_MM_S2 = 1000.0  # no source read gives the axes' acceleration
@@ -118,15 +138,16 @@ G_REFUSED: dict[int, str] = {
     98: "canned cycles are not read (no program read uses one)",
     99: "canned cycles are not read (no program read uses one)",
 }
-M_TAKEN = frozenset({1, 2, 3, 4, 5, 6, 8, 9, 30})
+M_TAKEN = frozenset({1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 30})
+BRAKES = {10: "A brake on", 11: "A brake off", 12: "B brake on", 13: "B brake off"}
 M_REFUSED: dict[int, str] = {
     0: "M00 stops the program until a person presses Cycle Start, which is not simulated",
     97: "sub-programs are not read",
     98: "sub-programs are not read",
     99: "sub-programs are not read",
 }
-LETTERS = frozenset("GMXYZIJKRFSTHDPNO")
-NEEDS_DECIMAL = frozenset("XYZIJKRF")  # Setting 77 (PDF p. 229): no decimal point is scaled
+LETTERS = frozenset("GMXYZABIJKRFSTHDPNO")
+NEEDS_DECIMAL = frozenset("XYZABIJKRF")  # Setting 77 (PDF p. 229): no decimal point is scaled
 WORD = re.compile(r"(,?[A-Z#])\s*([+-]?(?:\d+\.?\d*|\.\d+))?")
 
 
@@ -288,12 +309,26 @@ class AxisMap(BaseModel):
     )
 
 
+class RotaryMap(BaseModel):
+    """One of Haas's rotary axes (A, B) on the twin: its turning joint, the axis about which +
+    turns the tool against the work (the right hand rule), and the joint's angle at home."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    joint_id: str
+    direction: tuple[float, float, float] = Field(
+        description="Haas's + by the right hand rule for the tool's motion, in the twin's frame"
+    )
+    home_deg: float = Field(default=0.0, description="the joint's angle at machine zero")
+
+
 class MachineMap(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     axes: dict[Literal["X", "Y", "Z"], AxisMap]
+    rotary: dict[Literal["A", "B"], RotaryMap] = Field(default_factory=dict)
     tool_part: str = Field(description="the part that carries the tool (the spindle)")
-    work_part: str = Field(description="the part that carries the work (the table)")
+    work_part: str = Field(description="the part that carries the work (the table, the platter)")
     spindle: str | None = Field(default=None, description="the spindle's turning joint")
     carousel: str | None = Field(default=None, description="the tool carousel's turning joint")
     pockets: int | None = Field(default=None, ge=1)
@@ -325,6 +360,11 @@ class Setup(BaseModel):
     stock_height: float | None = Field(
         default=None, gt=0, description="a block on the table under the path; set-up units"
     )
+    rotary_diameters: dict[Literal["A", "B"], float] = Field(
+        default_factory=dict,
+        description="Settings 34 (A) and 79 (B): the part's diameter for a rotary feed, set-up "
+        "units",
+    )
     start_pocket: int = Field(default=1, ge=1, description="the pocket at the spindle at the start")
     optional_stop: bool = Field(default=False, description="M01 stops only when this is on")
     why: list[str] = Field(default_factory=list, description="why each stand-in is what it is")
@@ -342,7 +382,10 @@ def machine_map(behavior: ControlBehavior) -> MachineMap:
         raise ProgramError(f"spec['{PROGRAM_KEY}']['machine']: {_first(exc)}") from exc
     if sorted(machine.axes) != list(AXES):
         raise ProgramError(f"spec['{PROGRAM_KEY}']['machine']['axes'] must map X, Y and Z")
-    if len({a.joint_id for a in machine.axes.values()}) != len(AXES):
+    joints = [a.joint_id for a in machine.axes.values()] + [
+        r.joint_id for r in machine.rotary.values()
+    ]
+    if len(set(joints)) != len(joints):
         raise ProgramError("two of Haas's axes map to the same joint")
     return machine
 
@@ -375,10 +418,40 @@ class MillAxis(BaseModel):
         return self.home_m + self.sign * m
 
 
+class RotaryAxis(BaseModel):
+    """A trunnion's A or B on the twin (decision 0036): angles in degrees."""
+
+    axis: str
+    joint_id: str
+    side: Literal["work"]
+    joint_axis: tuple[float, float, float]
+    origin_m: tuple[float, float, float] = Field(description="a point on the joint's axis, twin 0")
+    direction: tuple[float, float, float]
+    sign: int = Field(description="Haas's angle = sign x (joint angle - home)")
+    home_deg: float
+    lower_deg: float | None = Field(description="None: no limit")
+    upper_deg: float | None
+    rapid_deg_s: float
+
+    def machine(self, q_deg: float) -> float:
+        return self.sign * (q_deg - self.home_deg)
+
+    def joint(self, m_deg: float) -> float:
+        return self.home_deg + self.sign * m_deg
+
+    def reaches(self, q_deg: float) -> bool:
+        if self.lower_deg is None or self.upper_deg is None:
+            return abs(q_deg) <= WRAP_LIMIT_DEG + 1e-9
+        return self.lower_deg - 1e-6 <= q_deg <= self.upper_deg + 1e-6
+
+
 class MillBinding(BaseModel):
     """Haas's axes on the twin, with its spindle and carousel."""
 
     axes: list[MillAxis]
+    rotary: list[RotaryAxis] = Field(
+        default_factory=list, description="A and B, nearest the frame first"
+    )
     tool_part: str
     work_part: str
     spindle: str | None
@@ -401,6 +474,19 @@ class MillBinding(BaseModel):
                 for i in range(3):
                     out[i] += q * axis.joint_axis[i]
         return out[0], out[1], out[2]
+
+    def to_work(
+        self, point: Sequence[float], m: Sequence[float], rotary_deg: Sequence[float] = ()
+    ) -> tuple[float, float, float]:
+        """A point of the world, with the axes at machine ``m`` and the rotary axes at
+        ``rotary_deg`` (Haas's angles), in the work part's frame at the twin's 0: the work part
+        moves by the work-side slides, then turns about A and B, nearest the frame first."""
+        d = self.displacement(m, "work")
+        p = [point[i] - d[i] for i in range(3)]
+        angles = list(rotary_deg) or [0.0] * len(self.rotary)
+        for axis, angle in zip(self.rotary, angles, strict=True):
+            p = list(_turn(p, axis.origin_m, axis.joint_axis, -axis.joint(angle)))
+        return p[0], p[1], p[2]
 
 
 def bind_mill(behavior: ControlBehavior, results: Sequence[PipelineResult]) -> MillBinding:
@@ -468,6 +554,12 @@ def bind_mill(behavior: ControlBehavior, results: Sequence[PipelineResult]) -> M
                 rapid_m_s=joint.max_velocity,
             )
         )
+    rotary = [
+        _bind_rotary(name, mapping, joints.get(mapping.joint_id), carried, machine)
+        for name, mapping in sorted(machine.rotary.items())
+    ]
+    # nearest the frame first: an axis that another's joint rides on comes before it
+    rotary.sort(key=lambda r: sum(_rides_on(r, o, joints, carried) for o in rotary))
     spindle_rpm = None
     for name, joint_id in (("spindle", machine.spindle), ("carousel", machine.carousel)):
         if joint_id is None:
@@ -482,6 +574,7 @@ def bind_mill(behavior: ControlBehavior, results: Sequence[PipelineResult]) -> M
     feed = facts.get("max_cutting_feed")
     return MillBinding(
         axes=axes,
+        rotary=rotary,
         tool_part=machine.tool_part,
         work_part=machine.work_part,
         spindle=machine.spindle,
@@ -490,6 +583,59 @@ def bind_mill(behavior: ControlBehavior, results: Sequence[PipelineResult]) -> M
         pockets=machine.pockets,
         max_feed_m_s=float(feed) if isinstance(feed, int | float) else None,
     )
+
+
+def _bind_rotary(
+    name: str,
+    mapping: RotaryMap,
+    joint: Any,
+    carried: Any,
+    machine: MachineMap,
+) -> RotaryAxis:
+    """A or B on its turning joint: on the work's side only (a trunnion), its sign from the right
+    hand rule for the tool (decision 0036), its home a stated angle."""
+    if joint is None or joint.joint_type != "revolute":
+        raise ProgramError(f"{name} turns '{mapping.joint_id}', not a turning joint here")
+    if joint.max_velocity is None:
+        raise ProgramError(f"{joint.joint_id} has no cited top speed")
+    moved = carried(joint.child_part)
+    if machine.tool_part in moved:
+        raise ProgramError(f"{name} turns the tool: a tilting head is not read (decision 0036)")
+    if machine.work_part not in moved:
+        raise ProgramError(f"{joint.joint_id} does not carry the work part '{machine.work_part}'")
+    direction = _unit(mapping.direction, f"{name}'s direction")
+    joint_axis = _unit(joint.axis, f"{joint.joint_id}'s axis")
+    dot = sum(a * b for a, b in zip(direction, joint_axis, strict=True))
+    if abs(dot) < ALIGNED:
+        raise ProgramError(
+            f"{name}'s direction {direction} is not along {joint.joint_id}'s axis {joint_axis}"
+        )
+    limited = joint.lower_limit is not None and joint.upper_limit is not None
+    axis = RotaryAxis(
+        axis=name,
+        joint_id=joint.joint_id,
+        side="work",
+        joint_axis=joint_axis,
+        origin_m=tuple(joint.origin_m),
+        direction=direction,
+        sign=-1 if dot > 0 else 1,  # the work turns opposite to the tool's + (p. 34)
+        home_deg=mapping.home_deg,
+        lower_deg=math.degrees(joint.lower_limit) if limited else None,
+        upper_deg=math.degrees(joint.upper_limit) if limited else None,
+        rapid_deg_s=math.degrees(joint.max_velocity),
+    )
+    if not axis.reaches(axis.home_deg):
+        raise ProgramError(
+            f"{name}'s home {axis.home_deg:g} deg is outside {joint.joint_id}'s range"
+        )
+    return axis
+
+
+def _rides_on(axis: RotaryAxis, other: RotaryAxis, joints: Mapping[str, Any], carried: Any) -> bool:
+    """Whether ``axis``'s joint is carried by ``other``'s."""
+    if axis.joint_id == other.joint_id:
+        return False
+    return joints[axis.joint_id].child_part in carried(joints[other.joint_id].child_part)
 
 
 class MillGeometry(BaseModel):
@@ -510,7 +656,10 @@ class MillSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     acceleration_mm_s2: float | None = Field(
-        default=ACCELERATION_STAND_IN_MM_S2, gt=0, description="a stand-in; None: none"
+        default=ACCELERATION_STAND_IN_MM_S2,
+        gt=0,
+        description="a stand-in; None: none, on the rotary axes too (they take twice their top "
+        "speed per second, decision 0036)",
     )
     seconds_per_pocket: float = Field(default=POCKET_SECONDS_STAND_IN, gt=0)
     power_up: bool = Field(default=True, description="return to machine zero before the program")
@@ -526,6 +675,8 @@ class MillEvent(BaseModel):
     end_s: float
     from_mm: list[float] = Field(description="the tool against the table: machine X, Y, Z")
     to_mm: list[float]
+    from_deg: list[float] = Field(default_factory=list, description="machine A, B (as bound)")
+    to_deg: list[float] = Field(default_factory=list)
     what: str
 
 
@@ -543,6 +694,10 @@ class MillTrajectory(BaseModel):
     positions: dict[str, list[float]]
     machine_mm: list[list[float]]
     axes: list[MillAxis]
+    rotary: list[RotaryAxis] = Field(default_factory=list)
+    machine_deg: list[list[float]] = Field(
+        default_factory=list, description="machine A, B (as bound) at each time"
+    )
     spindle: str | None
     carousel: str | None
     events: list[MillEvent]
@@ -602,9 +757,11 @@ class _MillRunner:
         )
         self.state = _State(units_m=setup.unit_m)
         self.pos = binding.machine({a.joint_id: 0.0 for a in binding.axes})
+        self.rot = [r.machine(0.0) for r in binding.rotary]  # Haas's A, B at the twin's 0
         self.t = 0.0
         self.times = [0.0]
         self.machine = [list(self.pos)]
+        self.machine_rot = [list(self.rot)]
         self.spindle_deg = [0.0]
         self.spindle_rate = 0.0  # deg/s
         self.spindle_rpm: list[list[float]] = [[0.0, 0.0]]
@@ -627,22 +784,28 @@ class _MillRunner:
             self._block(block)
 
     def _power_up(self) -> None:
-        start, from_mm = self.t, self._mm()
+        start, from_mm, from_deg = self.t, self._mm(), list(self.rot)
         z = [self.pos[0], self.pos[1], 0.0]
         self._rapid(z)
-        self._rapid([0.0, 0.0, 0.0])
+        self._rapid([0.0, 0.0, 0.0], [0.0] * len(self.rot))
         self._note(
             "The plan starts at the twin's 0 (its photographed pose) and returns to machine zero "
             "first, Z then X and Y at the rapids, as POWER UP does before a program runs (2009 "
             "manual, PDF p. 24; the order of the Tool Room Mill's HOME G28, its 2002 addendum, "
             "p. 14). The homing speed is a stand-in: the manuals give none"
         )
-        self._event(0, "POWER UP", "power_up", start, from_mm, "zero return: Z, then X and Y")
+        what = "zero return: Z, then X and Y" + (
+            f" with {' and '.join(r.axis for r in self.b.rotary)}" if self.rot else ""
+        )
+        self._event(0, "POWER UP", "power_up", start, from_mm, what, from_deg)
 
     def _block(self, block: Block) -> None:
         where = f"line {block.line} ({block.text})"
         s = self.state
-        start, from_mm = self.t, self._mm()
+        start, from_mm, from_deg = self.t, self._mm(), list(self.rot)
+        for name in ROTARY:
+            if block.has(name) and not any(r.axis == name for r in self.b.rotary):
+                raise ProgramError(f"{where}: the twin has no {name} axis in the machine map")
         gs = block.codes("G")
         did: list[str] = []
         kind = "modal"
@@ -681,7 +844,7 @@ class _MillRunner:
         if (tw := block.get("T")) is not None:
             s.next_tool = int(tw.value)
 
-        moved = [block.has(a) for a in AXES]
+        moved = [block.has(a) for a in (*AXES, *ROTARY)]
         if 4 in gs:
             kind = "dwell"
             did.append(self._dwell(block, where))
@@ -697,7 +860,7 @@ class _MillRunner:
             kind, what = self._m(m, block, where, kind)
             did.append(what)
         what = "; ".join(d for d in did if d) or "nothing to do"
-        self._event(block.line, block.text, kind, start, from_mm, what)
+        self._event(block.line, block.text, kind, start, from_mm, what, from_deg)
 
     # --------------------------------------------------------------------- modal codes
     def _cutter(self, block: Block, gs: list[int], where: str, did: list[str]) -> None:
@@ -804,15 +967,54 @@ class _MillRunner:
         self._check_reach(target, where)
         return target
 
+    def _rot_target(self, block: Block, gs: list[int], where: str) -> list[float]:
+        """Haas's A and B after the block: always degrees (2012 manual, PDF p. 172), absolute
+        (work offset 0) or incremental."""
+        target = list(self.rot)
+        for i, axis in enumerate(self.b.rotary):
+            w = block.get(axis.axis)
+            if w is None:
+                continue
+            target[i] = w.value if (self.state.absolute or 53 in gs) else self.rot[i] + w.value
+            q = axis.joint(target[i])
+            if not axis.reaches(q):
+                limits = (
+                    f"its range {axis.lower_deg:.3f} to {axis.upper_deg:.3f} deg"
+                    if axis.lower_deg is not None
+                    else f"+-{WRAP_LIMIT_DEG:g} deg, where an unlimited joint's plan stays "
+                    "(Isaac Sim takes a target on it a turn at a time, decision 0036)"
+                )
+                raise ProgramError(
+                    f"{where}: {axis.axis}{target[i]:g} puts {axis.joint_id} at {q:.3f} deg, "
+                    f"outside {limits}"
+                )
+        return target
+
     def _move(self, block: Block, gs: list[int], where: str) -> str:
         s = self.state
         target = self._target(block, gs, where)
+        rot = self._rot_target(block, gs, where)
+        turns = [i for i, (a, b) in enumerate(zip(self.rot, rot, strict=True)) if a != b]
         if s.motion == 0:
-            moved = self._rapid(target)
+            moved = self._rapid(target, rot)
             return f"rapid, {moved:.3f} s" if moved else "rapid: already there"
         if s.feed_m_s is None:
             raise ProgramError(f"{where}: a feed move before any F")
         start = self.t
+        if any(block.has(a.axis) for a in self.b.rotary):
+            if s.motion != 1:
+                raise ProgramError(f"{where}: an arc cannot turn A or B (G17 arcs are in X and Y)")
+            if target != self.pos or len(turns) > 1:
+                raise ProgramError(
+                    f'{where}: a feed that turns a rotary axis with another axis needs "G93 '
+                    'inverse time ... for simultaneous 5-axis motion" (2012 manual, PDF p. 172), '
+                    "which is not read; turn one rotary axis alone (decision 0036)"
+                )
+            if not turns:
+                return "feed: already there"
+            what = self._rotary_feed(turns[0], rot, s.feed_m_s, where)
+            self.cutting.append([start, self.t])
+            return what
         if s.motion == 1:
             length = self._line(target, s.feed_m_s, where)
             what = f"feed {length / s.units_m:.4f} {self._unit()} at F{self._f():g}"
@@ -824,20 +1026,77 @@ class _MillRunner:
             self.cutting.append([start, self.t])
         return what
 
-    def _rapid(self, target: Sequence[float]) -> float:
-        start, origin = self.t, list(self.pos)
+    def _rapid(self, target: Sequence[float], rot: Sequence[float] | None = None) -> float:
+        start, origin, rot0 = self.t, list(self.pos), list(self.rot)
+        rot = list(rot0 if rot is None else rot)
         profiles = []
         for i, axis in enumerate(self.b.axes):
             profiles.append(move_profile(target[i] - origin[i], axis.rapid_m_s, self.acc))
-        duration = max(p[-1][0] for p in profiles)
+        turns = [
+            move_profile(rot[i] - rot0[i], axis.rapid_deg_s, self._rotary_acc(axis))
+            for i, axis in enumerate(self.b.rotary)
+        ]
+        duration = max(p[-1][0] for p in [*profiles, *turns])
         if duration <= 0:
             return 0.0
-        times = sorted({round(t, 9) for p in profiles for t, _ in p})
+        times = sorted({round(t, 9) for p in [*profiles, *turns] for t, _ in p})
         for t in times[1:]:
             point = [origin[i] + _along(p, t) for i, p in enumerate(profiles)]
-            self._sample(start + t, point)
-        self._settle(target)
+            angles = [rot0[i] + _along(p, t) for i, p in enumerate(turns)]
+            self._sample(start + t, point, rot=angles)
+        self._settle(target, rot)
+        if turns and any(r != r0 for r, r0 in zip(rot, rot0, strict=True)):
+            self._note(
+                "A and B move at their top speed on G00, each on its own, as X, Y and Z do: G00 "
+                "takes an A address (2012 manual, PDF p. 181), and 'Rapid moves are not allowed' "
+                "(p. 173) is read as for 5-axis cutting [INFERENCE, decision 0036]. They speed "
+                "up and slow down at twice their top speed per second, a stand-in (decision "
+                "0026's rule)"
+            )
         return self.t - start
+
+    def _rotary_acc(self, axis: RotaryAxis) -> float | None:
+        return None if self.acc is None else ROTARY_ACCELERATION_SPEEDS * axis.rapid_deg_s
+
+    def _rotary_feed(self, i: int, rot: Sequence[float], feed: float, where: str) -> str:
+        """G01 turning one rotary axis: F (units per minute) along the part's circumference at
+        Setting 34's or 79's diameter (2012 manual, PDF pp. 271, 277)."""
+        axis = self.b.rotary[i]
+        setting = "Setting 34" if axis.axis == "A" else "Setting 79"
+        diameter = self.setup.rotary_diameters.get(axis.axis)  # type: ignore[call-overload]
+        if not diameter:
+            raise ProgramError(
+                f"{where}: a feed on {axis.axis} needs the part's diameter ({setting}): give "
+                f"setup.rotary_diameters['{axis.axis}']"
+            )
+        rate = feed / (math.pi * diameter * self.setup.unit_m) * 360.0  # deg/s
+        if rate > axis.rapid_deg_s * (1 + 1e-6):
+            raise ProgramError(
+                f"{where}: {axis.axis} would turn at {rate:.1f} deg/s, over its cited "
+                f'{axis.rapid_deg_s:.1f}: "an alarm (max feedrate exceeded)" (2009 manual, '
+                "PDF p. 139)"
+            )
+        start, rot0 = self.t, list(self.rot)
+        delta = rot[i] - rot0[i]
+        step = ARC_STEP_DEG
+        profile = move_profile(delta, rate, self._rotary_acc(axis))
+        times = [t for t, _ in profile]
+        extra = [k * step / rate for k in range(1, math.ceil(times[-1] * rate / step))]
+        for t in sorted({round(t, 9) for t in [*times[1:], *extra]}):
+            angles = list(rot0)
+            angles[i] = rot0[i] + _along(profile, t)
+            self._sample(start + t, list(self.pos), rot=angles)
+        self._settle(self.pos, rot)
+        self._note(
+            f"A rotary feed's F is {self._unit()}/min along the part's circumference at its "
+            "diameter (Settings 34 and 79, 2012 manual, PDF pp. 271, 277), not degrees per "
+            "second as one example says (p. 173); the diameter is a set-up stand-in (decision "
+            "0036)"
+        )
+        return (
+            f"feed {axis.axis} {delta:+.3f} deg at F{self._f():g} ({rate:.2f} deg/s at "
+            f"{setting}'s {diameter:g} {self._unit()})"
+        )
 
     def _line(self, target: Sequence[float], feed: float, where: str) -> float:
         origin = list(self.pos)
@@ -912,14 +1171,19 @@ class _MillRunner:
     def _return(self, block: Block, gs: list[int], where: str) -> str:
         """G28: through the given point (with G90), then the named axes, or all, to zero."""
         s = self.state
-        named = [a for a in AXES if block.has(a)] or list(AXES)
+        bound = [r.axis for r in self.b.rotary]
+        everything = [*AXES, *bound]
+        # "returns all axes (X, Y, Z, A and B) ... when no axis is specified" (2012, PDF p. 191)
+        named = [a for a in everything if block.has(a)] or everything
         via = "directly"  # with G91 the given point is where the axes stand (PDF p. 150)
-        if s.absolute and any(block.has(a) for a in AXES):
-            middle = self._target(block, [g for g in gs if g != 28], where)
-            if self._rapid(middle):
+        if s.absolute and any(block.has(a) for a in everything):
+            rest = [g for g in gs if g != 28]
+            middle = self._target(block, rest, where)
+            if self._rapid(middle, self._rot_target(block, rest, where)):
                 via = "through the given point"
         home = [0.0 if a in named else self.pos[i] for i, a in enumerate(AXES)]
-        self._rapid(home)
+        rot = [0.0 if a in named else self.rot[i] for i, a in enumerate(bound)]
+        self._rapid(home, rot)
         s.length_m, s.length_h = 0.0, None  # "G28 cancels tool length offsets" (PDF p. 149)
         return f"G28: {', '.join(named)} to machine zero {via}; tool length offset off"
 
@@ -951,6 +1215,12 @@ class _MillRunner:
         if m == 5:
             self._spin(0.0)
             return kind, "spindle stop"
+        if m in BRAKES:
+            self._note(
+                "The A and B brakes (M10-M13, 2012 manual, PDF p. 172) are logged only: the "
+                "twin's stiff hold stands in for them, on or off (decision 0036)"
+            )
+            return kind, f"M{m}: {BRAKES[m]} (logged)"
         if m in (8, 9):
             self._note("Coolant (M08, M09) is logged only: the twin has none")
             return kind, "coolant on (logged)" if m == 8 else "coolant off (logged)"
@@ -1010,24 +1280,37 @@ class _MillRunner:
             else:
                 self.spindle_rpm.append([self.t, rpm])
 
-    def _sample(self, t: float, point: Sequence[float], turn: float = 0.0) -> None:
+    def _sample(
+        self,
+        t: float,
+        point: Sequence[float],
+        turn: float = 0.0,
+        rot: Sequence[float] | None = None,
+    ) -> None:
         if t < self.times[-1] - 1e-12:
             raise AssertionError("the plan's times went backwards")
+        rot = list(self.rot if rot is None else rot)
         dt = t - self.times[-1]
         if dt <= 1e-12:
             self.machine[-1] = list(point)
+            self.machine_rot[-1] = rot
             self.carousel_deg[-1] += turn
         else:
             self.times.append(t)
             self.machine.append(list(point))
+            self.machine_rot.append(rot)
             self.spindle_deg.append(self.spindle_deg[-1] + self.spindle_rate * dt)
             self.carousel_deg.append(self.carousel_deg[-1] + turn)
         self.t = t
         self.pos = list(point)
+        self.rot = list(rot)
 
-    def _settle(self, target: Sequence[float]) -> None:
+    def _settle(self, target: Sequence[float], rot: Sequence[float] | None = None) -> None:
         self.pos = list(target)
         self.machine[-1] = list(target)
+        if rot is not None:
+            self.rot = list(rot)
+            self.machine_rot[-1] = list(rot)
 
     def _check_start(self) -> None:
         for axis, m in zip(self.b.axes, self.pos, strict=True):
@@ -1037,6 +1320,9 @@ class _MillRunner:
                 <= axis.upper_m + LIMIT_TOLERANCE_M
             ):
                 raise ProgramError(f"{axis.joint_id}: the twin's 0 is outside its own range")
+        for rotary in self.b.rotary:
+            if not rotary.reaches(0.0):
+                raise ProgramError(f"{rotary.joint_id}: the twin's 0 is outside its own range")
 
     def _check_reach(self, point: Sequence[float], where: str) -> None:
         for axis, m in zip(self.b.axes, point, strict=True):
@@ -1075,7 +1361,14 @@ class _MillRunner:
         return round(self.state.feed_m_s * 60 / self.state.units_m, 6)
 
     def _event(
-        self, line: int, block: str, kind: str, start: float, from_mm: list[float], what: str
+        self,
+        line: int,
+        block: str,
+        kind: str,
+        start: float,
+        from_mm: list[float],
+        what: str,
+        from_deg: list[float],
     ) -> None:
         self.events.append(
             MillEvent(
@@ -1086,6 +1379,8 @@ class _MillRunner:
                 end_s=self.t,
                 from_mm=from_mm,
                 to_mm=self._mm(),
+                from_deg=from_deg,
+                to_deg=list(self.rot),
                 what=what,
             )
         )
@@ -1098,6 +1393,8 @@ class _MillRunner:
         positions: dict[str, list[float]] = {}
         for k, axis in enumerate(self.b.axes):
             positions[axis.joint_id] = [axis.joint(m[k]) for m in self.machine]
+        for k, rotary in enumerate(self.b.rotary):
+            positions[rotary.joint_id] = [rotary.joint(r[k]) for r in self.machine_rot]
         if self.b.spindle is not None:
             positions[self.b.spindle] = list(self.spindle_deg)
         if self.b.carousel is not None:
@@ -1115,6 +1412,8 @@ class _MillRunner:
             positions=positions,
             machine_mm=[[v * 1000 for v in m] for m in self.machine],
             axes=self.b.axes,
+            rotary=self.b.rotary,
+            machine_deg=[list(r) for r in self.machine_rot],
             spindle=self.b.spindle,
             carousel=self.b.carousel,
             events=self.events,
@@ -1167,6 +1466,21 @@ def _along(profile: list[tuple[float, float]], t: float) -> float:
     k = bisect.bisect_right(times, t)
     (t0, s0), (t1, s1) = profile[k - 1], profile[k]
     return s0 + (s1 - s0) * (t - t0) / (t1 - t0) if t1 > t0 else s1
+
+
+def _turn(
+    p: Sequence[float], origin: Sequence[float], axis: Sequence[float], deg: float
+) -> tuple[float, float, float]:
+    """``p`` turned by ``deg`` about the line through ``origin`` along the unit ``axis``, by the
+    right hand rule (Rodrigues' formula)."""
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    v = [p[i] - origin[i] for i in range(3)]
+    k = axis
+    dot = k[0] * v[0] + k[1] * v[1] + k[2] * v[2]
+    cross = (k[1] * v[2] - k[2] * v[1], k[2] * v[0] - k[0] * v[2], k[0] * v[1] - k[1] * v[0])
+    out = [v[i] * c + cross[i] * s + k[i] * dot * (1 - c) + origin[i] for i in range(3)]
+    return out[0], out[1], out[2]
 
 
 def _unit(v: Sequence[float], what: str) -> tuple[float, float, float]:

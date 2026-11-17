@@ -617,3 +617,264 @@ def test_the_command_line(tmp_path: Path, box_mill, capsys) -> None:
     assert read_recording(recording)["time_s"][1] == pytest.approx(1 / 60)
     assert control_cli(["compare", str(recording), str(folder / "trajectory.json")]) == 0
     assert "line 15 feed: tip within 0.1 mm of its end" in capsys.readouterr().out
+
+
+# ------------------------------------------------------- a trunnion's A and B (decision 0036)
+A_ORIGIN, B_ORIGIN, PLATTER_TOP = 0.66, 0.655, 0.665
+TOP_SPEED = math.radians(80.0)  # the TR160's 80 deg/s
+TRUNNION_MACHINE = {
+    **MACHINE,
+    "work_part": "platter",
+    "rotary": {
+        "A": {"joint_id": "a_axis", "direction": [0.0, 1.0, 0.0]},
+        "B": {"joint_id": "b_axis", "direction": [0.0, 0.0, 1.0]},
+    },
+}
+TRUNNION_SETUP = {  # G54 X0 Y0 on the platter's centre, under the spindle at the twin's 0
+    "units": "inch",
+    "work_offsets": {"G54": {"X": -15.0, "Y": -6.0, "Z": 0.0}},
+    "tools": {"1": {"length": 3.0, "diameter": 0.5}},
+    "stock_height": 1.0,
+    "rotary_diameters": {"B": 4.0},
+}
+
+
+def build_trunnion_mill(created_at: datetime) -> tuple[TwinRecord, PipelineResult]:
+    """The box mill with a trunnion on its table: a base, a cradle on A (about the table's long
+    axis, +-120 deg) and a platter on B (about its normal, no limit), as on the VF-3 twin."""
+    twin, result = build_box_mill(created_at)
+    parts = [
+        *result.parts,
+        part("trunnion_base", "Base", box((0.2, 0.6, 0.04), (0.0, 0.0, 0.62)), MADE_UP),
+        part("cradle", "Cradle", box((0.15, 0.4, 0.02), (0.0, 0.0, 0.645)), MADE_UP),
+        part(
+            "platter",
+            "Platter",
+            cylinder(0.08, 0.01, (0, 0, 1), (0.0, 0.0, PLATTER_TOP - 0.005), segments=32),
+            MADE_UP,
+        ),
+    ]
+
+    def rotary(joint_id, parent, child, axis, origin, limit):
+        return Joint(
+            joint_id=joint_id,
+            joint_type="revolute",
+            parent_part=parent,
+            child_part=child,
+            axis=axis,
+            origin_m=origin,
+            lower_limit=None if limit is None else -limit,
+            upper_limit=limit,
+            max_velocity=TOP_SPEED,
+            confidence=0.5,
+            citations=[MADE_UP],
+        )
+
+    joints = [
+        *result.joints,
+        Joint(
+            joint_id="trunnion_mount",
+            joint_type="fixed",
+            parent_part="table",
+            child_part="trunnion_base",
+            axis=(0.0, 0.0, 1.0),
+            origin_m=(0.0, 0.0, 0.6),
+            confidence=0.5,
+            citations=[MADE_UP],
+        ),
+        rotary("a_axis", "trunnion_base", "cradle", (0.0, 1.0, 0.0), (0, 0, A_ORIGIN), 2.0944),
+        rotary("b_axis", "cradle", "platter", (0.0, 0.0, 1.0), (0, 0, B_ORIGIN), None),
+    ]
+    return twin, result.model_copy(update={"parts": parts, "joints": joints})
+
+
+@pytest.fixture
+def trunnion_mill(fixed_time):
+    return build_trunnion_mill(fixed_time)
+
+
+def trunnion_program(text: str, setup: dict | None = None, machine: dict | None = None):
+    data = program_file(text).model_dump(mode="json")
+    data["behavior"]["spec"]["program"]["machine"] = machine or TRUNNION_MACHINE
+    data["behavior"]["spec"]["program"]["setup"] = setup or TRUNNION_SETUP
+    data["behavior"]["drives_joints"] = ["x_axis", "y_axis", "z_axis", "a_axis", "b_axis"]
+    return ProgramFile.model_validate(data)
+
+
+def rplan(text: str, mill, setup: dict | None = None, settings: MillSettings = NO_ACC):
+    _, result = mill
+    program = trunnion_program(text, setup)
+    return run_gcode_program(
+        GcodeProgram.from_behavior(program.behavior),
+        bind_mill(program.behavior, [result]),
+        setup_of(program.behavior),
+        settings,
+        MillGeometry(nose_m=(0.0, 0.0, NOSE_Z), table_top_m=PLATTER_TOP),
+    )
+
+
+def test_a_and_b_are_bound_on_the_work_nearest_the_frame_first(trunnion_mill) -> None:
+    binding = bind_mill(trunnion_program(gcode("G00 A1.")).behavior, [trunnion_mill[1]])
+    a, b = binding.rotary
+    # the joints turn the work, so opposite to Haas's + for the tool (2011 rotary manual, p. 34)
+    assert (a.axis, a.joint_id, a.sign, a.home_deg) == ("A", "a_axis", -1, 0.0)
+    assert a.lower_deg == pytest.approx(-120.0, abs=1e-3) and a.rapid_deg_s == pytest.approx(80)
+    assert (b.axis, b.sign, b.lower_deg, b.upper_deg) == ("B", -1, None, None)
+    assert a.origin_m == (0.0, 0.0, A_ORIGIN)
+    flipped = {
+        **TRUNNION_MACHINE,
+        "rotary": dict(reversed(list(TRUNNION_MACHINE["rotary"].items()))),
+    }
+    again = bind_mill(
+        trunnion_program(gcode("G00 A1."), machine=flipped).behavior, [trunnion_mill[1]]
+    )
+    assert [r.axis for r in again.rotary] == ["A", "B"]  # B rides on A, whatever the order
+
+
+def test_a_rapid_turns_a_and_b_each_at_its_top_speed(trunnion_mill) -> None:
+    t = rplan(gcode("G00 G90 A30. B-90."), trunnion_mill)
+    move = event(t, 3)
+    assert move.kind == "rapid" and move.to_deg == pytest.approx([30.0, -90.0])
+    assert move.end_s - move.start_s == pytest.approx(90 / 80)  # B's 90 deg at 80 deg/s
+    a_done = min(range(len(t.times)), key=lambda k: abs(t.times[k] - move.start_s - 30 / 80))
+    assert t.machine_deg[a_done][0] == pytest.approx(30.0)  # A arrives first, as G00 says
+    assert t.positions["a_axis"][-1] == pytest.approx(-30.0)  # the joints turn the other way
+    assert t.positions["b_axis"][-1] == pytest.approx(90.0)
+    assert any("Rapid moves are not allowed" in n for n in t.notes)
+    incremental = rplan(gcode("G00 G90 A30.", "G91 A-10."), trunnion_mill)
+    assert incremental.events[-2].to_deg == pytest.approx([20.0, 0.0])
+
+
+def test_a_rotary_feed_is_units_per_minute_at_the_parts_diameter(trunnion_mill) -> None:
+    t = rplan(gcode("G01 B90. F20."), trunnion_mill)
+    move = event(t, 3)
+    rate = 20 / 60 / (math.pi * 4.0) * 360  # Setting 79's 4 in: 9.55 deg/s
+    assert move.end_s - move.start_s == pytest.approx(90 / rate)
+    assert "at Setting 79's 4 in" in move.what and [move.start_s, move.end_s] in t.cutting
+    during = [x for x in t.times if move.start_s <= x <= move.end_s]
+    assert max(b - a for a, b in itertools.pairwise(during)) <= 2.0 / rate + 1e-9
+
+
+@pytest.mark.parametrize(
+    ("block", "reason"),
+    [
+        ("G01 A10. F20.", "Setting 34"),
+        ("G01 X1. B10. F10.", "G93"),
+        ("G01 A10. B10. F10.", "G93"),
+        ("G01 B90. F2000.", "max feedrate exceeded"),
+        ("G00 B200.", r"\+-180"),
+        ("G00 A130.", "outside its range"),
+        ("G02 X1. Y1. R1. B10. F10.", "arc cannot turn"),
+    ],
+)
+def test_what_the_plan_refuses_on_a_and_b(trunnion_mill, block: str, reason: str) -> None:
+    with pytest.raises(ProgramError, match=reason):
+        rplan(gcode("G00 G90 G54 X0 Y0", block), trunnion_mill)
+
+
+def test_a_and_b_need_a_decimal_point_and_a_map(box_mill) -> None:
+    with pytest.raises(ProgramError, match="no decimal point"):
+        GcodeProgram.from_text(gcode("G00 A10"))
+    with pytest.raises(ProgramError, match="no A axis"):
+        plan(gcode("G00 A10."), box_mill)
+
+
+def test_g28_returns_a_and_b_and_the_brakes_are_logged(trunnion_mill) -> None:
+    t = rplan(gcode("G00 G90 A30. B45.", "M11", "G28"), trunnion_mill)
+    assert t.events[-2].to_deg == [0.0, 0.0]
+    assert "A brake off (logged)" in event(t, 4).what
+    named = rplan(gcode("G00 G90 A30. B45.", "G91 G28 B0."), trunnion_mill)
+    assert named.events[-2].to_deg == pytest.approx([30.0, 0.0])
+
+
+def test_a_point_on_the_platter_is_taken_back_through_a_and_b(trunnion_mill) -> None:
+    from moonwalkers.control.haas_gcode import _turn
+
+    binding = bind_mill(trunnion_program(gcode("G00 A1.")).behavior, [trunnion_mill[1]])
+    a, b = binding.rotary
+    m = [-10 * IN, -3 * IN, -2 * IN]  # machine X, Y, Z
+    on_platter = (0.03, -0.02, PLATTER_TOP)
+    p = _turn(on_platter, b.origin_m, b.joint_axis, b.joint(40.0))
+    p = _turn(p, a.origin_m, a.joint_axis, a.joint(-25.0))
+    d = binding.displacement(m, "work")
+    world = [p[i] + d[i] for i in range(3)]
+    assert binding.to_work(world, m, [-25.0, 40.0]) == pytest.approx(on_platter, abs=1e-12)
+
+
+TILT_AND_TURN = (
+    "T1 M06",
+    "G00 G90 G54 X-1. Y0",
+    "S1000 M03",
+    "G43 H01 Z0.1",
+    "G01 Z0 F20.",
+    "X1.",
+    "G00 Z0.1",
+    "B90.",
+    "X-1.",
+    "G01 Z0",
+    "X1.",
+    "G00 Z0.1",
+)
+
+
+def test_the_path_is_drawn_on_the_platter_as_it_turned(tmp_path: Path, trunnion_mill) -> None:
+    twin, result = trunnion_mill
+    program = trunnion_program(gcode(*TILT_AND_TURN))
+    output = write_program_folder(tmp_path / "p", program, twin, [result], tmp_path)
+    stage = Usd.Stage.Open(str(output.folder / "program.usdc"))
+    found = {
+        p.joint_path.rsplit("/", 1)[-1]: p for p in _load_runner(output.folder).find_programs(stage)
+    }
+    assert found["b_axis"].kind == "angular" and not found["b_axis"].speed_only
+    assert found["b_axis"].angles[-1] == pytest.approx(-90.0)
+    cut = UsdGeom.BasisCurves(_named(stage, "platter/programmed_path_cutting"))
+    counts = list(cut.GetCurveVertexCountsAttr().Get())
+    points = [list(p) for p in cut.GetPointsAttr().Get()]
+    top = PLATTER_TOP + 1.0 * IN
+    first = points[counts[0] : counts[0] + counts[1]]  # line 8's cut, at A0 B0: along twin y
+    assert all(p[0] == pytest.approx(0.0, abs=1e-6) for p in first)
+    assert [first[0][1], first[-1][1]] == pytest.approx([-IN, IN], abs=1e-6)
+    second = points[sum(counts[:3]) :]  # line 13's cut, at B90: turned back onto twin x
+    assert all(p[1] == pytest.approx(0.0, abs=1e-6) for p in second)
+    assert all(p[2] == pytest.approx(top, abs=1e-6) for p in first + second)
+    assert {round(second[0][0] / IN, 6), round(second[-1][0] / IN, 6)} == {-1.0, 1.0}
+    assert _named(stage, "platter/stand_in_stock")
+    notes = (output.folder / "PROGRAM.md").read_text(encoding="utf-8")
+    assert "| B | `b_axis` |" in notes and "Setting 79 (B's part diameter" in notes
+    assert "To (X, Y, Z, A, B)" in notes
+
+    plan_json = json.loads((output.folder / "trajectory.json").read_text(encoding="utf-8"))
+    perfect = {m.what: m for m in compare(_perfect(plan_json), plan_json)}
+    gap = perfect["B (b_axis): distance from the plan at the same time"]
+    assert gap.recorded.startswith("largest 0.000 deg")
+    assert perfect["B (b_axis): top speed, from positions"].recorded == "80.00 deg/s"
+    name = "line 10 rapid: tip within 0.1 mm, A and B within 0.05 deg, of its end"
+    arrived = perfect[name]
+    assert float(arrived.recorded.split()[0]) == pytest.approx(
+        float(arrived.planned.split()[0]), abs=0.02
+    )
+
+
+def test_recorded_angles_are_unwrapped() -> None:
+    from moonwalkers.control.compare import unwrap_deg
+
+    assert unwrap_deg([350.0, 359.9, -359.5, -350.0]) == pytest.approx([350, 359.9, 360.5, 370])
+    assert unwrap_deg([-10.0, -20.0]) == [-10.0, -20.0]
+
+
+@pytest.mark.parametrize(
+    "name", ["haas-o40001-basic-program-vf3", "moonwalkers-vf3-test-tilt-and-turn"]
+)
+def test_the_vf3_programs_plan_on_a_trunnion(trunnion_mill, name: str) -> None:
+    program = ProgramFile.load(packaged_programs()[name])
+    t = run_gcode_program(
+        GcodeProgram.from_behavior(program.behavior),
+        bind_mill(program.behavior, [trunnion_mill[1]]),
+        setup_of(program.behavior),
+        NO_ACC,
+        MillGeometry(nose_m=(0.0, 0.0, NOSE_Z), table_top_m=PLATTER_TOP),
+    )
+    assert t.events[-1].kind == "end" and t.machine_deg[-1] == [0.0, 0.0]
+    if name.startswith("moonwalkers"):
+        assert max(r[0] for r in t.machine_deg) == pytest.approx(30.0)  # tilted on A
+        assert max(r[1] for r in t.machine_deg) == pytest.approx(90.0)  # turned on B

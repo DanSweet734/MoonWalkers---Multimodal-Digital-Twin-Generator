@@ -36,6 +36,7 @@ ARM_KIND = "irc_joint_program"  # an arm's trajectory.json (decision 0033)
 ARRIVE_DEG = 0.5  # within half a degree of a move's target counts as arrived
 MILL_KIND = "haas_gcode_program"  # a mill's trajectory.json (decision 0035)
 ARRIVE_MM = 0.1  # a sliding axis's arrival: the tip within 0.1 mm of a block's end point
+ROTARY_ARRIVE_DEG = 0.05  # a rotary axis's arrival (decision 0036): within 0.05 degrees of the end
 PATH_WINDOW_S = 1.0  # the programmed path near a sample: the plan within a second of its time
 SPEED_SPAN_S = 0.05  # top speeds from positions this far apart (3 physics steps at 60 per s)
 
@@ -277,8 +278,18 @@ def compare_mill(
         [a["sign"] * (columns[a["joint_id"]][k] - a["home_m"]) * 1000 for a in axes]
         for k in range(len(times))
     ]
+    rotary = plan.get("rotary", [])
+    angles: list[list[float]] = []  # Haas's A, B (as bound) at each recorded time
+    for r in rotary:
+        column = _column(recording, f"{r['joint_id']} (rad)")
+        if column is None:
+            return [Measure(r["joint_id"], "not recorded", "a column '<joint> (rad)'")]
+        degrees = unwrap_deg([math.degrees(v) for v in column])
+        angles.append([r["sign"] * (q - r["home_deg"]) for q in degrees])
+    turned = [[a[k] for a in angles] for k in range(len(times))]
     plan_t = list(plan["times"])
     planned = [list(p) for p in plan["machine_mm"]]
+    planned_deg = [list(p) for p in plan.get("machine_deg", [])]
     cutting = [(c[0], c[1]) for c in plan["cutting"]]
 
     def cuts(t: float) -> bool:
@@ -308,22 +319,45 @@ def compare_mill(
                     "0",
                 )
             )
+    for i, r in enumerate(rotary):
+        gaps = sorted(
+            (abs(turned[k][i] - _at_point(plan_t, planned_deg, times[k])[i]), times[k])
+            for k in during
+        )
+        if gaps:
+            out.append(
+                Measure(
+                    f"{r['axis']} ({r['joint_id']}): distance from the plan at the same time",
+                    f"largest {gaps[-1][0]:.3f} deg (at {gaps[-1][1]:.2f} s), 95% within "
+                    f"{_percentile([g for g, _ in gaps], 0.95):.3f} deg",
+                    "0",
+                )
+            )
     last_arrival: float | None = None
     for event in plan["events"]:
-        if event["end_s"] <= event["start_s"] or event["from_mm"] == event["to_mm"]:
+        to_deg = event.get("to_deg", [])
+        if event["end_s"] <= event["start_s"] or (
+            event["from_mm"] == event["to_mm"] and event.get("from_deg", []) == to_deg
+        ):
             continue
         last_arrival = next(
             (
                 t
                 for k, t in enumerate(times)
-                if t >= event["start_s"] and _distance(tip[k], event["to_mm"]) <= ARRIVE_MM
+                if t >= event["start_s"]
+                and _distance(tip[k], event["to_mm"]) <= ARRIVE_MM
+                and all(
+                    abs(a - b) <= ROTARY_ARRIVE_DEG for a, b in zip(turned[k], to_deg, strict=True)
+                )
             ),
             None,
         )
+        within = f"tip within {ARRIVE_MM:g} mm" + (
+            f", A and B within {ROTARY_ARRIVE_DEG:g} deg," if to_deg else ""
+        )
         out.append(
             Measure(
-                f"line {event['line'] or '-'} {event['kind']}: tip within {ARRIVE_MM:g} mm "
-                "of its end",
+                f"line {event['line'] or '-'} {event['kind']}: {within} of its end",
                 _s(last_arrival),
                 _s(event["end_s"]),
             )
@@ -344,6 +378,23 @@ def compare_mill(
                 f"{a['axis']} ({a['joint_id']}): top speed, from positions",
                 f"{peak * 1000:.1f} mm/s",
                 f"{top:.1f} mm/s (cited rapid {a['rapid_m_s'] * 1000:.1f})",
+            )
+        )
+    for i, r in enumerate(rotary):
+        peak = _top_speed(times, [turned[k][i] for k in range(len(times))], end)
+        top = max(
+            (
+                abs(c[i] - b[i]) / (t1 - t0)
+                for (t0, b), (t1, c) in itertools.pairwise(zip(plan_t, planned_deg, strict=True))
+                if t1 > t0
+            ),
+            default=0.0,
+        )
+        out.append(
+            Measure(
+                f"{r['axis']} ({r['joint_id']}): top speed, from positions",
+                f"{peak:.2f} deg/s",
+                f"{top:.2f} deg/s (cited top speed {r['rapid_deg_s']:.1f})",
             )
         )
     after = [tip[k] for k, t in enumerate(times) if t >= end]
@@ -370,6 +421,20 @@ def compare_mill(
                     f"{_rpm_at(changes, cutting[0][0]):g} RPM",
                 )
             )
+    return out
+
+
+def unwrap_deg(values: Sequence[float]) -> list[float]:
+    """A turning joint's recorded angles made continuous: Isaac Sim reports an unlimited joint
+    between -360 and +360 degrees and jumps by a multiple of 360 at the ends (seen 2026-11-17),
+    so a step of more than 180 degrees between rows is taken as such a jump."""
+    out: list[float] = []
+    shift = 0.0
+    for k, v in enumerate(values):
+        if k:
+            step = v + shift - out[-1]
+            shift -= 360.0 * round(step / 360.0)
+        out.append(v + shift)
     return out
 
 

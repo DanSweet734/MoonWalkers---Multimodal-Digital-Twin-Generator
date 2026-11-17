@@ -283,13 +283,15 @@ def format_mill_trajectory(program: ProgramFile, trajectory: MillTrajectory) -> 
     unit = 25.4 if trajectory.units == "inch" else 1.0
     lines = [f"{program.name}: {program.behavior.name}"]
     for e in trajectory.events:
-        to = ", ".join(f"{v / unit:.4f}" for v in e.to_mm)
+        to = ", ".join([f"{v / unit:.4f}" for v in e.to_mm] + [f"{v:.3f}" for v in e.to_deg])
         line = f"line {e.line:>3}" if e.line else "        "
         lines.append(f"  {e.start_s:7.3f}-{e.end_s:7.3f} s  {line}  {e.kind:<11} [{to}]  {e.what}")
     summary = plan_summary(trajectory)
+    rotary = "".join(f", {r.axis}" for r in trajectory.rotary)
     lines.append(
         f"duration {summary['duration_s']:.3f} s, {summary['cutting_s']:.3f} s cutting; "
         f"positions are the tool tip's machine X, Y, Z in {trajectory.units}"
+        + (f"{rotary} in degrees" if rotary else "")
     )
     lines += [f"note: {n}" for n in trajectory.notes]
     return "\n".join(lines)
