@@ -79,6 +79,7 @@ def write_mill_program_folder(
     settings: MillSettings | None = None,
     hold: DriveSettings | None = None,
     collide_unjoined: bool = False,
+    hidden_parts: Sequence[str] = (),
 ) -> tuple[Path, MillBinding, MillTrajectory, MillSettings]:
     """Run the Haas ``program`` on ``twin``'s axes and write the folder ``out_dir``."""
     out_dir = Path(out_dir)
@@ -93,7 +94,9 @@ def write_mill_program_folder(
     drive = DriveSettings(  # the twin's 0 is where the program starts
         mode="position", target=0.0, stiffness=base.stiffness, damping=base.damping
     )
-    stage = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
+    stage = build_stage(
+        twin, results, drive, data_dir, collide_unjoined=collide_unjoined, hidden_parts=hidden_parts
+    )
     geometry = measure_geometry(stage, binding)
     trajectory = run_gcode_program(gcode, binding, setup, settings, geometry)
 
@@ -255,15 +258,19 @@ def _drawn_tool(setup: Setup, trajectory: MillTrajectory) -> tuple[str, float, f
 
 
 def tip_on_table(
-    binding: MillBinding, geometry: MillGeometry, length_m: float, machine_m: Sequence[float]
+    binding: MillBinding,
+    geometry: MillGeometry,
+    length_m: float,
+    machine_m: Sequence[float],
+    rotary_deg: Sequence[float] = (),
 ) -> tuple[float, float, float]:
-    """The tool tip at machine position ``machine_m``, in the work part's frame at the twin's 0
-    (where its points are drawn): the tip's place minus how far the work has moved."""
+    """The tool tip at machine position ``machine_m`` (and A, B at ``rotary_deg``), in the work
+    part's frame at the twin's 0 (where its points are drawn): the tip's place, taken back
+    through how far the work has moved and turned (decision 0036)."""
     z = next(a for a in binding.axes if a.axis == "Z")
     tip0 = [geometry.nose_m[i] - length_m * z.direction[i] for i in range(3)]
     tool = binding.displacement(machine_m, "tool")
-    work = binding.displacement(machine_m, "work")
-    return tip0[0] + tool[0] - work[0], tip0[1] + tool[1] - work[1], tip0[2] + tool[2] - work[2]
+    return binding.to_work([tip0[i] + tool[i] for i in range(3)], machine_m, rotary_deg)
 
 
 def _add_pictures(
@@ -300,7 +307,10 @@ def _add_pictures(
 
     def drawn(times_runs: list[list[int]]) -> list[list[tuple[float, float, float]]]:
         return [
-            [tip_on_table(binding, geometry, length, _m(trajectory, k)) for k in run]
+            [
+                tip_on_table(binding, geometry, length, _m(trajectory, k), _rot(trajectory, k))
+                for k in run
+            ]
             for run in times_runs
             if len(run) > 1
         ]
@@ -365,6 +375,10 @@ def _samples(trajectory: MillTrajectory, spans: list[tuple[float, float]]) -> li
 
 def _m(trajectory: MillTrajectory, k: int) -> list[float]:
     return [v / 1000 for v in trajectory.machine_mm[k]]
+
+
+def _rot(trajectory: MillTrajectory, k: int) -> list[float]:
+    return list(trajectory.machine_deg[k]) if trajectory.machine_deg else []
 
 
 def _label(prim: Usd.Prim, text: str) -> None:
@@ -462,17 +476,50 @@ def mill_program_notes(
             f"{'+' if a.sign > 0 else '-'}(joint - home) | {a.home_m:+.4f} m | "
             f"{m_to(ends[0])} to {m_to(ends[1])} {unit} |"
         )
+    if binding.rotary:
+        lines += [
+            "",
+            (
+                "A and B (decision 0036): always in degrees. Their joints ride the work, so they "
+                "turn opposite to Haas's + for the tool (the right hand rule)."
+            ),
+            "",
+            (
+                "| Axis | Joint | + turns the tool about (twin frame) | Machine = | Home: joint at "
+                "| Range (joint) | Top speed |"
+            ),
+            "|---|---|---|---|---|---|---|",
+        ]
+        for r in binding.rotary:
+            span = (
+                f"{r.lower_deg:+.1f} to {r.upper_deg:+.1f} deg"
+                if r.lower_deg is not None and r.upper_deg is not None
+                else "no limit (the plan keeps within +-180 deg)"
+            )
+            lines.append(
+                f"| {r.axis} | `{r.joint_id}` | {_vec(r.direction)} | "
+                f"{'+' if r.sign > 0 else '-'}(joint - home) | {r.home_deg:+.1f} deg | {span} | "
+                f"{r.rapid_deg_s:.1f} deg/s |"
+            )
     start = binding.machine({a.joint_id: 0.0 for a in binding.axes})
+    rot0 = [r.machine(0.0) for r in binding.rotary]
     lines += [
         "",
         "The twin's 0 (its photographed pose) is machine "
         + ", ".join(f"{a.axis} {m_to(v)}" for a, v in zip(binding.axes, start, strict=True))
-        + f" {unit}.",
+        + f" {unit}"
+        + "".join(f", {r.axis} {v + 0.0:g} deg" for r, v in zip(binding.rotary, rot0, strict=True))
+        + ".",
         "",
         "## The set-up (stand-ins, labelled)",
         "",
         f"- Units (Setting 9): {unit}",
     ]
+    for name, diameter in setup.rotary_diameters.items():
+        setting = "Setting 34" if name == "A" else "Setting 79"
+        lines.append(
+            f"- {setting} ({name}'s part diameter, for a rotary feed): {diameter:g} {unit}"
+        )
     for name, offset in setup.work_offsets.items():
         lines.append(
             f"- Work offset {name}: "
@@ -497,13 +544,19 @@ def mill_program_notes(
         "",
         "## The blocks, and what each did (the plan)",
         "",
-        "Positions are the tool tip's machine X, Y, Z, in " + unit + ".",
+        "Positions are the tool tip's machine X, Y, Z, in "
+        + unit
+        + "".join(f", and {r.axis}" for r in binding.rotary)
+        + (" in degrees" if binding.rotary else "")
+        + ".",
         "",
-        "| Start (s) | End (s) | Line | Block | Kind | To (X, Y, Z) | What |",
+        "| Start (s) | End (s) | Line | Block | Kind | To (X, Y, Z"
+        + "".join(f", {r.axis}" for r in binding.rotary)
+        + ") | What |",
         "|---|---|---|---|---|---|---|",
     ]
     for e in trajectory.events:
-        to = ", ".join(f"{v / 1000 / u:.4f}" for v in e.to_mm)
+        to = ", ".join([f"{v / 1000 / u:.4f}" for v in e.to_mm] + [f"{v:.3f}" for v in e.to_deg])
         block = e.block.replace("|", "\\|")
         lines.append(
             f"| {e.start_s:.3f} | {e.end_s:.3f} | {e.line or ''} | `{block}` | {e.kind} | {to} | "
@@ -513,7 +566,7 @@ def mill_program_notes(
         lines += ["", "## Notes", "", *(f"- {n}" for n in trajectory.notes)]
     lines += [
         "",
-        "## Check in Isaac Sim (fill in; `docs/setup/isaac-sim-check.md`, section 12)",
+        "## Check in Isaac Sim (fill in; `docs/setup/isaac-sim-check.md`, sections 12 and 14)",
         "",
         "1. Open `program.usdc` (not the run's `twin.usdc`). The twin opens in its photographed",
         "   pose, with a yellow stand-in tool under the spindle, a grey see-through block on the",

@@ -354,6 +354,7 @@ def export_twin(
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
     collide_unjoined: bool = False,
+    hidden_parts: Sequence[str] = (),
 ) -> Path:
     """Write the twin to ``path``; returns the path.
 
@@ -365,6 +366,8 @@ def export_twin(
     ``coupling_method`` writes the contract's links (decision 0019). ``keep_awake`` (the default)
     stops PhysX from putting the articulation to sleep (decision 0017). ``collide_unjoined``
     lets parts that no joint joins collide with each other (decision 0032; off by default).
+    ``hidden_parts`` are written invisible, so what they enclose shows in a check (an enclosed
+    mill's guards, lab's machines plan, Phase 6); they keep their physics.
     """
     path = Path(path)
     if path.suffix not in (".usda", ".usdc"):
@@ -380,6 +383,7 @@ def export_twin(
         coupling_method=coupling_method,
         keep_awake=keep_awake,
         collide_unjoined=collide_unjoined,
+        hidden_parts=hidden_parts,
     )
     return write_stage(stage, path)
 
@@ -414,8 +418,10 @@ def build_stage(
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
     collide_unjoined: bool = False,
+    hidden_parts: Sequence[str] = (),
 ) -> Usd.Stage:
-    """Build the twin's stage in memory (see the module docstring for its layout)."""
+    """Build the twin's stage in memory (see the module docstring for its layout).
+    ``hidden_parts`` are made invisible (``export_twin``)."""
     drive = drive or DriveSettings()
     _check_results_match(twin, results)
     parts = _collect(results, "parts", "part_id")
@@ -424,6 +430,9 @@ def build_stage(
         raise ExportError(f"twin {twin.twin_id} has no parts to export")
     _check_prim_names(list(parts), reserved={JOINTS_SCOPE}, what="part")
     _check_prim_names(list(joints), reserved={WORLD_JOINT}, what="joint")
+    unknown = sorted(set(hidden_parts) - set(parts))
+    if unknown:
+        raise ExportError(f"cannot hide {unknown}: no such part in twin {twin.twin_id}")
     root_part = _root_part(parts, joints)
     settings = _joint_settings(joints, drive, joint_settings or {}, starts or {}, coupling_method)
     _check_settings(settings, joints)
@@ -458,6 +467,8 @@ def build_stage(
         body_paths[part_id] = _write_part(
             stage, root_path, part, result_id, articulated, color, data_dir
         )
+        if part_id in hidden_parts:
+            UsdGeom.Imageable(stage.GetPrimAtPath(body_paths[part_id])).MakeInvisible()
 
     if articulated:
         UsdPhysics.ArticulationRootAPI.Apply(root)

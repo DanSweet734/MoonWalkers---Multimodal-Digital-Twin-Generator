@@ -181,6 +181,7 @@ def _run(args: argparse.Namespace) -> int:
         mill_settings=_mill_settings(args) if program.is_gcode else None,
         hold=hold,
         collide_unjoined=collide,
+        hidden_parts=twin_hidden_parts(twin, data_dir),
     )
     trajectory = output.trajectory
     if isinstance(trajectory, ArmTrajectory):
@@ -282,13 +283,15 @@ def format_mill_trajectory(program: ProgramFile, trajectory: MillTrajectory) -> 
     unit = 25.4 if trajectory.units == "inch" else 1.0
     lines = [f"{program.name}: {program.behavior.name}"]
     for e in trajectory.events:
-        to = ", ".join(f"{v / unit:.4f}" for v in e.to_mm)
+        to = ", ".join([f"{v / unit:.4f}" for v in e.to_mm] + [f"{v:.3f}" for v in e.to_deg])
         line = f"line {e.line:>3}" if e.line else "        "
         lines.append(f"  {e.start_s:7.3f}-{e.end_s:7.3f} s  {line}  {e.kind:<11} [{to}]  {e.what}")
     summary = plan_summary(trajectory)
+    rotary = "".join(f", {r.axis}" for r in trajectory.rotary)
     lines.append(
         f"duration {summary['duration_s']:.3f} s, {summary['cutting_s']:.3f} s cutting; "
         f"positions are the tool tip's machine X, Y, Z in {trajectory.units}"
+        + (f"{rotary} in degrees" if rotary else "")
     )
     lines += [f"note: {n}" for n in trajectory.notes]
     return "\n".join(lines)
@@ -328,6 +331,17 @@ def twin_simulation(twin: TwinRecord, data_dir: Path) -> tuple[DriveSettings | N
     if not (run_dir / SPEC_FILE).is_file():
         return None, False
     return hold_drive(run_dir), self_collision(run_dir) == "on"
+
+
+def twin_hidden_parts(twin: TwinRecord, data_dir: Path) -> list[str]:
+    """The parts the stored twin's checks hide (its run's spec, ``hidden_in_checks``), which its
+    program folders hide too; none when the run has no spec."""
+    from moonwalkers.pipelines.b.build import SPEC_FILE, hidden_in_checks
+
+    if twin.usd_path is None:
+        return []
+    run_dir = (data_dir / twin.usd_path).parent
+    return hidden_in_checks(run_dir) if (run_dir / SPEC_FILE).is_file() else []
 
 
 def _arm_settings(args: argparse.Namespace) -> ArmSettings:

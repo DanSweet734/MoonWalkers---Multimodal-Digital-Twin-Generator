@@ -1,0 +1,877 @@
+{
+  "sources": [
+    {
+      "source_id": "src-mill-manual-2012",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-vf3/inputs/documents/haas_mill-operators-manual_96-8000-rev-ap_2012.pdf",
+      "title": "Haas Automation, \"Mill Operator's Manual 96-8000 Rev AP December 2012\" (the Classic Haas Control), 314 pages",
+      "sha256": "fd8d98a423f43808376e328e740e2cf51b6de2368a6be1772083aaab95a8b0e5",
+      "retrieved_at": "2026-11-10T05:35:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-vf3-product-page",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/haas-vf3/inputs/documents/VF-3 _ 40-Taper Mill _ Vertical Mills – Haas CNC Machines.htm",
+      "title": "Haas Automation, \"VF-3 | 40-Taper Mill\" product page, https://haascnc.com/machines/vertical-mills/vf-series/models/medium/vf-3, saved by Daniel in a browser (today's VF-3)",
+      "sha256": "18bdea1d818f6943a7fc7635b6a17dd7523ed0fbc86f65b7bc9461e77035e40e",
+      "retrieved_at": "2026-11-10T05:41:00Z",
+      "license_note": "© Haas Automation; the maker's web page, kept for internal research only"
+    },
+    {
+      "source_id": "src-vf3-layout-2023",
+      "kind": "file",
+      "input_type": "layout_drawing",
+      "uri": "machines/haas-vf3/inputs/documents/haas_vf-3-vf-3ss_machine-layout-drawing_2023-02.pdf",
+      "title": "Haas Automation, \"Machine Layout Drawing VF-3/SS\", 2/23/2023, 7 pages (today's VF-3, not this 2014 unit), from https://pub-aem.haascnc.com/content/dam/haascnc/pdp_feed/mld/vf-3_ss_mld__2_2023.PDF, linked from the product page",
+      "sha256": "ffe74e9c6bd3a966f79b637b8873faa79acd53c71cede45ca8bdef6c5030ec1b",
+      "retrieved_at": "2026-11-17T04:37:00Z",
+      "license_note": "© Haas Automation; the maker's drawing, kept for internal research only"
+    },
+    {
+      "source_id": "src-rotary-manual-2011",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-vf3/inputs/documents/haas_rotary-operators-manual_2011.pdf",
+      "title": "Haas Automation, \"Rotary Operators Manual 96-0315 RevH English June 2011\" (pages dated June 2010), 92 pages, from https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---rotary-operator's-manual---2011.pdf",
+      "sha256": "c2b3127207469df586b9d8466702c4a4d8f95ff21ce1cb31649d327a134342c7",
+      "retrieved_at": "2026-11-17T04:31:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-trt-manual-2004",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-vf3/inputs/documents/haas_trt-tilting-table-operators-manual_2004.pdf",
+      "title": "Haas Automation, \"TRT Series Operators Manual 96-5048J Rev J English June 2004\", with \"1.7 TR SPECIFICATIONS\", 80 pages, from https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---trt-tilting-table-operator%27s-manual---2004.pdf",
+      "sha256": "e289b56df23c945afc3a249686d44e0828b474b71667a91e9b63723b34a491ed",
+      "retrieved_at": "2026-11-17T04:31:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-rotary-guide-2026",
+      "kind": "file",
+      "input_type": "brochure_datasheet",
+      "uri": "machines/haas-vf3/inputs/documents/haas_rotaries-and-indexers-guide_2026-08.pdf",
+      "title": "Haas Automation, \"Rotaries & Indexers\" guide, 2026-08, 13 pages (today's models), from https://www.haascnc.com/content/dam/haascnc/assets/printdocuments/rotary-guide/2026-08-RotariesAndIndexers-Guide.pdf",
+      "sha256": "bcb952a28f49864b0e731cb05e41d1028b0c5861121ea6ae848df20ac6583115",
+      "retrieved_at": "2026-11-17T04:32:00Z",
+      "license_note": "© Haas Automation; the maker's brochure, kept for internal research only"
+    },
+    {
+      "source_id": "src-tr160-page",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/haas-vf3/inputs/documents/TR160 _ Trunnion _ 5-Axis Rotaries _ Rotaries and Indexers – Haas CNC Machines.htm",
+      "title": "Haas Automation, \"TR160 | Trunnion | 5-Axis Rotaries\" product page, https://haascnc.com/machines/rotaries-indexers/5-axis-rotaries/models/tr160, saved by Daniel in a browser (today's TR160)",
+      "sha256": "b6334cd60567220c75e164e1dca3af7eec49f4e7d741d59fffca01c90ac91ae0",
+      "retrieved_at": "2026-11-17T06:35:00Z",
+      "license_note": "© Haas Automation; the maker's web page, kept for internal research only"
+    },
+    {
+      "source_id": "src-photo-nameplate",
+      "kind": "file",
+      "input_type": "nameplate_photo",
+      "uri": "machines/haas-vf3/inputs/photos/20261105_134114.jpg",
+      "title": "The VF-3's nameplate; its serial number stays in data/ (photo 20261105_134114)",
+      "sha256": "86b0433b8964bd370d0c7095f0c953b71a029d5a5136a040bb6452d40c8dab37",
+      "retrieved_at": "2026-11-05T21:41:14Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-front",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/haas-vf3/inputs/photos/20261105_133735.jpg",
+      "title": "The VF-3 from the front: the doors, the pendant on the operator's right, the tool shelf on the left (photo 20261105_133735)",
+      "sha256": "ff8b161a165565241e762ccaccc18090317cd08d852fffdd7d9733caac0df2fd",
+      "retrieved_at": "2026-11-05T21:37:35Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-inside",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/haas-vf3/inputs/photos/20261105_133927.jpg",
+      "title": "Inside the VF-3, doors open: the table, the trunnion on it, the spindle above (photo 20261105_133927)",
+      "sha256": "a44b5ccdf30d0f3dba2cee89cb4b2c0fdc4d699c38f4ad795971af851d0e21f1",
+      "retrieved_at": "2026-11-05T21:39:27Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-trunnion-angle",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/haas-vf3/inputs/photos/20261105_133938.jpg",
+      "title": "Inside, at an angle: the trunnion, '5th AXIS' on the vise (photo 20261105_133938)",
+      "sha256": "64532718fd01ba1a71a752302e709bc9d263b66573ae1f914b794d88e94a4056",
+      "retrieved_at": "2026-11-05T21:39:38Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    },
+    {
+      "source_id": "src-photo-trunnion-above",
+      "kind": "file",
+      "input_type": "machine_photo",
+      "uri": "machines/haas-vf3/inputs/photos/20261105_133959.jpg",
+      "title": "Inside, from above the table: the trunnion between its two end housings (photo 20261105_133959)",
+      "sha256": "043dd4426d368f6867c81421c51141ee64bbb0e777b3998731554f0a1616edf8",
+      "retrieved_at": "2026-11-05T21:39:59Z",
+      "license_note": "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the team's own photo; internal research only; shows serial numbers, keep out of commits."
+    }
+  ],
+  "identity": {
+    "manufacturer": "Haas Automation",
+    "model": "VF-3",
+    "category": "CNC vertical machining centre, 40 taper, enclosed, with a two-axis trunnion rotary table",
+    "aliases": [
+      "Haas VF-3",
+      "VF 3"
+    ],
+    "confidence": 0.95,
+    "citations": [
+      {
+        "source_id": "src-photo-nameplate",
+        "locator": "the nameplate's model",
+        "quote": "VF-3"
+      },
+      {
+        "source_id": "src-photo-front",
+        "locator": "the enclosure's side, 'VF 3'"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "key": "x_travel",
+      "value": 1.016,
+      "unit": "m",
+      "original": "X Axis 40.00 in",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"X Axis\",\"value\":1016,\"unitText\":\"mm\",\"description\":\"40.00 in\""
+        },
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance",
+          "quote": "X-AXIS TRAVEL"
+        }
+      ]
+    },
+    {
+      "key": "y_travel",
+      "value": 0.508,
+      "unit": "m",
+      "original": "Y Axis 20.00 in",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Y Axis\",\"value\":508,\"unitText\":\"mm\",\"description\":\"20.00 in\""
+        },
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance",
+          "quote": "Y-AXIS TRAVEL"
+        }
+      ]
+    },
+    {
+      "key": "z_travel",
+      "value": 0.635,
+      "unit": "m",
+      "original": "Z Axis 25.00 in",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Z Axis\",\"value\":635,\"unitText\":\"mm\",\"description\":\"25.00 in\""
+        },
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance",
+          "quote": "Z-AXIS TRAVEL"
+        }
+      ]
+    },
+    {
+      "key": "spindle_nose_to_table_min",
+      "value": 0.10414,
+      "unit": "m",
+      "original": "4.1in [105mm]",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance",
+          "quote": "4.1in 105mm Spindle Nose to Table (~ min)"
+        },
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD): 4.2 in, 0.1 in more (an issue)",
+          "quote": "\"name\":\"Spindle Nose to Table (~ min)\",\"value\":107,\"unitText\":\"mm\",\"description\":\"4.2 in\""
+        }
+      ]
+    },
+    {
+      "key": "spindle_nose_to_table_max",
+      "value": 0.73914,
+      "unit": "m",
+      "original": "29.1in [740mm]",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance",
+          "quote": "29.1in 740mm Spindle Nose to Table (~ max)"
+        },
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD): 29.2 in (an issue)",
+          "quote": "\"name\":\"Spindle Nose to Table (~ max)\",\"value\":742,\"unitText\":\"mm\",\"description\":\"29.2 in\""
+        }
+      ]
+    },
+    {
+      "key": "table_length",
+      "value": 1.2192,
+      "unit": "m",
+      "original": "Length 48.0 in",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Length\",\"value\":1219,\"unitText\":\"mm\",\"description\":\"48.0 in\""
+        }
+      ]
+    },
+    {
+      "key": "table_width",
+      "value": 0.4572,
+      "unit": "m",
+      "original": "Width 18.0 in",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Width\",\"value\":457,\"unitText\":\"mm\",\"description\":\"18.0 in\""
+        }
+      ]
+    },
+    {
+      "key": "number_of_t_slots",
+      "value": 5,
+      "original": "Number of Std T-Slots 5",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Number of Std T-Slots\",\"value\":5"
+        }
+      ]
+    },
+    {
+      "key": "t_slot_spacing",
+      "value": 0.08,
+      "unit": "m",
+      "original": "T-Slot Center Distance 3.15 in / 80 mm",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"T-Slot Center Distance\",\"value\":80,\"unitText\":\"mm\",\"description\":\"3.15 in\""
+        }
+      ]
+    },
+    {
+      "key": "table_height",
+      "value": 0.9398,
+      "unit": "m",
+      "original": "37in [940mm] TABLE HEIGHT",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 3, Height Breakdown",
+          "quote": "37in 940mm TABLE HEIGHT"
+        }
+      ]
+    },
+    {
+      "key": "enclosure_height",
+      "value": 2.00152,
+      "unit": "m",
+      "original": "78.8in [2002mm]",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 3, Height Breakdown: the enclosure's top, the right-hand dimension line drawn to the top of the sheet metal [INFERENCE: read off the drawing]",
+          "quote": "78.8in 2002mm"
+        }
+      ]
+    },
+    {
+      "key": "operating_height",
+      "value": 3.09626,
+      "unit": "m",
+      "original": "121.9in [3096mm] OPERATING HEIGHT",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 1, Installed Dimensions",
+          "quote": "121.9in 3096mm OPERATING HEIGHT"
+        },
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 3, Height Breakdown: the same height to the spindle's top",
+          "quote": "121.8in 3094mm SPINDLE TOP"
+        }
+      ]
+    },
+    {
+      "key": "door_width",
+      "value": 1.5875,
+      "unit": "m",
+      "original": "62.5in [1588mm] ~DOOR WIDTH",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 3, Height Breakdown",
+          "quote": "62.5in 1588mm ~DOOR WIDTH"
+        }
+      ]
+    },
+    {
+      "key": "pendant_height",
+      "value": 1.43764,
+      "unit": "m",
+      "original": "56.6in [1437mm] PENDANT",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 3, Height Breakdown",
+          "quote": "56.6in 1437mm PENDANT"
+        }
+      ]
+    },
+    {
+      "key": "max_spindle_speed",
+      "value": 848.230016,
+      "unit": "rad/s",
+      "original": "Max Speed 8100 rpm",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD) (today's VF-3; this 2014 unit's spindle not confirmed)",
+          "quote": "\"name\":\"Max Speed\",\"value\":8100,\"unitText\":\"rpm\",\"description\":\"8100 rpm\""
+        }
+      ]
+    },
+    {
+      "key": "spindle_taper",
+      "value": "40 taper",
+      "original": "Taper CT40 | BT40 | HSK-A63",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Taper\",\"value\":\"CT40 | BT40 | HSK-A63\""
+        }
+      ]
+    },
+    {
+      "key": "rapid_x",
+      "value": 0.423333,
+      "unit": "m/s",
+      "original": "Rapids on X 1000 ipm",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Rapids on X\",\"value\":25.4,\"unitText\":\"m/min\",\"description\":\"1000 ipm\""
+        }
+      ]
+    },
+    {
+      "key": "rapid_y",
+      "value": 0.423333,
+      "unit": "m/s",
+      "original": "Rapids on Y 1000 ipm",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Rapids on Y\",\"value\":25.4,\"unitText\":\"m/min\",\"description\":\"1000 ipm\""
+        }
+      ]
+    },
+    {
+      "key": "rapid_z",
+      "value": 0.423333,
+      "unit": "m/s",
+      "original": "Rapids on Z 1000 ipm",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Rapids on Z\",\"value\":25.4,\"unitText\":\"m/min\",\"description\":\"1000 ipm\""
+        }
+      ]
+    },
+    {
+      "key": "max_cutting_feed",
+      "value": 0.275167,
+      "unit": "m/s",
+      "original": "Max Cutting 650 ipm",
+      "confidence": 0.75,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Max Cutting\",\"value\":16.5,\"unitText\":\"m/min\",\"description\":\"650 ipm\""
+        }
+      ]
+    },
+    {
+      "key": "tool_changer",
+      "value": "carousel, 20 pockets (today's VF-3); not seen in the photos",
+      "original": "Type Carousel; Capacity 20",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Type\",\"value\":\"Carousel\""
+        },
+        {
+          "source_id": "src-vf3-product-page",
+          "locator": "Specs (its JSON-LD)",
+          "quote": "\"name\":\"Capacity\",\"value\":20,\"description\":\"20\""
+        }
+      ]
+    },
+    {
+      "key": "axes_layout",
+      "value": "the table moves in X on the saddle, the saddle in Y on the base, the head in Z on the column",
+      "original": "X&Y-Axis Travel and Clearance; Z-AXIS TRAVEL & CLEARANCE",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-vf3-layout-2023",
+          "locator": "PDF p. 4, Axes Clearance: the table drawn at both ends of X and of Y under a fixed spindle; the head drawn at both ends of Z on the column",
+          "quote": "X&Y-Axis Travel and Clearance"
+        },
+        {
+          "source_id": "src-photo-inside",
+          "locator": "the table on its saddle under the head, the column behind [INFERENCE]"
+        }
+      ]
+    },
+    {
+      "key": "date_of_manufacture",
+      "value": "12/2014",
+      "original": "12/2014",
+      "confidence": 0.95,
+      "citations": [
+        {
+          "source_id": "src-photo-nameplate",
+          "locator": "the nameplate's date of manufacture"
+        }
+      ]
+    },
+    {
+      "key": "rotary_axis_names",
+      "value": "the 4th axis is A, the 5th axis is B",
+      "original": "Jog and command the 5th axis using the B address.",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 177, INSTALLING AN OPTIONAL 5TH AXIS",
+          "quote": "Jog and command the 5th axis using the B address."
+        },
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 173, Jogging the 4th and 5th Axis",
+          "quote": "will select the A axis for jogging. The B axis can be selected for jogging by pressing the Shift button"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_axes",
+      "value": "A tilts the cradle; B turns the platter, carried by A",
+      "original": "the plane of the B-axis platter and the A-axis centerline on tilting rotary products",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 177, B ON A AXIS OFFSET (TILTING ROTARY PRODUCTS)",
+          "quote": "the distance between the plane of the B-axis platter and the A-axis centerline on tilting rotary products"
+        },
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 171, the figure 'Axis motion on the VR-11 Mill and the Haas TRT 210'",
+          "quote": "A-Axis ±120º"
+        }
+      ]
+    },
+    {
+      "key": "rotary_axes_are_the_mills",
+      "value": "yes: the mill's control drives A and B, set up by Settings 30 and 78",
+      "original": "Setting 30 (and Setting 78 for the 5th axis) specifies a parameter set for a given rotary unit",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 175, INSTALLING AN OPTIONAL 4TH AXIS",
+          "quote": "Setting 30 (and Setting 78 for the 5th axis) specifies a parameter set for a given rotary unit"
+        },
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 181, G00 Rapid Motion Positioning",
+          "quote": "A Optional A-axis motion command"
+        }
+      ]
+    },
+    {
+      "key": "rotary_brakes",
+      "value": "M10/M11 the A brake, M12/M13 the B brake",
+      "original": "M10/M11 engages/disengages the A-axis brake",
+      "confidence": 0.9,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 172, M Codes",
+          "quote": "M10/M11 engages/disengages the A-axis brake"
+        },
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 172, M Codes",
+          "quote": "M12/M13 engages/disengages the B-axis brake"
+        }
+      ]
+    },
+    {
+      "key": "rotary_directions",
+      "value": "A turns about X, B about Y (the table's own axis on a trunnion's platter [INFERENCE]); by the right hand rule the fingers give the tool's motion for a positive command, and the table turns the opposite way",
+      "original": "The A-axis is rotary motion about the X-axis",
+      "confidence": 0.6,
+      "citations": [
+        {
+          "source_id": "src-rotary-manual-2011",
+          "locator": "PDF p. 34, DUAL AXES COORDINATE SYSTEM",
+          "quote": "The A-axis is rotary motion about the X-axis, while the B-axis determines rotary motion about the Y-axis."
+        },
+        {
+          "source_id": "src-rotary-manual-2011",
+          "locator": "PDF p. 34, DUAL AXES COORDINATE SYSTEM",
+          "quote": "the right hand rule determines direction of tool movement and not the table movement direction. For the right hand rule, the fingers will point opposite of the positive rotary table movement."
+        },
+        {
+          "source_id": "src-rotary-manual-2011",
+          "locator": "PDF p. 35, the note under the figures",
+          "quote": "Different table movements are possible, for positive directions, depending on the equipment, parameter settings, or five-axis programming software being used."
+        }
+      ]
+    },
+    {
+      "key": "rotary_homing",
+      "value": "clockwise as viewed from the front",
+      "original": "All Haas indexers home in the clockwise direction as viewed from the front.",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 176, Initial Start-up",
+          "quote": "All Haas indexers home in the clockwise direction as viewed from the front."
+        },
+        {
+          "source_id": "src-rotary-manual-2011",
+          "locator": "PDF p. 16 (the same rule, 'as viewed from the platter/spindle')",
+          "quote": "All Haas indexers home in the clockwise direction"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_family",
+      "value": "Haas TR series: a cradle between two supports, one platter",
+      "original": "Dual-axis trunnion construction holds the part rigidly between two supports",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-rotary-guide-2026",
+          "locator": "PDF p. 8, TRUNNION ROTARY TABLES",
+          "quote": "Dual-axis trunnion construction holds the part rigidly between two supports"
+        },
+        {
+          "source_id": "src-rotary-manual-2011",
+          "locator": "PDF p. 89, TR ASSEMBLY DRAWINGS: an A-axis drive and an A-axis slave, one at each end",
+          "quote": "A-axis Slave"
+        },
+        {
+          "source_id": "src-tr160-page",
+          "locator": "the page's description (its JSON-LD)",
+          "quote": "The TR160 is a dual-axis trunnion rotary table"
+        },
+        {
+          "source_id": "src-photo-trunnion-above",
+          "locator": "a cradle between two end housings, one platter with a vise; the plate on the base is not readable"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_model",
+      "value": "TR160 [INFERENCE, by elimination; to read off its plate]",
+      "original": "TR160",
+      "confidence": 0.4,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 9, Trunnion Mounting (TR210): 37.14 + 9.46 + 2.99 in = 49.6 in long, over the VF-3's 48 in table; the lab's trunnion is about 0.6 of its table's length in photo 133927 [INFERENCE]",
+          "quote": "37.14 9.46"
+        },
+        {
+          "source_id": "src-rotary-guide-2026",
+          "locator": "PDF p. 8: the TR310 needs a VF-6",
+          "quote": "Smallest compatible Mill VF-2 VF-3 VF-6"
+        },
+        {
+          "source_id": "src-tr160-page",
+          "locator": "the page's description: the TR160 fits a VF-3",
+          "quote": "The unit fits into VF-2 and larger VF Series machines"
+        },
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 175: the plate names it",
+          "quote": "The rotary model highlighted in the control must match the model engraved on the rotary unit's identification plate."
+        }
+      ]
+    },
+    {
+      "key": "trunnion_a_range",
+      "value": 2.094395,
+      "unit": "rad",
+      "original": "A - +/- 120° (tilt)",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160",
+          "quote": "Travels: A - +/- 120° (tilt),"
+        },
+        {
+          "source_id": "src-tr160-page",
+          "locator": "Specs, Indexing - A (tilt): Max Rotation/Step ± 120°",
+          "quote": "Indexing - A (tilt)"
+        },
+        {
+          "source_id": "src-rotary-guide-2026",
+          "locator": "PDF p. 12, the table of 5th-axis rotaries",
+          "quote": "A-axis travel: ±120° across the lineup, except TRT70"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_b_range",
+      "value": "360 degrees, continuous",
+      "original": "B - 360 (rotate).",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160",
+          "quote": "B - 360 (rotate)."
+        },
+        {
+          "source_id": "src-rotary-guide-2026",
+          "locator": "PDF p. 12, the table of 5th-axis rotaries",
+          "quote": "B-axis: 360° continuous on all models."
+        }
+      ]
+    },
+    {
+      "key": "trunnion_a_speed",
+      "value": 1.396263,
+      "unit": "rad/s",
+      "original": "A-axis 80° per sec",
+      "confidence": 0.5,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160 (the TR210's is 60, the TR310's 50)",
+          "quote": "Speed: A-axis 80° per sec"
+        },
+        {
+          "source_id": "src-rotary-guide-2026",
+          "locator": "PDF p. 12, TR160's row",
+          "quote": "TR160 6.30\" (160 mm) 10.5\" (267 mm) 110 lb (49.90 kg) 150 ft-lb (203 Nm) 100 ft-lb (136 Nm) 80°/sec"
+        },
+        {
+          "source_id": "src-tr160-page",
+          "locator": "Specs, Spindle - A (tilt): Max Speed 80 °/sec (the JSON-LD's first Max Speed)",
+          "quote": "\"name\":\"Max Speed\",\"value\":\"80"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_b_speed",
+      "value": 1.396263,
+      "unit": "rad/s",
+      "original": "B-axis 80° per sec",
+      "confidence": 0.5,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160",
+          "quote": "B-axis 80° per sec"
+        },
+        {
+          "source_id": "src-tr160-page",
+          "locator": "Specs, Spindle - B (rotary): Max Speed 80 °/sec",
+          "quote": "Spindle - B (rotary)"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_platter_diameter",
+      "value": 0.16,
+      "unit": "m",
+      "original": "Diameter 6.3” (160mm)",
+      "confidence": 0.5,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160",
+          "quote": "Platter: Diameter 6.3” (160mm)"
+        },
+        {
+          "source_id": "src-tr160-page",
+          "locator": "Specs, Platter",
+          "quote": "\"name\":\"Platter Diameter\",\"value\":160,\"unitText\":\"mm\",\"description\":\"6.30 in\""
+        },
+        {
+          "source_id": "src-rotary-guide-2026",
+          "locator": "PDF p. 8",
+          "quote": "Platter 6.30\" (160 mm)"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_platter_below_a_axis",
+      "value": 0.003175,
+      "unit": "m",
+      "original": "located 0.125” (3.1mm) below centerline of A-axis",
+      "confidence": 0.5,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160 [INFERENCE: the platter's face, from the swing's note]",
+          "quote": "located 0.125” (3.1mm) below centerline of A-axis"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_length",
+      "value": 0.99314,
+      "unit": "m",
+      "original": "39.1\"",
+      "confidence": 0.4,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160: the drawing's overall length, 39.1 in; its base 31.0 in [read off the drawing; its labels are not in the text]",
+          "quote": "Trunnion Mounting (TR160)"
+        }
+      ]
+    },
+    {
+      "key": "trunnion_a_axis_height",
+      "value": 0.1778,
+      "unit": "m",
+      "original": "7.00",
+      "confidence": 0.4,
+      "citations": [
+        {
+          "source_id": "src-trt-manual-2004",
+          "locator": "PDF p. 7, 1.7 TR SPECIFICATIONS, TR160: the side view's 7.00 in from the base to the A axis's centre [INFERENCE: read off the drawing]",
+          "quote": "Trunnion Mounting (TR160)"
+        }
+      ]
+    },
+    {
+      "key": "rotary_feed",
+      "value": "disputed: degrees per second in one passage, inches per minute through a diameter in another",
+      "original": "G01 A90. F50. will rotate the A-Axis 90 degrees at 50 degrees per second",
+      "confidence": 0.5,
+      "citations": [
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 173, Feed Rates",
+          "quote": "G01 A90. F50. will rotate the A-Axis 90 degrees at 50 degrees per second"
+        },
+        {
+          "source_id": "src-mill-manual-2012",
+          "locator": "PDF p. 271, Setting 34 - 4th Axis Diameter",
+          "quote": "the control must know the diameter of the part being machined in the A-axis in order to compute angular feedrate"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "No source for this 2014 VF-3 itself was found: the travels, table, rapids, spindle and sizes are today's VF-3's (the product page, saved 2026-11-10; the layout drawing of 2/23/2023). The travels (40 x 20 x 25 in) agree with dealers' listings, among them a 2013 unit (docs/research/2026-11-06-lab-machines.md); the enclosure's sheet metal is assumed unchanged since 2014 [INFERENCE]."
+    },
+    {
+      "severity": "info",
+      "message": "The sources disagree on the spindle nose to table by 0.1 in: 4.1 to 29.1 in on the layout drawing (p. 4), 4.2 to 29.2 in on the product page. The drawing is used: it is the more detailed of the two."
+    },
+    {
+      "severity": "warning",
+      "message": "The trunnion's model is not confirmed: its plate is not readable in the photos (the visit list, item 10). It is a Haas TR (two supports, one platter; the 2026 guide, p. 8), and the TR160 by elimination: the TR210 is 49.6 in long, more than the 48 in table it stands on, and the TR310 needs a VF-6 [INFERENCE]. The TR160's platter, speeds and sizes are used as labelled stand-ins; the A and B ranges are the same for every TR."
+    },
+    {
+      "severity": "warning",
+      "message": "Which way +A and +B turn this trunnion is not confirmed: the 2011 rotary manual gives the right hand rule for the tool's motion, but notes that table movements depend on 'the equipment, parameter settings, or five-axis programming software' (p. 35). Where A and B home is not cited either."
+    },
+    {
+      "severity": "warning",
+      "message": "The 2012 manual disagrees with itself on a rotary feed: 'G01 A90. F50. will rotate the A-Axis 90 degrees at 50 degrees per second' (p. 173), against Setting 34: the feed is in inches per minute and the control computes the angular feed from the part's diameter (p. 271). It also says 'Rapid moves are not allowed' in its five-axis notes (p. 173), while G00 takes an A address (p. 181). Decision 0036 chooses."
+    },
+    {
+      "severity": "info",
+      "message": "Haas's sources disagree on the TR160's swing: 'Max swing at 90°: 14.4” (366mm)' in the 2004 TRT manual (p. 7), 'Part Swing Max 17.5 in' on today's TR160 page. Neither is used for the twin's geometry, which is sized from the photos; the 2004 note's 3.1 mm from the platter to the A axis is a stand-in [INFERENCE]."
+    },
+    {
+      "severity": "info",
+      "message": "Today's TR160 page asks for 'NGC software version 100.21.000.1130 or later'; dealers' listings of the TRT160 and TRT210 ask for 'software version 18.00 or later' (docs/research/2026-11-06-lab-machines.md; a Classic control's numbering [INFERENCE]), so the trunnion does not tell which control this unit runs."
+    },
+    {
+      "severity": "info",
+      "message": "Which control this unit runs (Classic or Next Generation) is not confirmed (the visit list, item 11); the 2012 Classic manual is the nearest edition to its 12/2014 date."
+    },
+    {
+      "severity": "info",
+      "message": "The tool changer does not show in the photos: it is left out of the twin (Daniel's rule, 2026-10-24), and a program's tool change is logged, not simulated (plan, Phase 6)."
+    }
+  ]
+}

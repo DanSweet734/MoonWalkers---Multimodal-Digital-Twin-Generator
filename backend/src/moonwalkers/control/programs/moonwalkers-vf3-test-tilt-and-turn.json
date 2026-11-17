@@ -1,0 +1,172 @@
+{
+  "name": "moonwalkers-vf3-test-tilt-and-turn",
+  "sources": [
+    {
+      "source_id": "src-mill-manual-2012",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-vf3/inputs/documents/haas_mill-operators-manual_96-8000-rev-ap_2012.pdf",
+      "title": "Haas Automation, \"Mill Operator's Manual 96-8000 Rev AP December 2012\" (the Classic Haas Control), 314 pages, from https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english---mill-operator's-manual---2012.pdf",
+      "sha256": "fd8d98a423f43808376e328e740e2cf51b6de2368a6be1772083aaab95a8b0e5",
+      "retrieved_at": "2026-11-10T05:35:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-rotary-manual-2011",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-vf3/inputs/documents/haas_rotary-operators-manual_2011.pdf",
+      "title": "Haas Automation, \"Rotary Operators Manual 96-0315 RevH English June 2011\" (pages dated June 2010), 92 pages, from https://www.haascnc.com/content/dam/haascnc/en/service/manual/operator/english---rotary-operator's-manual---2011.pdf",
+      "sha256": "c2b3127207469df586b9d8466702c4a4d8f95ff21ce1cb31649d327a134342c7",
+      "retrieved_at": "2026-11-17T04:31:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "moonwalkers_vf3_test_tilt_and_turn",
+    "name": "A test of A and B on the VF-3's trunnion (written by Claude Code, not Haas's)",
+    "kind": "program_interpreter",
+    "description": "A labelled test program for decision 0036, as rebel-test-joint-moves is for the arm: four cuts on a stand-in block on the trunnion's platter. Cut 1 along X at A0 B0; B rapids 90 degrees and cut 2 crosses cut 1; cut 3 is an arc as B feeds back to 0 at F10. under the tool; A rapids 30 degrees and cut 4 runs along the tilted top. Then Z, B and A home. Written in Haas's codes as the 2012 Classic manual gives them; not from the lab, which has shared no program.",
+    "drives_joints": [
+      "x_axis",
+      "y_axis",
+      "z_axis",
+      "a_axis",
+      "b_axis",
+      "spindle_rotation"
+    ],
+    "spec": {
+      "program": {
+        "format": "haas_gcode",
+        "text": "%\nO09001 (MOONWALKERS TEST - TILT AND TURN - NOT A HAAS PROGRAM) ;\n(G54 X0 Y0 IS THE PLATTER CENTRE, Z0 THE TOP OF THE STOCK AT A0 B0) ;\n(T1 IS A 1/2 IN END MILL, A STAND-IN) ;\nT1 M06 ;\nG00 G90 G17 G40 G49 G54 ;\nX-1.5 Y0 ;\nS1000 M03 ;\nG43 H01 Z0.1 ;\nG01 Z-0.05 F20. ;\nX1.5 (CUT 1 ALONG X AT A0 B0) ;\nG00 Z0.1 ;\nM13 (B BRAKE OFF) ;\nB90. (TURN THE PART A QUARTER) ;\nX-1.5 ;\nG01 Z-0.05 ;\nX1.5 (CUT 2 ACROSS CUT 1) ;\nG00 Z0.1 ;\nX1. Y0 ;\nG01 Z-0.05 ;\nB0. F10. (CUT 3 AN ARC - THE PART TURNS UNDER THE TOOL) ;\nG00 Z1. ;\nM12 (B BRAKE ON) ;\nM11 (A BRAKE OFF) ;\nA30. (TILT THE PART) ;\nM10 (A BRAKE ON) ;\nX-1.5 Y0.9396 ;\nZ-0.1518 ;\nG01 Z-0.3018 F20. ;\nX1.5 (CUT 4 ALONG THE TILTED TOP) ;\nG00 Z1. ;\nG53 G49 Z0 M05 (Z HOME, SPINDLE OFF) ;\nG91 G28 B0. A0. (A AND B HOME) ;\nG90 ;\nM30 ;\n%\n",
+        "machine": {
+          "axes": {
+            "X": {
+              "joint_id": "x_axis",
+              "direction": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "home": "plus_end"
+            },
+            "Y": {
+              "joint_id": "y_axis",
+              "direction": [
+                -1.0,
+                0.0,
+                0.0
+              ],
+              "home": "plus_end"
+            },
+            "Z": {
+              "joint_id": "z_axis",
+              "direction": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "home": "plus_end"
+            }
+          },
+          "rotary": {
+            "A": {
+              "joint_id": "a_axis",
+              "direction": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "home_deg": 0.0
+            },
+            "B": {
+              "joint_id": "b_axis",
+              "direction": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "home_deg": 0.0
+            }
+          },
+          "tool_part": "spindle",
+          "work_part": "platter",
+          "spindle": "spindle_rotation"
+        },
+        "setup": {
+          "units": "inch",
+          "work_offsets": {
+            "G54": {
+              "X": -20.0,
+              "Y": -10.0,
+              "Z": 0.0
+            }
+          },
+          "tools": {
+            "1": {
+              "length": 3.0,
+              "diameter": 0.5
+            }
+          },
+          "stock_height": 2.0,
+          "rotary_diameters": {
+            "B": 2.0
+          },
+          "start_pocket": 1,
+          "why": [
+            "Directions of X, Y and Z as on the TM-1 (decision 0035): +X the tool to the operator's right, the twin's +y; +Y the tool towards the back, the twin's -x; +Z up. The VF-3 twin has the same frame (+x the front, +y the machine's own left).",
+            "Home: Z at the top of its travel; Y at its + end (the table towards the operator) [INFERENCE, as the TM-1]; X at its + end, the table at its operator-left end: a STAND-IN, as on the TM-1 (decision 0035).",
+            "A turns about Haas's +X, B about the platter's normal; their + is the tool's motion by the right hand rule, and the trunnion's joints turn the other way (\"the fingers will point opposite of the positive rotary table movement\", the 2011 rotary manual, p. 34). +A follows that rule with the manual's caveat (\"Different table movements are possible ... depending on the equipment, parameter settings\", p. 35); +B about the platter's normal is a STAND-IN [INFERENCE]: the manual's B turns about Y, a tilting rotary's other layout (decision 0036). The lab's jog of +A and +B settles both (the visit list, item 10).",
+            "Home of A and B: the joints' 0, the cradle level as photographed (133938) and B as built: a STAND-IN; the tool changer is left out of the twin, so M06 stops the spindle and raises Z only.",
+            "The work part is the platter: the trunnion stands on the table's middle, so the stock and the drawn path ride the platter (decision 0036).",
+            "A TEST PROGRAM written by Claude Code for decision 0036, not Haas's and not the lab's: positions on A and B (3+2) between straight cuts, and one feed on B alone; no simultaneous rotary and linear motion, which needs G93 (2012 manual, PDF p. 172).",
+            "Work offset G54: X -20, Y -10 in, the platter's centre under the spindle at the twin's 0 (measured on haas/vf3@v1); Z 0, the tool's offset carrying the height. A STAND-IN.",
+            "Stock: a 2.0 in block on the platter, a STAND-IN; Z0 is its top at A0 B0.",
+            "Cut 4's Y 0.9396 and Z -0.3018: the stock's top centre line, 1.8792 in over the A axis on haas/vf3@v1, with the part tilted 30 degrees on A, the work turning opposite to +A; then 0.05 in down. Computed for this twin and the stand-in direction of +A: on the real machine they hold only if +A turns the cradle this way.",
+            "Setting 79 (B's diameter): 2.0 in, the diameter at which cut 3's tool runs (1 in from B's axis), a STAND-IN: F10. in/min there turns B at 9.55 deg/s (Settings 34 and 79: \"The feedrate in a program is always inches per minute\").",
+            "Tool T1: 3.0 in from the spindle nose's face to its tip, a STAND-IN; H01 touched off on the stock's top.",
+            "The brakes (M10-M13) are logged only; the twin's hold stands in for them."
+          ]
+        }
+      }
+    },
+    "confidence": 0.5,
+    "citations": [
+      {
+        "source_id": "src-mill-manual-2012",
+        "locator": "PDF p. 172, G Codes (5-axis programming)",
+        "quote": "A and B axes are always programmed in degrees."
+      },
+      {
+        "source_id": "src-mill-manual-2012",
+        "locator": "PDF p. 172, G Codes (5-axis programming)",
+        "quote": "G93 inverse time must be in effect for simultaneous 5-axis motion."
+      },
+      {
+        "source_id": "src-mill-manual-2012",
+        "locator": "PDF p. 172, M Codes (5-axis programming)",
+        "quote": "M10/M11 engages/disengages the A-axis brake"
+      },
+      {
+        "source_id": "src-mill-manual-2012",
+        "locator": "PDF p. 181, G00 Rapid Motion Positioning",
+        "quote": "A Optional A-axis motion command"
+      },
+      {
+        "source_id": "src-mill-manual-2012",
+        "locator": "PDF p. 191, G28 Return to Machine Zero Point",
+        "quote": "The G28 code returns all axes (X, Y, Z, A and B) simultaneously to the machine zero position when no axis is specified on the G28 line."
+      },
+      {
+        "source_id": "src-mill-manual-2012",
+        "locator": "PDF p. 277, Setting 79 5th-axis Diameter",
+        "quote": "The feedrate in a program is always inches per minute (or mm per minute), therefore, the control must know the diameter of the part being machined in the B-axis in order to compute angular feedrate."
+      },
+      {
+        "source_id": "src-rotary-manual-2011",
+        "locator": "PDF p. 34, DUAL AXES COORDINATE SYSTEM",
+        "quote": "the right hand rule determines direction of tool movement and not the table movement direction"
+      }
+    ]
+  }
+}

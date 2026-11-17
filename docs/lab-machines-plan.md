@@ -874,16 +874,136 @@ not the velocity column.
   tool's length, the starting pocket and which way ATC FWD turns the carousel.
 
 ## Phase 6 - The Haas VF-3 with its trunnion: levels 1 to 3
-- [ ] Sources as for the TM-1, and the trunnion's once its plate is read (visit list). Until then
+
+### Hand-off (2026-11-16, from the plan's Phase 5 chat)
+- **Where you start:** from `main` after PR #32 (merge commit `602c4f2`, 2026-11-17T04:16Z), on
+  branch `feat/lab-phase-6-vf3`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-5-mill-programs` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request. Merge
+    only on his word.
+- **Read first:**
+  - CLAUDE.md "Current phase" and "Direction from the advisors";
+  - this hand-off, then the checklist; Phase 5's note "For Phase 6" and Phase 4's checklist (the
+    TM-1 build this phase repeats);
+  - decisions 0034 (a mill's axes from its photos: the TM-1's build) and 0035 (Haas programs:
+    the reader, the plan, the program folder, the measures); 0028 and 0029 for the spec tools and
+    the cut-outs;
+  - the research notes [2026-11-06](research/2026-11-06-lab-machines.md) (the trunnion, section
+    "The VF-3's trunnion"), [2026-11-11](research/2026-11-11-haas-tm1-sources.md) (how the TM-1's
+    facts were cited) and [2026-11-16](research/2026-11-16-haas-mill-programs.md) (directions,
+    home, the tool tip, the codes);
+  - the worklogs of [2026-11-11](worklog/2026-11-11.md) and [2026-11-16](worklog/2026-11-16.md),
+    by their headings.
+
+#### What Phase 5 left
+- **Level 3 met for the TM-1** (Daniel's check, 2026-11-16): Haas's O40001 and O40006 run on
+  `haas/tm1@v3`; the tool tip within 0.017 mm of the programmed path, every block within 0.01 s
+  of the plan. Folders: `data/machines/haas-tm1/programs/2026-11-16_*_v3/`, with the check
+  recorded in each `PROGRAM.md`.
+- **How a mill program is described** (decision 0035, `control/programs/haas-*.json`, written
+  by a script kept as
+  `data/machines/haas-tm1/part_cutting/2026-11-16_programs/make_haas_programs.py`):
+  `spec["program"]` holds `format: "haas_gcode"`, the `text` as printed, a `machine` map and a
+  `setup`.
+  - `machine.axes`: for X, Y and Z, the joint, the **direction the tool moves against the table in
+    the twin's frame** (TM-1: X `[0, 1, 0]`, Y `[-1, 0, 0]`, Z `[0, 0, 1]`) and the home end
+    (`plus_end`). `bind_mill` works out each joint's sign from its axis and from whether it
+    carries the tool part or the work part, so the VF-3's own layout (which part moves in X and
+    Y) needs no typed signs. Also `tool_part`, `work_part`, `spindle`, `carousel`, `pockets`.
+  - `setup`: units, work offsets (machine coordinates), tools (a stand-in `length`, or a
+    `length_offset`), `stock_height`, `start_pocket`, and `why` with every stand-in's reason.
+    The TM-1's G54 X and Y were chosen to centre each path on the table.
+  - Each axis's rapid is its joint's `max_velocity`; the maximum cutting feed is the fact
+    `max_cutting_feed`; the spindle's cap is its joint's `max_velocity`. Cite the VF-3's in its
+    reference file as the TM-1's are (`pipelines/b/haas_tm1.reference.json`).
+- **The reader reads X, Y and Z only.** The trunnion's two turning axes are new: a decision
+  (the plan's "The VF-3's trunnion axes"; **next free number 0036**), the axes' letters and
+  directions cited from the 2012 manual (Rev AP, in `data/machines/haas-vf3/inputs/documents/`:
+  look for the 4th and 5th axis and rotary chapters), and a program that tilts and turns the
+  part. Haas's trunnions run as the mill's own axes, from second-hand listings [INFERENCE], so
+  decision 0026's HA5C controller likely does not carry over; confirm in the manual.
+- **What the exporter needs from a mill twin** (found on the TM-1):
+  - the program folder measures the **spindle nose's face** as the lowest level of the tool
+    part's mesh with at least 16 points (`mill_export.NOSE_MIN_POINTS`): a stand-in nose of 32
+    sides passes, and its drive keys (4 points each) are skipped. A VF-3 nose of fewer sides, or
+    a generated nose, may fail: make it a stand-in like the TM-1's;
+  - the **table's top** as the highest upward level of the work part holding half the area of its
+    largest (`TOP_AREA_SHARE`): a line straight down hit a T-slot's floor, and the TM-1's
+    stand-in table is a slab with rails. On the VF-3 the trunnion's platter is the work, so its
+    top is what the touch-off needs: check `measure_geometry` on it before any program.
+- **Z lags up to 1.84 mm while the head rises at the rapid** (along the path; Phase 5's note).
+  If the VF-3's trunnion or table carries Z, or a check needs the timing on rises, a decision.
+- **Running and checking a program:** `uv run python -m moonwalkers.control run <program> --twin
+  haas/vf3[@vN]`; Daniel's steps in `docs/setup/isaac-sim-check.md`, section 12 (open
+  `program.usdc`, paste `run_program.py` and `record_joints.py`, Play, type nothing); then
+  `... control compare <recording.csv> <folder>/trajectory.json`, and the session log (memory
+  "isaac-sim-logs") for errors and which file each run was. A VF-3 check gets its own section 13.
+  - Three `omni.fabric.plugin` warnings appeared once, at the session's first program file, and
+    not later; source not confirmed, nothing failed.
+- **Tests:** `pytest -m "not gpu and not slow"`: 833 passed in about 4.3 min.
+  `tests/test_control_haas_gcode.py` builds a box mill laid out as the TM-1; a trunnion test twin
+  can extend it.
+
+#### The VF-3 itself
+- **Photos** (`data/machines/haas-vf3/inputs/photos/`, 11, listed with views in `SOURCES.md`):
+  two marked `generator`, the front-left corner `133749` and the back-right corner `133826`; the
+  front, a side, the other back corner and four inside photos (`133927`, `133932`, `133938`,
+  `133959`: the table, the trunnion, the spindle, "5th AXIS" on the vise) as evidence; the
+  nameplate `134114` shows the serial number, **so keep it out of commits and pages**. The TM-1
+  needed three corners and cut-outs (decision 0029); check the VF-3's cut-outs first
+  (`... pipelines.b cutouts <run>`), and ask Daniel whether more views can be marked generator.
+- **The enclosure hides the axes,** so the checklist builds the moving parts as stand-ins matched
+  to the inside photos, with a check file without the enclosure.
+- **Sources filed:** the Classic manual Rev AP (2012) and the VF-3's product page (saved by
+  Daniel, 2026-11-09). The 2009 and 2023 manuals are in the TM-1's folder. Which control the VF-3
+  runs (Classic or NGC) is not confirmed (visit list, item 11).
+- **The TM-1's build to copy:** `data/machines/haas-tm1/part_cutting/2026-11-11_spec/`
+  (`tm1_request.py` sets up the run, `write_tm1_reference.py` the cited facts, `compose_spec.py`
+  the spec with stand-ins, `copy_run.py` a new run from an old one, `summarise_recordings.py`
+  reads recordings). Build in a scratch copy and dry-run first (`dry-run`, or the MCP tool
+  `dry_run_twin`); **restart the MCP server (`/mcp`)** before an agent builds.
+
+#### Carried over
+- **The time left:** the semester ends about 2026-12-17; Phases 6 to 8 have about a week each.
+  The advisors asked for level 3 on both Haas mills before video (2026-11-12): if time runs
+  short, the VF-3's level 3 comes before the trunnion's extra axes, and the trunnion stays a
+  labelled stand-in.
+- **Daniel's lab visit** (the list "A planned visit to the lab"): items 10 and 11 are the VF-3's
+  (the trunnion's plate, its platter and tilt height, the control screen, the tool changer, the
+  back). Items 1 and 2 settle the TM-1's stand-ins (which way +X moves the table, X home).
+  Record his measurements as the hand-off of Phase 5 says.
+- **Not reviewed in the dashboard:** `haas/tm1@v3`. Reviewing is Daniel's.
+- **The weekly report:** the advisors' page for the week from 2026-11-12 is not built yet (memory
+  "lab-machines-report-page"); it would carry the TM-1's level 2 and 3 and the meeting's answers.
+  Ask Daniel when he wants it.
+- **The lab's program for the arm** comes through Dr. Li's assistant, at a later date.
+
+### Phase 6's checklist
+- [x] Sources as for the TM-1, and the trunnion's once its plate is read (visit list). Until then
       the trunnion is a labelled stand-in, sized from the photos against the table's cited size.
-- [ ] The enclosure from the generator. The moving parts inside are stand-ins matched to the four
+      (Done 2026-11-17: [the research note](research/2026-11-16-haas-vf3-and-trunnion-sources.md),
+      `haas_vf3.reference.json` with 40 facts. The trunnion is the TR160 by elimination
+      [INFERENCE], sized by its drawing. The plate waits for the visit, item 10.)
+- [x] The enclosure from the generator. The moving parts inside are stand-ins matched to the four
       inside photos, since the enclosure hides them. A check file without the enclosure shows the
-      axes.
-- [ ] The trunnion's tilt and turn as two joints, with Haas's axis names cited.
-- [ ] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
+      axes. (Two sides fed, 133735 and 133812, chosen by renders against the photos. The
+      enclosure is hidden in every check file and program folder by the spec's
+      `hidden_in_checks`, and `checks/inside.usdc` is the twin without it. `haas/vf3@v1`, run
+      `2026-11-16_run-001`, built 2026-11-17.)
+- [x] The trunnion's tilt and turn as two joints, with Haas's axis names cited (`a_axis` and
+      `b_axis`, A ±120°, B unlimited, 80 °/s each; which way +A and +B turn is decision 0036's).
+- [x] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
       program's tool change is logged, not simulated.
-- [ ] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
-- [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+- [x] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
+      (2026-11-17: decision 0036, proposed. A and B are in the machine map; G00 and G01 on one
+      rotary axis alone, the feed at Settings 34 and 79's diameter; simultaneous moves refused,
+      since they need G93. Two programs: Haas's O40001 on the platter, and the labelled test
+      `moonwalkers-vf3-test-tilt-and-turn`, folders `data/machines/haas-vf3/programs/2026-11-17_*_v1/`.)
+- [x] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+      (The program folders were written in scratch first, both validators clean. **Level 3 met
+      for the VF-3** (Daniel's check, 2026-11-17, section 14): the tip within 0.021 mm of the
+      path, A and B within 0.004° of the plan, every block within 0.02 s. Decision 0036 is
+      written and waits for Daniel's acceptance.)
 
 **Measured by:** as Phases 4 and 5, with the trunnion's two axes.
 
@@ -956,7 +1076,16 @@ Bring a tape measure (at least 3 m, since the TM-1 is cited at 109 in tall) and 
 
 **The VF-3 (Phase 6)**
 10. A close photo of the trunnion's plate (its model), its platter's diameter, and its tilt
-    axis's height above the table.
+    axis's height above the table. **Update (2026-11-16):** the plate is on the cradle's base,
+    lower left in `133959`; photograph it square on. If it cannot be read, photograph the
+    control's Setting 78 (the 5th axis's model) and Setting 30 (the 4th's), which "must match the
+    model engraved on the rotary unit's identification plate" (2012 manual, p. 175). If the lab
+    allows, a phone video from the front of a jog of +A, then +B: it settles which way each
+    turns (Haas's rule depends on "the equipment, parameter settings", 2011 rotary manual,
+    p. 35). Until then the trunnion is a TR160 by elimination [INFERENCE], with its figures as
+    labelled stand-ins (`docs/research/2026-11-16-haas-vf3-and-trunnion-sources.md`). Daniel
+    raises it with the advisors when scheduling his next visit (meeting of 2026-11-19). Files go
+    in `data/machines/haas-vf3/inputs/photos/` with the phone's names.
 11. The VF-3's control screen (as item 2), its tool changer, and its back without the sign.
 
 **The arm and the hand (beside, and Phase 7)**
@@ -989,7 +1118,10 @@ haascnc.com refuses scripts (403):
   - https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english---mill-ngc---operator's-manual---2021.pdf
   - the online chapters "17 - Mill - G-Codes" and "18 - Mill - M-Codes" under the manual's page;
 - the trunnion's page once its model is known, and how a Haas rotary is set up as a 4th and 5th
-  axis.
+  axis. **Done (2026-11-16, Phase 6):** Claude Code fetched the 2011 rotary manual, the 2004 TRT
+  manual, the 2026 rotary guide and the VF-3's layout drawing (PDFs), and Daniel saved the TR160's
+  page (https://www.haascnc.com/machines/rotaries-indexers/5-axis-rotaries/models/tr160.html) in a
+  browser; the TR160 being the likeliest model, by elimination, until the plate is read.
 
 For the arm: the igus manual on ManualsLib (https://www.manualslib.de/manual/949812/Igus-Rebel.html)
 and igus's product page (https://www.igus.de/product/21465), both search listings, not opened.

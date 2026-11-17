@@ -25,7 +25,9 @@ def test_the_manual_examples_ship_with_their_citations() -> None:
         "ha5c-manual-example-5-subroutine",
         "ha5c-manual-example-6",
         "haas-o40001-basic-program",  # Haas mill programs (decision 0035), tested on their own
+        "haas-o40001-basic-program-vf3",  # on the VF-3's platter (decision 0036)
         "haas-o40006-cutter-comp",
+        "moonwalkers-vf3-test-tilt-and-turn",  # A and B, a labelled test (decision 0036)
         "rebel-test-joint-moves",  # an arm's iRC program (decision 0033), tested on its own
     ]
     for name, path in programs.items():

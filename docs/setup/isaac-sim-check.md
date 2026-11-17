@@ -576,6 +576,196 @@ extraction", "Attempting to set an invalid data source to array attribute", "att
 timeVaryingAttributes not found"), and not on later opens; nothing went wrong with them [their
 source is not confirmed]. The record is each folder's `PROGRAM.md`.
 
+## 13. Lab plan, Phase 6: the Haas VF-3, its axes and its trunnion (success levels 1 and 2)
+`haas/vf3@v1` (run `2026-11-16_run-001`) is the generated enclosure, made from two photos (the
+front, 133735, and the operator's right, 133812), with stand-ins for every moving part inside
+it. These are the saddle, the table with five slots, the head with its motor, and the spindle
+nose. The TR160 trunnion is also a stand-in: a base plate with two housings, the cradle that tilts
+on **A** and the platter that turns on **B**. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-vf3\runs\2026-11-16_run-001\`.
+Its `RUN.md` lists every stand-in and inaccuracy; `views\on_front_photo.png` and
+`views\on_left_photo.png` show the twin over the fed photos.
+
+**What is new in this check: the enclosure is hidden in the check files.** The generator made the
+enclosure one closed shell; its doors' windows are not open. So `twin.usdc` shows only the
+outside, and every check file shows the twin with the enclosure (`frame`) hidden, so the moving
+parts show. This is new in Phase 6 (the spec's `hidden_in_checks`). The new file is
+`checks\inside.usdc`, the twin itself with the enclosure hidden, where you type targets. Hidden
+parts keep their physics.
+
+Every joint holds with the stiff drive (stiffness 100000, damping 632.5). Parts do not collide
+(`self_collision` "off"), so nothing stops a part passing through another. **Typed targets work
+only in `twin.usdc` and `inside.usdc`, and only after Play** (section 11): the check files' moving
+joints have speed drives, which ignore a Target Position. A typed target moves its part at the
+drive's own pace, not the cited rapid (Phase 4 saw up to 224 mm/s). Angles are in degrees,
+lengths in metres. The joints are under `/haas_vf3/joints/` in the Stage panel.
+
+1. **`twin.usdc`, level 1: the outside.** Open it and press Play. Nothing moves, nothing sags.
+   Look it over against the photos: the front doors and the pendant, as in 133735; the operator's
+   right side, as in 133812. The back and the operator's left are the generator's guess. Its
+   proportions are off against Haas's layout drawing: about 9% too wide and 19% too deep for its
+   height (logged). Press Stop.
+2. **`checks\inside.usdc`, level 1: the parts inside.** Open it and press Play. Nothing moves.
+   You see the parts that were behind the enclosure:
+   - the base and the column (grey, fixed);
+   - the saddle and the table, 48 x 18 in, 37 in off the floor;
+   - the head on the column's face, its motor on top, the spindle nose under it with two keys;
+   - on the table's middle, the trunnion along the table: two housings, the cradle between them
+     (level, as photographed in 133938), and the round platter with a tab at its rim.
+
+   Compare with 133927 and 133959. The nose is about 23 in over the table, read off 133927 within
+   about 2 in. Shift+drag the head and the cradle: both hold.
+3. **`checks\slide.usdc`, level 2: each axis runs its cited travel.** Open it. Before Play, paste
+   the run folder's `record_joints.py` into Window > Script Editor and click **Run**. Press Play
+   and let it run about 5 s. All three start at their lower limits and slide at the cited rapid,
+   1000 ipm (423.3 mm/s):
+   - `y_axis`, the saddle and table, front to back: -10 to +10 in (20 in, about 1.2 s);
+   - `x_axis`, the table, left to right: -20 to +20 in (40 in, about 2.4 s);
+   - `z_axis`, the head: -18.9 to +6.1 in (25 in, about 1.5 s). That is 4.1 to 29.1 in from
+     the nose to the table, the layout drawing's figures.
+
+   Each stops at its upper limit and stays there. The trunnion rides on the table and does not
+   turn. **The nose passes into the platter at Z's lower end** (it starts there): the 4.1 in is
+   to the table, and the trunnion stands 14 in on it. No collision is modelled, and a real
+   machine would crash. Press Stop; the recorder writes `recordings\slide_<date>_<time>.csv`.
+4. **`checks\spin.usdc`: the spindle, A and B turn.** Run the recorder again on the newly opened
+   file, then Play for about 8 s. All three turn at 30 °/s:
+   - the spindle (its two keys show it);
+   - the cradle on **A**, tilting about the table's long axis. It stops at +120° after 4 s and
+     stays there;
+   - the platter on **B**, which keeps turning, and which the tab shows. B rides on the cradle,
+     so it turns about the tilted axis.
+
+   Press Stop.
+5. **The ranges by target (level 2), in `checks\inside.usdc`.** Open it, run the recorder, press
+   Play. Select each joint and set its **Target Position** in the Property panel (Physics >
+   Drive). Wait until the part stops before you type the next:
+   - **`a_axis`:** `90`, then `120`, then `-120`, then `0`. At `90` the platter's face looks
+     towards you, the front. This is the joint's +A, not yet tied to Haas's +A (decision 0036
+     will settle that). At ±120 the cradle stops at its cited limit.
+   - **`b_axis`:** `90`, then `-90`, then `0`. The platter turns a quarter one way, half a turn
+     back, then a quarter to where it began. B has no limit, and a typed target takes the short
+     way round: `360` from `90` goes back to `0` (seen 2026-11-17, below).
+   - **The linear axes' lower ends, which `slide.usdc` passes before the recorder's first row:**
+     `y_axis` `-0.254`, `x_axis` `-0.508`, then `0` for each. Then `z_axis` `-0.48`, and back to
+     `0`: the nose passes into the platter from `-0.396` down (as in step 3).
+   - **The tilted platter, carried:** set `a_axis` to `90` and `x_axis` to `0.3`. The trunnion
+     rides with the table, and the platter stays tilted.
+
+   Shift+drag the cradle while A is at `90`: it holds. Press Stop.
+6. **Send Claude Code** the recordings' paths and what you saw. It runs
+   `uv run python -m moonwalkers.pipelines.b.score <run> --recording <csv> ...`, which measures
+   each joint's range against its limits.
+
+**Result (Daniel, 2026-11-17, Isaac Sim 6.2.0): levels 1 and 2.** Nothing moved in `twin.usdc` or
+`inside.usdc`, which "looks as you described". In `slide.usdc` "each axis started at one end and
+slid to the other very smoothly". `spin.usdc` "looked great". In `inside.usdc` every typed target
+was reached, and the trunnion "did indeed move ... while it remained tilted". Measured from the
+recordings (`score/SCORE.md`):
+- every limit of Y, X, Z and A reached within 0.01 mm or 0.01°;
+- the head holds within 0.019 mm;
+- the linear axes slid at the cited 423.3 mm/s in `slide.usdc`, and typed targets moved at
+  429-434 mm/s;
+- A and B moved at the TR160's 80 °/s.
+
+**One step went otherwise than written:** `b_axis` "moved for 90, then moved back for 360, then
+didn't move at all for value 0". In the recording, B went back from 90 to 0 for the target 360
+and stayed at 0: a typed target on a joint with no limit is taken a turn at a time, the short way
+(Isaac Sim's own explanation is not confirmed). The recorded position of such a joint wraps
+between -360° and +360°, as the spindle and B show in `spin.usdc`. Step 5 now types `-90` in
+place of `360`. The record is the run's `RUN.md`.
+
+## 14. Lab plan, Phase 6: programs on the VF-3, with its trunnion (success level 3)
+Two programs on `haas/vf3@v1` (decision 0036). Their folders are under
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-vf3\programs\`:
+- **`2026-11-17_haas-o40001-basic-program-vf3_v1\`:** Haas's O40001 as printed, as on the TM-1 in
+  section 12, with the stock on the trunnion's platter. A and B stay home. 25.7 s.
+- **`2026-11-17_moonwalkers-vf3-test-tilt-and-turn_v1\`:** a test program written by Claude Code
+  (not Haas's, not the lab's), which tilts and turns the part between four cuts. 51.2 s.
+
+Each `PROGRAM.md` lists every block with its times, the tool tip's machine X, Y, Z and A, B, and
+every stand-in.
+
+**You type no targets in this check.** The runner moves every target, A and B included, along
+the plan on every physics step, as in section 12. The enclosure is hidden in program folders
+(as in the checks of section 13), so the axes show.
+
+What `program.usdc` adds, as on the TM-1: a **yellow stand-in tool** under the spindle nose, a
+**grey see-through block** of stock, and the **programmed path**, red where it cuts and blue for
+rapids. Here the block and the path sit **on the platter** and tilt and turn with it. A tip that
+follows the program stays on the red lines.
+
+Check **O40001 first**, then the test, each in a fresh stage, with the steps of section 12:
+1. **Open the folder's `program.usdc`.**
+2. **Start the runner:** paste the folder's `run_program.py` into Window > Script Editor and
+   click **Run**. It prints one line per joint, six here: `x_axis`, `y_axis`, `z_axis`,
+   `a_axis`, `b_axis` and the spindle `(angular, speed only)`.
+3. **Start the recorder:** paste the folder's `record_joints.py` into a second tab and click
+   **Run**.
+4. **Press Play** and watch; touch nothing.
+
+   **O40001** should:
+   - 0-2.4 s: the zero return. The head rises 6 in, then the table slides to X home (its
+     operator-left end) and towards you to Y home;
+   - 2.4-5.4 s: the table brings the block under the spindle. The spindle starts (1000 rpm),
+     and the head comes down to 0.1 in over the block;
+   - 5.4-23.0 s: the cut, 0.2 in down, then diagonally across the block's top at 20 in/min
+     (8.5 mm/s) along the red line;
+   - to 25.7 s: the head rises to the top, the spindle stops, and the table comes towards you.
+
+   **The test** should:
+   - to 15.0 s: as O40001's start, then **cut 1**: 3 in straight along the block's top, at
+     20 in/min;
+   - 15.2-16.8 s: the tool lifts 0.15 in, and **the platter turns a quarter** on B, clockwise
+     seen from above [INFERENCE: +B's direction is a stand-in];
+   - 16.8-26.8 s: **cut 2**, the same line across cut 1: the red lines on the block cross;
+   - 27.2-37.1 s: **cut 3, an arc.** The tool stays still, 1 in from the platter's centre, and the
+     platter turns back a quarter under it at 9.55 °/s (F10. at Setting 79's 2 in). The tip
+     traces a red quarter circle;
+   - 37.1-38.3 s: the tool lifts to 1 in over the block, and **the cradle tilts 30°** on A. The
+     platter's face turns towards the back (the column) [INFERENCE: the stand-in direction of
+     +A, decision 0036];
+   - 38.3-48.6 s: **cut 4**, along the tilted top's centre line. The tip should stay on the red
+     line drawn on the tilted block;
+   - to 51.2 s: the head rises, the spindle stops, and A and B turn home together (the cradle
+     level, the platter as at the start).
+5. **Let it run 2 s more, then press Stop.** The recorder writes
+   `recordings\program_<date>_<time>.csv` in the folder.
+6. **Look for:**
+   - Does the tip stay on the red lines while cutting, on the tilted block too?
+   - Does the platter turn and the cradle tilt smoothly and stop where they should, without
+     shaking?
+   - Does anything sag while tilted? Do the block and the path stay on the platter?
+7. **Send Claude Code** each recording's path and what you saw. It runs `uv run python -m
+   moonwalkers.control compare <recording.csv> <folder>\trajectory.json`, which measures:
+   - the tip's distance from the plan and from the path (mm);
+   - A's and B's gaps from the plan (degrees);
+   - when each block arrived (the tip within 0.1 mm, A and B within 0.05°);
+   - each axis's top speed;
+   - the spindle's speed.
+
+**If nothing moves on Play:** set `API = "omni.physx"` near the top of the pasted runner and run
+it again, as in section 7.
+
+**Result (Daniel, 2026-11-17, Isaac Sim 6.2.0): level 3 for both programs.** "Both looked great
+and the two direction guesses at least seem accurate to what would be expected." The runner used
+`simulation_manager` with six joints, first physics step at t = 0.017 s, and the session log
+(`kit_20261117_011912.log`) shows no errors. Measured from the recordings:
+- the tip within 0.021 mm of the programmed path (O40001) and 0.019 mm (the test, through the arc
+  and the tilted cut);
+- A and B within 0.004° of the plan;
+- every block's move (the tip within 0.1 mm, A and B within 0.05°) within 0.02 s of its planned
+  end;
+- X, Y and Z at the cited 423.3 mm/s and B at the TR160's 80 °/s. A's 30° tilt peaks at 69 °/s at
+  the stand-in acceleration and never reaches 80;
+- the spindle at 1000 rpm while cutting.
+
+Z lags the plan by up to 1.5 mm while the head rises at the rapid, along the path, as on the TM-1.
+Besides the warnings listed below, the log shows the three `omni.fabric.plugin` warnings of
+section 12 once, when the first program file opened, and "Unable to deregister callback" twice,
+when the second program's runner and recorder replaced the first's (they print "stopped the
+earlier runner").
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

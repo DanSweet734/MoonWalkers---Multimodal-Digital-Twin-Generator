@@ -69,6 +69,7 @@ def write_arm_program_folder(
     settings: ArmSettings | None = None,
     hold: DriveSettings | None = None,
     collide_unjoined: bool = False,
+    hidden_parts: Sequence[str] = (),
 ) -> tuple[Path, ArmBinding, ArmTrajectory, ArmSettings]:
     """Run the iRC ``program`` on ``twin``'s arm joints and write the folder ``out_dir``."""
     out_dir = Path(out_dir)
@@ -83,8 +84,12 @@ def write_arm_program_folder(
     drive = DriveSettings(  # the twin's 0 is where the program starts
         mode="position", target=0.0, stiffness=base.stiffness, damping=base.damping
     )
-    stage = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
-    native = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
+    stage = build_stage(
+        twin, results, drive, data_dir, collide_unjoined=collide_unjoined, hidden_parts=hidden_parts
+    )
+    native = build_stage(
+        twin, results, drive, data_dir, collide_unjoined=collide_unjoined, hidden_parts=hidden_parts
+    )
     twin_deg = trajectory.twin_deg()
     for joint_id, angles in zip(trajectory.joint_ids, twin_deg):
         _add_program(_joint_prim(stage, joint_id), program, trajectory.times, angles)
