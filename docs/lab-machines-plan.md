@@ -813,6 +813,34 @@ not the velocity column.
   label stand-ins, as above.
 - **Tests:** `pytest -m "not gpu and not slow"`: 802 passed in about 4.2 min.
 
+#### Added on 2026-11-16, from the Phase 4 chat
+- **The time left:** the semester ends about 2026-12-17 and the advisors meet weekly, so Phases 5
+  to 8 have about one week each. If time runs short, level 3 on both Haas mills comes first: the
+  advisors asked for it before video (2026-11-12).
+- **The tool tip is not modelled.** v3 has a spindle nose stand-in but no tool in it. The phase
+  is "measured by the tool tip's path", so decide how: the nose's centre point, or a labelled
+  stand-in tool of a stated length. Either is a point on the head's part, moved by X, Y and Z
+  [INFERENCE: the table moves in X and the saddle in Y, so the tip's path against the table is
+  the joints' motion, with the signs that item 1 of the visit list or the manuals settle].
+- **The recorder's velocity column is not trustworthy under the stiff hold:** it read 3.42 mm/s
+  on a head standing still (v3), and 88 mm/s on a move whose positions show up to 224 mm/s. The
+  arm's holds showed the same bias (worklog 2026-11-10). Measure from positions.
+- **Reading Daniel's recordings:** `data/machines/haas-tm1/part_cutting/2026-11-11_spec/summarise_recordings.py
+  <csv>...` (run with `python -I`) prints each joint's span in degrees or mm; the session log
+  (memory "isaac-sim-logs") shows which file each observation is about. Daniel reports checks
+  in chat, so record them in the run's or the program folder's notes.
+- **His check habits:** spell out each step's file, and when to type a target (after Play). On
+  2026-11-11 a target typed before Play, and in `slide.usdc`, did nothing. The program check
+  will need a new section 12 in `docs/setup/isaac-sim-check.md`.
+- **Not reviewed in the dashboard:** `haas/tm1@v3` (and v1, v2). A request reuses the newest
+  version not rejected, so v3 is used; reviewing it is Daniel's.
+- **The weekly report:** the next advisors' page covers the week from 2026-11-12, with the
+  meeting's answers (memory "lab-machines-report-page": build it the same way, from
+  `data/scratch/2026-11-11_weekly-report/`).
+- **Daniel's lab visit:** when he sends measurements, record them in that day's worklog and the
+  machine's `inputs/SOURCES.md` as his own, dated and with photos, then update the twin's facts
+  and issues in a new version.
+
 ### Phase 5's checklist
 - [ ] Research note: Haas's G and M codes, from the mill manual's pages Daniel saves.
 - [ ] Decision record: a reader of the codes the programs use (moves, arcs, units, absolute and
