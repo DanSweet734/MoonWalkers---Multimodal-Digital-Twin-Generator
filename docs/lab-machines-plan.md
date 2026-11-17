@@ -979,13 +979,20 @@ not the velocity column.
 - **The lab's program for the arm** comes through Dr. Li's assistant, at a later date.
 
 ### Phase 6's checklist
-- [ ] Sources as for the TM-1, and the trunnion's once its plate is read (visit list). Until then
+- [x] Sources as for the TM-1, and the trunnion's once its plate is read (visit list). Until then
       the trunnion is a labelled stand-in, sized from the photos against the table's cited size.
-- [ ] The enclosure from the generator. The moving parts inside are stand-ins matched to the four
+      (Done 2026-11-17: [the research note](research/2026-11-16-haas-vf3-and-trunnion-sources.md),
+      `haas_vf3.reference.json` with 40 facts. The trunnion is the TR160 by elimination
+      [INFERENCE], sized by its drawing. The plate waits for the visit, item 10.)
+- [x] The enclosure from the generator. The moving parts inside are stand-ins matched to the four
       inside photos, since the enclosure hides them. A check file without the enclosure shows the
-      axes.
-- [ ] The trunnion's tilt and turn as two joints, with Haas's axis names cited.
-- [ ] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
+      axes. (Two sides fed, 133735 and 133812, chosen by renders against the photos. The
+      enclosure is hidden in every check file and program folder by the spec's
+      `hidden_in_checks`, and `checks/inside.usdc` is the twin without it. `haas/vf3@v1`, run
+      `2026-11-16_run-001`, built 2026-11-17.)
+- [x] The trunnion's tilt and turn as two joints, with Haas's axis names cited (`a_axis` and
+      `b_axis`, A ±120°, B unlimited, 80 °/s each; which way +A and +B turn is decision 0036's).
+- [x] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
       program's tool change is logged, not simulated.
 - [ ] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
 - [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
@@ -1061,7 +1068,16 @@ Bring a tape measure (at least 3 m, since the TM-1 is cited at 109 in tall) and 
 
 **The VF-3 (Phase 6)**
 10. A close photo of the trunnion's plate (its model), its platter's diameter, and its tilt
-    axis's height above the table.
+    axis's height above the table. **Update (2026-11-16):** the plate is on the cradle's base,
+    lower left in `133959`; photograph it square on. If it cannot be read, photograph the
+    control's Setting 78 (the 5th axis's model) and Setting 30 (the 4th's), which "must match the
+    model engraved on the rotary unit's identification plate" (2012 manual, p. 175). If the lab
+    allows, a phone video from the front of a jog of +A, then +B: it settles which way each
+    turns (Haas's rule depends on "the equipment, parameter settings", 2011 rotary manual,
+    p. 35). Until then the trunnion is a TR160 by elimination [INFERENCE], with its figures as
+    labelled stand-ins (`docs/research/2026-11-16-haas-vf3-and-trunnion-sources.md`). Daniel
+    raises it with the advisors when scheduling his next visit (meeting of 2026-11-19). Files go
+    in `data/machines/haas-vf3/inputs/photos/` with the phone's names.
 11. The VF-3's control screen (as item 2), its tool changer, and its back without the sign.
 
 **The arm and the hand (beside, and Phase 7)**
@@ -1094,7 +1110,10 @@ haascnc.com refuses scripts (403):
   - https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english---mill-ngc---operator's-manual---2021.pdf
   - the online chapters "17 - Mill - G-Codes" and "18 - Mill - M-Codes" under the manual's page;
 - the trunnion's page once its model is known, and how a Haas rotary is set up as a 4th and 5th
-  axis.
+  axis. **Done (2026-11-16, Phase 6):** Claude Code fetched the 2011 rotary manual, the 2004 TRT
+  manual, the 2026 rotary guide and the VF-3's layout drawing (PDFs), and Daniel saved the TR160's
+  page (https://www.haascnc.com/machines/rotaries-indexers/5-axis-rotaries/models/tr160.html) in a
+  browser; the TR160 being the likeliest model, by elimination, until the plate is read.
 
 For the arm: the igus manual on ManualsLib (https://www.manualslib.de/manual/949812/Igus-Rebel.html)
 and igus's product page (https://www.igus.de/product/21465), both search listings, not opened.

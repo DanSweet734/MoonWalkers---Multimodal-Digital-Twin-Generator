@@ -576,6 +576,86 @@ extraction", "Attempting to set an invalid data source to array attribute", "att
 timeVaryingAttributes not found"), and not on later opens; nothing went wrong with them [their
 source is not confirmed]. The record is each folder's `PROGRAM.md`.
 
+## 13. Lab plan, Phase 6: the Haas VF-3, its axes and its trunnion (success levels 1 and 2)
+`haas/vf3@v1` (run `2026-11-16_run-001`) is the generated enclosure, made from two photos (the
+front, 133735, and the operator's right, 133812), with stand-ins for every moving part inside
+it. These are the saddle, the table with five slots, the head with its motor, and the spindle
+nose. The TR160 trunnion is also a stand-in: a base plate with two housings, the cradle that tilts
+on **A** and the platter that turns on **B**. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-vf3\runs\2026-11-16_run-001\`.
+Its `RUN.md` lists every stand-in and inaccuracy; `views\on_front_photo.png` and
+`views\on_left_photo.png` show the twin over the fed photos.
+
+**What is new in this check: the enclosure is hidden in the check files.** The generator made the
+enclosure one closed shell; its doors' windows are not open. So `twin.usdc` shows only the
+outside, and every check file shows the twin with the enclosure (`frame`) hidden, so the moving
+parts show. This is new in Phase 6 (the spec's `hidden_in_checks`). The new file is
+`checks\inside.usdc`, the twin itself with the enclosure hidden, where you type targets. Hidden
+parts keep their physics.
+
+Every joint holds with the stiff drive (stiffness 100000, damping 632.5). Parts do not collide
+(`self_collision` "off"), so nothing stops a part passing through another. **Typed targets work
+only in `twin.usdc` and `inside.usdc`, and only after Play** (section 11): the check files' moving
+joints have speed drives, which ignore a Target Position. A typed target moves its part at the
+drive's own pace, not the cited rapid (Phase 4 saw up to 224 mm/s). Angles are in degrees,
+lengths in metres. The joints are under `/haas_vf3/joints/` in the Stage panel.
+
+1. **`twin.usdc`, level 1: the outside.** Open it and press Play. Nothing moves, nothing sags.
+   Look it over against the photos: the front doors and the pendant, as in 133735; the operator's
+   right side, as in 133812. The back and the operator's left are the generator's guess. Its
+   proportions are off against Haas's layout drawing: about 9% too wide and 19% too deep for its
+   height (logged). Press Stop.
+2. **`checks\inside.usdc`, level 1: the parts inside.** Open it and press Play. Nothing moves.
+   You see the parts that were behind the enclosure:
+   - the base and the column (grey, fixed);
+   - the saddle and the table, 48 x 18 in, 37 in off the floor;
+   - the head on the column's face, its motor on top, the spindle nose under it with two keys;
+   - on the table's middle, the trunnion along the table: two housings, the cradle between them
+     (level, as photographed in 133938), and the round platter with a tab at its rim.
+
+   Compare with 133927 and 133959. The nose is about 23 in over the table, read off 133927 within
+   about 2 in. Shift+drag the head and the cradle: both hold.
+3. **`checks\slide.usdc`, level 2: each axis runs its cited travel.** Open it. Before Play, paste
+   the run folder's `record_joints.py` into Window > Script Editor and click **Run**. Press Play
+   and let it run about 5 s. All three start at their lower limits and slide at the cited rapid,
+   1000 ipm (423.3 mm/s):
+   - `y_axis`, the saddle and table, front to back: -10 to +10 in (20 in, about 1.2 s);
+   - `x_axis`, the table, left to right: -20 to +20 in (40 in, about 2.4 s);
+   - `z_axis`, the head: -18.9 to +6.1 in (25 in, about 1.5 s). That is 4.1 to 29.1 in from
+     the nose to the table, the layout drawing's figures.
+
+   Each stops at its upper limit and stays there. The trunnion rides on the table and does not
+   turn. **The nose passes into the platter at Z's lower end** (it starts there): the 4.1 in is
+   to the table, and the trunnion stands 14 in on it. No collision is modelled, and a real
+   machine would crash. Press Stop; the recorder writes `recordings\slide_<date>_<time>.csv`.
+4. **`checks\spin.usdc`: the spindle, A and B turn.** Run the recorder again on the newly opened
+   file, then Play for about 8 s. All three turn at 30 °/s:
+   - the spindle (its two keys show it);
+   - the cradle on **A**, tilting about the table's long axis. It stops at +120° after 4 s and
+     stays there;
+   - the platter on **B**, which keeps turning, and which the tab shows. B rides on the cradle,
+     so it turns about the tilted axis.
+
+   Press Stop.
+5. **The ranges by target (level 2), in `checks\inside.usdc`.** Open it, run the recorder, press
+   Play. Select each joint and set its **Target Position** in the Property panel (Physics >
+   Drive). Wait until the part stops before you type the next:
+   - **`a_axis`:** `90`, then `120`, then `-120`, then `0`. At `90` the platter's face looks
+     towards you, the front. This is the joint's +A, not yet tied to Haas's +A (decision 0036
+     will settle that). At ±120 the cradle stops at its cited limit.
+   - **`b_axis`:** `90`, then `360`, then `0`. The platter turns a quarter, then a full turn,
+     then back. B has no limit.
+   - **The linear axes' lower ends, which `slide.usdc` passes before the recorder's first row:**
+     `y_axis` `-0.254`, `x_axis` `-0.508`, then `0` for each. Then `z_axis` `-0.48`, and back to
+     `0`: the nose passes into the platter from `-0.396` down (as in step 3).
+   - **The tilted platter, carried:** set `a_axis` to `90` and `x_axis` to `0.3`. The trunnion
+     rides with the table, and the platter stays tilted.
+
+   Shift+drag the cradle while A is at `90`: it holds. Press Stop.
+6. **Send Claude Code** the recordings' paths and what you saw. It runs
+   `uv run python -m moonwalkers.pipelines.b.score <run> --recording <csv> ...`, which measures
+   each joint's range against its limits.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:
