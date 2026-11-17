@@ -994,8 +994,14 @@ not the velocity column.
       `b_axis`, A ±120°, B unlimited, 80 °/s each; which way +A and +B turn is decision 0036's).
 - [x] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
       program's tool change is logged, not simulated.
-- [ ] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
+- [x] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
+      (2026-11-17: decision 0036, proposed. A and B are in the machine map; G00 and G01 on one
+      rotary axis alone, the feed at Settings 34 and 79's diameter; simultaneous moves refused,
+      since they need G93. Two programs: Haas's O40001 on the platter, and the labelled test
+      `moonwalkers-vf3-test-tilt-and-turn`, folders `data/machines/haas-vf3/programs/2026-11-17_*_v1/`.)
 - [ ] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
+      (The program folders were written in scratch first, both validators clean; decision 0036
+      is written; the check is `docs/setup/isaac-sim-check.md`, section 14.)
 
 **Measured by:** as Phases 4 and 5, with the trunnion's two axes.
 

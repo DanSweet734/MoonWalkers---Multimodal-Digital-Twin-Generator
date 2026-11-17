@@ -675,6 +675,78 @@ and stayed at 0: a typed target on a joint with no limit is taken a turn at a ti
 between -360° and +360°, as the spindle and B show in `spin.usdc`. Step 5 now types `-90` in
 place of `360`. The record is the run's `RUN.md`.
 
+## 14. Lab plan, Phase 6: programs on the VF-3, with its trunnion (success level 3)
+Two programs on `haas/vf3@v1` (decision 0036). Their folders are under
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-vf3\programs\`:
+- **`2026-11-17_haas-o40001-basic-program-vf3_v1\`:** Haas's O40001 as printed, as on the TM-1 in
+  section 12, with the stock on the trunnion's platter. A and B stay home. 25.7 s.
+- **`2026-11-17_moonwalkers-vf3-test-tilt-and-turn_v1\`:** a test program written by Claude Code
+  (not Haas's, not the lab's), which tilts and turns the part between four cuts. 51.2 s.
+
+Each `PROGRAM.md` lists every block with its times, the tool tip's machine X, Y, Z and A, B, and
+every stand-in.
+
+**You type no targets in this check.** The runner moves every target, A and B included, along
+the plan on every physics step, as in section 12. The enclosure is hidden in program folders
+(as in the checks of section 13), so the axes show.
+
+What `program.usdc` adds, as on the TM-1: a **yellow stand-in tool** under the spindle nose, a
+**grey see-through block** of stock, and the **programmed path**, red where it cuts and blue for
+rapids. Here the block and the path sit **on the platter** and tilt and turn with it. A tip that
+follows the program stays on the red lines.
+
+Check **O40001 first**, then the test, each in a fresh stage, with the steps of section 12:
+1. **Open the folder's `program.usdc`.**
+2. **Start the runner:** paste the folder's `run_program.py` into Window > Script Editor and
+   click **Run**. It prints one line per joint, six here: `x_axis`, `y_axis`, `z_axis`,
+   `a_axis`, `b_axis` and the spindle `(angular, speed only)`.
+3. **Start the recorder:** paste the folder's `record_joints.py` into a second tab and click
+   **Run**.
+4. **Press Play** and watch; touch nothing.
+
+   **O40001** should:
+   - 0-2.4 s: the zero return. The head rises 6 in, then the table slides to X home (its
+     operator-left end) and towards you to Y home;
+   - 2.4-5.4 s: the table brings the block under the spindle. The spindle starts (1000 rpm),
+     and the head comes down to 0.1 in over the block;
+   - 5.4-23.0 s: the cut, 0.2 in down, then diagonally across the block's top at 20 in/min
+     (8.5 mm/s) along the red line;
+   - to 25.7 s: the head rises to the top, the spindle stops, and the table comes towards you.
+
+   **The test** should:
+   - to 15.0 s: as O40001's start, then **cut 1**: 3 in straight along the block's top, at
+     20 in/min;
+   - 15.2-16.8 s: the tool lifts 0.15 in, and **the platter turns a quarter** on B, clockwise
+     seen from above [INFERENCE: +B's direction is a stand-in];
+   - 16.8-26.8 s: **cut 2**, the same line across cut 1: the red lines on the block cross;
+   - 27.2-37.1 s: **cut 3, an arc.** The tool stays still, 1 in from the platter's centre, and the
+     platter turns back a quarter under it at 9.55 °/s (F10. at Setting 79's 2 in). The tip
+     traces a red quarter circle;
+   - 37.1-38.3 s: the tool lifts to 1 in over the block, and **the cradle tilts 30°** on A. The
+     platter's face turns towards the back (the column) [INFERENCE: the stand-in direction of
+     +A, decision 0036];
+   - 38.3-48.6 s: **cut 4**, along the tilted top's centre line. The tip should stay on the red
+     line drawn on the tilted block;
+   - to 51.2 s: the head rises, the spindle stops, and A and B turn home together (the cradle
+     level, the platter as at the start).
+5. **Let it run 2 s more, then press Stop.** The recorder writes
+   `recordings\program_<date>_<time>.csv` in the folder.
+6. **Look for:**
+   - Does the tip stay on the red lines while cutting, on the tilted block too?
+   - Does the platter turn and the cradle tilt smoothly and stop where they should, without
+     shaking?
+   - Does anything sag while tilted? Do the block and the path stay on the platter?
+7. **Send Claude Code** each recording's path and what you saw. It runs `uv run python -m
+   moonwalkers.control compare <recording.csv> <folder>\trajectory.json`, which measures:
+   - the tip's distance from the plan and from the path (mm);
+   - A's and B's gaps from the plan (degrees);
+   - when each block arrived (the tip within 0.1 mm, A and B within 0.05°);
+   - each axis's top speed;
+   - the spindle's speed.
+
+**If nothing moves on Play:** set `API = "omni.physx"` near the top of the pasted runner and run
+it again, as in section 7.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

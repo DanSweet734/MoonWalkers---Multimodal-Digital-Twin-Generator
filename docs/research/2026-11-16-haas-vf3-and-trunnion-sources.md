@@ -159,3 +159,43 @@ Decision 0036 chooses how the reader takes them.
   2026-11-19 when scheduling the visit): the trunnion's plate (lower left of the cradle's base in `133959`), or
   the control's Setting 78 and Setting 30; the control's generation (Classic or Next Generation);
   a jog of +A and +B, watched from the front.
+
+## Update, 2026-11-17: how the 2012 manual programs A and B
+Read for decision 0036 (Claude Code, 2026-11-17), from the filed 2012 manual (96-8000 Rev AP,
+PDF pages; its text taken with pypdfium2):
+- **Units:** "5th-axis programming is not affected by the selection of inch (G20) or metric (G21),
+  as A and B axes are always programmed in degrees." (p. 172)
+- **Which codes take them:**
+  - G00 and G01 list "A Optional A-axis motion command" (p. 181);
+  - G28 "returns all axes (X, Y, Z, A and B) simultaneously to the machine zero position when no
+    axis is specified on the G28 line" (p. 191);
+  - Haas's own examples rapid to "A0 B0" (G141's, p. 233) and end with "G91 G28 B0. A0."
+    (G161's and G162's, pp. 244-245). Those examples are for a machine whose head tilts (G143,
+    the VR-11), so the reader does not run them.
+- **Moving together:** "G93 inverse time must be in effect for simultaneous 5-axis motion."
+  (p. 172). "Settings 34 and 79 (4th & 5th axis diameter) are not necessary when using G93."
+  (p. 225)
+- **A rotary feed, defined:**
+  - G01: "F Feedrate in inches (mm) per minute" (p. 181);
+  - Setting 34: "This is used to set the diameter of the A-axis (0.0 to 50 inches), which the
+    control will use to determine the angular feedrate. The feedrate in a program is always
+    inches per minute (or mm per minute), therefore, the control must know the diameter of the
+    part being machined in the A-axis in order to compute angular feedrate." (p. 271);
+  - Setting 79: the same for the B axis (p. 277).
+
+  Against these, p. 173's example: "G01 A90. F50. will rotate the A-Axis 90 degrees at 50
+  degrees per second". Decision 0036 takes the definitions [INFERENCE: three statements against
+  one example].
+- **Rapids:** "When in the rapid mode, the axes will arrive at the programmed position at
+  different times; the axis with shortest distance from target will arrive first" (p. 172).
+  "Rapid moves are not allowed; rapid motions, entering and exiting holes (full retract
+  peck-drill cycle) are not supported." (p. 173, under "Feed Rates" for 4- and 5-axis code).
+  Decision 0036 reads the second as for 5-axis cutting [INFERENCE].
+- **Brakes:** "It is highly recommended that the A/B brakes be engaged when doing any non 5-axis
+  motion." M10/M11 and M12/M13 (p. 172).
+- **Not found:** the trunnion's acceleration and how the control turns an absolute B (the shorter
+  way or not). Both stay stand-ins.
+
+The 2011 rotary manual's feeds (pp. 23-49: "The feed rate corresponds to degrees rotated per
+second", p. 45) belong to the rotary's own servo control, as on the HA5C, not to the mill's
+4th and 5th axes.
