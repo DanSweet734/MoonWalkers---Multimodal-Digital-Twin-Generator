@@ -6,24 +6,34 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 4, the Haas TM-1 (levels 1 and 2; the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 4", whose hand-off comes first. Phase 4 runs on
-branch `feat/lab-phase-4-tm1`, from `main` after PR #30; its first commit is the hand-off. Phase 4
-builds `haas/tm1` from its four corner photos: the frame, the axes' carriages, the head, the
-spindle and the tool carousel, each axis sliding its cited travel.
-**Phase 4 so far (2026-11-11):** sources in `docs/research/2026-11-11-haas-tm1-sources.md` (Y travel
-12 in, from Haas's 2002 addendum; today's pages say 16) and `pipelines/b/haas_tm1.reference.json`.
-`haas/tm1@v3` (run `2026-11-11_run-003`; spec by `data/machines/haas-tm1/part_cutting/2026-11-11_spec/compose_spec.py`)
-is generated from **three** corners (the back right one, hidden by a sign and a stool, pulled
-the pendant to the back in a four-corner trial), with the head cut and stand-ins for the saddle,
-the table, the spindle nose and the 10-pocket carousel; decision 0034 (accepted by Daniel
-2026-11-11). The build now writes `checks/slide.usdc` for driven sliding joints, and the scorer
-reads their ranges in mm. Daniel's check of v2 (run-002): ranges and carousel good, but the head
-sank 100 mm: the exporter gave slides the default hold, not `hold_drive` (fixed, v3). v1
-(run-001) has no slide check. **Level 2 met by v3** (Daniel's check, 2026-11-11): the head holds
-within 0.014 mm, every axis reaches both ends within 0.01 mm, the carousel indexes 36 deg. For
-Phase 5: a target stepped by hand moves an axis up to 224 mm/s, over the cited 84.7 (the stiff
-hold; the plan's note under Phase 4). **Waiting:** Daniel's review of PR #31.
+## Current phase: the lab's machines plan, Phase 5, mill programs and the TM-1's level 3 (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 5", whose hand-off comes first. Phase 5 runs on
+branch `feat/lab-phase-5-mill-programs`, from `main` after PR #31; its first commit is the
+hand-off. Phase 5 reads Haas's G and M codes into the axes' motion at cited rapid and feed rates
+and runs a program on `haas/tm1@v3`, measured by the tool tip's path.
+**Phase 5's work is done, in PR #32 for Daniel's review** (2026-11-16): research note
+`docs/research/2026-11-16-haas-mill-programs.md` (+X, +Y, +Z, home and the tool tip from the
+manuals' pages; X home a stand-in); decision 0035 (accepted by Daniel 2026-11-16): our own
+reader of Haas's codes, no library (`control/haas_gcode.py`), program folders by
+`control/mill_export.py` with a stand-in tool touched off on the twin, stock and the drawn path;
+the runner drives sliding joints and a speed-only spindle; `control compare` measures the tool
+tip. Haas's O40001 and O40006 are packaged; their folders are
+`data/machines/haas-tm1/programs/2026-11-16_*_v3/`. **Level 3 met for the TM-1** (Daniel's check,
+2026-11-16): the tip within 0.017 mm of the path, every block on time within 0.01 s; Z lags up to
+1.84 mm along the path while rising at the rapid (the speed cap [INFERENCE], logged).
+**Phase 4 is done** (PR #31, merged on 2026-11-11 on Daniel's word; branch `feat/lab-phase-4-tm1`):
+sources in `docs/research/2026-11-11-haas-tm1-sources.md` (Y travel 12 in, from Haas's 2002
+addendum; today's pages say 16) and `pipelines/b/haas_tm1.reference.json`. `haas/tm1@v3` (run
+`2026-11-11_run-003`; spec by `data/machines/haas-tm1/part_cutting/2026-11-11_spec/compose_spec.py`)
+is generated from **three** corners (the back right one, hidden by a sign and a stool, pulled the
+pendant to the back in a four-corner trial), with the head cut and stand-ins for the saddle, the
+table, the spindle nose and the 10-pocket carousel; decision 0034 (accepted by Daniel
+2026-11-11). Builds write `checks/slide.usdc` for driven sliding joints; the scorer reads their
+ranges in mm; sliding joints now hold with the twin's `hold_drive` (v2's head sank 100 mm without
+it). **Level 2 met by v3** (Daniel's check, 2026-11-11): the head holds within 0.014 mm, every
+axis reaches both ends within 0.01 mm, the carousel indexes 36 deg. A target stepped by hand
+moves an axis up to 224 mm/s, over the cited 84.7 (the stiff hold): programs move the target
+along their path (Phase 5's hand-off).
 **Phase 3 is done** (PR #30, merged on 2026-11-10 on Daniel's word; branch
 `feat/lab-phase-3-rebel-arm-control`): the research note `docs/research/2026-11-10-irc-programs-and-cri.md`;
 decision 0033 (accepted by Daniel 2026-11-10 "as is until we know if we get the program from
@@ -35,10 +45,10 @@ labelled test program, `rebel-test-joint-moves`, is in
 (Daniel's Isaac Sim check, 2026-11-10): joints within 0.29° of the plan at 45.00°/s, no
 collisions; logged: "some motions cause certain parts of the mesh to move where it shouldn't
 have": when joint 2 turns, part of the column comes with it (v3's cut list [INFERENCE]).
-**For the weekly meeting of 2026-11-12:** Daniel asks the lab for the arm's own iRC program
-(and, if they can, its angles in iRC in the photographed pose); if it comes, decision 0033 is
-revisited and the program runs on the twin. The plan lists it under Phase 2's "Waiting, beside
-this phase".
+**The lab's program for the arm** comes "at a later date", through Dr. Li's assistant (Daniel,
+2026-11-16); until then the labelled test program stands as level 3. When it comes, decision
+0033 is revisited and the program runs on the twin (the plan, Phase 2's "Waiting, beside this
+phase").
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
 **Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
 - **Done in Phase 1:**
@@ -242,7 +252,13 @@ The history below is the record of the PoC and the drill-press plan.
     guessed back is acceptable for this stage, with that depth kept for a machine we own;
   - **from the meeting of 2026-11-05:** masses are a bonus, not a priority (Dr. Lu); when an agent
     cannot reach a source, the user is prompted, with an option to skip it (Dr. Li,
-    `docs/agent-procedure.md`, step 2); the lab has no HA5C, so decision 0026's stand-ins stay.
+    `docs/agent-procedure.md`, step 2); the lab has no HA5C, so decision 0026's stand-ins stay;
+  - **from the meeting of 2026-11-12** (worklog 2026-11-16): the scorecard accepted, targets
+    unchanged, "always shoot for as close as possible"; keep to photos until both Haas mills
+    reach level 3, and the order stays (TM-1, VF-3, hand, agent build); the meshes look bumpy
+    and less detailed than hoped, so optimising the process and other ways to generate the mesh
+    come later; the lab's arm program comes later. **The semester ends about 2026-12-17**;
+    meetings stay weekly. Phase 8's machine: the TM-1 (Daniel left it to us).
 - **Who owns what.**
   - Pipelines A, C and D belong to their owners (Ava, Kiran, Sarkis). They replace their stubs
     in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and
@@ -369,6 +385,10 @@ Backend (run from `backend/`):
   `... run rebel-test-joint-moves --twin igus/rebel6dof02@v3 [--override 50] [--acceleration 0]`;
   `... control compare <recording.csv> <folder>/trajectory.json` measures its recording.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 10.
+  A Haas mill program in G and M codes (decision 0035): `... show haas-o40001-basic-program`;
+  `... run haas-o40006-cutter-comp --twin haas/tm1@v3 [--acceleration <mm/s^2, 0 for none>]
+  [--pocket-time <s>]`; `... compare <recording.csv> <folder>/trajectory.json` measures the tool
+  tip. Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 12.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
 - A manual machine's controls (level 3, decision 0025): a switch, a speed table and the operator's
   commands with scenarios, as three control behaviours (the T33901's are in its reference file).

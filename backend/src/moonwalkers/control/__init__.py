@@ -9,11 +9,20 @@
 - ``controls_export``: writes a controls folder; ``compare`` measures a recording against it;
 - ``irc`` and ``arm_export``: a robot arm's program in igus Robot Control's XML, planned as
   synchronised joint moves and written as a program folder (decision 0033);
+- ``haas_gcode`` and ``mill_export``: a Haas mill program in G and M codes, planned as the axes'
+  motion at the cited rapid and feed rates and written as a program folder (decision 0035);
 - ``python -m moonwalkers.control``: list, show and run programs; controls and compare.
 """
 
 from .controls_export import ControlsOutput, controls_files, write_controls_folder
 from .export import ProgramOutput, write_program_folder
+from .haas_gcode import (
+    GcodeProgram,
+    MillSettings,
+    MillTrajectory,
+    bind_mill,
+    run_gcode_program,
+)
 from .interpreter import RunSettings, Trajectory, run_program
 from .irc import ArmSettings, ArmTrajectory, IrcProgram, bind_arm, run_irc_program
 from .manual import ControlPlan, ControlsFile, ManualControls, manual_controls, plan_scenario
@@ -33,21 +42,26 @@ __all__ = [
     "ControlPlan",
     "ControlsFile",
     "ControlsOutput",
+    "GcodeProgram",
     "IndexProgram",
     "IndexStep",
     "IrcProgram",
     "ManualControls",
+    "MillSettings",
+    "MillTrajectory",
     "ProgramError",
     "ProgramFile",
     "ProgramOutput",
     "RunSettings",
     "Trajectory",
     "bind_arm",
+    "bind_mill",
     "check_program",
     "controls_files",
     "manual_controls",
     "packaged_programs",
     "plan_scenario",
+    "run_gcode_program",
     "run_irc_program",
     "run_program",
     "runnable_behaviors",

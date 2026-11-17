@@ -10,6 +10,12 @@ check of level 3 (methodology, "Evaluation"):
   the hand held it;
 - the spindle: its steady speed against the setting, and how long it took to reach it and to stop;
 - each joint that follows the quill (the downfeed handles): the ratio it kept.
+
+An arm's iRC program (decision 0033) is measured joint by joint; a Haas mill program (decision
+0035) by the tool tip: its distance from the plan and from the programmed path, in mm, when each
+block's move arrived, and the time against the plan. A mill is measured from positions only: the
+recorder's velocity column is not trusted under the stiff hold (Phase 4's hand-off), except the
+spindle's, whose position wraps.
 """
 
 from __future__ import annotations
@@ -28,6 +34,10 @@ HOME_TOLERANCE_M = 0.001  # within 1 mm of the rest position counts as home
 STOP_TOLERANCE_M = 0.0005  # within 0.5 mm of the stop counts as at the stop
 ARM_KIND = "irc_joint_program"  # an arm's trajectory.json (decision 0033)
 ARRIVE_DEG = 0.5  # within half a degree of a move's target counts as arrived
+MILL_KIND = "haas_gcode_program"  # a mill's trajectory.json (decision 0035)
+ARRIVE_MM = 0.1  # a sliding axis's arrival: the tip within 0.1 mm of a block's end point
+PATH_WINDOW_S = 1.0  # the programmed path near a sample: the plan within a second of its time
+SPEED_SPAN_S = 0.05  # top speeds from positions this far apart (3 physics steps at 60 per s)
 
 
 @dataclass(frozen=True)
@@ -55,6 +65,8 @@ def compare(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any]) -
     program (decision 0033), else a manual machine's scenario (decision 0025)."""
     if plan.get("kind") == ARM_KIND:
         return compare_arm(recording, plan)
+    if plan.get("kind") == MILL_KIND:
+        return compare_mill(recording, plan)
     times = list(recording["time_s"])
     quill = plan["quill"]
     spindle = plan["spindle"]
@@ -242,6 +254,187 @@ def compare_arm(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any
             )
         )
     return out
+
+
+def compare_mill(
+    recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any]
+) -> list[Measure]:
+    """A Haas program on a mill (decision 0035), by the tool tip: the tip's machine position is
+    each axis's ``sign x (joint - home)``, the tool's length being fixed. Measured: its distance
+    from the plan at the same time and from the programmed path, over the whole program and
+    while cutting; when each block's move arrived within ``ARRIVE_MM``; each axis's top speed;
+    where it ended; the spindle's speed while cutting."""
+    times = list(recording["time_s"])
+    axes = plan["axes"]
+    end = plan["duration_s"]
+    columns: dict[str, list[float]] = {}
+    for a in axes:
+        column = _column(recording, f"{a['joint_id']} (m)")
+        if column is None:
+            return [Measure(a["joint_id"], "not recorded", "a column '<joint> (m)'")]
+        columns[a["joint_id"]] = column
+    tip = [
+        [a["sign"] * (columns[a["joint_id"]][k] - a["home_m"]) * 1000 for a in axes]
+        for k in range(len(times))
+    ]
+    plan_t = list(plan["times"])
+    planned = [list(p) for p in plan["machine_mm"]]
+    cutting = [(c[0], c[1]) for c in plan["cutting"]]
+
+    def cuts(t: float) -> bool:
+        return any(a <= t <= b for a, b in cutting)
+
+    out: list[Measure] = []
+    during = [k for k, t in enumerate(times) if t <= end]
+    for label, ks in (
+        ("whole program", during),
+        ("cutting (feeds and arcs)", [k for k in during if cuts(times[k])]),
+    ):
+        if not ks:
+            continue
+        for what, gap in (
+            (
+                "from the plan at the same time",
+                lambda k: _distance(tip[k], _at_point(plan_t, planned, times[k])),
+            ),
+            ("from the programmed path", lambda k: _off_path(tip[k], times[k], plan_t, planned)),
+        ):
+            gaps = sorted((gap(k), times[k]) for k in ks)
+            out.append(
+                Measure(
+                    f"tip's distance {what}, {label}",
+                    f"largest {gaps[-1][0]:.3f} mm (at {gaps[-1][1]:.2f} s), 95% within "
+                    f"{_percentile([g for g, _ in gaps], 0.95):.3f} mm",
+                    "0",
+                )
+            )
+    last_arrival: float | None = None
+    for event in plan["events"]:
+        if event["end_s"] <= event["start_s"] or event["from_mm"] == event["to_mm"]:
+            continue
+        last_arrival = next(
+            (
+                t
+                for k, t in enumerate(times)
+                if t >= event["start_s"] and _distance(tip[k], event["to_mm"]) <= ARRIVE_MM
+            ),
+            None,
+        )
+        out.append(
+            Measure(
+                f"line {event['line'] or '-'} {event['kind']}: tip within {ARRIVE_MM:g} mm "
+                "of its end",
+                _s(last_arrival),
+                _s(event["end_s"]),
+            )
+        )
+    out.append(Measure("the program's last move arrived", _s(last_arrival), _s(end)))
+    for i, a in enumerate(axes):
+        peak = _top_speed(times, columns[a["joint_id"]], end)
+        top = max(
+            (
+                abs(c[i] - b[i]) / (t1 - t0)
+                for (t0, b), (t1, c) in itertools.pairwise(zip(plan_t, planned, strict=True))
+                if t1 > t0
+            ),
+            default=0.0,
+        )
+        out.append(
+            Measure(
+                f"{a['axis']} ({a['joint_id']}): top speed, from positions",
+                f"{peak * 1000:.1f} mm/s",
+                f"{top:.1f} mm/s (cited rapid {a['rapid_m_s'] * 1000:.1f})",
+            )
+        )
+    after = [tip[k] for k, t in enumerate(times) if t >= end]
+    out.append(
+        Measure(
+            "where the tip ended (machine X, Y, Z)",
+            "not recorded (the recording stops before the plan ends)"
+            if not after
+            else ", ".join(f"{statistics.median(v[i] for v in after):.3f}" for i in range(3))
+            + " mm",
+            ", ".join(f"{v:.3f}" for v in planned[-1]) + " mm",
+        )
+    )
+    spindle = plan.get("spindle")
+    w = None if spindle is None else _column(recording, f"{spindle} (rad/s)")
+    changes = [(r[0], r[1]) for r in plan.get("spindle_rpm", [])]
+    if w is not None and changes and cutting:
+        rpm = [abs(v) * 60 / (2 * math.pi) for t, v in zip(times, w, strict=True) if cuts(t)]
+        if rpm:
+            out.append(
+                Measure(
+                    "spindle's speed while cutting, median",
+                    f"{statistics.median(rpm):.1f} RPM",
+                    f"{_rpm_at(changes, cutting[0][0]):g} RPM",
+                )
+            )
+    return out
+
+
+def _distance(a: Sequence[float], b: Sequence[float]) -> float:
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=True)))
+
+
+def _at_point(times: list[float], points: list[list[float]], t: float) -> list[float]:
+    """The planned point at ``t``, in a straight line between the plan's points."""
+    if t <= times[0]:
+        return list(points[0])
+    if t >= times[-1]:
+        return list(points[-1])
+    i = bisect_left(times, t)
+    t0, t1 = times[i - 1], times[i]
+    f = 1.0 if t1 <= t0 else (t - t0) / (t1 - t0)
+    return [a + (b - a) * f for a, b in zip(points[i - 1], points[i], strict=True)]
+
+
+def _off_path(p: Sequence[float], t: float, times: list[float], points: list[list[float]]) -> float:
+    """How far ``p`` is from the planned path's segments within ``PATH_WINDOW_S`` of ``t``: off
+    the path, whether early or late along it."""
+    lo = max(bisect_left(times, t - PATH_WINDOW_S) - 1, 0)
+    hi = min(bisect_left(times, t + PATH_WINDOW_S) + 1, len(times) - 1)
+    if hi <= lo:
+        return _distance(p, points[lo])
+    return min(_to_segment(p, points[i], points[i + 1]) for i in range(lo, hi))
+
+
+def _to_segment(p: Sequence[float], a: Sequence[float], b: Sequence[float]) -> float:
+    ab = [y - x for x, y in zip(a, b, strict=True)]
+    length2 = sum(v * v for v in ab)
+    if length2 == 0:
+        return _distance(p, a)
+    f = sum((pi - ai) * v for pi, ai, v in zip(p, a, ab, strict=True)) / length2
+    f = min(max(f, 0.0), 1.0)
+    return _distance(p, [ai + f * v for ai, v in zip(a, ab, strict=True)])
+
+
+def _top_speed(times: list[float], q: list[float], end: float) -> float:
+    """The fastest a joint moved over at least ``SPEED_SPAN_S``, from its positions, until a
+    second after the plan's end."""
+    peak = 0.0
+    j = 0
+    for k, t in enumerate(times):
+        if t > end + 1.0:
+            break
+        while j + 1 < k and t - times[j + 1] >= SPEED_SPAN_S:
+            j += 1
+        if t - times[j] >= SPEED_SPAN_S:
+            peak = max(peak, abs(q[k] - q[j]) / (t - times[j]))
+    return peak
+
+
+def _percentile(values: list[float], share: float) -> float:
+    ordered = sorted(values)
+    return ordered[max(min(math.ceil(share * len(ordered)) - 1, len(ordered) - 1), 0)]
+
+
+def _rpm_at(changes: list[tuple[float, float]], t: float) -> float:
+    rpm = 0.0
+    for when, value in changes:
+        if when <= t + 1e-9:
+            rpm = value
+    return rpm
 
 
 # ---------------------------------------------------------------------------------- helpers

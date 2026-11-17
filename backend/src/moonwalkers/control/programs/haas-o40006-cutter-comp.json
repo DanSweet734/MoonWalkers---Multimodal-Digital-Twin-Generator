@@ -1,0 +1,138 @@
+{
+  "name": "haas-o40006-cutter-comp",
+  "sources": [
+    {
+      "source_id": "src-mill-manual-2023",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-tm1/inputs/documents/haas_mill-operators-manual_ngc_2023.pdf",
+      "title": "Haas Automation, \"2023 Mill Operator's Manual\" (the Next Generation Control), 187 pages, from https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english_mill_interactive_manual_print_version_2023.pdf",
+      "sha256": "402f553b6b492e4c898e3a350f177d5067969c82fbf801fb2792015de4077b0c",
+      "retrieved_at": "2026-11-10T05:34:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    },
+    {
+      "source_id": "src-mill-manual-2009",
+      "kind": "file",
+      "input_type": "pdf_catalog",
+      "uri": "machines/haas-tm1/inputs/documents/haas_mill-operators-manual_96-8000-rev-y_2009.pdf",
+      "title": "Haas Automation, \"Mill Operator's Manual 96-8000 Rev Y December 2009\" (the Classic Haas Control), 264 pages, from https://haascnc.com/content/dam/haascnc/en/service/manual/operator/english---mill-operator's-manual---2009.pdf",
+      "sha256": "d697c7122ec53bd597246c78489210f4577ef6c31b23d53b7e2f6919cbc5cd06",
+      "retrieved_at": "2026-11-10T05:35:00Z",
+      "license_note": "© Haas Automation; the maker's manual, kept for internal research only"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "haas_o40006_cutter_comp",
+    "name": "Haas's contour program O40006 with arcs (2023 Mill Operator's Manual, p. 172)",
+    "kind": "program_interpreter",
+    "description": "Haas's example: a contour round a 4 by 4.5 in part, 1 in deep at 50 in/min, six arcs by R and the lines between, under cutter compensation G41 D01. Run with the diameter offset D01 = 0 (a stand-in), so the tool's centre follows the printed path: \"The tool path is programmed to the centerline of the cutter\" (p. 172). From the 2023 manual; its codes have the same meaning in the 2009 Classic manual. Labelled stand-ins for the set-up (decision 0035).",
+    "drives_joints": [
+      "x_axis",
+      "y_axis",
+      "z_axis",
+      "spindle_rotation",
+      "carousel_index"
+    ],
+    "spec": {
+      "program": {
+        "format": "haas_gcode",
+        "text": "%\nO40006 (Cutter comp ex-prog) ;\n(G54 X0 Y0 is at the lower left of part corner) ;\n(Z0 is on top of the part) ;\n(T1 is a .250 dia endmill) ;\n(BEGIN PREPARATION BLOCKS) ;\nT1 M06 (Select tool 1) ;\nG00 G90 G40 G49 G54 (Safe startup) ;\nX-1. Y-1. (Rapid to 1st position) ;\nS1000 M03 (Spindle on CW) ;\nG43 H01 Z0.1(Tool offset 1 on) ;\nM08(Coolant on) ;\n(BEGIN CUTTING BLOCKS) ;\nG01 Z-1. F50. (Feed to cutting depth) ;\nG41 G01 X0 Y0 D01 F50. (2D Cutter Comp left on) ;\nY4.125 (Linear motion) ;\nG02 X0.25 Y4.375 R0.375 (Corner rounding) ;\nG01 X1.6562 (Linear motion) ;\nG02 X2. Y4.0313 R0.3437 (Corner rounding) ;\nG01 Y3.125 (Linear motion) ;\nG03 X2.375 Y2.75 R0.375 (Corner rounding) ;\nG01 X3.5 (Linear motion) ;\nG02 X4. Y2.25 R0.5 (Corner rounding) ;\nG01 Y0.4375 (Linear motion) ;\nG02 X3.4375 Y-0.125 R0.5625 (Corner rounding) ;\nG01 X-0.125 (Linear motion) ;\nG40 X-1. Y-1. (Last position, cutter comp off) ;\n(BEGIN COMPLETION BLOCKS) ;\nG00 Z0.1 M09 (Rapid retract, Coolant off) ;\nG53 G49 Z0 M05 (Z home, Spindle off) ;\nG53 Y0 (Y home) ;\nM30 (End program) ;\n%\n",
+        "machine": {
+          "axes": {
+            "X": {
+              "joint_id": "x_axis",
+              "direction": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "home": "plus_end"
+            },
+            "Y": {
+              "joint_id": "y_axis",
+              "direction": [
+                -1.0,
+                0.0,
+                0.0
+              ],
+              "home": "plus_end"
+            },
+            "Z": {
+              "joint_id": "z_axis",
+              "direction": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "home": "plus_end"
+            }
+          },
+          "tool_part": "spindle",
+          "work_part": "table",
+          "spindle": "spindle_rotation",
+          "carousel": "carousel_index",
+          "pockets": 10
+        },
+        "setup": {
+          "units": "inch",
+          "work_offsets": {
+            "G54": {
+              "X": -17.0,
+              "Y": -8.125,
+              "Z": 0.0
+            }
+          },
+          "tools": {
+            "1": {
+              "length": 3.0,
+              "diameter": 0.25,
+              "diameter_offset": 0.0
+            }
+          },
+          "stock_height": 2.0,
+          "start_pocket": 1,
+          "why": [
+            "Directions: a program's coordinates are the tool's against the table (\"This defines the motion of the tool relative to the table\", 2009 manual, PDF p. 148). +X is the tool to the operator's right of the part, the twin's +y (O40001, \"G54 X0 Y0 is top right corner of part\", cut to X-4. Y-4., 2023 manual, p. 102; O40002, \"G54 X0 Y0 is center left of part\", holes at +X steps, p. 107); +Y the tool towards the back, the twin's -x (the part's top right corner [INFERENCE: its top is the side away from the operator]); +Z up, the twin's +z (\"Press +Z ... jog the Z-axis approximately. 1” above the part\", 2009 manual, PDF p. 65). The twin's frame: +x towards the operator, +z up (decision 0012).",
+            "Home: Z at the top of its travel (\"Tool Length is measured ... with the Z axis at its home position\", 2009 manual, PDF p. 67; a tool change \"will never move below machine zero\", PDF p. 53). Y at its + end, the table towards the operator [INFERENCE: \"moves the table to a position from where the part can be unloaded\" by G53 Y0 (Y home), 2023 manual, pp. 102 and 105]. X at its + end, the table at its operator-left end: a STAND-IN, no source read gives it (decision 0035; the visit list's item 2 settles it).",
+            "Tool T1: 3.0 in from the spindle nose's face to its tip, a STAND-IN (the manual gives only its diameter); its length offset H01 is touched off on the twin: the machine Z where the tip meets the top of the stock (\"This will take the Z position ... and put it at the tool number position\", 2009 manual, PDF p. 67).",
+            "Stock: a 2.0 in block on the table's top, a STAND-IN; Z0 is its top, as the program's comment says (\"Z0 is on top of the part\").",
+            "Work offset G54: X and Y chosen so the program's path is centred on the table (its centre is under the spindle at X -15 in, Y -6 in, the middle of the travel); Z 0, the tool's offset carrying the height. A STAND-IN: an operator's set-up, not the machine's.",
+            "Setting 9 (units): inch, a STAND-IN; the program is written in inches (\"F20. specifies that the feed rate for the motion is 20” (508 mm) / min\", 2023 manual, p. 104).",
+            "The carousel's pocket 1 faces the spindle at the start, a STAND-IN.",
+            "Its path, X -1 to 4 and Y -1 to 4.375, centred on the table: G54 X -17, Y -8.125.",
+            "D01 = 0, a STAND-IN: cutter compensation with an offset is not modelled. With D01 set for the .250 in tool, the cut would lie 0.125 in to the left of the printed path."
+          ]
+        }
+      }
+    },
+    "confidence": 0.6,
+    "citations": [
+      {
+        "source_id": "src-mill-manual-2023",
+        "locator": "p. 172, the program as printed",
+        "quote": "O40006 (Cutter comp ex-prog)"
+      },
+      {
+        "source_id": "src-mill-manual-2009",
+        "locator": "PDF p. 139, G00 Rapid Motion Positioning",
+        "quote": "Each axis specified is moved at the same speed, but all axes will not necessarily complete their motions at the same time."
+      },
+      {
+        "source_id": "src-mill-manual-2009",
+        "locator": "PDF p. 139, G01 Linear Interpolation Motion",
+        "quote": "Once a G01 is started all programmed axes will move and reach the destination at the same time."
+      },
+      {
+        "source_id": "src-mill-manual-2009",
+        "locator": "PDF p. 148, G17 XY plane selection",
+        "quote": "This defines the motion of the tool relative to the table."
+      },
+      {
+        "source_id": "src-mill-manual-2009",
+        "locator": "PDF p. 207, M Code Introduction",
+        "quote": "All M codes take effect at the end of the block."
+      }
+    ]
+  }
+}

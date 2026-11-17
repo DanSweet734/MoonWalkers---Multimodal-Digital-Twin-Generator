@@ -505,6 +505,77 @@ which the generator placed too close (logged).
    `uv run python -m moonwalkers.pipelines.b.score <run> --recording <csv> ...`, which measures
    each joint's range against its limits (the scorecard's 1 mm target).
 
+## 12. Lab plan, Phase 5: Haas's programs run on the TM-1 (success level 3)
+Two programs from Haas's 2023 mill manual (decision 0035), as printed, on `haas/tm1@v3`:
+**O40001**, a straight cut (lines only, 38.2 s), and **O40006**, a contour with six arcs (46.8 s).
+Their folders are under
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\haas-tm1\programs\`:
+`2026-11-16_haas-o40001-basic-program_v3\` and `2026-11-16_haas-o40006-cutter-comp_v3\`. Each
+`PROGRAM.md` lists every block with its start and end time and the tool tip's machine position,
+and every stand-in: a 3 in tool, a 2 in block of stock, the work offset, X home.
+
+**You type no targets in this check.** The runner moves every target along the plan on every
+physics step. A Target Position typed in the Property panel would be overwritten on the next
+step (and it works only after Play, and only in `twin.usdc`, as section 11 found).
+
+What `program.usdc` adds to the twin: a **yellow stand-in tool** under the spindle nose, a
+**grey see-through block** of stock on the table, and the **programmed path drawn on the table**,
+red where the program cuts, blue for rapids. They are pictures: no collision, no mass. The path
+moves with the table, so a tip that follows the program stays on the red line.
+
+Check **O40001 first**, then O40006, each in a fresh stage:
+1. **Open the file.** File > Open the folder's `program.usdc` (not the run's `twin.usdc`). The
+   machine opens in its photographed pose, the head up, the table near its operator-left end.
+2. **Start the runner.** Open the folder's `run_program.py` in a text editor, copy all of it,
+   paste it into Window > Script Editor and click **Run**. It prints five lines, one per joint,
+   such as `'haas-o40001-basic-program' on /haas_tm1/joints/x_axis: 157 points over 38.161 s
+   (linear)`, the spindle's ending `(angular, speed only)`, then the physics API and "press Play".
+3. **Start the recorder.** In a second Script Editor tab, paste the folder's `record_joints.py` and
+   click **Run**. It prints the articulation it will record.
+4. **Press Play** and watch; touch nothing. **O40001** should:
+   - 0-5.0 s, the zero return (POWER UP): the head rises 10 in to the top of Z, then the table
+     slides to X home (its operator-left end, where it passes about 2 in into the left guard, as
+     logged in Phase 4) and towards you to Y home;
+   - 5.0-9.0 s, rapid to the path's start: the table slides right and back, X and Y each at
+     84.7 mm/s, so one finishes before the other;
+   - 9.0 s, the spindle starts (1000 rpm); 9.0-13.5 s, the head comes down at the rapid until the
+     tip is 0.1 in over the block;
+   - 13.5-14.1 s, the tip feeds 0.2 in down into the block; 14.1-31.0 s, the slow cut: the tip
+     moves diagonally across the block along the red line at 20 in/min (8.5 mm/s);
+   - 31.0-35.7 s, the head rises to the top, and the spindle stops when it gets there (M05 acts
+     at its block's end); 35.7-38.2 s, the table comes towards you (Y home). The runner prints `finished at 38.161 s` once per joint.
+
+   **O40006** does the same start, then from 14.95 s feeds 1 in down and runs the contour round
+   the block at 50 in/min (21 mm/s), six rounded corners, until 39.1 s, then goes up and to Y
+   home by 46.8 s.
+5. **Let it run 2 s more, then press Stop.** The recorder writes
+   `recordings\program_<date>_<time>.csv` in the folder and prints its path.
+6. **Look for:** does the tip stay on the red line while cutting (zoom in at a corner of O40006)?
+   Does anything sag, jump or shake when an axis stops? Does the spindle turn only from 9.0 s
+   to 35.7 s (O40001)? Is the tool's tip at the block's top when the cut starts?
+7. **Send Claude Code** each recording's path and what you saw. It runs
+   `uv run python -m moonwalkers.control compare <recording.csv> <folder>\trajectory.json`: the
+   tip's largest distance from the plan and from the programmed path (in mm, whole program and
+   while cutting), when each block's move came within 0.1 mm of its end against the plan, each
+   axis's top speed from positions against the cited 84.7 mm/s, where the tip ended, and the
+   spindle's speed while cutting.
+
+**If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top of the pasted
+runner and run it again.
+
+**Result (Daniel, 2026-11-16, Isaac Sim 6.2.0): level 3 for both programs.** "All looked really
+good, the spindle tip followed the path and every motion was clean"; O40006 "also looked great".
+The runner used `simulation_manager`, first physics step at t = 0.017 s, and the session log shows
+no errors. Measured from the recordings: the tip within 0.017 mm of the programmed path (0.014 mm
+while cutting, through O40006's six arcs); every block's move within 0.1 mm of its end
+0.00-0.01 s before its planned end; X, Y and Z at the cited 84.7 mm/s; the spindle at 1000 rpm
+while cutting. Z lags the plan by up to 1.84 mm while the head rises at the rapid, along the path
+(decision 0035, "Seen in Daniel's Isaac Sim check"). Three `omni.fabric.plugin` warnings appeared
+once, when the session's first program file opened ("Unsupported type encountered during VtValue
+extraction", "Attempting to set an invalid data source to array attribute", "attribute
+timeVaryingAttributes not found"), and not on later opens; nothing went wrong with them [their
+source is not confirmed]. The record is each folder's `PROGRAM.md`.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:
