@@ -6,12 +6,15 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 5, mill programs and the TM-1's level 3 (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 5", whose hand-off comes first. Phase 5 runs on
-branch `feat/lab-phase-5-mill-programs`, from `main` after PR #31; its first commit is the
-hand-off. Phase 5 reads Haas's G and M codes into the axes' motion at cited rapid and feed rates
-and runs a program on `haas/tm1@v3`, measured by the tool tip's path.
-**Phase 5's work is done, in PR #32 for Daniel's review** (2026-11-16): research note
+## Current phase: the lab's machines plan, Phase 6, the Haas VF-3 with its trunnion (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 6", whose hand-off comes first. Phase 6 runs on
+branch `feat/lab-phase-6-vf3`, from `main` after PR #32; its first commit is the hand-off.
+Phase 6 builds `haas/vf3` from its photos (levels 1 and 2, as the TM-1 in Phase 4), its trunnion's
+tilt and turn as two joints, and runs a Haas program on it (level 3, as Phase 5); the reader's two
+extra axes need decision 0036. The VF-3's level 3 comes before the trunnion's axes if time runs
+short (the advisors want both mills at level 3 before video).
+**Phase 5 is done** (PR #32, merged on 2026-11-16 on Daniel's word; branch
+`feat/lab-phase-5-mill-programs`): research note
 `docs/research/2026-11-16-haas-mill-programs.md` (+X, +Y, +Z, home and the tool tip from the
 manuals' pages; X home a stand-in); decision 0035 (accepted by Daniel 2026-11-16): our own
 reader of Haas's codes, no library (`control/haas_gcode.py`), program folders by
