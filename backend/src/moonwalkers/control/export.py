@@ -14,7 +14,8 @@ On the driven joint, ``program.usdc`` carries ``moonwalkers:program:times`` (sec
 ``moonwalkers:program:anglesDeg`` (degrees): the runner reads them. A time-sampled
 ``moonwalkers:program:plannedAngleDeg`` lets a person scrub the plan on the timeline, and
 ``customData["moonwalkers"]["program"]`` holds the program's provenance. A folder is never
-overwritten.
+overwritten. An arm's iRC program (decision 0033) and a Haas mill program (decision 0035) have
+folders of their own, written by ``arm_export`` and ``mill_export``.
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ from moonwalkers.usd.exporter import (
 from moonwalkers.usd.validate import validate_file
 
 from .arm_export import write_arm_program_folder
+from .haas_gcode import MillSettings, MillTrajectory
 from .interpreter import RunSettings, Trajectory, run_program
 from .irc import ArmSettings, ArmTrajectory
 from .isaac_runner import (
@@ -54,6 +56,7 @@ from .isaac_runner import (
     WAIT_HOLDS,
     WAIT_STARTS,
 )
+from .mill_export import write_mill_program_folder
 from .program import ProgramError, ProgramFile
 
 PLANNED = "moonwalkers:program:plannedAngleDeg"
@@ -65,9 +68,9 @@ RUNNER = Path(__file__).with_name("isaac_runner.py")
 @dataclass(frozen=True)
 class ProgramOutput:
     folder: Path
-    joint_id: str  # for an arm's iRC program: its joints, comma-separated
-    trajectory: Trajectory | ArmTrajectory
-    settings: RunSettings | ArmSettings
+    joint_id: str  # for an arm's or a mill's program: its joints, comma-separated
+    trajectory: Trajectory | ArmTrajectory | MillTrajectory
+    settings: RunSettings | ArmSettings | MillSettings
 
 
 def write_program_folder(
@@ -79,12 +82,14 @@ def write_program_folder(
     settings: RunSettings | None = None,
     *,
     arm_settings: ArmSettings | None = None,
+    mill_settings: MillSettings | None = None,
     hold: DriveSettings | None = None,
     collide_unjoined: bool = False,
 ) -> ProgramOutput:
     """Run ``program`` on ``twin``'s driven joint and write the folder ``out_dir``. An iRC
     program for an arm (decision 0033) goes to ``write_arm_program_folder`` with
-    ``arm_settings``. ``hold`` is the twin's own drive (decision 0032: its stiffness and damping;
+    ``arm_settings``, a Haas mill program (decision 0035) to ``write_mill_program_folder`` with
+    ``mill_settings``. ``hold`` is the twin's own drive (decision 0032: its stiffness and damping;
     the target is the program's start), and ``collide_unjoined`` its collisions."""
     out_dir = Path(out_dir)
     if program.is_irc:
@@ -92,6 +97,12 @@ def write_program_folder(
             out_dir, program, twin, results, data_dir, arm_settings, hold, collide_unjoined
         )
         return ProgramOutput(folder, ", ".join(arm_trajectory.joint_ids), arm_trajectory, used)
+    if program.is_gcode:
+        folder, _, mill_trajectory, mill_used = write_mill_program_folder(
+            out_dir, program, twin, results, data_dir, mill_settings, hold, collide_unjoined
+        )
+        joints = ", ".join(mill_trajectory.positions)
+        return ProgramOutput(folder, joints, mill_trajectory, mill_used)
     if out_dir.exists():
         raise ExportError(f"{out_dir} exists; program folders are never overwritten")
     joint = driven_joint(program, results)

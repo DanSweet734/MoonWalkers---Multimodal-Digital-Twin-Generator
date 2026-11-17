@@ -169,11 +169,15 @@ def runnable_behaviors(control: Sequence[ControlBehavior]) -> list[ControlBehavi
 
 def check_program(behavior: ControlBehavior) -> None:
     """Refuse a program that cannot be run: an iRC program for an arm (decision 0033) when its
-    ``spec["program"]`` says ``"format": "irc_xml"``, else the HA5C's step table."""
-    from .irc import IrcProgram, is_irc  # irc imports this module
+    ``spec["program"]`` says ``"format": "irc_xml"``, a Haas mill program (decision 0035) when it
+    says ``"haas_gcode"``, else the HA5C's step table."""
+    from .haas_gcode import GcodeProgram, is_gcode  # both import this module
+    from .irc import IrcProgram, is_irc
 
     if is_irc(behavior):
         IrcProgram.from_behavior(behavior)
+    elif is_gcode(behavior):
+        GcodeProgram.from_behavior(behavior)
     else:
         IndexProgram.from_behavior(behavior)
 
@@ -202,6 +206,13 @@ class ProgramFile(BaseModel):
         from .irc import is_irc
 
         return is_irc(self.behavior)
+
+    @property
+    def is_gcode(self) -> bool:
+        """A Haas mill program (decision 0035), not an HA5C step table."""
+        from .haas_gcode import is_gcode
+
+        return is_gcode(self.behavior)
 
     def program(self) -> IndexProgram:
         return IndexProgram.from_behavior(self.behavior)

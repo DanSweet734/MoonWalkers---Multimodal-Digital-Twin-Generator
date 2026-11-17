@@ -16,8 +16,11 @@
    before Play; at each wait, tick "Cycle Start" to go on.
 
 The program's motion is stored in the stage itself: every joint with the attributes
-``moonwalkers:program:times`` (seconds) and ``moonwalkers:program:anglesDeg`` (degrees), written by
-``moonwalkers.control``. Between those points the target moves in a straight line.
+``moonwalkers:program:times`` (seconds) and ``moonwalkers:program:anglesDeg`` (degrees), or
+``moonwalkers:program:positions`` (degrees on a turning joint, metres on a sliding one; a mill's
+axes, decision 0035), written by ``moonwalkers.control``. Between those points the target moves in
+a straight line, so a sliding axis is never stepped. A joint with ``moonwalkers:program:speedOnly``
+(a mill's spindle) gets only the planned speed, on its velocity drive.
 
 Physics steps come from Isaac Sim's ``SimulationManager`` (``PHYSICS_PRE_STEP``), or, if that is
 not available, from ``omni.physx``'s step events. Set ``API = "omni.physx"`` below to force the
@@ -32,6 +35,8 @@ import sys
 API = "auto"  # "auto", "simulation_manager" or "omni.physx"
 TIMES = "moonwalkers:program:times"
 ANGLES = "moonwalkers:program:anglesDeg"
+POSITIONS = "moonwalkers:program:positions"  # degrees (turning) or metres (sliding)
+SPEED_ONLY = "moonwalkers:program:speedOnly"  # drive the speed only (a spindle)
 NAME = "moonwalkers:program:name"
 RELAY_TIMES = "moonwalkers:program:relayTimes"  # start, end, start, end, ... (seconds)
 WAIT_STARTS = "moonwalkers:program:waitStarts"  # where the controller waits for cycle start
@@ -45,7 +50,9 @@ HANDLE = "_moonwalkers_program_runner"
 class Program:
     """One joint's planned motion."""
 
-    def __init__(self, joint_path, name, times, angles, relay=(), waits=()):
+    def __init__(
+        self, joint_path, name, times, angles, relay=(), waits=(), kind="angular", speed_only=False
+    ):
         if len(times) != len(angles) or len(times) < 1:
             raise ValueError(f"{joint_path}: the program needs as many times as angles")
         if any(b < a for a, b in itertools.pairwise(times)):
@@ -58,6 +65,12 @@ class Program:
         self.angles = list(angles)
         self.relay = [(relay[i], relay[i + 1]) for i in range(0, len(relay), 2)]
         self.waits = list(waits)  # (start, hold) pairs
+        self.kind = kind  # the drive: "angular" (degrees) or "linear" (metres)
+        self.speed_only = speed_only
+
+    @property
+    def unit(self):
+        return "m" if self.kind == "linear" else "deg"
 
     def relay_at(self, t):
         """Whether the CNC relay is closed at plan time ``t``."""
@@ -68,7 +81,8 @@ class Program:
         return self.times[-1]
 
     def target_at(self, t):
-        """(angle in degrees, speed in degrees per second) of the target at ``t`` seconds."""
+        """(position, speed) of the target at ``t`` seconds: degrees and degrees per second, or
+        metres and metres per second on a sliding joint."""
         times, angles = self.times, self.angles
         if t <= times[0]:
             return angles[0], 0.0
@@ -104,9 +118,18 @@ class Progress:
         for program in self.programs:
             if t >= program.duration and program.joint_path not in self.finished:
                 self.finished.add(program.joint_path)
+                end = (
+                    "speed 0"
+                    if program.speed_only
+                    else f"target {program.angles[-1]:.{5 if program.kind == 'linear' else 3}f} "
+                    f"{program.unit}"
+                )
+                joint = (
+                    f" on {program.joint_path.rsplit('/', 1)[-1]}" if len(self.programs) > 1 else ""
+                )
                 lines.append(
-                    f"MoonWalkers runner: '{program.name}' finished at {program.duration:.3f} s, "
-                    f"target {program.angles[-1]:.3f} deg"
+                    f"MoonWalkers runner: '{program.name}'{joint} finished at "
+                    f"{program.duration:.3f} s, {end}"
                 )
         return lines
 
@@ -150,6 +173,8 @@ def find_programs(stage):
     programs = []
     for prim in stage.Traverse():
         times, angles = prim.GetAttribute(TIMES), prim.GetAttribute(ANGLES)
+        if not (angles and angles.HasAuthoredValue()):
+            angles = prim.GetAttribute(POSITIONS)
         if not (times and angles and times.HasAuthoredValue() and angles.HasAuthoredValue()):
             continue
         name = prim.GetAttribute(NAME)
@@ -164,6 +189,8 @@ def find_programs(stage):
                 [float(v) for v in angles.Get()],
                 relay,
                 list(zip(starts, holds, strict=True)),
+                "linear" if prim.GetTypeName() == "PhysicsPrismaticJoint" else "angular",
+                bool(_get(prim, SPEED_ONLY, False)),
             )
         )
     return programs
@@ -185,7 +212,7 @@ def start():
     drives = []
     for program in programs:
         prim = stage.GetPrimAtPath(program.joint_path)
-        drive = UsdPhysics.DriveAPI(prim, "angular")
+        drive = UsdPhysics.DriveAPI(prim, program.kind)
         drive.CreateTargetPositionAttr()
         drive.CreateTargetVelocityAttr()
         drives.append((drive, program, prim, PlanClock(program.waits), {"relay": None}))
@@ -209,7 +236,8 @@ def start():
             elif clock.holding and not was_holding:
                 print(f"{say}waiting for Cycle Start at plan time {plan_t:.2f} s")
             angle, speed = program.target_at(plan_t)
-            drive.GetTargetPositionAttr().Set(angle)
+            if not program.speed_only:  # a spindle's angle wraps: only its speed is driven
+                drive.GetTargetPositionAttr().Set(angle)
             drive.GetTargetVelocityAttr().Set(0.0 if clock.holding else speed)
             relay = program.relay_at(plan_t)
             if relay != seen["relay"]:
@@ -227,6 +255,7 @@ def start():
         print(
             f"MoonWalkers runner: '{program.name}' on {program.joint_path}: "
             f"{len(program.times)} points over {program.duration:.3f} s"
+            f" ({program.kind}{', speed only' if program.speed_only else ''})"
         )
     print(
         f"MoonWalkers runner: driving the joint(s) on each physics step through {api}; press Play"

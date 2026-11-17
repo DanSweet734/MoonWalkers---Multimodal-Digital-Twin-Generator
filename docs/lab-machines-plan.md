@@ -842,13 +842,17 @@ not the velocity column.
   and issues in a new version.
 
 ### Phase 5's checklist
-- [ ] Research note: Haas's G and M codes, from the mill manual's pages Daniel saves.
+- [x] Research note: Haas's G and M codes, from the mill manual's pages Daniel saves
+      (`docs/research/2026-11-16-haas-mill-programs.md`, 2026-11-16, from the filed manuals).
 - [ ] Decision record: a reader of the codes the programs use (moves, arcs, units, absolute and
       incremental, spindle, tool change, end), written here with no library; a library only on
-      Daniel's approval.
-- [ ] `moonwalkers.control` learns it: a program becomes the axes' motion at cited rapid and feed
-      rates; accelerations are stand-ins unless cited.
-- [ ] A program from Haas's manual, and the lab's own if it shares one.
+      Daniel's approval (decision 0035, proposed 2026-11-16; no library).
+- [x] `moonwalkers.control` learns it: a program becomes the axes' motion at cited rapid and feed
+      rates; accelerations are stand-ins unless cited (`control/haas_gcode.py`,
+      `control/mill_export.py`; the runner drives sliding joints; `control compare` by the tip).
+- [x] A program from Haas's manual, and the lab's own if it shares one: O40001 and O40006 (2023
+      manual, pp. 102 and 172), folders `data/machines/haas-tm1/programs/2026-11-16_*_v3/`; the
+      lab has shared none.
 - [ ] Daniel's Isaac Sim check; the tool tip's recorded path against the program's.
 - [ ] Worklog, PR.
 

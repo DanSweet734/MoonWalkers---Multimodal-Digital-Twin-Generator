@@ -27,6 +27,11 @@ An arm's program in igus Robot Control's XML (decision 0033), such as ``rebel-te
 (percent of the robot velocity), ``--acceleration`` (deg/s^2 at Acc 100 %; default the stand-in,
 300.2; 0 for none) and ``--loop-passes`` (passes of an endless loop). ``run`` and ``controls``
 hold the joints and collide as the stored twin does (its run's spec, decision 0032).
+
+A Haas mill program in G and M codes (decision 0035), such as ``haas-o40006-cutter-comp``:
+``show`` lists its blocks, and ``run`` plans it on the mill twin's axes from the twin's 0 pose
+(a zero return first), with ``--acceleration`` (mm/s^2; default the stand-in, 1000; 0 for none)
+and ``--pocket-time`` (seconds per carousel pocket; default the stand-in, 1).
 """
 
 from __future__ import annotations
@@ -50,6 +55,13 @@ from moonwalkers.workspace import default_data_dir
 from .compare import compare, format_measures, read_recording
 from .controls_export import controls_files, write_controls_folder
 from .export import write_program_folder
+from .haas_gcode import (
+    GcodeProgram,
+    MillSettings,
+    MillTrajectory,
+    describe_blocks,
+    plan_summary,
+)
 from .interpreter import ACCELERATION_STAND_IN, RunSettings, Trajectory, run_program
 from .irc import ArmSettings, ArmTrajectory, IrcProgram, JointMove, Loop, Output, Wait
 from .manual import ControlsFile
@@ -90,7 +102,11 @@ def _parser() -> argparse.ArgumentParser:
             "--acceleration",
             type=float,
             help="HA5C: Parameter 18 as deg/s^2 (default: the stand-in, 540); an iRC program: "
-            "deg/s^2 at Acc 100 %% (default: the stand-in, 300.2); 0 for none",
+            "deg/s^2 at Acc 100 %% (default: the stand-in, 300.2); a Haas mill program: mm/s^2 "
+            "(default: the stand-in, 1000); 0 for none",
+        )
+        command.add_argument(
+            "--pocket-time", type=float, help="Haas mill: seconds per carousel pocket (default 1)"
         )
         command.add_argument("--relay", type=int, choices=(0, 1, 2), help="Parameter 1")
         command.add_argument(
@@ -136,6 +152,12 @@ def _show(args: argparse.Namespace) -> int:
         print(format_irc_commands(program))
         print("\nthe timeline needs the twin's joints: run it with --twin")
         return 0
+    if program.is_gcode:
+        gcode = GcodeProgram.from_behavior(program.behavior)
+        print(f"{program.name}: {program.behavior.name} (Haas G and M codes)")
+        print("\n".join(describe_blocks(gcode)))
+        print("\nthe timeline needs the mill twin's axes: run it with --twin")
+        return 0
     print(format_trajectory(program, run_program(program.program(), _settings(args))))
     return 0
 
@@ -154,14 +176,17 @@ def _run(args: argparse.Namespace) -> int:
         twin,
         results,
         data_dir,
-        None if program.is_irc else _settings(args),
+        None if program.is_irc or program.is_gcode else _settings(args),
         arm_settings=_arm_settings(args) if program.is_irc else None,
+        mill_settings=_mill_settings(args) if program.is_gcode else None,
         hold=hold,
         collide_unjoined=collide,
     )
     trajectory = output.trajectory
     if isinstance(trajectory, ArmTrajectory):
         print(format_arm_trajectory(program, trajectory))
+    elif isinstance(trajectory, MillTrajectory):
+        print(format_mill_trajectory(program, trajectory))
     else:
         print(format_trajectory(program, trajectory))
     print(f"\nwrote {output.folder} for {twin.twin_id}, joint {output.joint_id}")
@@ -251,6 +276,34 @@ def format_irc_commands(program: ProgramFile) -> str:
 
     add(irc.commands, "  ")
     return "\n".join(lines)
+
+
+def format_mill_trajectory(program: ProgramFile, trajectory: MillTrajectory) -> str:
+    unit = 25.4 if trajectory.units == "inch" else 1.0
+    lines = [f"{program.name}: {program.behavior.name}"]
+    for e in trajectory.events:
+        to = ", ".join(f"{v / unit:.4f}" for v in e.to_mm)
+        line = f"line {e.line:>3}" if e.line else "        "
+        lines.append(f"  {e.start_s:7.3f}-{e.end_s:7.3f} s  {line}  {e.kind:<11} [{to}]  {e.what}")
+    summary = plan_summary(trajectory)
+    lines.append(
+        f"duration {summary['duration_s']:.3f} s, {summary['cutting_s']:.3f} s cutting; "
+        f"positions are the tool tip's machine X, Y, Z in {trajectory.units}"
+    )
+    lines += [f"note: {n}" for n in trajectory.notes]
+    return "\n".join(lines)
+
+
+def _mill_settings(args: argparse.Namespace) -> MillSettings:
+    values: dict[str, object] = {}
+    if args.acceleration is not None:
+        values["acceleration_mm_s2"] = args.acceleration or None
+    if args.pocket_time is not None:
+        values["seconds_per_pocket"] = args.pocket_time
+    try:
+        return MillSettings(**values)  # type: ignore[arg-type]
+    except ValueError as exc:
+        raise UsageError(str(exc).splitlines()[0]) from exc
 
 
 def format_arm_trajectory(program: ProgramFile, trajectory: ArmTrajectory) -> str:
