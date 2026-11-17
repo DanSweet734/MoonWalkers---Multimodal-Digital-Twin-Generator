@@ -194,10 +194,10 @@ them.
 | 3. The hand in the arm's first twin | The recommendation: the generator's fused shape, one labelled part on the flange |
 | 4. The fingers in Phase 7 | "If they can't be modeled from the input photos then stand ins will have to do." So the fingers are cut from the generated mesh where the photos allow, and are otherwise labelled stand-ins sized from the maker's model. The maker's meshes are not imported |
 | 5. The arm's front | "where the hand finger tips are pointing to." Fixed to the base as the photos show it: in `133326` the connector panel faces the camera and the arm reaches straight away from it, so this is also the side away from the panel, the plan's proposal |
-| 6. The scorecard | To the next weekly meeting, "if possible" (Thursday, 2026-11-12) |
-| 7. A lab visit | Not planned now. Daniel just visited, and can go again if a need is found. The visit list stays for that case. Dr. Li wants the three machines worked on |
+| 6. The scorecard | To the next weekly meeting, "if possible" (Thursday, 2026-11-12). **Accepted** there, targets unchanged, "always shoot for as close as possible" (Daniel, 2026-11-16) |
+| 7. A lab visit | Not planned now. Daniel just visited, and can go again if a need is found. The visit list stays for that case. Dr. Li wants the three machines worked on. **Update (2026-11-16):** Daniel plans to visit soon, with no promise that everything can be measured; the list ("A planned visit to the lab") is by priority |
 | 8. Tool gaps 2 and 6 | Fixed as well, in Phase 1 |
-| 9. The agent's build in Phase 8 | Open. Daniel read the question as the order of machines, which starts with the arm (Phase 2, agreed on 2026-11-09). Phase 8 asks which machine the agent builds unaided at the end. Asked again |
+| 9. The agent's build in Phase 8 | "Our choice" (Daniel, 2026-11-16). Claude Code chose **the TM-1** (Phase 8, "Chosen") |
 
 ### What the sources and photos settled since the hand-off
 - **The hand is a LinkerBot hand.** Its back shell reads "LINKERBOT" (photo `133438`, from above).
@@ -309,7 +309,8 @@ trip (Daniel, 2026-11-09). Until then, level 3 is measured against the cited spe
 - [x] This plan, a worklog entry, PR; stop for Daniel's review (PR #27)
 - [x] Daniel's answers to the questions at the end, recorded ("Decided on review", 2026-11-09).
       Question 9 is asked again
-- [ ] The scorecard to the weekly meeting of 2026-11-12, and the advisors' answers recorded
+- [x] The scorecard to the weekly meeting of 2026-11-12, and the advisors' answers recorded
+      (accepted, targets unchanged; worklog 2026-11-16)
 
 **Measured by:** Daniel's review.
 
@@ -532,7 +533,10 @@ at; the new tools used in Phase 2.
   - the GPU test: 57 s, with `MOONWALKERS_GEN_ROOT=C:\mw-gen`.
 
 #### Waiting, beside this phase
-- **The weekly meeting of Thursday 2026-11-12:**
+- **Done: the meeting of 2026-11-12** (Daniel's answers, 2026-11-16, in the worklog of that
+  date). The lab will share "some form of the robot control program at a later date"; Daniel
+  is arranging it with Dr. Li's assistant. Until then the labelled test program stands as the
+  arm's level 3, and decision 0033 stays as accepted. The scorecard was accepted. What was asked:
   - the scorecard goes to it "if possible" (Decided on review, 6);
   - **ask the lab for the ReBeL arm's own iRC program** (Daniel, 2026-11-10: "I'll ask at the
     meeting this week"): the `.xml` file iRC saves, or a screenshot of its program list. With
@@ -541,7 +545,7 @@ at; the new tools used in Phase 2.
     Also wanted, if they can: the arm's angles shown in iRC in the photographed pose (joints 1,
     4 and 6 are taken as 0, decision 0031);
   - afterwards, ask Daniel for the advisors' answers and record them the same day.
-- **Question 9,** which machine the agent builds in Phase 8, is still open.
+- **Question 9:** "Our choice" (2026-11-16); the TM-1 (Phase 8).
 - **The items "Carried over, none blocking"** in the first hand-off still stand.
 
 ### Phase 2's checklist
@@ -801,9 +805,12 @@ not the velocity column.
 - **Rebuilding:** `data/machines/haas-tm1/part_cutting/2026-11-11_spec/copy_run.py <old run> <new
   run>` sets up a new run from an earlier one (new job id, `new_version`); dry-run it first.
   The exporter changed in Phase 4, so **restart the MCP server (`/mcp`)** before an agent builds.
-- **Beside this phase:** the weekly meeting of 2026-11-12 (the lab's iRC program for the arm,
-  the scorecard). Ask Daniel for the advisors' answers and record them (memory
-  "meeting-2026-11-12-items").
+- **The meeting of 2026-11-12 is recorded** (worklog 2026-11-16): the scorecard accepted, keep to
+  photos until both Haas mills reach level 3, the order unchanged, the lab's arm program later,
+  the semester ends about 2026-12-17. **Daniel plans a lab visit soon:** item 1 of "A planned
+  visit to the lab" (which way each axis moves) and item 2 (the position display in machine
+  coordinates) answer this phase's two open questions. Until he reports, cite the manuals or
+  label stand-ins, as above.
 - **Tests:** `pytest -m "not gpu and not slow"`: 802 passed in about 4.2 min.
 
 ### Phase 5's checklist
@@ -850,8 +857,14 @@ the commanded poses against the plan, and the hand's match with the photos.
 
 ## Phase 8 - The agent builds one, and the report
 - [ ] The agent builds one lab machine from a dashboard job through the MCP tools, as in the drill
-      press's Phase 7. **Proposed: the TM-1,** which has no public model, so it is the hardest
-      test of photos to twin.
+      press's Phase 7. **Chosen: the TM-1** (Claude Code, on Daniel's "Our choice", 2026-11-16):
+      - it has no public model, so it is the hardest test of photos to twin;
+      - by then the chat's own TM-1 has reached level 3 (Phase 5), a reference to score the
+        agent's build against, as v8 was for the drill press agent's v9;
+      - its busy photos needed drawn masks in Phase 4, so the agent's build tests the cut-out
+        tools where they are weakest, and any gap it finds is a tool gap to report.
+      The VF-3's build (Phase 6) carries over to it [INFERENCE]; the arm has a maker's model to
+      score against, but Phase 2 already built it piece by piece through the same tools.
 - [ ] The plan's report: results per machine and level, the scorecard, the inaccuracies, the open
       questions and the tool gaps; a new advisors' page in the drill-press page's design.
 - [ ] A hand-off for the video plan.
@@ -863,18 +876,49 @@ the commanded poses against the plan, and the hand's match with the photos.
 **Measured by:** the scorecard for the agent's build, beside the chat's builds.
 
 ### A planned visit to the lab
-Daniel: measuring "has to be planned in advance". No visit is planned now: he has just been, and
-can go again if a phase finds a need (2026-11-09). Items 1 and 2 are the likeliest needs (Phases
-6 and 7), so each phase says when it reaches one. What a visit could settle, by priority:
-1. A close photo of the trunnion's plate (its model).
-2. The hand's label or box: maker, model, version, left or right.
-3. The arm's joint angles as its control software shows them, in the photographed pose, if the
-   lab will turn it on. They are the answer key for the zero pose.
-4. A tape measure on the arm: X1 to X4 and the foot, to compare version 02 with igus's drawing
-   of 00.
-5. Each mill's control version from its screen, and the VF-3's tool changer.
-6. The TM-1's sides square on, and the VF-3's back, without the sign in front.
-7. Whether the lab will share a program each machine really runs.
+Daniel: measuring "has to be planned in advance" (2026-11-09). After the meeting of 2026-11-12
+he plans to visit soon, with no promise that everything can be measured (2026-11-16). The list
+below is by priority, nearest phase first; each item says what it settles and what the sources
+say now. **Photograph the machine at the moment you measure it,** so the measures belong to a
+pose; the TM-1 has likely moved since 2026-11-05. Operate nothing without the lab's permission.
+Bring a tape measure (at least 3 m, since the TM-1 is cited at 109 in tall) and a phone.
+
+**The TM-1 (Phase 5, now)**
+1. **Which way each axis moves.** If the lab will jog it: X+, Y+ and Z+ from the control, noting
+   which way the table, the saddle and the head go. Or the handwheels' marked + direction, which
+   covers X and Y ("Manual jogging on the X and Y-axis", reference facts). Settles the joints'
+   signs, not confirmed (decision 0034).
+2. **The control's screen:** a photo of its position display in machine coordinates (with the
+   photo of the machine from the same moment), and of the screen that names the control and
+   its software version. Settles where each axis stands from Haas's home, and the control,
+   now "Classic Haas Control [INFERENCE]".
+3. **Overall height,** floor to the highest point, and floor to the top of the column. Haas
+   cites 109 in; the twin and the front photo show about 80 in (score: -24%).
+4. **Overall width and depth,** outside the guards. Haas cites 90 in (the twin's scale) and
+   64 in.
+5. **The table:** length and width (cited 47.75 by 10.5 in), and its top's height above the
+   floor.
+6. **The left guard:** the gap from the table's left end to the guard's inner face, with the
+   table where it stands. The twin's table passes 2 in into the guard at X's left end (logged).
+7. **Spindle nose to table top** as it stands (cited 4 to 20 in over Z's travel).
+8. **The carousel:** the pockets counted (10, second-hand), its centre to the spindle's centre
+   (cited 15.6 in) and its diameter. If the lab runs a tool change, a phone video times it (no
+   time is cited; Phase 5 needs one or a stand-in).
+9. **Square-on photos** of the TM-1's sides, and of its back without the sign and the stool in
+   front.
+
+**The VF-3 (Phase 6)**
+10. A close photo of the trunnion's plate (its model), its platter's diameter, and its tilt
+    axis's height above the table.
+11. The VF-3's control screen (as item 2), its tool changer, and its back without the sign.
+
+**The arm and the hand (beside, and Phase 7)**
+12. The arm's joint angles as igus Robot Control shows them, in the photographed pose, if the
+    lab will turn it on: the answer key for the zero pose (decision 0031). The program itself
+    comes through Dr. Li's assistant (2026-11-16).
+13. A tape measure on the arm: X1 to X4 and the foot, to compare version 02 with igus's drawing
+    of 00 (the twin's wrist reads -17.9%).
+14. The hand's label or box: maker, model, version, left or right.
 
 ### Sources for Daniel to save in a browser
 haascnc.com refuses scripts (403):
@@ -921,7 +965,11 @@ merging Sarkis's branch needs one too.
 
 ### Not in this plan
 - Video input (its own plan, once the photo results are acceptable); Pipelines A, C and D (their
-  owners'); Neo4j, Celery and Codex.
+  owners'); Neo4j, Celery and Codex. The advisors (2026-11-12): keep to photos until both Haas
+  mills reach level 3.
+- **Optimising the process, and other ways to generate the mesh** (the advisors, 2026-11-12):
+  they found the photo-built meshes bumpy and less detailed than hoped, and want this studied
+  later. Logged for after this plan; the scorecard's photo match and shape are its baseline.
 - Masses, a bonus (Dr. Lu, 2026-11-05). igus gives only the arm's total ("< 8" kg). Per-part
   masses need a contract change, discussed with the pipeline owners first (decision 0024, update).
 - The other arms in the lab's photos.

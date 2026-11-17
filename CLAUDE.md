@@ -35,10 +35,10 @@ labelled test program, `rebel-test-joint-moves`, is in
 (Daniel's Isaac Sim check, 2026-11-10): joints within 0.29° of the plan at 45.00°/s, no
 collisions; logged: "some motions cause certain parts of the mesh to move where it shouldn't
 have": when joint 2 turns, part of the column comes with it (v3's cut list [INFERENCE]).
-**For the weekly meeting of 2026-11-12:** Daniel asks the lab for the arm's own iRC program
-(and, if they can, its angles in iRC in the photographed pose); if it comes, decision 0033 is
-revisited and the program runs on the twin. The plan lists it under Phase 2's "Waiting, beside
-this phase".
+**The lab's program for the arm** comes "at a later date", through Dr. Li's assistant (Daniel,
+2026-11-16); until then the labelled test program stands as level 3. When it comes, decision
+0033 is revisited and the program runs on the twin (the plan, Phase 2's "Waiting, beside this
+phase").
 The plan was approved on 2026-11-09 (PR #27; Daniel's answers in its "Decided on review").
 **Phase 1 is done** (PR #28, merged on 2026-11-09 on Daniel's word):
 - **Done in Phase 1:**
@@ -242,7 +242,13 @@ The history below is the record of the PoC and the drill-press plan.
     guessed back is acceptable for this stage, with that depth kept for a machine we own;
   - **from the meeting of 2026-11-05:** masses are a bonus, not a priority (Dr. Lu); when an agent
     cannot reach a source, the user is prompted, with an option to skip it (Dr. Li,
-    `docs/agent-procedure.md`, step 2); the lab has no HA5C, so decision 0026's stand-ins stay.
+    `docs/agent-procedure.md`, step 2); the lab has no HA5C, so decision 0026's stand-ins stay;
+  - **from the meeting of 2026-11-12** (worklog 2026-11-16): the scorecard accepted, targets
+    unchanged, "always shoot for as close as possible"; keep to photos until both Haas mills
+    reach level 3, and the order stays (TM-1, VF-3, hand, agent build); the meshes look bumpy
+    and less detailed than hoped, so optimising the process and other ways to generate the mesh
+    come later; the lab's arm program comes later. **The semester ends about 2026-12-17**;
+    meetings stay weekly. Phase 8's machine: the TM-1 (Daniel left it to us).
 - **Who owns what.**
   - Pipelines A, C and D belong to their owners (Ava, Kiran, Sarkis). They replace their stubs
     in `pipelines/<a|c|d>/` (`create_pipeline()`) on their own branches. Do not build them, and
