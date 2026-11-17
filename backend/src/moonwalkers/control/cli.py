@@ -181,6 +181,7 @@ def _run(args: argparse.Namespace) -> int:
         mill_settings=_mill_settings(args) if program.is_gcode else None,
         hold=hold,
         collide_unjoined=collide,
+        hidden_parts=twin_hidden_parts(twin, data_dir),
     )
     trajectory = output.trajectory
     if isinstance(trajectory, ArmTrajectory):
@@ -328,6 +329,17 @@ def twin_simulation(twin: TwinRecord, data_dir: Path) -> tuple[DriveSettings | N
     if not (run_dir / SPEC_FILE).is_file():
         return None, False
     return hold_drive(run_dir), self_collision(run_dir) == "on"
+
+
+def twin_hidden_parts(twin: TwinRecord, data_dir: Path) -> list[str]:
+    """The parts the stored twin's checks hide (its run's spec, ``hidden_in_checks``), which its
+    program folders hide too; none when the run has no spec."""
+    from moonwalkers.pipelines.b.build import SPEC_FILE, hidden_in_checks
+
+    if twin.usd_path is None:
+        return []
+    run_dir = (data_dir / twin.usd_path).parent
+    return hidden_in_checks(run_dir) if (run_dir / SPEC_FILE).is_file() else []
 
 
 def _arm_settings(args: argparse.Namespace) -> ArmSettings:

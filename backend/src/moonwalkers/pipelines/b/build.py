@@ -371,6 +371,7 @@ def build_run(
         controls = controls_files(results)  # so do controls whose specs cannot be read
         hold = hold_drive(run_dir)
         collide = self_collision(run_dir) == "on"
+        hidden = hidden_in_checks(run_dir)  # never in the twin itself
         export_twin(twin, results, path, hold, data_dir, collide_unjoined=collide)
         written = [path]
         try:
@@ -392,6 +393,7 @@ def build_run(
                     collide_unjoined=(
                         collide if check.collide_unjoined is None else check.collide_unjoined
                     ),
+                    hidden_parts=hidden,
                 )
                 failed = [i for i in validate_file(path_) if i.severity == "error"]
                 if failed:
@@ -400,7 +402,14 @@ def build_run(
                 folder = run_dir / PROGRAMS_DIR / program.name
                 written.append(folder)
                 write_program_folder(  # holding and colliding as the twin does (0032, 0033)
-                    folder, program, twin, results, data_dir, hold=hold, collide_unjoined=collide
+                    folder,
+                    program,
+                    twin,
+                    results,
+                    data_dir,
+                    hold=hold,
+                    collide_unjoined=collide,
+                    hidden_parts=hidden,
                 )
             for control in controls:  # level 3 for a manual machine (decision 0025)
                 folder = run_dir / PROGRAMS_DIR / control.name
@@ -441,6 +450,13 @@ def write_views(run_dir: Path) -> dict[str, Path]:
     return views
 
 
+def hidden_in_checks(run_dir: Path) -> list[str]:
+    """The parts a several-part spec hides in the check files and program folders (an enclosed
+    mill's guards, lab's machines plan, Phase 6); none for any other spec."""
+    spec = read_spec(Path(run_dir) / SPEC_FILE)
+    return list(spec.hidden_in_checks) if isinstance(spec, PartsSpec) else []
+
+
 def self_collision(run_dir: Path) -> Literal["off", "check", "on"]:
     """Whether parts that no joint joins collide: a several-part spec's ``self_collision``
     (decision 0032), else "off" (decision 0017)."""
@@ -452,6 +468,17 @@ def run_checks(run_dir: Path, results: Sequence[PipelineResult]) -> list[CheckFi
     """The run's check files: ``check_files``, and with ``self_collision`` "check" one more
     where the parts no joint joins collide while the driven joints turn (decision 0032)."""
     checks = check_files(results)
+    hidden = hidden_in_checks(run_dir)
+    if hidden:
+        checks.append(
+            CheckFile(
+                "inside.usdc",
+                f"the twin as built, with {', '.join(repr(p) for p in hidden)} hidden (as in "
+                "every check file and program folder), so the parts inside show",
+                "On Play nothing moves: every joint holds its modelled pose. Type a target in a "
+                "joint's drive (Property panel, Physics > Drive) and that part moves to it.",
+            )
+        )
     if self_collision(run_dir) != "check":
         return checks
     spin = next((c for c in checks if c.name == "spin.usdc"), None)

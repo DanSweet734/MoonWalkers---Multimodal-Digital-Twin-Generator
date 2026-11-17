@@ -186,6 +186,7 @@ def test_a_spec_with_parts_is_read_as_several_parts(tmp_path: Path, write_spec) 
         (lambda s: s["joints"][0].update(child=REMOVED_TABLE), "not a twin part"),
         (lambda s: s["joints"].append(dict(s["joints"][0])), "duplicate joint ids"),
         (lambda s: s["joints"][0].update(axis=[0, 0, 0]), "no axis"),
+        (lambda s: s.update(hidden_in_checks=[REMOVED_TABLE]), "hidden_in_checks names"),
         (
             lambda s: s["parts"][-1].update(patches=[{"near": [0, 0, 0], "note": "t"}]),
             "only a cut part",
@@ -450,10 +451,46 @@ def test_a_specs_hold_drive_and_self_collision_check_reach_the_twin_and_its_chec
     assert "`checks/self_collision.usdc`" in (run_dir / "RUN.md").read_text(encoding="utf-8")
 
 
+def visible(path: Path, part_id: str) -> bool:
+    from pxr import Usd, UsdGeom
+
+    stage = Usd.Stage.Open(str(path))
+    prim = next(p for p in stage.Traverse() if p.GetName() == part_id)
+    return UsdGeom.Imageable(prim).ComputeVisibility() != UsdGeom.Tokens.invisible
+
+
+def test_parts_hidden_in_checks_show_in_the_twin_and_hide_in_its_checks_and_programs(
+    photo_run, spec_run, drill_press_generator, kb
+) -> None:
+    """An enclosed mill's guards hide what moves (lab's machines plan, Phase 6)."""
+    run_dir = photo_run.run_dir
+    spec_run(hidden_in_checks=["frame"])
+    request = JobRequest(job_id="job-1", sources=[photo_run.photo])
+    (run_dir / "request.json").write_text(request.model_dump_json(), encoding="utf-8")
+    program = ProgramFile.load(packaged_programs()["ha5c-manual-example-3"])
+    reference = reference_facts()
+    reference = reference.model_copy(
+        update={"sources": [*reference.sources, *program.sources], "control": [program.behavior]}
+    )
+    outcome = build.build_run(
+        run_dir, photo_run.data_dir, run_dir / "request.json", reference, None,
+        drill_press_generator, kb,
+    )  # fmt: skip
+    assert visible(outcome.twin_file, "frame")
+    assert "inside.usdc" in {p.name for p in outcome.check_files}
+    for path in outcome.check_files:
+        assert not visible(path, "frame"), path.name
+        assert visible(path, "quill"), path.name
+        assert [i for i in validate_file(path) if i.severity == "error"] == []
+    assert not visible(run_dir / "programs" / "index-program" / "program.usdc", "frame")
+    assert "`checks/inside.usdc`" in (run_dir / "RUN.md").read_text(encoding="utf-8")
+
+
 def test_without_a_hold_drive_the_exporters_default_holds(photo_run, spec_run) -> None:
     spec_run()
     assert build.hold_drive(photo_run.run_dir) == build.DriveSettings.hold(0.0)
     assert build.self_collision(photo_run.run_dir) == "off"
+    assert build.hidden_in_checks(photo_run.run_dir) == []
 
 
 def test_check_files_follow_the_joints_behaviour() -> None:

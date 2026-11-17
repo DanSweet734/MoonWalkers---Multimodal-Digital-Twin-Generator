@@ -85,21 +85,39 @@ def write_program_folder(
     mill_settings: MillSettings | None = None,
     hold: DriveSettings | None = None,
     collide_unjoined: bool = False,
+    hidden_parts: Sequence[str] = (),
 ) -> ProgramOutput:
     """Run ``program`` on ``twin``'s driven joint and write the folder ``out_dir``. An iRC
     program for an arm (decision 0033) goes to ``write_arm_program_folder`` with
     ``arm_settings``, a Haas mill program (decision 0035) to ``write_mill_program_folder`` with
     ``mill_settings``. ``hold`` is the twin's own drive (decision 0032: its stiffness and damping;
-    the target is the program's start), and ``collide_unjoined`` its collisions."""
+    the target is the program's start), ``collide_unjoined`` its collisions, and ``hidden_parts``
+    the parts its checks hide (an enclosed mill's guards)."""
     out_dir = Path(out_dir)
     if program.is_irc:
         folder, _, arm_trajectory, used = write_arm_program_folder(
-            out_dir, program, twin, results, data_dir, arm_settings, hold, collide_unjoined
+            out_dir,
+            program,
+            twin,
+            results,
+            data_dir,
+            arm_settings,
+            hold,
+            collide_unjoined,
+            hidden_parts,
         )
         return ProgramOutput(folder, ", ".join(arm_trajectory.joint_ids), arm_trajectory, used)
     if program.is_gcode:
         folder, _, mill_trajectory, mill_used = write_mill_program_folder(
-            out_dir, program, twin, results, data_dir, mill_settings, hold, collide_unjoined
+            out_dir,
+            program,
+            twin,
+            results,
+            data_dir,
+            mill_settings,
+            hold,
+            collide_unjoined,
+            hidden_parts,
         )
         joints = ", ".join(mill_trajectory.positions)
         return ProgramOutput(folder, joints, mill_trajectory, mill_used)
@@ -118,9 +136,13 @@ def write_program_folder(
         drive = DriveSettings(
             mode="position", target=start, stiffness=hold.stiffness, damping=hold.damping
         )
-    stage = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
+    stage = build_stage(
+        twin, results, drive, data_dir, collide_unjoined=collide_unjoined, hidden_parts=hidden_parts
+    )
     _add_program(_joint_prim(stage, joint.joint_id), program, trajectory, settings)
-    native = build_stage(twin, results, drive, data_dir, collide_unjoined=collide_unjoined)
+    native = build_stage(
+        twin, results, drive, data_dir, collide_unjoined=collide_unjoined, hidden_parts=hidden_parts
+    )
     _add_native(_joint_prim(native, joint.joint_id), trajectory)
 
     tmp = out_dir.with_name(f".{out_dir.name}.tmp")

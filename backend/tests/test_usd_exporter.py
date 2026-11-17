@@ -302,6 +302,19 @@ def test_results_must_match_the_twin(twin_and_result) -> None:
         build_stage(twin.model_copy(update={"built_from": ["res-other"]}), [result])
 
 
+def test_hidden_parts_are_invisible_and_keep_their_physics(twin_and_result) -> None:
+    twin, result = twin_and_result
+    hidden_id = result.parts[0].part_id
+    stage = build_stage(twin, [result], hidden_parts=[hidden_id])
+    for part in result.parts:
+        prim = next(p for p in stage.Traverse() if p.GetName() == part.part_id)
+        hidden = UsdGeom.Imageable(prim).ComputeVisibility() == UsdGeom.Tokens.invisible
+        assert hidden == (part.part_id == hidden_id)
+        assert prim.HasAPI(UsdPhysics.RigidBodyAPI)
+    with pytest.raises(ExportError, match="cannot hide"):
+        build_stage(twin, [result], hidden_parts=["nowhere"])
+
+
 def test_twin_without_parts_is_refused(twin_and_result) -> None:
     twin, result = twin_and_result
     with pytest.raises(ExportError, match="no parts"):

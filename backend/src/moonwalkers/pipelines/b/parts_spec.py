@@ -148,6 +148,9 @@ class PartsSpec(_Model):
     # Parts no joint joins: "off" do not collide (decision 0017); "check" adds a check file
     # where they do; "on" makes them collide in the twin and its checks (decision 0032)
     self_collision: Literal["off", "check", "on"] = "off"
+    # Parts written invisible in the check files and program folders, never in the twin itself,
+    # so what they enclose shows: an enclosed mill's guards (lab's machines plan, Phase 6)
+    hidden_in_checks: list[str] = Field(default_factory=list)
     decided_by: str
     method: str
 
@@ -175,6 +178,9 @@ class PartsSpec(_Model):
                     raise ValueError(f"joint '{joint.joint_id}' joins '{end}', not a twin part")
             if not np.linalg.norm(joint.axis):
                 raise ValueError(f"joint '{joint.joint_id}' has no axis")
+        for part_id in self.hidden_in_checks:
+            if kinds.get(part_id) not in ("cut", "stand_in"):
+                raise ValueError(f"hidden_in_checks names '{part_id}', not a twin part")
         return self
 
     def part(self, part_id: str) -> SpecPart:
