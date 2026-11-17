@@ -563,6 +563,19 @@ Check **O40001 first**, then O40006, each in a fresh stage:
 **If nothing moves on Play:** as in section 7, set `API = "omni.physx"` near the top of the pasted
 runner and run it again.
 
+**Result (Daniel, 2026-11-16, Isaac Sim 6.2.0): level 3 for both programs.** "All looked really
+good, the spindle tip followed the path and every motion was clean"; O40006 "also looked great".
+The runner used `simulation_manager`, first physics step at t = 0.017 s, and the session log shows
+no errors. Measured from the recordings: the tip within 0.017 mm of the programmed path (0.014 mm
+while cutting, through O40006's six arcs); every block's move within 0.1 mm of its end
+0.00-0.01 s before its planned end; X, Y and Z at the cited 84.7 mm/s; the spindle at 1000 rpm
+while cutting. Z lags the plan by up to 1.84 mm while the head rises at the rapid, along the path
+(decision 0035, "Seen in Daniel's Isaac Sim check"). Three `omni.fabric.plugin` warnings appeared
+once, when the session's first program file opened ("Unsupported type encountered during VtValue
+extraction", "Attempting to set an invalid data source to array attribute", "attribute
+timeVaryingAttributes not found"), and not on later opens; nothing went wrong with them [their
+source is not confirmed]. The record is each folder's `PROGRAM.md`.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:

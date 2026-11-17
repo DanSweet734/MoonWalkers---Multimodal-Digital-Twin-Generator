@@ -11,6 +11,16 @@ Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sectio
 branch `feat/lab-phase-5-mill-programs`, from `main` after PR #31; its first commit is the
 hand-off. Phase 5 reads Haas's G and M codes into the axes' motion at cited rapid and feed rates
 and runs a program on `haas/tm1@v3`, measured by the tool tip's path.
+**Phase 5's work is done, in its pull request for Daniel's review** (2026-11-16): research note
+`docs/research/2026-11-16-haas-mill-programs.md` (+X, +Y, +Z, home and the tool tip from the
+manuals' pages; X home a stand-in); decision 0035 (accepted by Daniel 2026-11-16): our own
+reader of Haas's codes, no library (`control/haas_gcode.py`), program folders by
+`control/mill_export.py` with a stand-in tool touched off on the twin, stock and the drawn path;
+the runner drives sliding joints and a speed-only spindle; `control compare` measures the tool
+tip. Haas's O40001 and O40006 are packaged; their folders are
+`data/machines/haas-tm1/programs/2026-11-16_*_v3/`. **Level 3 met for the TM-1** (Daniel's check,
+2026-11-16): the tip within 0.017 mm of the path, every block on time within 0.01 s; Z lags up to
+1.84 mm along the path while rising at the rapid (the speed cap [INFERENCE], logged).
 **Phase 4 is done** (PR #31, merged on 2026-11-11 on Daniel's word; branch `feat/lab-phase-4-tm1`):
 sources in `docs/research/2026-11-11-haas-tm1-sources.md` (Y travel 12 in, from Haas's 2002
 addendum; today's pages say 16) and `pipelines/b/haas_tm1.reference.json`. `haas/tm1@v3` (run
@@ -375,6 +385,10 @@ Backend (run from `backend/`):
   `... run rebel-test-joint-moves --twin igus/rebel6dof02@v3 [--override 50] [--acceleration 0]`;
   `... control compare <recording.csv> <folder>/trajectory.json` measures its recording.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 10.
+  A Haas mill program in G and M codes (decision 0035): `... show haas-o40001-basic-program`;
+  `... run haas-o40006-cutter-comp --twin haas/tm1@v3 [--acceleration <mm/s^2, 0 for none>]
+  [--pocket-time <s>]`; `... compare <recording.csv> <folder>/trajectory.json` measures the tool
+  tip. Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 12.
   Check in Isaac Sim: `docs/setup/isaac-sim-check.md`, section 7.
 - A manual machine's controls (level 3, decision 0025): a switch, a speed table and the operator's
   commands with scenarios, as three control behaviours (the T33901's are in its reference file).

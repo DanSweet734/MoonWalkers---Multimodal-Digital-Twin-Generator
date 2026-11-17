@@ -1,6 +1,7 @@
 # 0035 - A mill's programs: Haas's G and M codes, read by our own reader, run as the axes' motion
 
-- **Status:** proposed (2026-11-16), for Daniel's review in Phase 5's pull request
+- **Status:** accepted by Daniel on 2026-11-16 (the lab's machines plan, Phase 5): "Looking over
+  decision 0035 I approve as proposed", after his Isaac Sim check of both programs
 - **Date:** 2026-11-16
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0012 (the twin's frame), 0016 and 0026 (program folders, the runner),
@@ -106,3 +107,9 @@ manual, p. 102) and O40006 (p. 172), packaged in `control/programs/`.
   and the carousel's slide are not modelled.
 - **If reversed:** a library would replace `GcodeProgram.from_text` only; the planner, the folder,
   the runner and the measures stay.
+- **Seen in Daniel's Isaac Sim check (2026-11-16, level 3 for both programs):** the tool tip
+  stayed within 0.017 mm of the programmed path (0.014 mm while cutting), and every block's move
+  arrived within 0.01 s of its planned end. Z lags the plan by up to 1.84 mm (22 ms) while the
+  head rises at the rapid, along the path, and catches up as the target slows [INFERENCE: the
+  joint's speed cap at the cited rapid leaves no margin to catch up while lifting against
+  gravity]. Logged, not changed: the cap is the cited rapid.

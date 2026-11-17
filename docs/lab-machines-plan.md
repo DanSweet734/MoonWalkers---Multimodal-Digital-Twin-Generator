@@ -844,19 +844,34 @@ not the velocity column.
 ### Phase 5's checklist
 - [x] Research note: Haas's G and M codes, from the mill manual's pages Daniel saves
       (`docs/research/2026-11-16-haas-mill-programs.md`, 2026-11-16, from the filed manuals).
-- [ ] Decision record: a reader of the codes the programs use (moves, arcs, units, absolute and
+- [x] Decision record: a reader of the codes the programs use (moves, arcs, units, absolute and
       incremental, spindle, tool change, end), written here with no library; a library only on
-      Daniel's approval (decision 0035, proposed 2026-11-16; no library).
+      Daniel's approval (decision 0035, accepted by Daniel 2026-11-16; no library).
 - [x] `moonwalkers.control` learns it: a program becomes the axes' motion at cited rapid and feed
       rates; accelerations are stand-ins unless cited (`control/haas_gcode.py`,
       `control/mill_export.py`; the runner drives sliding joints; `control compare` by the tip).
 - [x] A program from Haas's manual, and the lab's own if it shares one: O40001 and O40006 (2023
       manual, pp. 102 and 172), folders `data/machines/haas-tm1/programs/2026-11-16_*_v3/`; the
       lab has shared none.
-- [ ] Daniel's Isaac Sim check; the tool tip's recorded path against the program's.
-- [ ] Worklog, PR.
+- [x] Daniel's Isaac Sim check; the tool tip's recorded path against the program's.
+      **Level 3 met for the TM-1** (2026-11-16, both programs): the tip within 0.017 mm of the
+      programmed path (0.014 mm while cutting), every block's move within 0.01 s of its planned
+      end, the axes at the cited 84.7 mm/s, the spindle at 1000 rpm
+      ([isaac-sim-check.md](setup/isaac-sim-check.md), section 12).
+- [x] Worklog, PR (the [worklog](worklog/2026-11-16.md); the pull request of Phase 5).
 
 **Measured by:** the tool tip's distance from the programmed path, in mm; the time against the plan.
+
+**For Phase 6, from Phase 5's check:**
+- The VF-3 needs only its own machine map in a program file (directions, home ends, tool and work
+  parts, spindle, carousel) and its set-up; the trunnion's two turning axes are new to the reader
+  (decision 0035 reads X, Y and Z only).
+- Z lags the plan by up to 1.84 mm while the head rises at the rapid: the joint's speed cap is
+  exactly the planned speed [INFERENCE], so it cannot catch up until the target slows. The tip
+  stays on the path. If a later check needs the time too, plan rises a little under the cap or
+  set the cap a little over the rapid in program files (a decision, not done).
+- Stand-ins a lab visit can replace: X home (the + end), which way +X moves the table, the
+  tool's length, the starting pocket and which way ATC FWD turns the carousel.
 
 ## Phase 6 - The Haas VF-3 with its trunnion: levels 1 to 3
 - [ ] Sources as for the TM-1, and the trunnion's once its plate is read (visit list). Until then
