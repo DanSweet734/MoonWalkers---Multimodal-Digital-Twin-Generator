@@ -643,8 +643,9 @@ lengths in metres. The joints are under `/haas_vf3/joints/` in the Stage panel.
    - **`a_axis`:** `90`, then `120`, then `-120`, then `0`. At `90` the platter's face looks
      towards you, the front. This is the joint's +A, not yet tied to Haas's +A (decision 0036
      will settle that). At ±120 the cradle stops at its cited limit.
-   - **`b_axis`:** `90`, then `360`, then `0`. The platter turns a quarter, then a full turn,
-     then back. B has no limit.
+   - **`b_axis`:** `90`, then `-90`, then `0`. The platter turns a quarter one way, half a turn
+     back, then a quarter to where it began. B has no limit, and a typed target takes the short
+     way round: `360` from `90` goes back to `0` (seen 2026-11-17, below).
    - **The linear axes' lower ends, which `slide.usdc` passes before the recorder's first row:**
      `y_axis` `-0.254`, `x_axis` `-0.508`, then `0` for each. Then `z_axis` `-0.48`, and back to
      `0`: the nose passes into the platter from `-0.396` down (as in step 3).
@@ -655,6 +656,24 @@ lengths in metres. The joints are under `/haas_vf3/joints/` in the Stage panel.
 6. **Send Claude Code** the recordings' paths and what you saw. It runs
    `uv run python -m moonwalkers.pipelines.b.score <run> --recording <csv> ...`, which measures
    each joint's range against its limits.
+
+**Result (Daniel, 2026-11-17, Isaac Sim 6.2.0): levels 1 and 2.** Nothing moved in `twin.usdc` or
+`inside.usdc`, which "looks as you described". In `slide.usdc` "each axis started at one end and
+slid to the other very smoothly". `spin.usdc` "looked great". In `inside.usdc` every typed target
+was reached, and the trunnion "did indeed move ... while it remained tilted". Measured from the
+recordings (`score/SCORE.md`):
+- every limit of Y, X, Z and A reached within 0.01 mm or 0.01°;
+- the head holds within 0.019 mm;
+- the linear axes slid at the cited 423.3 mm/s in `slide.usdc`, and typed targets moved at
+  429-434 mm/s;
+- A and B moved at the TR160's 80 °/s.
+
+**One step went otherwise than written:** `b_axis` "moved for 90, then moved back for 360, then
+didn't move at all for value 0". In the recording, B went back from 90 to 0 for the target 360
+and stayed at 0: a typed target on a joint with no limit is taken a turn at a time, the short way
+(Isaac Sim's own explanation is not confirmed). The recorded position of such a joint wraps
+between -360° and +360°, as the spindle and B show in `spin.usdc`. Step 5 now types `-90` in
+place of `360`. The record is the run's `RUN.md`.
 
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
