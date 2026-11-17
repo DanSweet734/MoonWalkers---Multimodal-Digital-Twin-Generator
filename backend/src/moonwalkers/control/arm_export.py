@@ -32,9 +32,11 @@ from pxr import Sdf, Usd, UsdPhysics, Vt
 from moonwalkers.contracts.pipeline_result import PipelineResult, TwinRecord
 from moonwalkers.usd.exporter import (
     TIME_CODES_PER_SECOND,
+    Collisions,
     DriveSettings,
     ExportError,
     build_stage,
+    collisions_json,
     write_stage,
 )
 from moonwalkers.usd.validate import validate_file
@@ -68,7 +70,7 @@ def write_arm_program_folder(
     data_dir: Path,
     settings: ArmSettings | None = None,
     hold: DriveSettings | None = None,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> tuple[Path, ArmBinding, ArmTrajectory, ArmSettings]:
     """Run the iRC ``program`` on ``twin``'s arm joints and write the folder ``out_dir``."""
@@ -131,7 +133,7 @@ def trajectory_json(
     binding: ArmBinding,
     twin: TwinRecord,
     drive: DriveSettings,
-    collide_unjoined: bool,
+    collide_unjoined: bool | Collisions,
 ) -> str:
     twin_deg = trajectory.twin_deg()
     data = {
@@ -141,7 +143,7 @@ def trajectory_json(
         "pose_from": binding.pose_from,
         "joints": [j.model_dump(mode="json") for j in binding.joints],
         "hold": {"stiffness": drive.stiffness, "damping": drive.damping},
-        "collide_unjoined": collide_unjoined,
+        "collide_unjoined": collisions_json(collide_unjoined),
         "duration_s": trajectory.duration_s,
         "twin_deg": dict(zip(trajectory.joint_ids, twin_deg)),
         **trajectory.model_dump(mode="json"),
@@ -157,7 +159,7 @@ def arm_program_notes(
     trajectory: ArmTrajectory,
     settings: ArmSettings,
     drive: DriveSettings,
-    collide_unjoined: bool,
+    collide_unjoined: bool | Collisions,
 ) -> str:
     """``PROGRAM.md``: what the program is, what it should do, and the check to fill in."""
     behavior = program.behavior

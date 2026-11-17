@@ -37,6 +37,7 @@ from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, Vt
 from moonwalkers.contracts.pipeline_result import PipelineResult, TwinRecord
 from moonwalkers.usd.exporter import (
     TIME_CODES_PER_SECOND,
+    Collisions,
     DriveSettings,
     ExportError,
     build_stage,
@@ -78,7 +79,7 @@ def write_mill_program_folder(
     data_dir: Path,
     settings: MillSettings | None = None,
     hold: DriveSettings | None = None,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> tuple[Path, MillBinding, MillTrajectory, MillSettings]:
     """Run the Haas ``program`` on ``twin``'s axes and write the folder ``out_dir``."""
@@ -425,7 +426,7 @@ def mill_program_notes(
     trajectory: MillTrajectory,
     settings: MillSettings,
     drive: DriveSettings,
-    collide_unjoined: bool,
+    collide_unjoined: bool | Collisions,
     tool: tuple[str, float, float] | None,
 ) -> str:
     """``PROGRAM.md``: what the program is, what it should do, and the check to fill in."""

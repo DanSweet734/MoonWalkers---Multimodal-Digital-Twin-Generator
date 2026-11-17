@@ -49,7 +49,7 @@ from moonwalkers.contracts.pipeline_result import TwinRecord
 from moonwalkers.kb import JsonKnowledgeBase, KnowledgeBase, validate_machine_key
 from moonwalkers.orchestrator import Orchestrator
 from moonwalkers.pipelines import default_pipelines
-from moonwalkers.usd.exporter import DriveSettings, ExportError
+from moonwalkers.usd.exporter import Collisions, DriveSettings, ExportError
 from moonwalkers.workspace import default_data_dir
 
 from .compare import compare, format_measures, read_recording
@@ -320,17 +320,19 @@ def format_arm_trajectory(program: ProgramFile, trajectory: ArmTrajectory) -> st
     return "\n".join(lines)
 
 
-def twin_simulation(twin: TwinRecord, data_dir: Path) -> tuple[DriveSettings | None, bool]:
+def twin_simulation(
+    twin: TwinRecord, data_dir: Path
+) -> tuple[DriveSettings | None, bool | Collisions]:
     """How the stored twin holds its joints and whether its unjoined parts collide: its run's
     spec (decisions 0032 and 0033), or the defaults when the run has none."""
-    from moonwalkers.pipelines.b.build import SPEC_FILE, hold_drive, self_collision
+    from moonwalkers.pipelines.b.build import SPEC_FILE, hold_drive, twin_collisions
 
     if twin.usd_path is None:
         return None, False
     run_dir = (data_dir / twin.usd_path).parent
     if not (run_dir / SPEC_FILE).is_file():
         return None, False
-    return hold_drive(run_dir), self_collision(run_dir) == "on"
+    return hold_drive(run_dir), twin_collisions(run_dir)
 
 
 def twin_hidden_parts(twin: TwinRecord, data_dir: Path) -> list[str]:

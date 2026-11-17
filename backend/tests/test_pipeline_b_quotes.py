@@ -269,3 +269,18 @@ def test_the_rebel_reference_facts_load() -> None:
     assert reference.fact("max_joint_speed").value == pytest.approx(math.radians(45))
     # the issue the plan asks for (Phase 2's first item)
     assert any("Version 02 not confirmed to match 00/01" in i.message for i in reference.issues)
+
+
+def test_a_quote_from_an_sdk_source_file_is_looked_for_too(tmp_path: Path) -> None:
+    # A maker's SDK read for its commands (LinkerBot's mapping.py; lab's machines plan, Phase 7)
+    sdk = tmp_path / "machines" / "arm" / "inputs" / "documents" / "sdk" / "mapping.py"
+    sdk.parent.mkdir(parents=True)
+    sdk.write_text("# L20 R OK\nl20_r_min = [0, 0, 0, 0, 0, -0.297]\n", encoding="utf-8")
+    source = Source(
+        source_id="sdk", kind="file", uri="machines/arm/inputs/documents/sdk/mapping.py",
+        retrieved_at=NOW,
+    )  # fmt: skip
+    (found,) = check_quotes(
+        [source], [("a", Citation(source_id="sdk", quote="# L20 R OK l20_r_min = [0, 0"))], tmp_path
+    )
+    assert (found.status, found.detail) == ("found", "mapping.py")

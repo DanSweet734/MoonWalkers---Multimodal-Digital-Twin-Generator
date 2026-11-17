@@ -30,6 +30,7 @@ from pxr import Sdf, Usd, UsdGeom, UsdPhysics, Vt
 
 from moonwalkers.contracts.pipeline_result import Joint, PipelineResult, TwinRecord
 from moonwalkers.usd.exporter import (
+    Collisions,
     DriveSettings,
     ExportError,
     JointSettings,
@@ -87,7 +88,7 @@ def write_controls_folder(
     results: Sequence[PipelineResult],
     data_dir: Path,
     hold: DriveSettings | None = None,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
 ) -> ControlsOutput:
     """Write the controls folder ``out_dir`` for ``twin``, holding its joints with ``hold`` (the
     twin's own drive, decision 0032; the exporter's default without one) and its unjoined parts

@@ -56,6 +56,66 @@
       "uri": "user",
       "title": "Daniel Sweet's directions for the arm's twin (2026-11-09): the arm and the hand are one twin; the arm's front is where the fingertips point in the photographed pose, fixed to the base; the hand is the generator's fused shape, one labelled part on the flange, until Phase 7; the name 'ReBeL® 6-DoF Cobot with SCHUNK EGP Gripper and CobotPump' with a 'Realhand L20 Dexterous Robotic Hand' is from Dr. Li's website; the four generator views confirmed (docs/lab-machines-plan.md, 'Decided on review' and Phase 2)",
       "retrieved_at": "2026-11-09T00:00:00Z"
+    },
+    {
+      "source_id": "src-linkerbot-l20-urdf",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/models/linkerbotai_linker_hand_sim@b21e9fa/linker_hand_isaac_gym_urdf/l20/right/linkerhand_l20_right.urdf",
+      "title": "LinkerBot's L20 right hand (URDF, 21 revolute joints, 5 mimic), https://github.com/linkerbotai/linker_hand_sim/blob/b21e9faa6078288a18311c351fc871371c784063/linker_hand_isaac_gym_urdf/l20/right/linkerhand_l20_right.urdf",
+      "sha256": "8f193f79d0fd37258d1b6a65f33c47077318a86d26f35821b45dccc90b24b6ea",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); the repository's README says it moved to linker-bot/linkerhand-sim"
+    },
+    {
+      "source_id": "src-realhand-l20-urdf",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/models/realhand-robotics_Realhand_description@7a64d07/l20/right/realhand_l20_right.urdf",
+      "title": "Realhand's L20 right hand (URDF, 21 revolute joints, 5 mimic), https://github.com/realhand-robotics/Realhand_description/blob/7a64d077ea8f1b81cd4df1f7b472ae3dece1b0ed/l20/right/realhand_l20_right.urdf",
+      "sha256": "0a8c75b81f692c000916e75ecf1eb42e47c28ed8d6fe8bbcd1f6c26d414afe58",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-mapping",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/sdk/linker-bot_linkerhand-ros2-sdk@0035f23/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/utils/mapping.py",
+      "title": "LinkerBot's ROS 2 SDK, mapping.py: each hand's 0-255 command range to joint angles in radians, https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/utils/mapping.py",
+      "sha256": "403134d65e1d9e263d70fef57cd7ac4c7366845b6385b788565f4e053829856b",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-presets",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/sdk/linker-bot_linkerhand-ros2-sdk@0035f23/gui_control/gui_control/config/constants.py",
+      "title": "LinkerBot's ROS 2 SDK, the GUI's hand configurations: each hand's joint names, initial position and preset actions, https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/gui_control/gui_control/config/constants.py",
+      "sha256": "27d251bb39a48cd9c9429751e5e66b04c7bd9f17b1e3f9d1e1ac2889431b3d97",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-l20-can",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/sdk/linker-bot_linkerhand-ros2-sdk@0035f23/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/core/can/linker_hand_l20_can.py",
+      "title": "LinkerBot's ROS 2 SDK, the L20's CAN driver: set_joint_positions and the CAN frames, https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/core/can/linker_hand_l20_can.py",
+      "sha256": "1fad4550591cfeb17b9fe7cac0b75772a8831df3cd589619af6206fe95fb44d6",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-readme",
+      "kind": "file",
+      "input_type": "online_resource",
+      "uri": "machines/igus-rebel6dof02/inputs/documents/sdk/linker-bot_linkerhand-ros2-sdk@0035f23/README.md",
+      "title": "LinkerBot's ROS 2 SDK, README (V3.0.1): the joint order of each hand's position list, https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/README.md",
+      "sha256": "e1b603b7db8c2113a5ddc23412fba946bdaa5355542a92f974b542f005900335",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE)"
     }
   ],
   "identity": {
@@ -543,6 +603,679 @@
           "source_id": "src-daniel-directions",
           "locator": "the name on Dr. Li's website (Daniel, 2026-11-09)",
           "quote": "Realhand L20 Dexterous Robotic Hand"
+        }
+      ]
+    },
+    {
+      "key": "hand_model",
+      "value": "LinkerBot Linker Hand L20, a right hand; LinkerBot's own model (linker_hand_sim, l20/right) is the one its SDK's angle table matches",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-photo-hand",
+          "locator": "the hand's back shell, seen from above",
+          "quote": "LINKERBOT"
+        },
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "the robot's name",
+          "quote": "name=\"linker_hand_l20_right\""
+        },
+        {
+          "source_id": "src-linkerbot-sdk-mapping",
+          "locator": "the L20 right hand's ranges, lines 42-45",
+          "quote": "# L20 R OK l20_r_min = [0, 0, 0, 0, 0, -0.297, -0.26, -0.26, -0.26, -0.26, 0,"
+        }
+      ]
+    },
+    {
+      "key": "hand_revolute_joints",
+      "value": 21,
+      "original": "21 <joint type=\"revolute\"> (counted)",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "lines 88-1529: 21 revolute joints, 5 fixed fingertip joints",
+          "quote": "name=\"thumb_joint0\" type=\"revolute\""
+        }
+      ]
+    },
+    {
+      "key": "hand_following_joints",
+      "value": 5,
+      "original": "5 <mimic> joints (counted)",
+      "confidence": 0.8,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "line 337, thumb_joint4",
+          "quote": "<mimic joint=\"thumb_joint3\" multiplier=\"1\" offset=\"0\"/>"
+        },
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "line 623, index_joint3 (middle, ring, little alike)",
+          "quote": "<mimic joint=\"index_joint2\" multiplier=\"1.06399\" offset=\"0\"/>"
+        }
+      ]
+    },
+    {
+      "key": "hand_driven_joints",
+      "value": 16,
+      "original": "20 positions, 4 of them Reserved",
+      "confidence": 0.85,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-sdk-readme",
+          "locator": "Position and Finger Joint Correspondence Table, L20",
+          "quote": "L20: [\"Thumb Base\", \"Index Base\", \"Middle Base\", \"Ring Base\", \"Little Base\", \"Thumb Abduction\""
+        },
+        {
+          "source_id": "src-linkerbot-sdk-readme",
+          "locator": "the same row",
+          "quote": "\"Thumb Roll\", \"Reserved\", \"Reserved\", \"Reserved\", \"Reserved\", \"Thumb Tip\""
+        }
+      ]
+    },
+    {
+      "key": "hand_joint_speed",
+      "value": 1.0,
+      "unit": "rad/s",
+      "original": "velocity=\"1\"",
+      "confidence": 0.3,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "every revolute joint's <limit>, e.g. line 100, thumb_joint0",
+          "quote": "effort=\"100\" velocity=\"1\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint0_lower",
+      "value": -0.297,
+      "unit": "rad",
+      "original": "lower=\"-0.297\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint0's <limit>, line 100",
+          "quote": "name=\"thumb_joint0\" ... lower=\"-0.297\" upper=\"0.683\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint0_upper",
+      "value": 0.683,
+      "unit": "rad",
+      "original": "upper=\"0.683\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint0's <limit>, line 100",
+          "quote": "name=\"thumb_joint0\" ... lower=\"-0.297\" upper=\"0.683\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint1_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint1's <limit>, line 158",
+          "quote": "name=\"thumb_joint1\" ... lower=\"0\" upper=\"1.78\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint1_upper",
+      "value": 1.78,
+      "unit": "rad",
+      "original": "upper=\"1.78\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint1's <limit>, line 158",
+          "quote": "name=\"thumb_joint1\" ... lower=\"0\" upper=\"1.78\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint2_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0.00\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint2's <limit>, line 216",
+          "quote": "name=\"thumb_joint2\" ... lower=\"0.00\" upper=\"0.87\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint2_upper",
+      "value": 0.87,
+      "unit": "rad",
+      "original": "upper=\"0.87\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint2's <limit>, line 216",
+          "quote": "name=\"thumb_joint2\" ... lower=\"0.00\" upper=\"0.87\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint3_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint3's <limit>, line 274",
+          "quote": "name=\"thumb_joint3\" ... lower=\"0\" upper=\"1.29\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint3_upper",
+      "value": 1.29,
+      "unit": "rad",
+      "original": "upper=\"1.29\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint3's <limit>, line 274",
+          "quote": "name=\"thumb_joint3\" ... lower=\"0\" upper=\"1.29\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint4_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint4's <limit>, line 332",
+          "quote": "name=\"thumb_joint4\" ... lower=\"0\" upper=\"1.29\""
+        }
+      ]
+    },
+    {
+      "key": "thumb_joint4_upper",
+      "value": 1.29,
+      "unit": "rad",
+      "original": "upper=\"1.29\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "thumb_joint4's <limit>, line 332",
+          "quote": "name=\"thumb_joint4\" ... lower=\"0\" upper=\"1.29\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint0_lower",
+      "value": -0.26,
+      "unit": "rad",
+      "original": "lower=\"-0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint0's <limit>, line 444",
+          "quote": "name=\"index_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint0_upper",
+      "value": 0.26,
+      "unit": "rad",
+      "original": "upper=\"0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint0's <limit>, line 444",
+          "quote": "name=\"index_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint1_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint1's <limit>, line 502",
+          "quote": "name=\"index_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint1_upper",
+      "value": 1.4,
+      "unit": "rad",
+      "original": "upper=\"1.4\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint1's <limit>, line 502",
+          "quote": "name=\"index_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint2_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint2's <limit>, line 560",
+          "quote": "name=\"index_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint2_upper",
+      "value": 1.08,
+      "unit": "rad",
+      "original": "upper=\"1.08\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint2's <limit>, line 560",
+          "quote": "name=\"index_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint3_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint3's <limit>, line 618",
+          "quote": "name=\"index_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "index_joint3_upper",
+      "value": 1.15,
+      "unit": "rad",
+      "original": "upper=\"1.15\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "index_joint3's <limit>, line 618",
+          "quote": "name=\"index_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint0_lower",
+      "value": -0.26,
+      "unit": "rad",
+      "original": "lower=\"-0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint0's <limit>, line 730",
+          "quote": "name=\"middle_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint0_upper",
+      "value": 0.26,
+      "unit": "rad",
+      "original": "upper=\"0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint0's <limit>, line 730",
+          "quote": "name=\"middle_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint1_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint1's <limit>, line 788",
+          "quote": "name=\"middle_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint1_upper",
+      "value": 1.4,
+      "unit": "rad",
+      "original": "upper=\"1.4\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint1's <limit>, line 788",
+          "quote": "name=\"middle_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint2_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint2's <limit>, line 846",
+          "quote": "name=\"middle_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint2_upper",
+      "value": 1.08,
+      "unit": "rad",
+      "original": "upper=\"1.08\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint2's <limit>, line 846",
+          "quote": "name=\"middle_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint3_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint3's <limit>, line 904",
+          "quote": "name=\"middle_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "middle_joint3_upper",
+      "value": 1.15,
+      "unit": "rad",
+      "original": "upper=\"1.15\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "middle_joint3's <limit>, line 904",
+          "quote": "name=\"middle_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint0_lower",
+      "value": -0.26,
+      "unit": "rad",
+      "original": "lower=\"-0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint0's <limit>, line 1016",
+          "quote": "name=\"ring_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint0_upper",
+      "value": 0.26,
+      "unit": "rad",
+      "original": "upper=\"0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint0's <limit>, line 1016",
+          "quote": "name=\"ring_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint1_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint1's <limit>, line 1074",
+          "quote": "name=\"ring_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint1_upper",
+      "value": 1.4,
+      "unit": "rad",
+      "original": "upper=\"1.4\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint1's <limit>, line 1074",
+          "quote": "name=\"ring_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint2_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint2's <limit>, line 1132",
+          "quote": "name=\"ring_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint2_upper",
+      "value": 1.08,
+      "unit": "rad",
+      "original": "upper=\"1.08\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint2's <limit>, line 1132",
+          "quote": "name=\"ring_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint3_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint3's <limit>, line 1190",
+          "quote": "name=\"ring_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "ring_joint3_upper",
+      "value": 1.15,
+      "unit": "rad",
+      "original": "upper=\"1.15\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "ring_joint3's <limit>, line 1190",
+          "quote": "name=\"ring_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint0_lower",
+      "value": -0.26,
+      "unit": "rad",
+      "original": "lower=\"-0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint0's <limit>, line 1302",
+          "quote": "name=\"little_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint0_upper",
+      "value": 0.26,
+      "unit": "rad",
+      "original": "upper=\"0.26\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint0's <limit>, line 1302",
+          "quote": "name=\"little_joint0\" ... lower=\"-0.26\" upper=\"0.26\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint1_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint1's <limit>, line 1360",
+          "quote": "name=\"little_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint1_upper",
+      "value": 1.4,
+      "unit": "rad",
+      "original": "upper=\"1.4\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint1's <limit>, line 1360",
+          "quote": "name=\"little_joint1\" ... lower=\"0\" upper=\"1.4\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint2_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint2's <limit>, line 1418",
+          "quote": "name=\"little_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint2_upper",
+      "value": 1.08,
+      "unit": "rad",
+      "original": "upper=\"1.08\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint2's <limit>, line 1418",
+          "quote": "name=\"little_joint2\" ... lower=\"0\" upper=\"1.08\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint3_lower",
+      "value": 0.0,
+      "unit": "rad",
+      "original": "lower=\"0\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint3's <limit>, line 1476",
+          "quote": "name=\"little_joint3\" ... lower=\"0\" upper=\"1.15\""
+        }
+      ]
+    },
+    {
+      "key": "little_joint3_upper",
+      "value": 1.15,
+      "unit": "rad",
+      "original": "upper=\"1.15\"",
+      "confidence": 0.7,
+      "citations": [
+        {
+          "source_id": "src-linkerbot-l20-urdf",
+          "locator": "little_joint3's <limit>, line 1476",
+          "quote": "name=\"little_joint3\" ... lower=\"0\" upper=\"1.15\""
         }
       ]
     }

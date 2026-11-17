@@ -38,7 +38,8 @@ Several joints (decision 0017):
   that sits inside another (the spindle inside the head). Joined parts already do not collide (the
   joint's ``collisionEnabled`` fallback is false). A twin of two parts gets no filtered pairs.
   ``collide_unjoined`` leaves the filter out, so an arm cannot pass through itself (decision
-  0032); joined parts still do not collide.
+  0032); joined parts still do not collide. ``Collisions`` does the same but keeps the filter
+  within groups of parts that pass through each other (a hand's stand-in links, decision 0037).
 * ``JointSettings`` gives one joint its own drive, limits (a lock or a depth stop), starting
   position or coupling to another joint (decisions 0018 and 0019). Joints without settings get
   ``drive`` (revolute) or a hold at 0 (prismatic) with ``drive``'s stiffness, damping and type
@@ -124,6 +125,27 @@ CouplingMethod = Literal["mimic", "rack_and_pinion"]
 
 class ExportError(ValueError):
     """The twin cannot be written as a simulatable stage."""
+
+
+@dataclass(frozen=True)
+class Collisions:
+    """Parts that no joint joins collide (``collide_unjoined=True``, decision 0032), except two
+    parts of one group in ``apart`` (decision 0037): stand-ins whose convex hulls are larger than
+    the parts they stand in for, which would stop each other short of the poses the machine
+    reaches. Their collisions with every other part stay. It counts as true wherever a flag
+    was asked for."""
+
+    apart: tuple[tuple[str, ...], ...] = ()
+
+    def __bool__(self) -> bool:
+        return True
+
+
+def collisions_json(collide_unjoined: bool | Collisions) -> bool | dict[str, Any]:
+    """How a program folder's notes record a twin's collisions."""
+    if isinstance(collide_unjoined, Collisions) and collide_unjoined.apart:
+        return {"unjoined": True, "apart": [list(g) for g in collide_unjoined.apart]}
+    return bool(collide_unjoined)
 
 
 @dataclass(frozen=True)
@@ -353,7 +375,7 @@ def export_twin(
     starts: Mapping[str, float] | None = None,
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> Path:
     """Write the twin to ``path``; returns the path.
@@ -365,7 +387,8 @@ def export_twin(
     what the contract asks for, ``starts`` maps joint ids to starting positions, and
     ``coupling_method`` writes the contract's links (decision 0019). ``keep_awake`` (the default)
     stops PhysX from putting the articulation to sleep (decision 0017). ``collide_unjoined``
-    lets parts that no joint joins collide with each other (decision 0032; off by default).
+    lets parts that no joint joins collide with each other (decision 0032; off by default), or,
+    given ``Collisions``, all but two parts of one group (decision 0037).
     ``hidden_parts`` are written invisible, so what they enclose shows in a check (an enclosed
     mill's guards, lab's machines plan, Phase 6); they keep their physics.
     """
@@ -417,7 +440,7 @@ def build_stage(
     starts: Mapping[str, float] | None = None,
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout).
@@ -488,6 +511,8 @@ def build_stage(
                 _write_coupling(stage, joints, joint_paths, body_paths, joint_id, joint_setting)
         if not collide_unjoined:
             _filter_unjoined_pairs(stage, body_paths, joints)
+        elif isinstance(collide_unjoined, Collisions):
+            _filter_groups(stage, body_paths, joints, collide_unjoined.apart)
 
     UsdPhysics.Scene.Define(stage, SCENE_PATH)  # default gravity: earth, opposite the up axis
     return stage
@@ -960,6 +985,35 @@ def _filter_unjoined_pairs(
         ]
         if others:
             body = stage.GetPrimAtPath(body_paths[part_id])
+            UsdPhysics.FilteredPairsAPI.Apply(body).CreateFilteredPairsRel().SetTargets(others)
+
+
+def _filter_groups(
+    stage: Usd.Stage,
+    body_paths: dict[str, Sdf.Path],
+    joints: dict[str, tuple[Joint, str]],
+    groups: Sequence[Sequence[str]],
+) -> None:
+    """Unjoined parts of one group do not collide (``Collisions``)."""
+    joined = {frozenset((joint.parent_part, joint.child_part)) for joint, _ in joints.values()}
+    for group in groups:
+        unknown = sorted(set(group) - set(body_paths))
+        if unknown:
+            raise ExportError(f"a collision group names {unknown}: no such part")
+    order = list(body_paths)
+    for i, (part_id, path) in enumerate(body_paths.items()):
+        others = sorted(
+            {
+                body_paths[other]
+                for group in groups
+                if part_id in group
+                for other in group
+                if order.index(other) > i and frozenset((part_id, other)) not in joined
+            },
+            key=str,
+        )
+        if others:
+            body = stage.GetPrimAtPath(path)
             UsdPhysics.FilteredPairsAPI.Apply(body).CreateFilteredPairsRel().SetTargets(others)
 
 

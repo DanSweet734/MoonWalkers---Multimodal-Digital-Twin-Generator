@@ -34,6 +34,7 @@ from pxr import Sdf, Usd, UsdPhysics, Vt
 from moonwalkers.contracts.pipeline_result import Joint, PipelineResult, TwinRecord
 from moonwalkers.usd.exporter import (
     TIME_CODES_PER_SECOND,
+    Collisions,
     DriveSettings,
     ExportError,
     build_stage,
@@ -84,7 +85,7 @@ def write_program_folder(
     arm_settings: ArmSettings | None = None,
     mill_settings: MillSettings | None = None,
     hold: DriveSettings | None = None,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> ProgramOutput:
     """Run ``program`` on ``twin``'s driven joint and write the folder ``out_dir``. An iRC

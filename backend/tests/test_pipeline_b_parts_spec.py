@@ -188,6 +188,16 @@ def test_a_spec_with_parts_is_read_as_several_parts(tmp_path: Path, write_spec) 
         (lambda s: s["joints"][0].update(axis=[0, 0, 0]), "no axis"),
         (lambda s: s.update(hidden_in_checks=[REMOVED_TABLE]), "hidden_in_checks names"),
         (
+            lambda s: s.update(collide_apart=[{"parts": ["quill", "table"], "why": "t"}]),
+            "needs self_collision 'on'",
+        ),
+        (
+            lambda s: s.update(
+                self_collision="on", collide_apart=[{"parts": ["quill", REMOVED_TABLE], "why": "t"}]
+            ),
+            "collide_apart names",
+        ),
+        (
             lambda s: s["parts"][-1].update(patches=[{"near": [0, 0, 0], "note": "t"}]),
             "only a cut part",
         ),
@@ -491,6 +501,14 @@ def test_without_a_hold_drive_the_exporters_default_holds(photo_run, spec_run) -
     assert build.hold_drive(photo_run.run_dir) == build.DriveSettings.hold(0.0)
     assert build.self_collision(photo_run.run_dir) == "off"
     assert build.hidden_in_checks(photo_run.run_dir) == []
+    assert build.twin_collisions(photo_run.run_dir) is False
+
+
+def test_collide_apart_groups_reach_the_twins_collisions(photo_run, spec_run) -> None:
+    spec_run(self_collision="on")
+    assert build.twin_collisions(photo_run.run_dir) is True
+    spec_run(self_collision="on", collide_apart=[{"parts": ["quill", "table"], "why": "t"}])
+    assert build.twin_collisions(photo_run.run_dir) == build.Collisions((("quill", "table"),))
 
 
 def test_check_files_follow_the_joints_behaviour() -> None:
