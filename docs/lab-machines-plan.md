@@ -995,19 +995,100 @@ not the velocity column.
 - [x] The tool changer does not show in the photos: left out (Daniel's rule, 2026-10-24), and a
       program's tool change is logged, not simulated.
 - [x] Phase 5's reader with the two extra axes; a program that tilts and turns the part.
-      (2026-11-17: decision 0036, proposed. A and B are in the machine map; G00 and G01 on one
+      (2026-11-17: decision 0036, accepted by Daniel the same day. A and B are in the machine map; G00 and G01 on one
       rotary axis alone, the feed at Settings 34 and 79's diameter; simultaneous moves refused,
       since they need G93. Two programs: Haas's O40001 on the platter, and the labelled test
       `moonwalkers-vf3-test-tilt-and-turn`, folders `data/machines/haas-vf3/programs/2026-11-17_*_v1/`.)
 - [x] Dry run, validators, build; Daniel's Isaac Sim check; decision record, worklog, PR.
       (The program folders were written in scratch first, both validators clean. **Level 3 met
       for the VF-3** (Daniel's check, 2026-11-17, section 14): the tip within 0.021 mm of the
-      path, A and B within 0.004° of the plan, every block within 0.02 s. Decision 0036 is
-      written and waits for Daniel's acceptance.)
+      path, A and B within 0.004° of the plan, every block within 0.02 s. Decision 0036
+      accepted; PR #33, merged on 2026-11-17 on Daniel's word.)
 
 **Measured by:** as Phases 4 and 5, with the trunnion's two axes.
 
 ## Phase 7 - The hand: 21 joints and its commands
+
+### Hand-off (2026-11-17, from the plan's Phase 6 chat)
+- **Where you start:** from `main` after PR #33 (merge commit `9024a60`, 2026-11-17T10:14Z), on
+  branch `feat/lab-phase-7-hand`. Its first commit holds this hand-off.
+  - Branch `feat/lab-phase-6-vf3` is kept, since Daniel did not ask to delete it.
+  - Work through the checklist below, then stop for Daniel's review with a pull request. Merge
+    only on his word.
+- **Read first:**
+  - CLAUDE.md "Current phase" and "Direction from the advisors";
+  - this hand-off, then the checklist; the plan's "What the sources and photos settled since the
+    hand-off" (the hand is a LinkerBot hand, two L20 models that disagree, a right hand
+    [INFERENCE]) and the visit list's item 14;
+  - decisions 0020 (`mode`, `follows`: the drill press's handles follow the quill), 0031 (the
+    arm's zero pose and shifted limits), 0032 (`hold_drive`, `loose_pieces`, `self_collision`) and
+    0033 (the arm's program; joint moves planned and recorded); 0023, 0027 and 0028 for cuts and
+    stand-ins;
+  - the worklogs of [2026-11-09](worklog/2026-11-09.md) and [2026-11-10](worklog/2026-11-10.md)
+    (the arm's build and checks), by their headings.
+
+#### What Phase 6 left
+- **Level 3 met for the VF-3** (Daniel's check, 2026-11-17), so both of the lab's Haas mills
+  reach level 3, the advisors' condition before video (meeting of 2026-11-12). The order stays:
+  the hand, then the agent's build (Phase 8).
+- **Decision 0036 accepted** (Daniel, 2026-11-17, "I accept decision 36"; recorded in this
+  commit, since PR #33 was merged as approved).
+- **Things learned that carry to the hand:**
+  - **Typed targets on a joint without limits** go a turn at a time in Isaac Sim, and the joint's
+    recorded position wraps between -360° and +360°. `control compare` unwraps angles
+    (`unwrap_deg`). The fingers have limits, so this should not bite [INFERENCE].
+  - **Check files** (`slide.usdc`, `spin.usdc`) use speed drives with no stiffness: typed targets
+    work only in `twin.usdc` (and `checks/inside.usdc` where parts are hidden).
+  - **`hidden_in_checks`** (decision 0036) hides listed parts in every check file and program
+    folder. It could hide the arm's links if the fingers need a clear view. The MCP tool
+    `set_spec_frame` cannot set it yet (a tool gap for Phase 8).
+  - **A fast measure's top speed** over 0.05 s spans reads a few percent low on short, sharp moves
+    (A's 30° tilt: 66.5 °/s against a 69.3 °/s peak). Fingers move short distances: judge the
+    speeds by the gap from the plan.
+- **Tests:** `pytest -m "not gpu and not slow"`: 853 passed in about 4.8 min.
+  `tests/test_control_haas_gcode.py` builds a box mill with a trunnion (`build_trunnion_mill`).
+
+#### The hand itself
+- **On the twin:** `igus/rebel6dof02@v3` (run `2026-11-10_run-002`, `compose_v3.py` in
+  `data/machines/igus-rebel6dof02/part_cutting/2026-11-10_spec/`) carries the hand as **one fused
+  part**, `hand`, on `joint6` (`meshes/hand.glb`). Its `RUN.md` logs:
+  - the fingers fused and still;
+  - **two thumbs** where the L20 has one (Daniel's check of v1; "stays as generated until Phase 7
+    models the hand");
+  - the hand's cables cut out ("Remove, log");
+  - which model matches the lab's hand not confirmed.
+- **The models, filed** under `data/machines/igus-rebel6dof02/inputs/documents/models/` (both
+  Apache-2.0, listed in `inputs/SOURCES.md` with their commits and checksums):
+  - `linkerbotai_linker_hand_sim@b21e9fa`: LinkerBot's L20, left and right, URDF and meshes;
+  - `realhand-robotics_Realhand_description@7a64d07`: Realhand's L20, `l20/` and `L20v10/`, left
+    and right, URDF and meshes (no `.usd`).
+
+  Both have 21 revolute joints, 5 of them mimic joints. Their joint names and limits differ
+  (LinkerBot's first joint -0.297 to 0.683 rad, Realhand's ±0.17 rad).
+  - **The maker's meshes are not imported** (the checklist; Daniel, 2026-11-09). The fingers are
+    cut from the generated mesh where the photos allow, otherwise stand-ins sized from the model.
+  - **Read the URDFs for joint axes, origins and limits;** cite them by file and line.
+- **The photos:** `data/machines/igus-rebel6dof02/inputs/photos/`, with `133438` (from above,
+  "LINKERBOT" on the shell) the clearest of the hand. The visit list's item 14 (the hand's label
+  or box: maker, model, version, left or right) settles which model. Until then, choose one with
+  reasons and log it as an [INFERENCE].
+- **The SDK:** LinkerBot's Python SDK has no licence on GitHub, so it is read and cited, not
+  copied (the checklist). Fetching pages needs no install. Ask before installing anything.
+- **The arm's controller:** the lab's own iRC program still comes through Dr. Li's assistant;
+  the labelled test program `rebel-test-joint-moves` stands as the arm's level 3.
+
+#### Carried over
+- **The time left:** the semester ends about 2026-12-17. Phases 7 and 8 have about a week each;
+  Phase 8 (the agent builds the TM-1, the plan's report) must keep its week.
+- **The weekly meeting of 2026-11-19:** the trunnion's plate, Settings 30 and 78, and a jog of
+  +A and +B go among that week's asks (memory "meeting-2026-11-19-items"). Daniel raises them
+  when scheduling his next visit. The advisors' page for the weeks since 2026-11-12 (the TM-1's
+  levels 2 and 3, the VF-3's levels 1 to 3) is not built: ask Daniel when he wants it.
+- **Not reviewed in the dashboard:** `haas/tm1@v3` and `haas/vf3@v1`. Reviewing is Daniel's.
+- **Stand-ins waiting on the visit:** +A's and +B's directions and homes, the TR160's figures,
+  and the TM-1's X direction and X home (items 1, 2, 10 and 11).
+
+### Phase 7's checklist
 - [ ] Decision record: the fingers' geometry. They are cut from the generated mesh where the photos
       allow; otherwise they are labelled stand-ins sized from the maker's model (Daniel,
       2026-11-09: "If they can't be modeled from the input photos then stand ins will have to
