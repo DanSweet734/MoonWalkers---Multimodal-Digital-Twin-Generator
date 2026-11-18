@@ -119,6 +119,9 @@ MOVING_PART_COLOR = (0.90, 0.45, 0.10)  # orange: parts that move
 SPRING_STIFFNESS, SPRING_DAMPING = 600.0, 49.0  # acceleration drive: about critically damped
 SPRING_PRELOAD = 0.03  # m (or rad) past a rest position at a limit: a wound spring's preload
 FREE_DAMPING = 2.0  # a stand-in for friction, so a pushed part comes to rest
+# How far a mimic follower's limits stay beyond where its leader can take it (decision 0037):
+# limits that meet the coupling's reach blew the L20 hand up in Isaac Sim (2026-11-17)
+MIMIC_CLEARANCE = {"revolute": math.radians(2.0), "prismatic": 0.002}
 
 CouplingMethod = Literal["mimic", "rack_and_pinion"]
 
@@ -460,6 +463,7 @@ def build_stage(
     settings = _joint_settings(joints, drive, joint_settings or {}, starts or {}, coupling_method)
     _check_settings(settings, joints)
     settings = _with_follower_starts(settings, joints)
+    settings = _with_mimic_clearance(settings, joints)
 
     stage = Usd.Stage.CreateInMemory()
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
@@ -794,7 +798,14 @@ def _write_joint(
     joint_drive = _joint_drive(joint, drive, setting)
     if joint_drive is not None:
         _write_drive(prim, joint_drive, _drive_kind(joint))
-    if joint.max_velocity is not None and joint.joint_type != "fixed":  # cited (decision 0025)
+    mimics = (
+        setting is not None
+        and setting.coupling is not None
+        and (setting.coupling.method == "mimic")
+    )
+    # cited (decision 0025); a mimic follower's speed is its leader's times the ratio, and a cap
+    # of its own fought the coupling when the ratio is over 1 (decision 0037)
+    if joint.max_velocity is not None and joint.joint_type != "fixed" and not mimics:
         set_max_joint_velocity(prim, _to_usd(joint, joint.max_velocity))
 
     prim.SetDocumentation(
@@ -953,6 +964,47 @@ def _write_coupling(
         "moonwalkers",
         {"couples": Vt.StringArray([follower_id, coupling.leader])},
     )
+
+
+def _with_mimic_clearance(
+    settings: dict[str, JointSettings], joints: dict[str, tuple[Joint, str]]
+) -> dict[str, JointSettings]:
+    """A mimic follower's limits widened, where needed, to ``MIMIC_CLEARANCE`` beyond where its
+    leader's limits take it (decision 0037). The follower can never go further than the
+    coupling takes it, so this changes no reachable position; it keeps PhysX from meeting a
+    limit and the mimic constraint at once, which blew up the L20 hand's followers in Isaac
+    Sim (2026-11-17), as NVIDIA's Inspire hand keeps its followers' limits wide. The contract's
+    limits stay in the joint's provenance."""
+    updated = dict(settings)
+    for joint_id, setting in settings.items():
+        coupling = setting.coupling
+        if coupling is None or coupling.method != "mimic":
+            continue
+        follower = joints[joint_id][0]
+        leader_setting = settings.get(coupling.leader)
+        leader = joints[coupling.leader][0]
+        reach_from = (
+            leader_setting.limits
+            if leader_setting is not None and leader_setting.limits
+            else stopped_limits(leader)
+        )
+        lower, upper = setting.limits or stopped_limits(follower)
+        if None in reach_from or lower is None or upper is None:
+            continue
+        ends = sorted(coupling.ratio * v + coupling.offset for v in reach_from)  # type: ignore[operator]
+        margin = MIMIC_CLEARANCE[follower.joint_type]
+        widened = (min(lower, ends[0] - margin), max(upper, ends[1] + margin))
+        if widened != (lower, upper):
+            note = (
+                f"limits widened to {margin:g} beyond the coupling's reach "
+                f"(contract: {lower:g} to {upper:g}; decision 0037)"
+            )
+            updated[joint_id] = replace(
+                setting,
+                limits=widened,
+                note=f"{setting.note}; {note}" if setting.note else note,
+            )
+    return updated
 
 
 def _with_follower_starts(
