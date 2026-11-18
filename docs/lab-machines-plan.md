@@ -1128,8 +1128,19 @@ the commanded poses against the plan, and the hand's match with the photos.
   (the hand is a second).
 
 #### What happens on 2026-11-18, and after
-- **Daniel's lab visit** (the visit list below, and a checklist page for his phone). Dr. Li's
-  assistant is to hand over **the lab's iRC program** for the arm. When it comes:
+- **Update (2026-11-18): the lab visit is postponed** until after the meeting of 2026-11-19
+  (Daniel). Phase 8's agent build goes ahead today, from the photos of 2026-11-05 alone; the
+  report is prepared afterwards. No measurement or lab program comes before the build.
+- **The trial of the agent's level-3 path (2026-11-18, before the agent):** v3's run, unbuilt,
+  staged in `data/scratch/2026-11-18_phase-8-prep/` (`stage.py`) with Haas's O40001 added to its
+  reference as a control behaviour, then `pipelines.b dry-run`: "Built version 4 of the
+  haas/tm1 twin" in the scratch knowledge base, and `programs/haas-o40001-basic-program/`
+  (`program.usdc`, `run_program.py`, `record_joints.py`, `trajectory.json`; 38.16 s) with
+  `twin.usdc` and the three check files, both validators clean. So a build writes a mill
+  program folder; until then only `control run` on a stored twin had.
+- **Daniel's lab visit** (the visit list below, and a checklist page for his phone,
+  https://claude.ai/artifact/PiySTgDfBSU15pxwKGYfcu, private). Dr. Li's assistant is to hand
+  over **the lab's iRC program** for the arm. When it comes:
   - file the `.xml` files as given (iRC keeps them in `/Data/Programs/`, research note
     2026-11-10) in `data/machines/igus-rebel6dof02/inputs/programs/`, with a `SOURCES.md` row;
   - run it with `control run` on `igus/rebel6dof02@v5` (decision 0033's reader refuses linear and
@@ -1214,8 +1225,9 @@ What you may read, and what not until you have submitted:
   manual's pages for the program yourself.
 - Do not open, until you have submitted: backend/src/moonwalkers/pipelines/b/haas_tm1.reference.json,
   anything under data/machines/haas-tm1/part_cutting/ or data/machines/haas-tm1/runs/ other than
-  your own run, the research notes on the TM-1 and on mill programs in docs/research/, the
-  worklogs, or docs/lab-machines-plan.md. Measure the mesh yourself with the tools.
+  your own run, anything under data/scratch/ but your own dry runs, the research notes on the
+  TM-1 and on mill programs in docs/research/, the worklogs, or docs/lab-machines-plan.md.
+  Measure the mesh yourself with the tools.
 
 While building:
 - Open every view the tools return: the cut-out sheet, the mesh views, each part_<id> view and
@@ -1242,6 +1254,10 @@ Afterwards:
 ```
 
 #### Then the Phase 8 chat
+- **Its part while the agent builds:** walk Daniel through the run-sheet a step at a time; it
+  does not build, and does not answer the agent's questions for him. After the submission it
+  checks the agent's run (below), then gives him each Isaac Sim step's file, and when to type a
+  target, as the earlier phases did.
 - The quote checker on the agent's run: `uv run python -m moonwalkers.pipelines.b.quotes
   <run>/reference_facts.json <run>/geometry_spec.json --data ../data` (the drill press's agent
   had 140 of 141 found).

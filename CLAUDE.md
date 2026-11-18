@@ -12,8 +12,9 @@ Daniel's run-sheet and the agent's starter prompt. Phase 8 runs on branch
 `feat/lab-phase-8-agent-build`, from `main` after PR #34; its first commit is the hand-off.
 A fresh Claude Code session (the agent) builds the TM-1 from a dashboard job through the MCP
 tools, recorded by Daniel on 2026-11-18 for the meeting of 2026-11-19; then the plan's report
-and the advisors' page. Daniel visits the lab on 2026-11-18 (the plan's visit list) and is to
-receive the lab's iRC program for the arm. The semester ends about 2026-12-17.
+and the advisors' page. Daniel's lab visit (the plan's visit list), where he is to receive the
+lab's iRC program for the arm, is postponed until after the meeting of 2026-11-19, so the agent
+builds from the photos alone. The semester ends about 2026-12-17.
 Daniel approved `haas/tm1@v3`, `haas/vf3@v1` and `igus/rebel6dof02@v5` in the dashboard
 (2026-11-17), so requests reuse them.
 **Phase 7 is done** (PR #34, merged on 2026-11-17 on Daniel's word; decisions 0037 and 0038
