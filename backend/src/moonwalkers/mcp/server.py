@@ -702,7 +702,15 @@ def create_server(
         "linkerhand_sdk", "hand_joint": "L20", "hand_type": "right", "slots": {SDK slot: joint
         id, the 16 driven joints}, "calls": [{"call": "set_speed", "speed": 5 values},
         {"call": "finger_move", "pose": 20 values}, {"call": "sleep", "seconds": s}]}, values
-        0-255 as the SDK takes them (packaged example: linkerhand-l20-test-grasp). A manual machine
+        0-255 as the SDK takes them (packaged example: linkerhand-l20-test-grasp). A Haas mill
+        program in G and M codes (decisions 0035, 0036) goes in spec["program"] as {"format":
+        "haas_gcode", "text": the program as the manual prints it, "machine": {"axes": {"X":
+        {"joint_id", "direction": Haas's + as the tool's motion against the work in the twin's
+        frame, "home": "plus_end" or "minus_end"}, "Y": ..., "Z": ...}, "rotary" (A, B; a
+        trunnion only), "tool_part", "work_part", "spindle", "carousel", "pockets"}, "setup":
+        {"units", "work_offsets", "tools", "stock_height", "start_pocket", "why": the reasons,
+        stand-ins labelled}}; each axis's sliding joint needs limits and a cited top speed (its
+        rapid). Packaged example: haas-o40001-basic-program. A manual machine
         (decision 0025; docs/agent-procedure.md) takes three: a "state_machine" switch (spec
         inputs, on_when, start_input, off_why, not_described), a "lookup_table" of speeds
         (spec joint, switch, rows of rpm, initial_rpm, change_only_when, run_up_s,
