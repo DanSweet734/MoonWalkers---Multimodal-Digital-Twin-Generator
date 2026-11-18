@@ -11,7 +11,8 @@ check of level 3 (methodology, "Evaluation"):
 - the spindle: its steady speed against the setting, and how long it took to reach it and to stop;
 - each joint that follows the quill (the downfeed handles): the ratio it kept.
 
-An arm's iRC program (decision 0033) is measured joint by joint; a Haas mill program (decision
+An arm's iRC program (decision 0033) is measured joint by joint, and so are a hand's SDK calls
+(decision 0038), followers included; a Haas mill program (decision
 0035) by the tool tip: its distance from the plan and from the programmed path, in mm, when each
 block's move arrived, and the time against the plan. A mill is measured from positions only: the
 recorder's velocity column is not trusted under the stiff hold (Phase 4's hand-off), except the
@@ -33,6 +34,7 @@ from typing import Any
 HOME_TOLERANCE_M = 0.001  # within 1 mm of the rest position counts as home
 STOP_TOLERANCE_M = 0.0005  # within 0.5 mm of the stop counts as at the stop
 ARM_KIND = "irc_joint_program"  # an arm's trajectory.json (decision 0033)
+HAND_KIND = "linkerhand_sdk_program"  # a hand's, measured as an arm's (decision 0038)
 ARRIVE_DEG = 0.5  # within half a degree of a move's target counts as arrived
 MILL_KIND = "haas_gcode_program"  # a mill's trajectory.json (decision 0035)
 ARRIVE_MM = 0.1  # a sliding axis's arrival: the tip within 0.1 mm of a block's end point
@@ -64,7 +66,7 @@ def read_recording(path: Path) -> dict[str, list[float]]:
 def compare(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any]) -> list[Measure]:
     """The measures of ``recording`` against ``plan`` (a trajectory JSON, loaded): an arm's iRC
     program (decision 0033), else a manual machine's scenario (decision 0025)."""
-    if plan.get("kind") == ARM_KIND:
+    if plan.get("kind") in (ARM_KIND, HAND_KIND):
         return compare_arm(recording, plan)
     if plan.get("kind") == MILL_KIND:
         return compare_mill(recording, plan)
@@ -228,9 +230,12 @@ def compare_arm(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any
                     f"{top:.2f} deg/s (cited top speed {joint['top_speed_deg_s']:g})",
                 )
             )
+    moves = {"Joint": "move Nr", "finger_move": "call"}  # an iRC move, an SDK finger_move
     for event in plan["events"]:
-        if event["command"] != "Joint" or event["end_s"] <= event["start_s"]:
+        if event["command"] not in moves or event["end_s"] <= event["start_s"]:
             continue
+        if not event.get("reached", True):
+            continue  # a later call took over before it arrived (decision 0038)
         targets = [
             v - p for v, p in zip(event["to_deg"], plan["pose_deg"], strict=True)
         ]  # the twin's angles
@@ -249,7 +254,8 @@ def compare_arm(recording: Mapping[str, Sequence[float]], plan: Mapping[str, Any
         )
         out.append(
             Measure(
-                f"move Nr {event['nr']}: all joints within {ARRIVE_DEG:g} deg of its target",
+                f"{moves[event['command']]} {event['nr']}: all joints within {ARRIVE_DEG:g} deg "
+                "of its target",
                 _s(at),
                 _s(event["end_s"]),
             )

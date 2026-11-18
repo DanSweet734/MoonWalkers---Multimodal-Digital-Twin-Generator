@@ -1,7 +1,7 @@
 # 0036 - A trunnion's A and B axes in the Haas reader, and parts hidden in the checks
 
-- **Status:** proposed (the lab's machines plan, Phase 6), for Daniel's review after his Isaac Sim
-  check of the VF-3's programs
+- **Status:** accepted by Daniel on 2026-11-17 ("I accept decision 36"), after his Isaac Sim
+  check of the VF-3's programs (the lab's machines plan, Phase 6; PR #33)
 - **Date:** 2026-11-17
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0023 and 0034 (the spec, a mill's axes), 0026 (the HA5C's acceleration

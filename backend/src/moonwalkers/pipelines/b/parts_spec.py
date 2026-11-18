@@ -132,6 +132,15 @@ class HoldDrive(_Model):
     why: str  # what the default drive did that this one fixes, and who chose it
 
 
+class CollisionGroup(_Model):
+    """Parts that do not collide with each other although no joint joins them, while they
+    still collide with every other part (decision 0037): a hand's stand-in links, whose convex
+    hulls are larger than the fingers they stand in for."""
+
+    parts: list[str] = Field(min_length=2)
+    why: str
+
+
 class PartsSpec(_Model):
     up: AxisName
     front: AxisName
@@ -151,6 +160,8 @@ class PartsSpec(_Model):
     # Parts written invisible in the check files and program folders, never in the twin itself,
     # so what they enclose shows: an enclosed mill's guards (lab's machines plan, Phase 6)
     hidden_in_checks: list[str] = Field(default_factory=list)
+    # With self_collision "on": groups of parts that pass through each other (decision 0037)
+    collide_apart: list[CollisionGroup] = Field(default_factory=list)
     decided_by: str
     method: str
 
@@ -178,6 +189,12 @@ class PartsSpec(_Model):
                     raise ValueError(f"joint '{joint.joint_id}' joins '{end}', not a twin part")
             if not np.linalg.norm(joint.axis):
                 raise ValueError(f"joint '{joint.joint_id}' has no axis")
+        for group in self.collide_apart:
+            if self.self_collision != "on":
+                raise ValueError("collide_apart needs self_collision 'on'")
+            for part_id in group.parts:
+                if kinds.get(part_id) not in ("cut", "stand_in"):
+                    raise ValueError(f"collide_apart names '{part_id}', not a twin part")
         for part_id in self.hidden_in_checks:
             if kinds.get(part_id) not in ("cut", "stand_in"):
                 raise ValueError(f"hidden_in_checks names '{part_id}', not a twin part")

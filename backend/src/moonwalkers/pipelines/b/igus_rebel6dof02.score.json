@@ -11,7 +11,7 @@
     "link3": "link_5",
     "link4": "link_6",
     "link5": "link_7",
-    "hand": "link_8"
+    "hand_adapter": "link_8"
   },
   "joints": {
     "joint1": "joint1",
@@ -28,7 +28,7 @@
   },
   "align_joint": "joint2",
   "no_shape": {
-    "hand": "the model's link_8 is the 1.2 mm flange disc (Joint6.dae); the hand on it, the Realhand L20, is compared in Phase 7"
+    "hand_adapter": "the model's link_8 is the 1.2 mm flange disc (Joint6.dae), where the twin keeps the generated adapter disc (v4 on). The hand on it (the palm and 21 links, from v4) is labelled boxes on LinkerBot's L20 model's frames (decision 0037), a second model this file does not compare: its joints and limits are the model's by construction, and its shapes are boxes, not the maker's meshes"
   },
   "note": "The pose is the twin's photographed pose (decision 0031) in the 00 description's joint values: its joints 2, 3 and 5 have origin pitches of +30, +30 and -7.5 degrees and limits shifted by the same, so a joint value is igus's angle minus that pitch (igus -21.81, +118.82, +10.46 degrees). Joints 1, 4 and 6 are 0, as in the twin. The 01 description includes the 00 one unchanged; whether version 02 matches them is not confirmed (the reference facts' issue)."
 }

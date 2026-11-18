@@ -6,22 +6,39 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 6, the Haas VF-3 with its trunnion (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 6", whose hand-off comes first. Phase 6 runs on
-branch `feat/lab-phase-6-vf3`, from `main` after PR #32; its first commit is the hand-off.
-Phase 6 builds `haas/vf3` from its photos (levels 1 and 2, as the TM-1 in Phase 4), its trunnion's
-tilt and turn as two joints, and runs a Haas program on it (level 3, as Phase 5); the reader's two
-extra axes need decision 0036. The VF-3's level 3 comes before the trunnion's axes if time runs
-short (the advisors want both mills at level 3 before video).
-**Phase 6's work is done, in review** (2026-11-17): `haas/vf3@v1` (run `2026-11-16_run-001`, spec
+## Current phase: the lab's machines plan, Phase 7, the hand (the drill-press plan is done)
+**Start here:** `docs/lab-machines-plan.md`, "Phase 7", whose hand-off comes first. Phase 7 runs on
+branch `feat/lab-phase-7-hand`, from `main` after PR #33; its first commit is the hand-off.
+Phase 7 gives the arm's hand (the L20 on `igus/rebel6dof02`, one fused part in v3) its 21 joints
+(5 following) and a grasp on the maker's SDK commands, then Phase 8 is the agent's build of the
+TM-1 and the plan's report. The semester ends about 2026-12-17.
+**Phase 7's work is done, its PR waiting for Daniel's review** (decisions 0037 and 0038
+accepted by Daniel 2026-11-17; research note `docs/research/2026-11-17-l20-hand-sdk-and-models.md`):
+- `igus/rebel6dof02@v5` (run `2026-11-17_run-002`, `compose_v5.py` in
+  `part_cutting/2026-11-17_spec/`): the hand as labelled stand-ins on LinkerBot's right L20
+  model's frames (the generated hand contradicts the photos; the meshes read for sizes, not
+  imported), 21 joints (16 driven, 5 following), 27 moving joints in one articulation; the
+  hand's parts pass through each other (the spec's new `collide_apart`). The exporter now writes
+  a mimic follower with no speed cap and limits 2° clear of its leader's reach (v4 blew up
+  without it). **Level 2 met** (Daniel's check, 2026-11-17): ends within 0.15°.
+- `control/linkerhand.py` and `control/hand_export.py`: LinkerBot SDK calls (`set_speed`,
+  `finger_move`, `sleep`) as a program, values to angles by the SDK's `mapping.py`, slots bound
+  to joints by their cited limits; `... control run linkerhand-l20-test-grasp --twin
+  igus/rebel6dof02@v5`. **Level 3 met** (Daniel's check, 2026-11-17): open, fist, open within
+  0.86° of the plan; the thumb passes through the fingers (logged; the maker's meshes overlap at
+  the fist preset too). Check guide sections 15 and 16.
+- Right hand and LinkerBot's model stay [INFERENCE] until the visit list's item 14. The scorer
+  compares the arm only; the hand is a second model it does not read (a tool gap).
+**Phase 6 is done** (PR #33, merged on 2026-11-17 on Daniel's word; branch
+`feat/lab-phase-6-vf3`; decision 0036 accepted by Daniel 2026-11-17). Both Haas mills are at
+level 3, as the advisors asked before video. `haas/vf3@v1` (run `2026-11-16_run-001`, spec
 by `data/machines/haas-vf3/part_cutting/2026-11-16_spec/compose_spec.py`): the generated
 enclosure, scaled by its cited 78.8 in height, with stand-ins inside for the saddle, the table,
 the head, the nose and the TR160 trunnion (`a_axis` ±120°, `b_axis` unlimited, 80 °/s). The spec's
 `hidden_in_checks` hides the enclosure in check files and program folders, never in `twin.usdc`
 (`checks/inside.usdc` is the twin with it hidden). **Level 2 met** (Daniel's check, 2026-11-17):
 every limit within 0.01 mm or 0.01°, the head holds within 0.019 mm. A `b_axis` target typed in
-Isaac Sim goes a turn at a time (360 from 90 went back to 0). Decision 0036 (**proposed**, waiting
-for Daniel's acceptance): A and B in the Haas reader (G00 at the top speed, G01 on one rotary axis
+Isaac Sim goes a turn at a time (360 from 90 went back to 0). Decision 0036: A and B in the Haas reader (G00 at the top speed, G01 on one rotary axis
 at Settings 34 and 79's diameter, simultaneous moves refused as needing G93, M10-M13 logged, an
 unlimited joint planned within ±180°), and the stock and path on the platter. Programs
 `haas-o40001-basic-program-vf3` and the labelled test `moonwalkers-vf3-test-tilt-and-turn`, in

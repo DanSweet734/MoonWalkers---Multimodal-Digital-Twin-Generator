@@ -161,6 +161,32 @@ def test_a_follower_starts_where_its_leader_puts_it(slider) -> None:
     assert math.isclose(start, math.degrees(RATIO * 0.08), rel_tol=1e-5)
 
 
+def test_a_mimic_followers_limits_clear_its_reach_and_it_has_no_speed_cap(slider) -> None:
+    """Decision 0037: limits that meet the coupling's reach, and a follower's own speed cap,
+    blew the L20 hand up in Isaac Sim; the follower's limits are widened to 2 degrees beyond
+    where its leader takes it (here 50 rad/m over 0 to 0.08 m: 0 to 4 rad), and its cap is
+    left to its leader."""
+    machine = with_fields(
+        slider,
+        slide_travel={"max_velocity": 0.1},
+        wheel_turn={**follows(), "lower_limit": 0.0, "upper_limit": 4.0, "max_velocity": 1.0},
+    )
+    stage = stage_of(machine)
+    wheel = stage.GetPrimAtPath(f"{JOINTS}/wheel_turn")
+    lower, upper = limits(wheel)
+    assert math.isclose(lower, -2.0, abs_tol=1e-4)
+    assert math.isclose(upper, math.degrees(4.0) + 2.0, rel_tol=1e-6)
+    assert not wheel.GetAttribute("physxJoint:maxJointVelocity").HasAuthoredValue()
+    slide = stage.GetPrimAtPath(f"{JOINTS}/slide_travel")
+    assert slide.GetAttribute("physxJoint:maxJointVelocity").HasAuthoredValue()
+    assert "widened" in wheel.GetCustomDataByKey("moonwalkers:export_settings")["note"]
+    # limits already clear of the reach (the fixture's -0.5 to 5 rad) stay as they are
+    clear = stage_of(with_fields(slider, wheel_turn=follows()))
+    assert limits(clear.GetPrimAtPath(f"{JOINTS}/wheel_turn")) == pytest.approx(
+        (math.degrees(-0.5), math.degrees(5.0)), rel=1e-6
+    )
+
+
 def test_a_turning_follower_without_limits_is_refused_for_the_mimic(slider) -> None:
     """PhysxMimicJointAPI supports "PhysicsRevoluteJoint (with a limit set)"; the contract does not
     require limits, so the exporter says what is missing."""

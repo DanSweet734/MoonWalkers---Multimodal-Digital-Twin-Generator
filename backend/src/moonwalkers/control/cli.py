@@ -32,6 +32,11 @@ A Haas mill program in G and M codes (decision 0035), such as ``haas-o40006-cutt
 ``show`` lists its blocks, and ``run`` plans it on the mill twin's axes from the twin's 0 pose
 (a zero return first), with ``--acceleration`` (mm/s^2; default the stand-in, 1000; 0 for none)
 and ``--pocket-time`` (seconds per carousel pocket; default the stand-in, 1).
+
+LinkerBot SDK calls for the L20 hand (decision 0038), such as ``linkerhand-l20-test-grasp``:
+``show`` lists its calls, and ``run`` plans them on the hand's joints from the twin's 0 pose,
+with ``--hand-top-speed`` (rad/s at set_speed 255; default the twin's cited hand_joint_speed, a
+stand-in).
 """
 
 from __future__ import annotations
@@ -49,7 +54,7 @@ from moonwalkers.contracts.pipeline_result import TwinRecord
 from moonwalkers.kb import JsonKnowledgeBase, KnowledgeBase, validate_machine_key
 from moonwalkers.orchestrator import Orchestrator
 from moonwalkers.pipelines import default_pipelines
-from moonwalkers.usd.exporter import DriveSettings, ExportError
+from moonwalkers.usd.exporter import Collisions, DriveSettings, ExportError
 from moonwalkers.workspace import default_data_dir
 
 from .compare import compare, format_measures, read_recording
@@ -64,6 +69,7 @@ from .haas_gcode import (
 )
 from .interpreter import ACCELERATION_STAND_IN, RunSettings, Trajectory, run_program
 from .irc import ArmSettings, ArmTrajectory, IrcProgram, JointMove, Loop, Output, Wait
+from .linkerhand import FingerMove, HandProgram, HandSettings, HandTrajectory, SetSpeed, Sleep
 from .manual import ControlsFile
 from .program import ProgramError, ProgramFile, packaged_programs
 
@@ -121,6 +127,11 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--loop-passes", type=int, default=1, help="iRC: passes of an endless loop"
         )
+        command.add_argument(
+            "--hand-top-speed",
+            type=float,
+            help="LinkerBot SDK: rad/s at set_speed 255 (default: the twin's hand_joint_speed)",
+        )
         if name == "run":
             command.add_argument("--twin", required=True, help="machine key[@vN], e.g. haas/ha5c")
             command.add_argument("--data", type=Path, help="the data folder")
@@ -158,6 +169,10 @@ def _show(args: argparse.Namespace) -> int:
         print("\n".join(describe_blocks(gcode)))
         print("\nthe timeline needs the mill twin's axes: run it with --twin")
         return 0
+    if program.is_linkerhand:
+        print(format_hand_calls(program))
+        print("\nthe timeline needs the hand's joints: run it with --twin")
+        return 0
     print(format_trajectory(program, run_program(program.program(), _settings(args))))
     return 0
 
@@ -176,9 +191,10 @@ def _run(args: argparse.Namespace) -> int:
         twin,
         results,
         data_dir,
-        None if program.is_irc or program.is_gcode else _settings(args),
+        None if program.is_irc or program.is_gcode or program.is_linkerhand else _settings(args),
         arm_settings=_arm_settings(args) if program.is_irc else None,
         mill_settings=_mill_settings(args) if program.is_gcode else None,
+        hand_settings=_hand_settings(args) if program.is_linkerhand else None,
         hold=hold,
         collide_unjoined=collide,
         hidden_parts=twin_hidden_parts(twin, data_dir),
@@ -188,6 +204,8 @@ def _run(args: argparse.Namespace) -> int:
         print(format_arm_trajectory(program, trajectory))
     elif isinstance(trajectory, MillTrajectory):
         print(format_mill_trajectory(program, trajectory))
+    elif isinstance(trajectory, HandTrajectory):
+        print(format_hand_trajectory(program, trajectory))
     else:
         print(format_trajectory(program, trajectory))
     print(f"\nwrote {output.folder} for {twin.twin_id}, joint {output.joint_id}")
@@ -320,17 +338,59 @@ def format_arm_trajectory(program: ProgramFile, trajectory: ArmTrajectory) -> st
     return "\n".join(lines)
 
 
-def twin_simulation(twin: TwinRecord, data_dir: Path) -> tuple[DriveSettings | None, bool]:
+def format_hand_calls(program: ProgramFile) -> str:
+    calls = HandProgram.from_behavior(program.behavior)
+    lines = [
+        (
+            f"{program.name}: {program.behavior.name} "
+            f"(LinkerBot SDK calls, {calls.hand_joint} {calls.hand_type})"
+        )
+    ]
+    for call in calls.calls:
+        if isinstance(call, SetSpeed):
+            what = "set_speed " + ", ".join(f"{v:g}" for v in call.speed)
+        elif isinstance(call, FingerMove):
+            what = "finger_move " + ", ".join(f"{v:g}" for v in call.pose)
+        else:
+            assert isinstance(call, Sleep)
+            what = f"sleep {call.seconds:g} s"
+        lines.append(f"  {call.nr:>3}  {what}" + (f"  ({call.descr})" if call.descr else ""))
+    return "\n".join(lines)
+
+
+def format_hand_trajectory(program: ProgramFile, trajectory: HandTrajectory) -> str:
+    lines = [f"{program.name}: {program.behavior.name}"]
+    for e in trajectory.events:
+        lines.append(f"  {e.start_s:7.3f}-{e.end_s:7.3f} s  call {e.nr:>3}  {e.what}")
+    posed = [(j, p) for j, p in zip(trajectory.joint_ids, trajectory.pose_deg) if abs(p) > 1e-9]
+    pose = ", ".join(f"{j} {p:.2f}" for j, p in posed) or "0 for every joint"
+    lines.append(
+        f"duration {trajectory.duration_s:.3f} s; at the twin's 0 the SDK's angle is {pose} deg"
+    )
+    lines += [f"note: {n}" for n in trajectory.notes]
+    return "\n".join(lines)
+
+
+def _hand_settings(args: argparse.Namespace) -> HandSettings:
+    try:
+        return HandSettings(top_speed_rad_s=args.hand_top_speed)
+    except ValueError as exc:
+        raise UsageError(str(exc).splitlines()[0]) from exc
+
+
+def twin_simulation(
+    twin: TwinRecord, data_dir: Path
+) -> tuple[DriveSettings | None, bool | Collisions]:
     """How the stored twin holds its joints and whether its unjoined parts collide: its run's
     spec (decisions 0032 and 0033), or the defaults when the run has none."""
-    from moonwalkers.pipelines.b.build import SPEC_FILE, hold_drive, self_collision
+    from moonwalkers.pipelines.b.build import SPEC_FILE, hold_drive, twin_collisions
 
     if twin.usd_path is None:
         return None, False
     run_dir = (data_dir / twin.usd_path).parent
     if not (run_dir / SPEC_FILE).is_file():
         return None, False
-    return hold_drive(run_dir), self_collision(run_dir) == "on"
+    return hold_drive(run_dir), twin_collisions(run_dir)
 
 
 def twin_hidden_parts(twin: TwinRecord, data_dir: Path) -> list[str]:

@@ -697,7 +697,12 @@ def create_server(
         for Isaac Sim. A robot arm's program in igus Robot Control's own XML (decision 0033)
         goes in spec["program"] as {"format": "irc_xml", "xml": the .xml file's text, "axes":
         {"A1": joint id, ..., "A6": joint id}}: Joint moves (a1-a6 in degrees, velPercent,
-        acc), Wait, Output and an endless Loop; linear moves are refused. A manual machine
+        acc), Wait, Output and an endless Loop; linear moves are refused. LinkerBot SDK calls
+        for an L20 right hand (decision 0038) go in spec["program"] as {"format":
+        "linkerhand_sdk", "hand_joint": "L20", "hand_type": "right", "slots": {SDK slot: joint
+        id, the 16 driven joints}, "calls": [{"call": "set_speed", "speed": 5 values},
+        {"call": "finger_move", "pose": 20 values}, {"call": "sleep", "seconds": s}]}, values
+        0-255 as the SDK takes them (packaged example: linkerhand-l20-test-grasp). A manual machine
         (decision 0025; docs/agent-procedure.md) takes three: a "state_machine" switch (spec
         inputs, on_when, start_input, off_why, not_described), a "lookup_table" of speeds
         (spec joint, switch, rows of rpm, initial_rpm, change_only_when, run_up_s,

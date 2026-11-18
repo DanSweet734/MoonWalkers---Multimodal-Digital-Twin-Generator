@@ -4,7 +4,8 @@ Rule 1 says every fact needs a source; this checks the quotes cheaply. A citatio
 its source is a PDF kept under the data folder: a ``file`` source by its path, or any source with a
 SHA-256 by finding the file with that hash under ``machines/*/inputs/``. The page is the
 locator's "PDF p. N", else its first "p. N". A ``file`` source that is a text file (a robot
-description such as the ReBeL's ``.xacro``, a saved web page; ``TEXT_SUFFIXES``) has no pages,
+description such as the ReBeL's ``.xacro``, a saved web page, a maker's SDK source;
+``TEXT_SUFFIXES``) has no pages,
 so its quote is looked for in the whole file (the lab's machines plan, Phase 2).
 
 pypdf's text is not the page as printed, so a quote is matched loosely (worklog 2026-10-23):
@@ -156,7 +157,10 @@ def local_pdf(source: Source, data_dir: Path) -> Path | None:
     return None
 
 
-TEXT_SUFFIXES = frozenset({".xacro", ".urdf", ".xml", ".txt", ".md", ".html", ".htm"})
+# ".py" and ".yaml": a maker's SDK source, read for its commands (lab's machines plan, Phase 7)
+TEXT_SUFFIXES = frozenset(
+    {".xacro", ".urdf", ".xml", ".txt", ".md", ".html", ".htm", ".py", ".yaml"}
+)
 
 
 def local_text(source: Source, data_dir: Path) -> Path | None:

@@ -38,7 +38,8 @@ Several joints (decision 0017):
   that sits inside another (the spindle inside the head). Joined parts already do not collide (the
   joint's ``collisionEnabled`` fallback is false). A twin of two parts gets no filtered pairs.
   ``collide_unjoined`` leaves the filter out, so an arm cannot pass through itself (decision
-  0032); joined parts still do not collide.
+  0032); joined parts still do not collide. ``Collisions`` does the same but keeps the filter
+  within groups of parts that pass through each other (a hand's stand-in links, decision 0037).
 * ``JointSettings`` gives one joint its own drive, limits (a lock or a depth stop), starting
   position or coupling to another joint (decisions 0018 and 0019). Joints without settings get
   ``drive`` (revolute) or a hold at 0 (prismatic) with ``drive``'s stiffness, damping and type
@@ -118,12 +119,36 @@ MOVING_PART_COLOR = (0.90, 0.45, 0.10)  # orange: parts that move
 SPRING_STIFFNESS, SPRING_DAMPING = 600.0, 49.0  # acceleration drive: about critically damped
 SPRING_PRELOAD = 0.03  # m (or rad) past a rest position at a limit: a wound spring's preload
 FREE_DAMPING = 2.0  # a stand-in for friction, so a pushed part comes to rest
+# How far a mimic follower's limits stay beyond where its leader can take it (decision 0037):
+# limits that meet the coupling's reach blew the L20 hand up in Isaac Sim (2026-11-17)
+MIMIC_CLEARANCE = {"revolute": math.radians(2.0), "prismatic": 0.002}
 
 CouplingMethod = Literal["mimic", "rack_and_pinion"]
 
 
 class ExportError(ValueError):
     """The twin cannot be written as a simulatable stage."""
+
+
+@dataclass(frozen=True)
+class Collisions:
+    """Parts that no joint joins collide (``collide_unjoined=True``, decision 0032), except two
+    parts of one group in ``apart`` (decision 0037): stand-ins whose convex hulls are larger than
+    the parts they stand in for, which would stop each other short of the poses the machine
+    reaches. Their collisions with every other part stay. It counts as true wherever a flag
+    was asked for."""
+
+    apart: tuple[tuple[str, ...], ...] = ()
+
+    def __bool__(self) -> bool:
+        return True
+
+
+def collisions_json(collide_unjoined: bool | Collisions) -> bool | dict[str, Any]:
+    """How a program folder's notes record a twin's collisions."""
+    if isinstance(collide_unjoined, Collisions) and collide_unjoined.apart:
+        return {"unjoined": True, "apart": [list(g) for g in collide_unjoined.apart]}
+    return bool(collide_unjoined)
 
 
 @dataclass(frozen=True)
@@ -353,7 +378,7 @@ def export_twin(
     starts: Mapping[str, float] | None = None,
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> Path:
     """Write the twin to ``path``; returns the path.
@@ -365,7 +390,8 @@ def export_twin(
     what the contract asks for, ``starts`` maps joint ids to starting positions, and
     ``coupling_method`` writes the contract's links (decision 0019). ``keep_awake`` (the default)
     stops PhysX from putting the articulation to sleep (decision 0017). ``collide_unjoined``
-    lets parts that no joint joins collide with each other (decision 0032; off by default).
+    lets parts that no joint joins collide with each other (decision 0032; off by default), or,
+    given ``Collisions``, all but two parts of one group (decision 0037).
     ``hidden_parts`` are written invisible, so what they enclose shows in a check (an enclosed
     mill's guards, lab's machines plan, Phase 6); they keep their physics.
     """
@@ -417,7 +443,7 @@ def build_stage(
     starts: Mapping[str, float] | None = None,
     coupling_method: CouplingMethod = "mimic",
     keep_awake: bool = True,
-    collide_unjoined: bool = False,
+    collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
 ) -> Usd.Stage:
     """Build the twin's stage in memory (see the module docstring for its layout).
@@ -437,6 +463,7 @@ def build_stage(
     settings = _joint_settings(joints, drive, joint_settings or {}, starts or {}, coupling_method)
     _check_settings(settings, joints)
     settings = _with_follower_starts(settings, joints)
+    settings = _with_mimic_clearance(settings, joints)
 
     stage = Usd.Stage.CreateInMemory()
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
@@ -488,6 +515,8 @@ def build_stage(
                 _write_coupling(stage, joints, joint_paths, body_paths, joint_id, joint_setting)
         if not collide_unjoined:
             _filter_unjoined_pairs(stage, body_paths, joints)
+        elif isinstance(collide_unjoined, Collisions):
+            _filter_groups(stage, body_paths, joints, collide_unjoined.apart)
 
     UsdPhysics.Scene.Define(stage, SCENE_PATH)  # default gravity: earth, opposite the up axis
     return stage
@@ -769,7 +798,14 @@ def _write_joint(
     joint_drive = _joint_drive(joint, drive, setting)
     if joint_drive is not None:
         _write_drive(prim, joint_drive, _drive_kind(joint))
-    if joint.max_velocity is not None and joint.joint_type != "fixed":  # cited (decision 0025)
+    mimics = (
+        setting is not None
+        and setting.coupling is not None
+        and (setting.coupling.method == "mimic")
+    )
+    # cited (decision 0025); a mimic follower's speed is its leader's times the ratio, and a cap
+    # of its own fought the coupling when the ratio is over 1 (decision 0037)
+    if joint.max_velocity is not None and joint.joint_type != "fixed" and not mimics:
         set_max_joint_velocity(prim, _to_usd(joint, joint.max_velocity))
 
     prim.SetDocumentation(
@@ -930,6 +966,47 @@ def _write_coupling(
     )
 
 
+def _with_mimic_clearance(
+    settings: dict[str, JointSettings], joints: dict[str, tuple[Joint, str]]
+) -> dict[str, JointSettings]:
+    """A mimic follower's limits widened, where needed, to ``MIMIC_CLEARANCE`` beyond where its
+    leader's limits take it (decision 0037). The follower can never go further than the
+    coupling takes it, so this changes no reachable position; it keeps PhysX from meeting a
+    limit and the mimic constraint at once, which blew up the L20 hand's followers in Isaac
+    Sim (2026-11-17), as NVIDIA's Inspire hand keeps its followers' limits wide. The contract's
+    limits stay in the joint's provenance."""
+    updated = dict(settings)
+    for joint_id, setting in settings.items():
+        coupling = setting.coupling
+        if coupling is None or coupling.method != "mimic":
+            continue
+        follower = joints[joint_id][0]
+        leader_setting = settings.get(coupling.leader)
+        leader = joints[coupling.leader][0]
+        reach_from = (
+            leader_setting.limits
+            if leader_setting is not None and leader_setting.limits
+            else stopped_limits(leader)
+        )
+        lower, upper = setting.limits or stopped_limits(follower)
+        if None in reach_from or lower is None or upper is None:
+            continue
+        ends = sorted(coupling.ratio * v + coupling.offset for v in reach_from)  # type: ignore[operator]
+        margin = MIMIC_CLEARANCE[follower.joint_type]
+        widened = (min(lower, ends[0] - margin), max(upper, ends[1] + margin))
+        if widened != (lower, upper):
+            note = (
+                f"limits widened to {margin:g} beyond the coupling's reach "
+                f"(contract: {lower:g} to {upper:g}; decision 0037)"
+            )
+            updated[joint_id] = replace(
+                setting,
+                limits=widened,
+                note=f"{setting.note}; {note}" if setting.note else note,
+            )
+    return updated
+
+
 def _with_follower_starts(
     settings: dict[str, JointSettings], joints: dict[str, tuple[Joint, str]]
 ) -> dict[str, JointSettings]:
@@ -960,6 +1037,35 @@ def _filter_unjoined_pairs(
         ]
         if others:
             body = stage.GetPrimAtPath(body_paths[part_id])
+            UsdPhysics.FilteredPairsAPI.Apply(body).CreateFilteredPairsRel().SetTargets(others)
+
+
+def _filter_groups(
+    stage: Usd.Stage,
+    body_paths: dict[str, Sdf.Path],
+    joints: dict[str, tuple[Joint, str]],
+    groups: Sequence[Sequence[str]],
+) -> None:
+    """Unjoined parts of one group do not collide (``Collisions``)."""
+    joined = {frozenset((joint.parent_part, joint.child_part)) for joint, _ in joints.values()}
+    for group in groups:
+        unknown = sorted(set(group) - set(body_paths))
+        if unknown:
+            raise ExportError(f"a collision group names {unknown}: no such part")
+    order = list(body_paths)
+    for i, (part_id, path) in enumerate(body_paths.items()):
+        others = sorted(
+            {
+                body_paths[other]
+                for group in groups
+                if part_id in group
+                for other in group
+                if order.index(other) > i and frozenset((part_id, other)) not in joined
+            },
+            key=str,
+        )
+        if others:
+            body = stage.GetPrimAtPath(path)
             UsdPhysics.FilteredPairsAPI.Apply(body).CreateFilteredPairsRel().SetTargets(others)
 
 

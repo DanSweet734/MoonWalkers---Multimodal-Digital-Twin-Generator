@@ -44,6 +44,7 @@ from moonwalkers.kb import KnowledgeBase
 from moonwalkers.orchestrator import JobRequest, Orchestrator
 from moonwalkers.pipelines import Pipeline, default_pipelines
 from moonwalkers.usd.exporter import (
+    Collisions,
     DriveSettings,
     ExportError,
     JointSettings,
@@ -99,7 +100,7 @@ class CheckFile:
     machine: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     settings: Mapping[str, JointSettings] = field(default_factory=dict)
     starts: Mapping[str, float] = field(default_factory=dict)
-    collide_unjoined: bool | None = None  # None: as the twin (decision 0032)
+    collide_unjoined: bool | Collisions | None = None  # None: as the twin (decision 0032)
 
     def results(self, results: Sequence[PipelineResult]) -> list[PipelineResult]:
         """The results with this check's machine changes, validated again."""
@@ -370,7 +371,7 @@ def build_run(
         programs = program_files(results)  # a program that cannot run fails before any file
         controls = controls_files(results)  # so do controls whose specs cannot be read
         hold = hold_drive(run_dir)
-        collide = self_collision(run_dir) == "on"
+        collide = twin_collisions(run_dir)
         hidden = hidden_in_checks(run_dir)  # never in the twin itself
         export_twin(twin, results, path, hold, data_dir, collide_unjoined=collide)
         written = [path]
@@ -462,6 +463,17 @@ def self_collision(run_dir: Path) -> Literal["off", "check", "on"]:
     (decision 0032), else "off" (decision 0017)."""
     spec = read_spec(Path(run_dir) / SPEC_FILE)
     return spec.self_collision if isinstance(spec, PartsSpec) else "off"
+
+
+def twin_collisions(run_dir: Path) -> bool | Collisions:
+    """How the twin's parts collide: with ``self_collision`` "on" every unjoined pair collides
+    (decision 0032) but those within a ``collide_apart`` group (decision 0037); else none."""
+    spec = read_spec(Path(run_dir) / SPEC_FILE)
+    if not isinstance(spec, PartsSpec) or spec.self_collision != "on":
+        return False
+    if spec.collide_apart:
+        return Collisions(tuple(tuple(g.parts) for g in spec.collide_apart))
+    return True
 
 
 def run_checks(run_dir: Path, results: Sequence[PipelineResult]) -> list[CheckFile]:

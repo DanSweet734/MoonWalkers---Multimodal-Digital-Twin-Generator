@@ -9,6 +9,7 @@ import pytest
 from pxr import Gf, Sdf, UsdPhysics
 
 from moonwalkers.usd.exporter import (
+    Collisions,
     DriveSettings,
     ExportError,
     JointCoupling,
@@ -143,6 +144,22 @@ def test_parts_not_joined_directly_do_not_collide(slider) -> None:
         frozenset(("slide", "wheel")),
         frozenset(("arm", "wheel")),
     }
+
+
+def test_collision_groups_keep_only_their_own_parts_apart(slider) -> None:
+    """``Collisions`` (decision 0037): unjoined parts collide, except two of one group."""
+    twin, result = slider
+    stage = build_stage(twin, [result], collide_unjoined=Collisions((("slide", "arm", "wheel"),)))
+    pairs = set()
+    for part in ("base", "slide", "arm", "wheel"):
+        api = UsdPhysics.FilteredPairsAPI(stage.GetPrimAtPath(f"{ROOT}/{part}"))
+        targets = api.GetFilteredPairsRel().GetTargets() if api else []
+        pairs |= {frozenset((part, Sdf.Path(t).name)) for t in targets}
+    # slide-arm are joined; base-arm collide, since base is in no group
+    assert pairs == {frozenset(("slide", "wheel")), frozenset(("arm", "wheel"))}
+    assert bool(Collisions()) is True
+    with pytest.raises(ExportError, match="no such part"):
+        build_stage(twin, [result], collide_unjoined=Collisions((("ghost", "arm"),)))
 
 
 def test_a_twin_of_two_joined_parts_gets_no_filtered_pairs(fixed_time: datetime) -> None:
