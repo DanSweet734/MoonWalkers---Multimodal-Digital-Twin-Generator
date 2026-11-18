@@ -13,7 +13,7 @@ Phase 7 gives the arm's hand (the L20 on `igus/rebel6dof02`, one fused part in v
 (5 following) and a grasp on the maker's SDK commands, then Phase 8 is the agent's build of the
 TM-1 and the plan's report. The semester ends about 2026-12-17.
 **Phase 7's work is done, its PR waiting for Daniel's review** (decisions 0037 and 0038
-proposed; research note `docs/research/2026-11-17-l20-hand-sdk-and-models.md`):
+accepted by Daniel 2026-11-17; research note `docs/research/2026-11-17-l20-hand-sdk-and-models.md`):
 - `igus/rebel6dof02@v5` (run `2026-11-17_run-002`, `compose_v5.py` in
   `part_cutting/2026-11-17_spec/`): the hand as labelled stand-ins on LinkerBot's right L20
   model's frames (the generated hand contradicts the photos; the meshes read for sizes, not

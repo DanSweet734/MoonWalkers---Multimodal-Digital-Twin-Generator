@@ -1,7 +1,7 @@
 # 0037 - The hand's fingers and joints: stand-ins on the maker's frames, parts that pass through each other, and mimic followers that clear their reach
 
-- **Status:** proposed (the lab's machines plan, Phase 7; Daniel's Isaac Sim checks of v4 and
-  v5 on 2026-11-17)
+- **Status:** accepted by Daniel on 2026-11-17 ("decision 0037 and 0038 seem good, let's accept
+  them"), after his Isaac Sim checks of v4 and v5 (the lab's machines plan, Phase 7; PR #34)
 - **Date:** 2026-11-17
 - **Decided by:** team (Daniel), proposed by Claude Code
 - **Applies:** decisions 0020 (`follows`), 0023 and 0024 (cut lists and stand-ins), 0031 (the
