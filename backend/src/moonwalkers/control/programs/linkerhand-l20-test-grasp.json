@@ -1,0 +1,275 @@
+{
+  "name": "linkerhand-l20-test-grasp",
+  "sources": [
+    {
+      "source_id": "src-linkerbot-sdk-api",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/linker_hand_api.py",
+      "title": "LinkerBot's ROS 2 SDK, linker_hand_api.py: finger_move and set_speed (commit 0035f23)",
+      "sha256": "acb40f50d393348ac6fb0d4df3ea2a6321a550f1c395d07f8be26188c1940db7",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); local copy in data/machines/igus-rebel6dof02/inputs/documents/sdk/"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-mapping",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/utils/mapping.py",
+      "title": "LinkerBot's ROS 2 SDK, mapping.py: each hand's 0-255 command range to joint angles in radians (commit 0035f23)",
+      "sha256": "403134d65e1d9e263d70fef57cd7ac4c7366845b6385b788565f4e053829856b",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); local copy in data/machines/igus-rebel6dof02/inputs/documents/sdk/"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-presets",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/gui_control/gui_control/config/constants.py",
+      "title": "LinkerBot's ROS 2 SDK, the GUI's hand configurations: each hand's preset actions (commit 0035f23)",
+      "sha256": "27d251bb39a48cd9c9429751e5e66b04c7bd9f17b1e3f9d1e1ac2889431b3d97",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); local copy in data/machines/igus-rebel6dof02/inputs/documents/sdk/"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-l20-can",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/core/can/linker_hand_l20_can.py",
+      "title": "LinkerBot's ROS 2 SDK, the L20's CAN driver: set_joint_positions, set_speed and the CAN frames (commit 0035f23)",
+      "sha256": "1fad4550591cfeb17b9fe7cac0b75772a8831df3cd589619af6206fe95fb44d6",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); local copy in data/machines/igus-rebel6dof02/inputs/documents/sdk/"
+    },
+    {
+      "source_id": "src-linkerbot-sdk-readme",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/linker-bot/linkerhand-ros2-sdk/blob/0035f236c98b644aba6d9e972359df3fa1af4342/README.md",
+      "title": "LinkerBot's ROS 2 SDK, README (V3.0.1): the joint order of each hand's position list (commit 0035f23)",
+      "sha256": "e1b603b7db8c2113a5ddc23412fba946bdaa5355542a92f974b542f005900335",
+      "retrieved_at": "2026-11-17T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); local copy in data/machines/igus-rebel6dof02/inputs/documents/sdk/"
+    },
+    {
+      "source_id": "src-linkerbot-l20-urdf",
+      "kind": "url",
+      "input_type": "online_resource",
+      "uri": "https://github.com/linkerbotai/linker_hand_sim/blob/b21e9faa6078288a18311c351fc871371c784063/linker_hand_isaac_gym_urdf/l20/right/linkerhand_l20_right.urdf",
+      "title": "LinkerBot's L20 right hand (URDF, 21 revolute joints, 5 mimic), https://github.com/linkerbotai/linker_hand_sim/blob/b21e9faa6078288a18311c351fc871371c784063/linker_hand_isaac_gym_urdf/l20/right/linkerhand_l20_right.urdf",
+      "sha256": "8f193f79d0fd37258d1b6a65f33c47077318a86d26f35821b45dccc90b24b6ea",
+      "retrieved_at": "2026-11-09T00:00:00Z",
+      "license_note": "Apache-2.0 (the repository's LICENSE); the repository's README says it moved to linker-bot/linkerhand-sim; local copy in data/machines/igus-rebel6dof02/inputs/documents/models/"
+    },
+    {
+      "source_id": "src-plan-phase-7",
+      "kind": "user_input",
+      "uri": "user",
+      "title": "Daniel Sweet's plan for the lab's machines, Phase 7's checklist (docs/lab-machines-plan.md, approved 2026-11-09, PR #27): a grasp, the hand closing and opening on the SDK's commands in Isaac Sim. The calls and their timing are Claude Code's choice (2026-11-17); the lab has shared no hand program",
+      "retrieved_at": "2026-11-17T00:00:00Z"
+    }
+  ],
+  "behavior": {
+    "behavior_id": "linkerhand_l20_test_grasp",
+    "name": "A test grasp for the L20 hand's twin (labelled: not the lab's)",
+    "kind": "program_interpreter",
+    "description": "A labelled test program of LinkerBot SDK calls, written by Claude Code because the lab has shared no hand program: set_speed at the SDK's default (100 of 255 for each finger), then finger_move to the GUI's preset 'open' (张开), the preset 'fist' (握拳) and 'open' again, with a sleep after each move. Not tried on the real hand.",
+    "drives_joints": [
+      "thumb_joint2",
+      "index_joint1",
+      "middle_joint1",
+      "ring_joint1",
+      "little_joint1",
+      "thumb_joint0",
+      "index_joint0",
+      "middle_joint0",
+      "ring_joint0",
+      "little_joint0",
+      "thumb_joint1",
+      "thumb_joint3",
+      "index_joint2",
+      "middle_joint2",
+      "ring_joint2",
+      "little_joint2"
+    ],
+    "confidence": 0.6,
+    "citations": [
+      {
+        "source_id": "src-plan-phase-7",
+        "locator": "docs/lab-machines-plan.md, Phase 7's checklist",
+        "quote": "A grasp: the hand closes and opens on the SDK's commands in Isaac Sim."
+      },
+      {
+        "source_id": "src-linkerbot-sdk-api",
+        "locator": "LinkerHandApi.finger_move, its docstring",
+        "quote": "@params: pose list L7 len(7) | L10 len(10) | L20 len(20) | L25 len(25) 0~255"
+      },
+      {
+        "source_id": "src-linkerbot-sdk-api",
+        "locator": "LinkerHandApi.set_speed: its default, the speed this program sets",
+        "quote": "speed = [100] * 5"
+      },
+      {
+        "source_id": "src-linkerbot-sdk-l20-can",
+        "locator": "class constants, the speed frame",
+        "quote": "JOINT_SPEED_R = 0x05           # Short frame speed - motor running speed control"
+      },
+      {
+        "source_id": "src-linkerbot-sdk-readme",
+        "locator": "the joint correspondence table, L20",
+        "quote": "L20: [\"Thumb Base\", \"Index Base\", \"Middle Base\", \"Ring Base\", \"Little Base\", \"Thumb Abduction\""
+      },
+      {
+        "source_id": "src-linkerbot-sdk-mapping",
+        "locator": "# L20 R OK, the right L20's ranges (rad) and directions",
+        "quote": "l20_r_derict = [-1, -1, -1, -1, -1, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, -1, -1, -1, -1]"
+      },
+      {
+        "source_id": "src-linkerbot-sdk-presets",
+        "locator": "_HAND_CONFIGS['L20'].preset_actions, the fist (握拳)",
+        "quote": "\"握拳\": [40, 0, 0, 0, 0, 131, 10, 100, 180, 240, 19, 255, 255, 255, 255, 135, 0, 0, 0, 0]"
+      },
+      {
+        "source_id": "src-linkerbot-sdk-presets",
+        "locator": "_HAND_CONFIGS['L20'].preset_actions, open (张开)",
+        "quote": "\"张开\": [255, 255, 255, 255, 255, 255, 10, 100, 180, 240, 245, 255, 255, 255, 255, 255, 255, 255, 255, 255]"
+      },
+      {
+        "source_id": "src-linkerbot-l20-urdf",
+        "locator": "every revolute joint's limit: a stand-in for speed 255",
+        "quote": "velocity=\"1\""
+      }
+    ],
+    "spec": {
+      "program": {
+        "format": "linkerhand_sdk",
+        "hand_joint": "L20",
+        "hand_type": "right",
+        "slots": {
+          "0": "thumb_joint2",
+          "1": "index_joint1",
+          "2": "middle_joint1",
+          "3": "ring_joint1",
+          "4": "little_joint1",
+          "5": "thumb_joint0",
+          "6": "index_joint0",
+          "7": "middle_joint0",
+          "8": "ring_joint0",
+          "9": "little_joint0",
+          "10": "thumb_joint1",
+          "15": "thumb_joint3",
+          "16": "index_joint2",
+          "17": "middle_joint2",
+          "18": "ring_joint2",
+          "19": "little_joint2"
+        },
+        "calls": [
+          {
+            "call": "set_speed",
+            "speed": [
+              100,
+              100,
+              100,
+              100,
+              100
+            ],
+            "descr": "the SDK's default speed"
+          },
+          {
+            "call": "finger_move",
+            "pose": [
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              10,
+              100,
+              180,
+              240,
+              245,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255
+            ],
+            "descr": "open, the GUI's preset"
+          },
+          {
+            "call": "sleep",
+            "seconds": 3,
+            "descr": "let it open"
+          },
+          {
+            "call": "finger_move",
+            "pose": [
+              40,
+              0,
+              0,
+              0,
+              0,
+              131,
+              10,
+              100,
+              180,
+              240,
+              19,
+              255,
+              255,
+              255,
+              255,
+              135,
+              0,
+              0,
+              0,
+              0
+            ],
+            "descr": "fist, the GUI's preset"
+          },
+          {
+            "call": "sleep",
+            "seconds": 5,
+            "descr": "hold the fist"
+          },
+          {
+            "call": "finger_move",
+            "pose": [
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              10,
+              100,
+              180,
+              240,
+              245,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255,
+              255
+            ],
+            "descr": "open, the GUI's preset"
+          },
+          {
+            "call": "sleep",
+            "seconds": 5,
+            "descr": "let it open"
+          }
+        ]
+      }
+    }
+  }
+}

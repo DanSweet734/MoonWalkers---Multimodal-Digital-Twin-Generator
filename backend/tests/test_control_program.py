@@ -27,6 +27,7 @@ def test_the_manual_examples_ship_with_their_citations() -> None:
         "haas-o40001-basic-program",  # Haas mill programs (decision 0035), tested on their own
         "haas-o40001-basic-program-vf3",  # on the VF-3's platter (decision 0036)
         "haas-o40006-cutter-comp",
+        "linkerhand-l20-test-grasp",  # SDK calls for the L20 hand (decision 0038), on its own
         "moonwalkers-vf3-test-tilt-and-turn",  # A and B, a labelled test (decision 0036)
         "rebel-test-joint-moves",  # an arm's iRC program (decision 0033), tested on its own
     ]

@@ -44,6 +44,7 @@ from moonwalkers.usd.validate import validate_file
 
 from .arm_export import write_arm_program_folder
 from .haas_gcode import MillSettings, MillTrajectory
+from .hand_export import write_hand_program_folder
 from .interpreter import RunSettings, Trajectory, run_program
 from .irc import ArmSettings, ArmTrajectory
 from .isaac_runner import (
@@ -57,6 +58,7 @@ from .isaac_runner import (
     WAIT_HOLDS,
     WAIT_STARTS,
 )
+from .linkerhand import HandSettings, HandTrajectory
 from .mill_export import write_mill_program_folder
 from .program import ProgramError, ProgramFile
 
@@ -69,9 +71,9 @@ RUNNER = Path(__file__).with_name("isaac_runner.py")
 @dataclass(frozen=True)
 class ProgramOutput:
     folder: Path
-    joint_id: str  # for an arm's or a mill's program: its joints, comma-separated
-    trajectory: Trajectory | ArmTrajectory | MillTrajectory
-    settings: RunSettings | ArmSettings | MillSettings
+    joint_id: str  # for an arm's, a mill's or a hand's program: its joints, comma-separated
+    trajectory: Trajectory | ArmTrajectory | MillTrajectory | HandTrajectory
+    settings: RunSettings | ArmSettings | MillSettings | HandSettings
 
 
 def write_program_folder(
@@ -84,6 +86,7 @@ def write_program_folder(
     *,
     arm_settings: ArmSettings | None = None,
     mill_settings: MillSettings | None = None,
+    hand_settings: HandSettings | None = None,
     hold: DriveSettings | None = None,
     collide_unjoined: bool | Collisions = False,
     hidden_parts: Sequence[str] = (),
@@ -91,9 +94,11 @@ def write_program_folder(
     """Run ``program`` on ``twin``'s driven joint and write the folder ``out_dir``. An iRC
     program for an arm (decision 0033) goes to ``write_arm_program_folder`` with
     ``arm_settings``, a Haas mill program (decision 0035) to ``write_mill_program_folder`` with
-    ``mill_settings``. ``hold`` is the twin's own drive (decision 0032: its stiffness and damping;
-    the target is the program's start), ``collide_unjoined`` its collisions, and ``hidden_parts``
-    the parts its checks hide (an enclosed mill's guards)."""
+    ``mill_settings``, LinkerBot SDK calls for a hand (decision 0038) to
+    ``write_hand_program_folder`` with ``hand_settings``. ``hold`` is the twin's own drive
+    (decision 0032: its stiffness and damping; the target is the program's start),
+    ``collide_unjoined`` its collisions, and ``hidden_parts`` the parts its checks hide (an
+    enclosed mill's guards)."""
     out_dir = Path(out_dir)
     if program.is_irc:
         folder, _, arm_trajectory, used = write_arm_program_folder(
@@ -122,6 +127,21 @@ def write_program_folder(
         )
         joints = ", ".join(mill_trajectory.positions)
         return ProgramOutput(folder, joints, mill_trajectory, mill_used)
+    if program.is_linkerhand:
+        folder, _, hand_trajectory, hand_used = write_hand_program_folder(
+            out_dir,
+            program,
+            twin,
+            results,
+            data_dir,
+            hand_settings,
+            hold,
+            collide_unjoined,
+            hidden_parts,
+        )
+        return ProgramOutput(
+            folder, ", ".join(hand_trajectory.joint_ids), hand_trajectory, hand_used
+        )
     if out_dir.exists():
         raise ExportError(f"{out_dir} exists; program folders are never overwritten")
     joint = driven_joint(program, results)

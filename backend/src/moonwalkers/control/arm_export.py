@@ -290,7 +290,12 @@ def _joint_prim(stage: Usd.Stage, joint_id: str) -> Usd.Prim:
 
 
 def _add_program(
-    prim: Usd.Prim, program: ProgramFile, times: Sequence[float], angles: Sequence[float]
+    prim: Usd.Prim,
+    program: ProgramFile,
+    times: Sequence[float],
+    angles: Sequence[float],
+    runs: str = "iRC program",
+    decision: str = "0033",
 ) -> None:
     prim.CreateAttribute(NAME, Sdf.ValueTypeNames.String, custom=True).Set(program.name)
     doubles = Sdf.ValueTypeNames.DoubleArray
@@ -301,8 +306,8 @@ def _add_program(
         planned.Set(deg, Usd.TimeCode(t * TIME_CODES_PER_SECOND))
     UsdPhysics.DriveAPI(prim, "angular").CreateTargetVelocityAttr(0.0)
     prim.SetDocumentation(
-        f"{prim.GetMetadata('documentation') or ''} Runs iRC program '{program.name}' through "
-        "run_program.py (decision 0033).".strip()
+        f"{prim.GetMetadata('documentation') or ''} Runs {runs} '{program.name}' through "
+        f"run_program.py (decision {decision}).".strip()
     )
 
 

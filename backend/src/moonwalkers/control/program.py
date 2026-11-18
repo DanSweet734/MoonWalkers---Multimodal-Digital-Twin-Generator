@@ -170,14 +170,18 @@ def runnable_behaviors(control: Sequence[ControlBehavior]) -> list[ControlBehavi
 def check_program(behavior: ControlBehavior) -> None:
     """Refuse a program that cannot be run: an iRC program for an arm (decision 0033) when its
     ``spec["program"]`` says ``"format": "irc_xml"``, a Haas mill program (decision 0035) when it
-    says ``"haas_gcode"``, else the HA5C's step table."""
-    from .haas_gcode import GcodeProgram, is_gcode  # both import this module
+    says ``"haas_gcode"``, LinkerBot SDK calls for the L20 hand (decision 0038) when it says
+    ``"linkerhand_sdk"``, else the HA5C's step table."""
+    from .haas_gcode import GcodeProgram, is_gcode  # all three import this module
     from .irc import IrcProgram, is_irc
+    from .linkerhand import HandProgram, is_linkerhand
 
     if is_irc(behavior):
         IrcProgram.from_behavior(behavior)
     elif is_gcode(behavior):
         GcodeProgram.from_behavior(behavior)
+    elif is_linkerhand(behavior):
+        HandProgram.from_behavior(behavior)
     else:
         IndexProgram.from_behavior(behavior)
 
@@ -213,6 +217,13 @@ class ProgramFile(BaseModel):
         from .haas_gcode import is_gcode
 
         return is_gcode(self.behavior)
+
+    @property
+    def is_linkerhand(self) -> bool:
+        """LinkerBot SDK calls for a hand (decision 0038), not an HA5C step table."""
+        from .linkerhand import is_linkerhand
+
+        return is_linkerhand(self.behavior)
 
     def program(self) -> IndexProgram:
         return IndexProgram.from_behavior(self.behavior)
