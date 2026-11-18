@@ -1104,6 +1104,158 @@ not the velocity column.
 the commanded poses against the plan, and the hand's match with the photos.
 
 ## Phase 8 - The agent builds one, and the report
+
+### Hand-off (2026-11-17, from the plan's Phase 7 chat)
+- **Where you start:** from `main` after PR #34 (merge commit `e1b0564`, 2026-11-18T05:50Z), on
+  branch `feat/lab-phase-8-agent-build`. Its first commit holds this hand-off; its second names
+  the mill program's format in `add_control` and `docs/agent-procedure.md` (a gap the agent
+  would have met). Branch `feat/lab-phase-7-hand` is kept, since Daniel did not ask to delete it.
+  Stop for Daniel's review with a pull request; merge only on his word.
+- **Read first:** CLAUDE.md "Current phase"; this hand-off and the checklist below; the drill
+  press's agent build, its plan's Phase 7 hand-off (`docs/drill-press-plan.md`) and
+  [worklog 2026-11-04](worklog/2026-11-04.md), by its headings; `docs/drill-press-report.md` as
+  the model for the plan's report.
+
+#### What Phase 7 left
+- **Level 3 met for the hand** (`igus/rebel6dof02@v5`, the test grasp; decisions 0037 and 0038,
+  accepted by Daniel 2026-11-17). Every machine of the plan now has levels 1 to 3.
+- **Daniel approved the three latest twins in the dashboard** (2026-11-17): `haas/tm1@v3`,
+  `haas/vf3@v1` and `igus/rebel6dof02@v5`. A request now reuses those. So the agent's new
+  TM-1 version is not reused until it is approved itself (decision 0015), and `request_twin`
+  after its submission should answer with v3. That is expected, not a fault.
+- **Tool gaps still open:** `set_spec_frame` cannot set `hidden_in_checks` (the TM-1 has no
+  enclosure, so it should not need it [INFERENCE]); the scorer reads one maker's model per twin
+  (the hand is a second).
+
+#### What happens on 2026-11-18, and after
+- **Daniel's lab visit** (the visit list below, and a checklist page for his phone). Dr. Li's
+  assistant is to hand over **the lab's iRC program** for the arm. When it comes:
+  - file the `.xml` files as given (iRC keeps them in `/Data/Programs/`, research note
+    2026-11-10) in `data/machines/igus-rebel6dof02/inputs/programs/`, with a `SOURCES.md` row;
+  - run it with `control run` on `igus/rebel6dof02@v5` (decision 0033's reader refuses linear and
+    circular moves; a refusal is a finding, not a failure);
+  - revisit decision 0033, as its record says. This is Phase 8 work only if it fits beside the
+    agent's build; otherwise it goes in the report as waiting.
+- **The measurements** go in the worklog, each machine's `inputs/SOURCES.md` and the twins'
+  issues. A measure that changes a twin is a new version, after the agent's build.
+- **The weekly meeting of 2026-11-19 (Thursday):** Daniel presents the agent's build from his
+  recording, with this week's advisors' page (the TM-1's levels 2 and 3, the VF-3's levels 1 to
+  3, the hand's levels 2 and 3, the agent's build, and the asks of the memory
+  "meeting-2026-11-19-items"). Not built yet; drafted with Daniel in the Phase 8 chat.
+
+#### Daniel's run-sheet for the agent's build
+Two Claude Code sessions: **the agent** (a fresh one that builds, recorded) and **the Phase 8
+chat** (this hand-off's reader, which checks and reports). Keep them apart, so the agent sees only
+what its prompt allows.
+
+1. **Before recording.** On `feat/lab-phase-8-agent-build`, pulled. Start the API and the
+   dashboard from `backend/`: `uv run python -m moonwalkers.api`, then http://127.0.0.1:8000/
+   (the built dashboard is in `dashboard/dist/`; `npm run build` in `dashboard/` if it is
+   missing).
+2. **The job, in the dashboard** (`docs/setup/dashboard.md`, section 3, step 6): manufacturer
+   `Haas Automation`, model `TM-1`, **"Build a new version" ticked**. Pick all eight photos in
+   `data/machines/haas-tm1/inputs/photos/`; they are already there, so nothing is copied. Views
+   and uses as the chat's v3 (Phase 4 learned that the back-right corner, behind a sign and a
+   stool, misleads the generator), recorded as the user's choice:
+
+   | Photo | View | Use |
+   |---|---|---|
+   | `20261105_134300.jpg` | Front-left corner (your left) | Used to make the 3D model |
+   | `20261105_134337.jpg` | Front-right corner (your right) | Used to make the 3D model |
+   | `20261105_134355.jpg` | Back-left corner (your left) | Used to make the 3D model |
+   | `20261105_134314.jpg` | Front | Kept as evidence |
+   | `20261105_134322.jpg` | Right side (your right) | Kept as evidence |
+   | `20261105_134329.jpg` | Back-right corner (your right) | Kept as evidence |
+   | `20261105_134346.jpg` | Left side (your left) | Kept as evidence |
+   | `20261105_134411.jpg` | A close-up or part of the machine | Kept as evidence |
+
+   Origin, for every photo: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the
+   team's own photo; internal research only; shows serial numbers, keep out of commits." Start
+   the job; it waits for the agent.
+3. **Record.** Windows' own tools need no install: the Snipping Tool's screen recording, or the
+   Game Bar (Win+Alt+R) on the VS Code window; check the Game Bar's longest recording in its
+   capture settings first. Recording in parts is fine.
+4. **The agent.** A new Claude Code session at the repository's root (a new chat starts the MCP
+   server afresh; `/mcp` should list `moonwalkers` with 28 tools). Paste the prompt below. Allow
+   its tool calls as they come.
+5. **Its questions.** It asks when the sources do not settle a judgement; the answers are
+   Daniel's, and each goes in the report as human help. Likely ones, with suggested answers:
+   - *A cut-out keeps the sign or the stool, or loses part of the mill:* "Try SAM's box and
+     points, or a crop box, with set_photo; if none is clean, use the mask the chat drew for v3 at
+     `machines/haas-tm1/runs/2026-11-11_run-003/masks/<photo id>.png`, and log it as a person's
+     mask." (v3 needed drawn masks for all three, Phase 4.)
+   - *Which height or width scales the twin, the TM-1 cited at 109 in tall against about 80 in in
+     the photos:* "Your call: cite it, and log the disagreement."
+   - *An axis's direction or home that no source gives:* "A labelled stand-in, logged."
+6. **After its submission.** It reports the reuse check, its comparison and a worklog summary,
+   and commits nothing. Stop the recording.
+7. **Isaac Sim, on the agent's run** (the Phase 8 chat gives the exact files and targets):
+   level 2 as in the check guide's section 11 (`twin.usdc`, a target typed for each axis's two
+   ends and the carousel; `checks/slide.usdc`), then level 3 as in section 12 (the program
+   folder in the run's `programs/`, `run_program.py` then `record_joints.py`).
+8. **Review in the dashboard:** Daniel's alone, and only once the checks are in.
+
+#### The agent's starter prompt
+```text
+Use the MoonWalkers MCP tools to build a new version of the Haas TM-1 twin, with a program it
+runs, for the open dashboard job (list_jobs finds it). Follow docs/agent-procedure.md, including
+section 5b (a machine of several parts), the cut-outs (preview_cutouts, set_photo) and step 3's
+programs.
+
+What you may read, and what not until you have submitted:
+- Read the Haas documents in data/machines/haas-tm1/inputs/documents/ yourself (listed in
+  data/machines/haas-tm1/inputs/SOURCES.md): the Toolroom Series sheet, the Toolroom addenda of
+  2002 and 2009, the TM-1 layout drawing, the mill operator's manuals of 2009 and 2023, and the
+  two saved web pages. Cite every fact with its PDF page and a short quote. Where sources
+  disagree, name both, pick one and say why.
+- You may read docs/agent-procedure.md, the decision records in docs/decisions/, and
+  backend/src/moonwalkers/control/programs/haas-o40001-basic-program.json as the format of a
+  mill program. State its machine and setup for your own joints and frame, and cite the
+  manual's pages for the program yourself.
+- Do not open, until you have submitted: backend/src/moonwalkers/pipelines/b/haas_tm1.reference.json,
+  anything under data/machines/haas-tm1/part_cutting/ or data/machines/haas-tm1/runs/ other than
+  your own run, the research notes on the TM-1 and on mill programs in docs/research/, the
+  worklogs, or docs/lab-machines-plan.md. Measure the mesh yourself with the tools.
+
+While building:
+- Open every view the tools return: the cut-out sheet, the mesh views, each part_<id> view and
+  the photo overlays.
+- For level 3, record Haas's basic program O40001 (2023 Mill Operator's Manual, p. 102) as a
+  program_interpreter behaviour with add_control, so the build writes its program folder.
+- Ask me when a judgement changes the twin and the sources do not settle it. Install nothing.
+  Never review the twin. Write no serial number from the nameplate photo anywhere in docs/.
+
+Before submit_twin: dry_run_twin until it is clean (a submitted version is kept for good).
+Then submit_twin, and run both validators on the stored twin.usdc, every file in checks/ and
+the program folder's program.usdc: uv run python -m moonwalkers.usd.validate <file> and
+uv run omni_asset_validate <file>, from backend/.
+
+Afterwards:
+- Call request_twin for the TM-1 and report its message (a newer approved version may be
+  reused; say which and why).
+- Compare your facts with backend/src/moonwalkers/pipelines/b/haas_tm1.reference.json, and your
+  spec with data/machines/haas-tm1/runs/2026-11-11_run-003/geometry_spec.json. Report every
+  difference, and which of the two you think is right and why.
+- Write a summary of the session in docs/worklog/2026-11-18.md: the tools you called, in order;
+  your choices and why; the questions you asked me and my answers; the results; anything that
+  went wrong; the tool gaps you found. Do not commit.
+```
+
+#### Then the Phase 8 chat
+- The quote checker on the agent's run: `uv run python -m moonwalkers.pipelines.b.quotes
+  <run>/reference_facts.json <run>/geometry_spec.json --data ../data` (the drill press's agent
+  had 140 of 141 found).
+- The scorecard: the agent's version beside v3 (photo match, the cited sizes, joint count and
+  ranges, level 3's gaps). No maker's model exists for the TM-1, so the scorer's maker file does
+  not apply; the comparison is with v3 and the cited facts [INFERENCE].
+- A level-3 measure of Daniel's recording: `uv run python -m moonwalkers.control compare
+  <recording.csv> <folder>/trajectory.json`.
+- Then the checklist's report, the advisors' pages and the tool guide.
+- **What CLAUDE.md shows the agent:** every session loads it, and its "Current phase" describes
+  v3 (three corners, its stand-ins, the 12 in Y travel). The drill press's agent had the same.
+  Name it in the report as a limit of the test [INFERENCE].
+
+### Phase 8's checklist
 - [ ] The agent builds one lab machine from a dashboard job through the MCP tools, as in the drill
       press's Phase 7. **Chosen: the TM-1** (Claude Code, on Daniel's "Our choice", 2026-11-16):
       - it has no public model, so it is the hardest test of photos to twin;
