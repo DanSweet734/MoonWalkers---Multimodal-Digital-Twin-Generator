@@ -173,6 +173,13 @@ the job is done. Otherwise the job waits for you:
      refused (no inverse kinematics). Angles are iRC's (igus's); the twin's pose angles come from
      its facts `jointN_lower`/`jointN_upper` (decision 0031). Example:
      `control/programs/rebel-test-joint-moves.json`.
+   - **A LinkerBot L20 hand** (right hand only; decision 0038): the program is the SDK's calls.
+     `spec["program"]` is `{"format": "linkerhand_sdk", "hand_joint": "L20", "hand_type":
+     "right", "slots": {"0": "thumb_joint2", ...}, "calls": [...]}`, each call `{"call":
+     "set_speed", "speed": [5 values]}`, `{"call": "finger_move", "pose": [20 values]}` or
+     `{"call": "sleep", "seconds": s}`, values 0-255 as the SDK takes them. The 16 slots must be
+     the joints whose cited `<joint>_lower`/`<joint>_upper` facts are the SDK's ranges for those
+     slots; the binding refuses others. Example: `control/programs/linkerhand-l20-test-grasp.json`.
    - **A manual machine** (no program, an operator at the controls; decision 0025) takes three
      behaviours, recorded in this order. Each cites the manual's words for every rule:
      - a `state_machine` for its switch. Its spec holds `inputs` (each with two states, off then

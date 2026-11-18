@@ -1089,16 +1089,16 @@ not the velocity column.
   and the TM-1's X direction and X home (items 1, 2, 10 and 11).
 
 ### Phase 7's checklist
-- [ ] Decision record: the fingers' geometry. They are cut from the generated mesh where the photos
+- [x] Decision record: the fingers' geometry (decision 0037: stand-ins, since the generated hand contradicts the photos). They are cut from the generated mesh where the photos
       allow; otherwise they are labelled stand-ins sized from the maker's model (Daniel,
       2026-11-09: "If they can't be modeled from the input photos then stand ins will have to
       do"). The maker's meshes are not imported. The hand is scored against the photos.
-- [ ] The 16 driven and 5 following joints, from the model that matches the lab's hand (visit
+- [x] The 16 driven and 5 following joints (`igus/rebel6dof02@v5`, level 2), from the model that matches the lab's hand (visit
       list), with `follows` (decision 0020): one articulation of 27 joints with the arm.
-- [ ] Research note: the SDK's commands (joint positions, preset poses) over CAN. LinkerBot's
+- [x] Research note: the SDK's commands (joint positions, preset poses) over CAN (`docs/research/2026-11-17-l20-hand-sdk-and-models.md`; the ROS 2 SDK used is Apache-2.0). LinkerBot's
       Python SDK has no licence on GitHub, so it is read and cited, not copied.
-- [ ] A grasp: the hand closes and opens on the SDK's commands in Isaac Sim.
-- [ ] Daniel's check; worklog, PR.
+- [x] A grasp: the hand closes and opens on the SDK's commands in Isaac Sim (decision 0038, `linkerhand-l20-test-grasp`, level 3).
+- [x] Daniel's check; worklog, PR.
 
 **Measured by:** the joint count against the cited 21 (5 following), the finger ranges reached,
 the commanded poses against the plan, and the hand's match with the photos.

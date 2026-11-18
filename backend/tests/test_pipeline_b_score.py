@@ -207,9 +207,10 @@ def test_the_arms_score_file_maps_every_part_and_joint_in_its_photographed_pose(
     maker = score.MakerModel.model_validate_json(
         (PACKAGE / "igus_rebel6dof02.score.json").read_text(encoding="utf-8")
     )
-    assert set(maker.parts) == {"base", "link1", "link2", "link3", "link4", "link5", "hand"}
+    parts = {"base", "link1", "link2", "link3", "link4", "link5", "hand_adapter"}  # v4 on
+    assert set(maker.parts) == parts
     assert set(maker.joints) == {f"joint{i}" for i in range(1, 7)}
-    assert set(maker.no_shape) == {"hand"}
+    assert set(maker.no_shape) == {"hand_adapter"}
     # igus's angles in the photographed pose (decision 0031) less the 00 model's origin pitches
     igus = {"joint2": -21.81, "joint3": 118.82, "joint5": 10.46}
     pitch = {"joint2": 30.0, "joint3": 30.0, "joint5": -7.5}

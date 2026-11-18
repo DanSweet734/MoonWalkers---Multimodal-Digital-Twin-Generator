@@ -766,6 +766,66 @@ section 12 once, when the first program file opened, and "Unable to deregister c
 when the second program's runner and recorder replaced the first's (they print "stopped the
 earlier runner").
 
+## 15. Lab plan, Phase 7: the L20 hand's 21 joints on the arm (success levels 1 and 2)
+`igus/rebel6dof02@v5` (run `2026-11-17_run-002`) is the arm with the hand as labelled stand-ins on
+LinkerBot's right L20 model's frames (decision 0037): the palm and 21 links, 16 driven joints and
+5 followers (each finger's `joint3` follows its `joint2`, `thumb_joint4` its `thumb_joint3`), in
+one articulation of 27 moving joints. The hand's parts pass through each other; they collide with
+the arm. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\igus-rebel6dof02\runs\2026-11-17_run-002\`.
+
+1. **Record first:** open `twin.usdc`, paste the run's `record_joints.py` into the Script Editor
+   and click **Run**, then press **Play**. Nothing should move.
+2. **Drag the thumb** (Shift + drag): it moves a little and springs back.
+3. **Type targets** (select a joint under `joints`, Property panel, Drive > Angular > Target
+   Position): each joint's ends, in the twin's degrees (the cited limits less the photographed
+   pose), are in section 16's `PROGRAM.md`, "The slots and their joints" (for example
+   `index_joint2` 0 to 61.88, `thumb_joint3` 0 to 73.91). Watch the followers curl with their
+   leaders.
+4. **`checks\spin.usdc`, then `checks\all_motions.usdc`**, each with the recorder: the arm swings
+   and the hand closes; where the arm points the hand at its base the fingers stop against it.
+5. **Send Claude Code** the recordings' paths and what you saw.
+
+**Result (Daniel, 2026-11-17, Isaac Sim 6.2.0): level 2.** v4 (run `2026-11-17_run-001`) blew up
+(positions to 1e36, then NaN) at a leader's range end, a thumb drag and in spin: a follower's
+limits met its coupling's reach and it had its own speed cap. Fixed in the exporter (decision
+0037) and rebuilt as v5. v5: the thumb "sprung back into place"; every typed joint reached its
+cited ends within 0.15°, the followers within 0.04°; spin and all_motions "all looked natural",
+no NaN. The hand's size, proportions and pose match the photos (his check of v4). The record is
+the run's `RUN.md`.
+
+## 16. Lab plan, Phase 7: LinkerBot SDK calls close and open the hand (success level 3)
+The program is a labelled test program of LinkerBot's SDK calls (decision 0038), not the lab's:
+`set_speed` 100 for every finger, `finger_move` to the SDK GUI's preset "open", 3 s, its "fist",
+5 s, "open", 5 s (13 s in all). Each value (0-255) is turned into a joint angle by the SDK's own
+table (`mapping.py`). It runs on `igus/rebel6dof02@v5`. The folder is
+`C:\Users\Daniel Sweet\Desktop\MoonWalkers---Multimodal-Digital-Twin-Agent-Platform\data\machines\igus-rebel6dof02\programs\2026-11-17_linkerhand-l20-test-grasp_v5\`.
+Its `PROGRAM.md` lists each slot's joint, the calls and the plan; `sdk_calls.py` is the same
+calls as a script using the SDK would make them (to read, not to run here).
+
+1. **Open the file.** File > Open that folder's `program.usdc`. The twin opens in its
+   photographed pose.
+2. **Start the runner.** Paste the whole of `run_program.py` into Window > Script Editor and click
+   **Run**. It prints 16 lines, one per driven joint; the 5 followers have none, since their
+   mimic coupling moves them.
+3. **Start the recorder** in a second Script Editor tab (`record_joints.py`).
+4. **Press Play.** By 0.7 s the fingers spread slightly and the thumb turns out a little; from
+   3 s the hand closes into a fist with the thumb across, done by about 7 s; it holds the fist
+   until 8 s and is open again by about 12 s. The arm stays still. The thumb passes through the
+   fingers (decision 0037).
+5. **Optional: no script.** In a new Isaac Sim session, open `program_native.usdc`, start only the
+   recorder, and press Play. It should make the same moves, trailing slightly.
+6. **Send Claude Code** the recordings and what you saw. It runs
+   `uv run python -m moonwalkers.control compare <recording.csv> <folder>\trajectory.json`: each
+   joint's distance from the plan, followers included, and when calls 2, 4 and 6 arrived.
+
+**Result (Daniel, 2026-11-17): level 3.** Two runs of `program.usdc` and one of
+`program_native.usdc`, "all was as you described" and "all looked great too": open, fist and open
+arrived within 0.5° at 0.70, 7.02 and 12.02 s (planned 0.71, 7.02, 12.02); every joint within
+0.86° of the plan. Seen and logged: "the thumb passes through the fingers too" (the hand's parts
+are one `collide_apart` group; the maker's meshes at the fist preset overlap too, decision 0037).
+The record is the folder's `PROGRAM.md`.
+
 ## Warnings you can ignore
 The first check (2026-10-17, Isaac Sim 6.2.0) showed no errors. It showed these warnings, which are
 not about the twin files:
