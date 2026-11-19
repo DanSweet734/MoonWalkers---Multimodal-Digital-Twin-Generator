@@ -158,8 +158,11 @@ def measure_geometry(stage: Usd.Stage, binding: MillBinding) -> MillGeometry:
     """The spindle nose's face and the table's top, on the twin at its 0.
 
     The face is the lowest level of the tool part's mesh that holds at least
-    ``NOSE_MIN_POINTS`` points, its centre their mean: the stand-in nose is a 32-sided cylinder,
-    and its drive keys hang below the face with four points each [INFERENCE: a turned nose's rim].
+    ``NOSE_MIN_POINTS`` points: the stand-in nose is a 32-sided cylinder, and its drive keys hang
+    below the face with four points each [INFERENCE: a turned nose's rim]. Its centre is where
+    the spindle's joint axis, when vertical, crosses it; else the mean of the face's points. The
+    mean alone is off the axis when a key lies on the face (the agent's TM-1, `haas/tm1@v4`:
+    one lug, 5.4 mm; Phase 8), and a tool drawn there circles the axis as the spindle turns.
     The table's top is the highest level, under the face, where the work part's upward faces
     have at least half the area of its largest such level: a line straight down from the nose
     can fall into a T-slot, and a stand-in built of overlapping boxes (the TM-1's: a slab with
@@ -177,6 +180,9 @@ def measure_geometry(stage: Usd.Stage, binding: MillBinding) -> MillGeometry:
     nx = sum(p[0] for p in face) / len(face)
     ny = sum(p[1] for p in face) / len(face)
     nz = face[0][2]
+    on_axis = _vertical_axis_xy(stage, binding.spindle) if binding.spindle else None
+    if on_axis is not None:  # the tool turns about the spindle's joint, so its tip is on it
+        nx, ny = on_axis
     areas: dict[float, float] = {}  # by height to the millimetre
     heights: dict[float, float] = {}  # the faces' own height, area-weighted
     for tri in _triangles(_part_prim(stage, binding.work_part)):
@@ -190,6 +196,25 @@ def measure_geometry(stage: Usd.Stage, binding: MillBinding) -> MillGeometry:
     largest = max(areas.values())
     top = max(z for z, area in areas.items() if area >= TOP_AREA_SHARE * largest)
     return MillGeometry(nose_m=(nx, ny, nz), table_top_m=heights[top] / areas[top])
+
+
+def _vertical_axis_xy(stage: Usd.Stage, joint_id: str) -> tuple[float, float] | None:
+    """Where the revolute joint ``joint_id``'s axis stands, (x, y) on the twin at its 0, if the
+    axis is vertical (within about 2.5 degrees); else None."""
+    joint = UsdPhysics.Joint(_joint_prim(stage, joint_id))
+    targets = joint.GetBody1Rel().GetTargets()
+    if not targets:
+        return None
+    body = stage.GetPrimAtPath(targets[0])
+    xf = UsdGeom.XformCache().GetLocalToWorldTransform(body)
+    anchor = xf.Transform(Gf.Vec3d(joint.GetLocalPos1Attr().Get() or Gf.Vec3f(0.0)))
+    token = UsdPhysics.RevoluteJoint(joint.GetPrim()).GetAxisAttr().Get() or "X"
+    local = Gf.Vec3d(*(1.0 if token == name else 0.0 for name in "XYZ"))
+    rotation = joint.GetLocalRot1Attr().Get() or Gf.Quatf(1.0)
+    axis = xf.TransformDir(Gf.Rotation(Gf.Quatd(rotation)).TransformDir(local))
+    if axis.GetLength() < 1e-12 or abs(axis[2]) / axis.GetLength() < 0.999:
+        return None
+    return anchor[0], anchor[1]
 
 
 def _upward(tri: Sequence[Sequence[float]]) -> tuple[bool, float]:

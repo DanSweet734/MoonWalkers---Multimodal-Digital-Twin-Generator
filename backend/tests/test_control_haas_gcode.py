@@ -457,6 +457,23 @@ def test_the_box_mills_nose_and_table_are_measured(box_mill) -> None:
     assert geometry.table_top_m == pytest.approx(TABLE_TOP)
 
 
+def test_the_nose_is_on_the_spindles_axis_not_the_faces_mean(box_mill) -> None:
+    """The agent's TM-1 (v4, Phase 8): a lug on the nose's face pulled the face's mean 5.4 mm off
+    the spindle's axis, and the tool drawn there circled the axis. Here the nose's mesh is
+    centred 6 mm off the joint's axis: the tip stays on the axis, the tool turns about."""
+    twin, result = box_mill
+    off_axis = cylinder(0.04, 0.1, (0, 0, 1), (0.006, 0.0, NOSE_Z + 0.05), segments=32)
+    parts = [
+        p.model_copy(update={"primitive": off_axis}) if p.part_id == "spindle" else p
+        for p in result.parts
+    ]
+    result = result.model_copy(update={"parts": parts})
+    program = program_file(gcode("G00 X1."))
+    stage = build_stage(twin, [result], None, None)
+    geometry = measure_geometry(stage, bind_mill(program.behavior, [result]))
+    assert geometry.nose_m == pytest.approx((0.0, 0.0, NOSE_Z), abs=1e-6)
+
+
 def _named(stage: Usd.Stage, tail: str) -> Usd.Prim:
     (prim,) = [p for p in stage.Traverse() if str(p.GetPath()).endswith("/" + tail)]
     return prim
