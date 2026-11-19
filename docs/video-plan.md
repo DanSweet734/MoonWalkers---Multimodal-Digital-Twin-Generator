@@ -5,8 +5,12 @@ lab's machines plan. The plan itself is drafted below it, after the advisors' me
 2026-11-19, and nothing is built, filed or installed until Daniel approves it.
 
 ## Hand-off (2026-11-18, from the lab's machines plan's Phase 8 chat)
-- **Start** from `main` after the Phase 8 pull request is merged, on a new branch
-  `docs/video-plan`. Its first commit holds the advisors' answers; the plan follows. Stop for
+- **Start** on branch `docs/video-plan`, from `main` after PR #35 (merge commit `a17a90e`). The
+  branch already holds one commit from the Phase 8 chat (2026-11-18): the research note on video
+  input below, and this line. Then the advisors' answers; the plan follows.
+  **Since PR #35:** Daniel rejected `haas/tm1@v4` in the dashboard (2026-11-19T02:09Z: "Mesh was
+  broken in multiple spots, out of place, and holes were present where they shouldn't have
+  been."); the merged docs still call it unreviewed, so correct them in this branch. Stop for
   Daniel's review with a pull request; merge only on his word.
   - Branches kept, since Daniel did not ask to delete them: every `feat/lab-phase-*` branch,
     `docs/lab-machines-plan` and the earlier plans' branches. `origin/Sarkis` is Sarkis's: read
@@ -30,6 +34,8 @@ lab's machines plan. The plan itself is drafted below it, after the advisors' me
 
 ### Read first
 - CLAUDE.md "Current phase";
+- [the research note on video input](research/2026-11-18-video-input-options.md): routes A to F,
+  Daniel's phone (no LiDAR), and how he was asked to film on 2026-11-19;
 - [the lab's machines report](lab-machines-report.md): section 3's agent build, section 7's
   inaccuracies, section 8's open questions and tool gaps;
 - [the lab's machines plan](lab-machines-plan.md): its shape (phases with checkbox items, each
