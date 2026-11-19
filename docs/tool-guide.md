@@ -126,12 +126,33 @@ job. Read-only tools change nothing.
 | 27 | `dry_run_twin` | Try the build without storing anything (the lab's plan, tool gap 7) | Run | The build's message, and our and NVIDIA's validators' findings on every file, from a scratch copy of the data folder |
 | 28 | `submit_twin` | Build and store the twin, or reuse it | Run | The twin version, its files, and the validators' findings |
 
-**Not yet used in an agent's build** (2026-11-09): `set_photo`, `preview_cutouts`,
-`correct_issue`, `dry_run_twin`, `fit_circles`'s box and direction, and `preview_twin`'s mesh
-warnings. Their tests pass, and `dry_run_twin`'s steps dry-ran v11 clean. The ReBeL arm (the lab's
-plan, Phase 2) is their first use, and its report will say how they did. Once the agent's build
-in Phase 8 has used them, this note is replaced by how each did (the plan's Phase 8, on Daniel's
-word, 2026-11-09).
+**How the lab's plan's new tools did** (decisions 0029 and 0030). Two uses: the ReBeL arm's spec,
+set through the MCP tools by the Phase 2 chat (run `igus-rebel6dof02/runs/2026-11-09_run-001`,
+[worklog 2026-11-09](worklog/2026-11-09.md), "How Phase 1's tools did"), and the TM-1 built by a
+fresh agent session from a dashboard job (`haas/tm1@v4`, run `haas-tm1/runs/2026-11-18_run-001`,
+[worklog 2026-11-18](worklog/2026-11-18.md), the agent's entry; the plan's report,
+`docs/lab-machines-report.md`, section 3).
+- **`set_photo` and `preview_cutouts`:** fast (seconds a try), and the sheet shows every failure.
+  They fell short on the lab's busy photos, both times. On the arm, SAM's points could not remove
+  strays that touch it, so each photo got a drawn mask, made from SAM's cut-out by a script. The
+  agent used SAM with boxes and points on the TM-1's three corners (13 `set_photo` calls, six
+  sheets) and kept 45%, 36.5% and 55.5% of the photos, ragged; its mesh matches the photos less
+  than v3's, which had drawn masks (silhouette IoU 0.688, 0.612, 0.773 against 0.751, 0.797,
+  0.842). **No tool draws or erases a mask**: decision 0029's third method needs a script (the
+  report's section 8.3, gap 1).
+- **`preview_twin`'s mesh warnings:** caught real faults both times: four non-manifold points on
+  the arm; 11 holes and 2 non-manifold points on the agent's TM-1 frame, which it cleared with
+  patches and cut moves. They cannot find what a cut leaves behind (the arm's bulge on link 1, the
+  shards of the TM-1's table block), which only the per-part views show, and holes come in model
+  units, not on the photos.
+- **`dry_run_twin`:** timed out at 600 s on the arm's 12-megapixel photos; fixed by fitting each
+  photo on an 800-pixel copy (`part_views.fit_photo`). On the agent's TM-1 it was clean on its
+  first call, and `submit_twin` stored the same result.
+- **`fit_circles` with `within` and a direction:** measured every housing and both angled links of
+  the arm. The agent did not use it on the TM-1 (no round part was cut from its mesh).
+- **`correct_issue`:** unused both times; no issue went stale.
+- **`set_size_checks`** (older): the agent skipped it, though the procedure asks for it
+  (`agent-procedure.md`, step 5b), so its score has the build's own sizes only.
 
 ## Commands people run
 From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.

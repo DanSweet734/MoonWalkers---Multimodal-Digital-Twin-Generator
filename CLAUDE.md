@@ -6,13 +6,34 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the lab's machines plan, Phase 7, the hand (the drill-press plan is done)
-**Start here:** `docs/lab-machines-plan.md`, "Phase 7", whose hand-off comes first. Phase 7 runs on
-branch `feat/lab-phase-7-hand`, from `main` after PR #33; its first commit is the hand-off.
-Phase 7 gives the arm's hand (the L20 on `igus/rebel6dof02`, one fused part in v3) its 21 joints
-(5 following) and a grasp on the maker's SDK commands, then Phase 8 is the agent's build of the
-TM-1 and the plan's report. The semester ends about 2026-12-17.
-**Phase 7's work is done, its PR waiting for Daniel's review** (decisions 0037 and 0038
+## Current phase: after the lab's machines plan; the next plan waits for the meeting of 2026-11-19
+**Start here:** `docs/video-plan.md`, its hand-off: first record the advisors' answers from the
+meeting of 2026-11-19 (ask Daniel), then the scorecard's decision record (0039, held until
+after the meeting by Daniel, 2026-11-18), then draft the next plan below the hand-off on branch
+`docs/video-plan`, from `main` after the Phase 8 PR is merged. The advisors choose between a
+cut-out drawing tool with a second agent run, and video (the page's asks).
+**The lab's machines plan is complete** (Phase 8's PR for Daniel's review, branch
+`feat/lab-phase-8-agent-build`). The record: `docs/lab-machines-report.md` (read by Daniel
+2026-11-18); the advisors' page https://claude.ai/artifact/3kcdDKCn5AZExqbsF8oJ6B.
+Daniel's lab visit (the plan's visit list), where he is to receive the lab's iRC program for the
+arm, comes after the meeting of 2026-11-19. The semester ends about 2026-12-17.
+Daniel approved `haas/tm1@v3`, `haas/vf3@v1` and `igus/rebel6dof02@v5` in the dashboard
+(2026-11-17), so requests reuse them.
+**Phase 8 is done** (2026-11-18; PR for review):
+- A fresh agent session built `haas/tm1@v4` (run `2026-11-18_run-001`) from an eight-photo
+  dashboard job through the MCP tools, recorded by Daniel: 38.5 min, 88 calls to 20 of the 28
+  tools, 51 of 51 checkable quotes found, `dry_run_twin` clean at once. It used SAM alone for
+  the cut-outs (no drawn masks), so its mesh matches the photos less than v3's (IoU 0.61-0.77
+  against 0.75-0.84), stands on a generated 10 in pedestal (`base_z` unset), and keeps shards
+  and holes. **Levels 2 and 3 met** (Daniel's check, 2026-11-18); left unreviewed by Daniel.
+  It skipped `set_size_checks`. Ten tool gaps: report, section 8.3.
+- Fixed: `mill_export.measure_geometry` puts the tool on the spindle joint's axis when it is
+  vertical, not the mean of the nose's lowest face (decision 0035, update, for Daniel's review);
+  v3's and the VF-3's programs unchanged; the fixed folder is
+  `data/machines/haas-tm1/programs/2026-11-18_haas-o40001-basic-program_v4/`.
+- The HA5C v3 and T33901 v11 still build (staged dry runs, clean). `docs/tool-guide.md` says how
+  the lab plan's new tools did.
+**Phase 7 is done** (PR #34, merged on 2026-11-17 on Daniel's word; decisions 0037 and 0038
 accepted by Daniel 2026-11-17; research note `docs/research/2026-11-17-l20-hand-sdk-and-models.md`):
 - `igus/rebel6dof02@v5` (run `2026-11-17_run-002`, `compose_v5.py` in
   `part_cutting/2026-11-17_spec/`): the hand as labelled stand-ins on LinkerBot's right L20

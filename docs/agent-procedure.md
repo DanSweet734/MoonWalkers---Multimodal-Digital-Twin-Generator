@@ -180,6 +180,20 @@ the job is done. Otherwise the job waits for you:
      `{"call": "sleep", "seconds": s}`, values 0-255 as the SDK takes them. The 16 slots must be
      the joints whose cited `<joint>_lower`/`<joint>_upper` facts are the SDK's ranges for those
      slots; the binding refuses others. Example: `control/programs/linkerhand-l20-test-grasp.json`.
+   - **A Haas mill** (decisions 0035 and 0036): the program stays in G and M codes, as the
+     manual prints it. `spec["program"]` is `{"format": "haas_gcode", "text": <the program>,
+     "machine": {...}, "setup": {...}}`:
+     - `machine` binds Haas's axes to the twin: `"axes"` gives X, Y and Z each a `joint_id`, a
+       `direction` (Haas's +, the tool's motion against the work, in the twin's frame) and a
+       `home` (`"plus_end"` or `"minus_end"`); `"rotary"` gives a trunnion's A and B; then
+       `tool_part`, `work_part`, `spindle`, `carousel` and `pockets`. Each axis's sliding joint
+       needs limits and a cited top speed (its rapid).
+     - `setup` is the operator's set-up the manual leaves open (`units`, `work_offsets`, `tools`,
+       `stock_height`, `start_pocket`), with a `why` that cites each choice and labels the
+       stand-ins.
+     - The tool reads the program at once and refuses the codes it does not read. Examples:
+       `control/programs/haas-o40001-basic-program.json` (the TM-1) and
+       `moonwalkers-vf3-test-tilt-and-turn.json` (the VF-3's A and B).
    - **A manual machine** (no program, an operator at the controls; decision 0025) takes three
      behaviours, recorded in this order. Each cites the manual's words for every rule:
      - a `state_machine` for its switch. Its spec holds `inputs` (each with two states, off then

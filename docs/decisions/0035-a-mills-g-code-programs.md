@@ -113,3 +113,22 @@ manual, p. 102) and O40006 (p. 172), packaged in `control/programs/`.
   head rises at the rapid, along the path, and catches up as the target slows [INFERENCE: the
   joint's speed cap at the cited rapid leaves no margin to catch up while lifting against
   gravity]. Logged, not changed: the cap is the cited rapid.
+
+## Update (2026-11-18, the lab's machines plan, Phase 8): the nose on the spindle's axis
+- **Found in Daniel's check of the agent's TM-1** (`haas/tm1@v4`): the stand-in tool looked off
+  centre. Option 7's nose centre, the mean of the spindle part's lowest level of 16 or more points,
+  was 5.4 mm off the spindle's axis: the agent's stand-in nose has one drive lug whose lower points
+  lie on that level (37 points). The tool, drawn there as a child of the spindle, circled the axis
+  at 1000 rpm, and the path was drawn for the offset tip. `control compare` measures the same
+  offset tip as the plan, so it did not see it. v3's nose had two keys hanging below its face, so
+  its mean lay on the axis.
+- **Changed:** `mill_export.measure_geometry` takes the nose's x and y where the spindle's joint
+  axis crosses the face, when that axis is vertical within about 2.5°; else the mean as before.
+  Test: `test_the_nose_is_on_the_spindles_axis_not_the_faces_mean` (a nose 6 mm off its joint;
+  it fails without the change). The TM-1 v3 and VF-3 v1 program files measure the same (0.000 mm);
+  v4's moves 5.405 mm onto the axis.
+- **Re-run, not rebuilt:** the agent's program folder stays as built; `control run` on its
+  `program.json` wrote `data/machines/haas-tm1/programs/2026-11-18_haas-o40001-basic-program_v4/`
+  (the same joint plan). Daniel's re-check the same day: "The tool is centered now"; the tip
+  within 0.014 mm of the path while cutting.
+- **Status of this update:** for Daniel's review with the phase's pull request.
