@@ -4,6 +4,11 @@
 compare with the real machines. These are the advisors' "real-world comparisons" (meeting of
 2026-10-29), and the start of "Evaluate on the standardized test set" on the README's roadmap.
 
+**Status (2026-11-18):** complete, with Phase 8's pull request for Daniel's review. Every machine
+has levels 1 to 3, and the agent's build of the TM-1 (`haas/tm1@v4`) reached levels 2 and 3. The
+record is [the plan's report](lab-machines-report.md); the next plan starts from
+[its hand-off](video-plan.md). Phases 1 to 7 were merged as PRs #28 to #34.
+
 **Status (2026-11-09):** approved (PR #27). Phase 1 is done (PR #28, merged). Phase 2, the
 ReBeL arm, is built (`igus/rebel6dof02@v1`) and waits for Daniel's Isaac Sim checks and review. The plan was drafted on 2026-11-09 for Daniel's
 review (Phase 0, branch `docs/lab-machines-plan`, PR #27). He answered eight of its nine questions the same day ("Decided on review"). Nothing is
@@ -1272,7 +1277,7 @@ Afterwards:
   Name it in the report as a limit of the test [INFERENCE].
 
 ### Phase 8's checklist
-- [ ] The agent builds one lab machine from a dashboard job through the MCP tools, as in the drill
+- [x] The agent builds one lab machine from a dashboard job through the MCP tools, as in the drill
       press's Phase 7. **Chosen: the TM-1** (Claude Code, on Daniel's "Our choice", 2026-11-16):
       - it has no public model, so it is the hardest test of photos to twin;
       - by then the chat's own TM-1 has reached level 3 (Phase 5), a reference to score the
@@ -1281,13 +1286,23 @@ Afterwards:
         tools where they are weakest, and any gap it finds is a tool gap to report.
       The VF-3's build (Phase 6) carries over to it [INFERENCE]; the arm has a maker's model to
       score against, but Phase 2 already built it piece by piece through the same tools.
-- [ ] The plan's report: results per machine and level, the scorecard, the inaccuracies, the open
+      (Done 2026-11-18, recorded by Daniel: `haas/tm1@v4`, run `2026-11-18_run-001`, in 38.5 min;
+      51 of 51 checkable quotes found. Its SAM-only cut-outs gave a worse mesh: a 10 in pedestal,
+      shards, holes. Daniel's Isaac Sim check: levels 2 and 3 met, level 3 after a fix to where a
+      program folder puts the tool (decision 0035, update). Left unreviewed by Daniel. Worklog
+      2026-11-18; report, section 3.)
+- [x] The plan's report: results per machine and level, the scorecard, the inaccuracies, the open
       questions and the tool gaps; a new advisors' page in the drill-press page's design.
-- [ ] A hand-off for the video plan.
-- [ ] **The tool guide brought up to date** (Daniel, 2026-11-09). Once the agent's build has used
+      ([docs/lab-machines-report.md](lab-machines-report.md), read by Daniel 2026-11-18; the page
+      https://claude.ai/artifact/3kcdDKCn5AZExqbsF8oJ6B for the meeting of 2026-11-19.)
+- [x] A hand-off for the video plan ([docs/video-plan.md](video-plan.md); it starts with the
+      meeting's answers).
+- [x] **The tool guide brought up to date** (Daniel, 2026-11-09). Once the agent's build has used
       Phase 1's tools, `docs/tool-guide.md` replaces its note "Not yet used in an agent's build"
       with how each did, citing the runs. A tool still unused, or one that fell short, stays
-      named there with the reason.
+      named there with the reason. (Done 2026-11-18: "How the lab's plan's new tools did".)
+- [ ] The scorecard's decision record: after the meeting of 2026-11-19 (Daniel, 2026-11-18), in
+      the next plan's first commit.
 
 **Measured by:** the scorecard for the agent's build, beside the chat's builds.
 
