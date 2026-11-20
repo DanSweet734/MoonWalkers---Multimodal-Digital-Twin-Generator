@@ -406,6 +406,7 @@ California State University, Northridge (CSUN), Computer Science capstone.
 | `CLAUDE.md` | Project instructions for Claude Code (rules, layout, commands, workflow) |
 | `.claude/settings.json` | Shared Claude Code permissions (tests, commits, and PRs allowed; installs ask first) |
 | `.mcp.json` | Registers the `moonwalkers` MCP server, so Claude Code can drive the platform (decision 0013) |
+| `.github/` | The PR template; `labeler.yml` and the `auto-label.yml` workflow, which label every PR; `release.yml`, which sorts generated release notes by those labels ([docs/releasing.md](docs/releasing.md), decision 0040) |
 | `docs/methodology.md` | How we work: research, decide, build, verify, document |
 | `docs/agent-procedure.md` | How the agent builds a twin with the MCP tools |
 | `docs/poc-plan.md` | Proof-of-concept phases and checkboxes |

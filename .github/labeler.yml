@@ -1,0 +1,57 @@
+# .github/labeler.yml
+# Rules for actions/labeler (run by .github/workflows/auto-label.yml on every pull request).
+# Each key is a label in the repository; the labels must exist (Issues/Pull requests > Labels).
+# Syntax: https://github.com/actions/labeler#match-object
+# How the labels become release-note sections: docs/releasing.md and .github/release.yml.
+
+# At most this many NEW labels from changed-files rules per run. If a PR would get MORE, the
+# labeler adds none of them, so keep it above the number of changed-files labels below (7).
+changed-files-labels-limit: 8
+
+# --- Branch rules (not counted against the limit) ---
+
+# 'feature' for a head branch that starts with `feature` or has a `feature` section in its name
+# (the course's rule), and for our own `feat/` branches (CLAUDE.md, "Git workflow").
+feature:
+  - head-branch: ['^feature', 'feature', '^feat/']
+
+# 'bug' for our `fix/` branches.
+bug:
+  - head-branch: ['^fix/']
+
+# 'release' for any PR opened against `main`, the branch we release from.
+release:
+  - base-branch: '^main$'
+
+# --- Changed-files rules (counted against the limit) ---
+
+# Any change in the repository.
+AnyChange:
+  - changed-files:
+      - any-glob-to-any-file: '**'
+
+# Docs folder, or any Markdown file anywhere.
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '**/*.md']
+
+# The Python backend's code: at least one changed file is under backend/ and outside its tests
+# (a PR that changes only tests gets 'tests', not 'backend').
+backend:
+  - changed-files:
+      - all-globs-to-any-file: ['backend/**', '!backend/tests/**']
+
+# The React dashboard.
+dashboard:
+  - changed-files:
+      - any-glob-to-any-file: 'dashboard/**'
+
+# Backend tests and dashboard tests.
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ['backend/tests/**', 'dashboard/src/**/*.test.ts']
+
+# GitHub configuration: workflows, labeler and release-note settings, templates.
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
