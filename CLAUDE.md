@@ -403,6 +403,8 @@ Daniel's machine, with Isaac Sim and the generators: `docs/setup/windows-dev-set
 
 Backend (run from `backend/`):
 - Install/sync Python deps: `uv sync` (creates `backend/.venv` from `uv.lock`)
+- The platform's version and its module commands: `uv run python -m moonwalkers [--version]`
+  (the version a release is tagged with; releases and PR labels: `docs/releasing.md`)
 - Tests: `uv run pytest`; without GPU/slow tests: `uv run pytest -m "not gpu and not slow"`;
   the real generator test (needs the generator environment, about 70 s):
   `$env:MOONWALKERS_GEN_ROOT = "C:\mw-gen"; uv run pytest -m gpu`

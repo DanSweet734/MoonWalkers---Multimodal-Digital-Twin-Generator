@@ -41,7 +41,8 @@ Two things to know:
 
 1. Merge the PRs that belong in it into `main`.
 2. Tag the release commit, for example `git tag -a v0.1.0 -m "..."` on `main`'s merge commit,
-   then `git push origin v0.1.0`. The version follows `backend/pyproject.toml`.
+   then `git push origin v0.1.0`. The version follows `backend/pyproject.toml`, which
+   `uv run python -m moonwalkers --version` prints (from `backend/`).
 3. On GitHub, **Releases > Draft a new release**, choose the tag, then **Generate release
    notes**. GitHub lists every PR merged since the previous release, each under the first
    section of `release.yml` whose labels it carries; a PR with no matching label goes under
