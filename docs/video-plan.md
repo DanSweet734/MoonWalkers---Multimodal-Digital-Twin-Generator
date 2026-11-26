@@ -1,8 +1,8 @@
 # The video plan
 
-**Status (2026-11-18):** not drafted. This file holds only the hand-off from the chat that closed the
-lab's machines plan. The plan itself is drafted below it, after the advisors' meeting of
-2026-11-19, and nothing is built, filed or installed until Daniel approves it.
+**Status (2026-11-25):** drafted below the hand-off, for Daniel's review. Nothing is built or
+installed until he approves it. The advisors approved both asks on 2026-11-19, so the plan covers
+the cut-out tool and a second agent run first, then video ("The plan", below).
 
 ## Hand-off (2026-11-18, from the lab's machines plan's Phase 8 chat)
 - **Start** on branch `docs/video-plan`, from `main` after PR #35 (merge commit `a17a90e`). The
@@ -75,9 +75,220 @@ lab's machines plan. The plan itself is drafted below it, after the advisors' me
 ### Carried over, none blocking
 - **The lab visit** (the lab plan's visit list), now after the meeting of 2026-11-19: each
   measure that changes a twin is a new version.
-- **`haas/tm1@v4`** (the agent's) is unreviewed; requests reuse v3 (decision 0015). The dashboard
-  review is Daniel's.
+- **`haas/tm1@v4`** (the agent's) was rejected by Daniel on 2026-11-18 (the mesh); requests reuse
+  the approved v3 (decision 0015). Corrected in the merged docs on 2026-11-25.
 - **The tool gaps** in the report's section 8.3, gaps 1 to 9.
 - **Decision 0035's update** (the nose on the spindle's axis) is in the Phase 8 pull request, for
   Daniel's review with it.
 - **Time:** the semester ends about 2026-12-17 (CLAUDE.md); meetings stay weekly.
+
+## The plan (draft of 2026-11-25)
+Written by Claude Code from the hand-off above and the advisors' answers of 2026-11-19 (Daniel's
+account, 2026-11-25). It also draws on the photos and videos of the lab visit of 2026-11-19, filed
+the same day and looked at with scratch scripts (contact sheets, crops, frame strips). Nothing was
+written to `data/` but the filed copies, their `SOURCES.md` rows and dated notes in three runs'
+`RUN.md`. As before:
+- every phase ends in a pull request and a stop for review;
+- each phase runs in a new chat, with a hand-off written into this file;
+- every stand-in is labelled and logged;
+- nothing is installed without asking first.
+
+### What the advisors decided (meeting of 2026-11-19)
+| Ask (the lab report's page, section 10) | Answer |
+|---|---|
+| 1. A cut-out drawing tool, then a second agent run | **Yes** |
+| 2. Video input | **Approved** |
+| 3. The VF-3's trunnion: plate, Settings 78 and 30, the +A and +B jog | Still unsure: note it and ask at the next lab visit |
+| 4. The lab's iRC program for the arm | To be delivered "sometime next week" (the week of 2026-11-30 [INFERENCE, from Daniel's message of 2026-11-25]) |
+| The scorecard | **Accepted as is** ([decision 0039](decisions/0039-the-scorecard.md)) |
+
+So the plan does both, and the cut-out tool comes first. A video's frames need cut-outs as much as
+photos do, and the second agent run measures the tool before video adds a new source [INFERENCE].
+
+### What the visit of 2026-11-19 gives (filed 2026-11-25)
+No lab member could meet Daniel, so nothing was operated, measured or shown on a screen. He took
+34 photos and 8 videos (2.1 GB) on the Galaxy S22 Ultra, the videos 4K at about 60 fps
+([research note, update of 2026-11-25](research/2026-11-18-video-input-options.md)).
+
+| Machine | Videos | Photos | Settles | Leaves open |
+|---|---|---|---|---|
+| **TM-1** | Two full circles, chest height then higher (`133809`, `133841`) | 8: the front square on, a front corner, the pendant's side, a side guard, the back corners and the cabinet | The back is now seen: the stool of 2026-11-05 is gone; the caution panel still stands at the pendant's side (`133709`) | Every measure (no tape seen), the axes' directions and homes, the control's screen |
+| **VF-3** | Two circles round the enclosure (`133039`, `133120`), close to a desk and a tool cart; one inside (`133413`) | 16: the back, the sides, the front, the pendant, the trunnion square on, its plate, the head | **The trunnion is a TR160** (its plate, `133507`). **The control is the Classic Haas Control** by its keys (`133254`): they match the 2012 manual (PDF pp. 15, 35-36), not the 2023 NGC manual (PDF pp. 34-35) | Settings 78 and 30, the +A and +B jog, the software version |
+| **The lab's other ReBeL, the 01** (`igus-rebel6dof01`, new) | Two circles, landscape (`132340`, `132718`); a 1.5 s label clip | 10: its plate "REBEL-6DOF-01", 28.12.2023; its base plate; its asset tag; its tape; the arm from three sides and above | The connector box is on the 01 too, so the box no longer hints at what 02 changes | Everything about the twin's 02 (not filmed); the maker of the 01's hand |
+
+- **Not the twin's arm:** Daniel, 2026-11-25: "All of it is the 01". The twin `igus/rebel6dof02`
+  is the unit with the tape "Rebel-6DOF-02" and the next asset tag.
+- **Blur:** the VF-3's circles have the most blurred frames: 19-24% of sampled frames fall under
+  half the clip's median sharpness, against 2-11% for the TM-1 and 1-5% for the 01 (the research
+  note's update) [INFERENCE: a tight space walked quickly].
+- **What it means for the plan [INFERENCE]:**
+  - **The TM-1's circles are the best first video test.** They give two complete heights and the
+    back that v3 had to guess, and the approved `haas/tm1@v3` (from three photos) can be compared
+    with the result on the same scorecard.
+  - **The 01's circles** are the only footage of a machine with a public maker's model of its own
+    version, so the scorecard's "shape against the maker's model" could score a video-built mesh.
+    But it is a fourth machine.
+  - **The VF-3's footage** is the weakest for geometry; its plate is a fact for its next version.
+
+### What exists, and what each phase adds
+- **Cut-outs** (decision 0029): per photo in `request.json`, one of:
+  - `sam`: SAM 1 (`sam_vit_b_01ec64` in rembg 2.0.68), with a box and points;
+  - `crop`;
+  - `mask`: a PNG a person drew outside the tools.
+
+  The MCP tool `set_photo` sets them and `preview_cutouts` previews them. v3's masks were "SAM's
+  cut-out plus traced fill polygons", made by scripts (worklog 2026-11-11). Gap 1 (report 8.3): no
+  tool draws or corrects a cut-out.
+- **Video:** `InputType.WALKTHROUGH_VIDEO` routes to Pipeline B, which reads nothing from it. A
+  frame reader is on Daniel's machine (ffmpeg 9.0.2 on the PATH; OpenCV 4.11.0 in `C:\mw-gen`). It
+  is neither in the backend's dependencies nor on the teammates' machines (the research note's
+  update).
+- **The generator** takes up to four views, cut out first (decision 0022). A fed photo is fitted to
+  800 pixels first (`part_views.fit_photo`), so a 4K frame serves it as well as a photo
+  [INFERENCE: a frame's blur and compression, not its size, would make the difference].
+
+### Success levels
+The three levels stay for each new twin (the lab plan's "Success levels"). Every new twin is
+scored on decision 0039's scorecard beside the version it is compared with. Each phase adds its own
+measure below.
+
+## Phase 0 - Plan
+- [x] Read the record: CLAUDE.md's "Current phase", this hand-off, the research note, the lab report
+- [x] `main` merged into this branch (PRs #36-#38, 2026-11-25)
+- [x] The advisors' answers recorded (worklog 2026-11-25; the lab report, section 8.1)
+- [x] The visit's 42 files filed by machine, SHA-256 checked, `SOURCES.md` rows; plates read; what
+      they settle in the research notes, the report, the visit list and the runs' `RUN.md`
+- [x] `haas/tm1@v4`'s rejection corrected in the merged docs
+- [x] [Decision 0039](decisions/0039-the-scorecard.md), the scorecard
+- [ ] This plan, a pull request; stop for Daniel's review and his answers to "Questions for Daniel"
+
+## Phase 1 - A tool to draw and correct a cut-out
+The advisors' ask 1; the report's gap 1. **Proposed shape** (a decision record, 0041):
+- **Polygons on top of any cut-out.** A photo's `cutout` gains `add` and `remove` polygons, in
+  fractions of the upright photo as boxes and points are now. They apply after SAM's or the crop's
+  mask. This is how v3's masks were made by script, now in the tools. `mask` (a drawn PNG) stays.
+- **For a person: the dashboard.** On a job's page, a photo opens with its cut-out drawn over it.
+  The person clicks points to add a region or cut one out, sees the mask, and saves. The API writes
+  the photo's `cutout` in `request.json`, with the same check as `set_photo`: a run that has
+  generated refuses a change (decision 0029). The pure geometry goes in `dashboard/src/lib/` with
+  tests.
+- **For the agent:** `set_photo` takes the same polygons, and `preview_cutouts` shows them.
+  - Where SAM still keeps a neighbour or loses a part after its tries, the procedure has the agent
+    ask the user to draw the cut-out in the dashboard, with the option to skip (Dr. Li's rule,
+    2026-11-05; `agent-procedure.md`, step 2).
+  - [INFERENCE] An agent places polygons poorly by eye on a busy photo, so the person's route is
+    the main one.
+- **Proposed with it, all small:** warnings in `preview_twin` and `dry_run_twin` for the faults
+  behind v4's rejection (Daniel's call, question 3):
+  - the base stands on a small slab (gap 2);
+  - pieces of a removed part stay inside a kept part where a moving part passes (gap 3);
+  - a spec has no size checks (gap 9).
+- [ ] Decision 0041; code, tests (backend and dashboard), the tool guide, the procedure
+- [ ] **Check (Daniel):** draw the cut-outs of the TM-1's three fed photos in the dashboard; the
+      tool prints each mask's IoU against v3's drawn masks (a measure for this phase, no target)
+- [ ] Pull request; stop for review
+
+**Measured by:** the drawn masks against v3's (IoU), the time Daniel takes, and the tests.
+
+## Phase 2 - The second agent run
+The advisors' ask 1, its second half. A fresh Claude Code session builds the TM-1 again from a
+dashboard job, as in the lab plan's Phase 8 (with its run-sheet and starter prompt, updated). This
+time it has the cut-out tool and the Phase 1 warnings.
+- **Proposed inputs:** the same eight photos of 2026-11-05 as v4's job (question 4). Then the tool
+  is the only change, and v3, v4 and the new version compare on one scorecard. The new photos come
+  in Phase 3.
+- [ ] The run-sheet and starter prompt; Daniel starts the session; the chat checks the transcript
+- [ ] **Check (Daniel):** levels 1 to 3 in Isaac Sim, as for v4; the review in the dashboard is his
+- [ ] The scorecard against v3 and v4; the tool gaps it finds; pull request; stop
+
+**Measured by:**
+- the photo match (IoU), against v4's 0.61-0.77 and v3's 0.75-0.84;
+- whether the faults Daniel rejected v4 for (pedestal, shards, holes) are present;
+- the session's time and calls.
+
+## Phase 3 - Video as a source of photos (route A)
+The advisors' ask 2, its first step: a video becomes frames, and the frames go through the photo
+path that exists. **Proposed shape** (a decision record, 0042):
+- **A video in a job:** `add_input` and the dashboard's upload take an MP4 as
+  `walkthrough_video`. It is filed under `inputs/videos/` with its `SOURCES.md` row, as on
+  2026-11-25.
+- **Frames as photos:** a new MCP tool shows a video's frames at chosen times as a contact sheet,
+  with each frame's time and sharpness. It files the chosen frames as photos of the run:
+  - each cites the video's SHA-256 and its time;
+  - each has a view in the operator's words (decision 0022).
+
+  From there, cut-outs (Phase 1), the generator and the cut list are unchanged.
+- **The frame reader:** ffmpeg, already on Daniel's machine (question 5).
+  - The backend calls it as a program found on the PATH, as it calls the generator. No package is
+    added.
+  - The tests use a tiny generated clip, or skip when ffmpeg is missing.
+  - The teammates' setup guide says how to get it.
+- **First machine: the TM-1, from its circles** (question 6):
+  - four corners, the back right one among them;
+  - built as a new version through the chat's script route, dry-run first;
+  - compared with v3 on the scorecard;
+  - its joints and programs carry over from v3's facts.
+- [ ] Decision 0042; code, tests; docs (tool guide, procedure, pipeline guide on the input type)
+- [ ] The TM-1 from video frames, dry-run, built; **Daniel's check** in Isaac Sim, levels 1-3
+- [ ] Pull request; stop
+
+**Measured by:**
+- the scorecard against `haas/tm1@v3`: the photo match on the same photos of 2026-11-05, the
+  sizes, and the back's shape against the new back photos;
+- how many frames per view had to be skipped for blur.
+
+## Phase 4 (if time allows) - A second machine from video, or SAM 2 across frames
+For Daniel to choose at Phase 3's review, from what it shows:
+- **(a) The 01 arm from its circles:** a twin `igus/rebel6dof01`, scored against igus's own model
+  of its version (the scorecard's shape row). It is the only machine where a video-built mesh can
+  be scored against a maker's mesh. Its joints come from the 02's cited facts (the same
+  documentation).
+- **(b) SAM 2 tracking** (route B): one click on one frame, a mask on every frame. It is an install
+  (the `sam2` code and a checkpoint, Apache-2.0); its size and versions are read before asking.
+- **(c) The VF-3's next version** from the plate (TR160 as read, the Classic control), with the
+  new photos for its back.
+
+## Beside the phases
+- **The lab's iRC program** (expected the week of 2026-11-30): run on `igus/rebel6dof02@v5`, as the
+  lab plan's Phase 3 ran the labelled test. Decision 0033 ("as is until we know if we get the
+  program from the lab") is revisited then. It gives a program folder, and no new twin unless the
+  program needs one. Its own small pull request when it comes.
+- **The next lab visit:** the lab plan's visit list, items 1-8 and 10-14, is still open.
+  - First, Settings 78 and 30 and the +A and +B jog (the advisors); then the TM-1's jog and
+    measures.
+  - A phone video of each jog gives route E's simple measure: the time and direction of a move
+    between two marks. That is a new scorecard row and an amendment of decision 0039.
+  - Photograph the 02, not the 01, for the twin.
+- **The report and the advisors' page:** at the end, before the semester ends (about 2026-12-17).
+
+### Not in this plan
+- Many-view reconstruction (route C), Gaussian splats (D), research methods for joints from
+  motion (E's papers) and phone scan apps (F). The advisors put other ways to make the mesh later
+  (2026-11-12); route C would be its own study.
+- Pipelines A, C and D (their owners'); Neo4j, Celery, Codex; masses (a bonus).
+
+### Decision records this plan needs
+Numbered when written: 0039 is written and 0040 is taken (PR labels), so 0041 is the next free.
+
+| Title | Phase |
+|---|---|
+| The scorecard: [0039](decisions/0039-the-scorecard.md), accepted by the advisors | 0 |
+| Drawing and correcting a cut-out (amends 0029) | 1 |
+| A video as a source of photos (amends 0022) | 3 |
+| The lab's iRC program, if it changes decision 0033 | beside |
+
+### Questions for Daniel
+1. **The order:** the cut-out tool and the second agent run first, then video (recommended, above),
+   or video first?
+2. **The file's name:** keep `docs/video-plan.md` for both (recommended), or rename it?
+3. **Gaps 2, 3 and 9** (warnings for a base on a slab, shards in a kept part, no size checks): in
+   Phase 1 with the cut-out tool (recommended: they are what v4 was rejected for), or later?
+4. **The second agent run's photos:** the same eight of 2026-11-05 as v4 (recommended, so the tool
+   is the only change), or the new ones of 2026-11-19?
+5. **The frame reader:** ffmpeg, already on your machine and called as a program (recommended: no
+   install; teammates install it only to use video), or a Python package in the backend (an
+   install, asked separately)?
+6. **The first machine from video:** the TM-1 (recommended), the 01 arm, or the VF-3?
+7. **The 01 arm:** worth a twin in Phase 4, or footage only?
+8. **The temp folder** `data/machine photos (temp)/11-19-26/`: may it go now that the copies are
+   checked (every SHA-256 matched)?
