@@ -1,11 +1,13 @@
 # 0041 - Drawing and correcting a cut-out
 
-- **Status:** proposed. Drafted by Claude Code in the video plan's Phase 1 (2026-11-25); its
-  shape was shown to Daniel before any code, and he chose the recommended option on its four
-  open choices the same day: one ordered list of edits; the whole cut-out in the dashboard
-  (method, box, points and edits); the API runs the cut-out preview only; the warnings listed
-  without changing `clean` (options 2(a), 4(a), 5(a) and the warnings' last paragraph). To be
-  accepted at the phase's review.
+- **Status:** accepted by Daniel on 2026-11-25, as it stands ("I accept decision 0041 as it
+  stands"), after his check (below, "Daniel's check"). Drafted by Claude Code in the video plan's
+  Phase 1 (2026-11-25); its shape was shown to Daniel before any code, and he chose the
+  recommended option on its four open choices the same day: one ordered list of edits; the whole
+  cut-out in the dashboard (method, box, points and edits); the API runs the cut-out preview
+  only; the warnings listed without changing `clean` (options 2(a), 4(a), 5(a) and the warnings'
+  last paragraph). He also confirmed that the agent offers to skip a cut-out the person does not
+  want to draw (the procedure, step 2).
 - **Date:** 2026-11-25
 - **Decided by:** team (Daniel)
 - **Amends:** decision 0029 (a cut-out gains drawn edits and an `auto` method) and decision 0014
@@ -175,6 +177,29 @@ edits), 0.992 (`photo-134337`, 11) and 0.997 (`photo-134355`, 5). The small diff
 expected [INFERENCE: make_masks.py drew on SAM's prepared PNG thresholded at alpha 128, and
 its mask was then cut at `min_piece` 0.1 when fed; the job draws on SAM's mask and applies
 `min_piece` 0.1 after the edits, so the compared mask is the fed one].
+
+### Daniel's check (2026-11-25)
+Daniel drew the TM-1's three fed photos in the dashboard on a scratch job
+(`data/scratch/2026-11-25_cutout-tool-check/`, `docs/setup/dashboard.md` section 3b), in
+"roughly 3 or 4 minutes" for all three (his estimate). On each he kept the automatic removal
+and drew one large polygon to add around the whole machine, with polygons to remove inside the
+conduit's loop: 4, 2 and 2 edits, against v3's 8, 11 and 5 over SAM. Against v3's masks:
+
+| Photo | Edits | Kept | IoU against v3's mask |
+|---|---|---|---|
+| `photo-134300` | 4 | 54.0% | 0.879 |
+| `photo-134337` | 2 | 48.9% | 0.933 |
+| `photo-134355` | 2 | 66.7% | 0.873 |
+
+Most of the difference is his outline's straight edges, which keep a little floor and the
+coolant hose where v3's masks follow SAM's edge [INFERENCE, from the sheet]. Whether that
+matters for the mesh shows only in a build: Phase 2's agent run is the next measure. The
+plan set no target for this phase.
+
+### The T33901's crank (Daniel, 2026-11-25)
+The warning that fires on `grizzly/t33901@v11` is the crank passing into the base, a fault
+known but not yet an issue in the twin. Daniel: log it as an issue in the T33901's next
+version. The drill-press report's table of inaccuracies says so.
 
 ## Consequences
 - **Easier:**

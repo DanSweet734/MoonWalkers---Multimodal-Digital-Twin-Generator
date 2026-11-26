@@ -126,8 +126,8 @@ the job is done. Otherwise the job waits for you:
    - **Where your edits still leave the cut-out wrong after two or three tries, ask the person**
      to draw it in the dashboard: the job's page, "Edit the cut-out" beside the photo, with a
      preview over the photo. Say which photo and what is wrong, and offer to skip it, as for a
-     source you cannot reach (item 1 above) [INFERENCE: Dr. Li's rule of 2026-11-05 was for
-     sources]. Their drawing is saved in `request.json`; `preview_cutouts` reads it. If they skip,
+     source you cannot reach (item 1 above; Dr. Li's rule of 2026-11-05 for sources, extended to
+     cut-outs by Daniel on 2026-11-25). Their drawing is saved in `request.json`; `preview_cutouts` reads it. If they skip,
      log the fault as an issue.
    - Preview again after each change. Specks are dropped by `min_piece` (default 0.02).
    - **Nothing fills in what stands in front of the machine.** Log it as an issue on the twin,
