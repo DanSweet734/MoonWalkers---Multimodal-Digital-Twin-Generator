@@ -275,7 +275,7 @@ The advisors' ask 1; the report's gap 1. **Proposed shape** (a decision record, 
       dashboard; the tool prints each mask's IoU against v3's drawn masks (a measure for this
       phase, no target). Done in "roughly 3 or 4 minutes", 8 edits in all: IoU 0.879, 0.933,
       0.873. Decision 0041 accepted as it stands
-- [ ] Pull request; stop for review
+- [x] Pull request; stop for review (PR #40, merged on Daniel's word 2026-11-25, `feb69a9`)
 
 **Measured by:** the drawn masks against v3's (IoU), the time Daniel takes, and the tests.
 
@@ -286,6 +286,191 @@ time it has the cut-out tool and the Phase 1 warnings.
 - **Proposed inputs:** the same eight photos of 2026-11-05 as v4's job (question 4). Then the tool
   is the only change, and v3, v4 and the new version compare on one scorecard. The new photos come
   in Phase 3.
+
+### Hand-off (2026-11-25, from the Phase 1 chat)
+- **Start** on branch `feat/video-phase-2-agent-run`, cut from `main` at `feb69a9` (PR #40
+  merged on Daniel's word, 2026-11-25). Its first commit is this hand-off. Its second takes
+  v3's own numbers out of the slab warning and the procedure (below, "Limits of the test").
+  `feat/video-phase-1-cutout-tool` is kept (no word to delete it). Stop for review with a pull
+  request; merge only on Daniel's word.
+- **Read first:** CLAUDE.md's "Current phase"; this hand-off; the lab plan's Phase 8 hand-off
+  (`docs/lab-machines-plan.md`, "Phase 8", its run-sheet, starter prompt and "Then the Phase 8
+  chat"), which this phase repeats; the lab report's section on the agent's build
+  (`docs/lab-machines-report.md`, "The agent's build (Phase 8)") and its section 8.3, the tool
+  gaps; decision 0041 and [worklog 2026-11-25](worklog/2026-11-25.md), Phase 1's entries.
+
+#### What Phase 1 left
+- **Decision 0041, accepted** (Daniel, 2026-11-25). A cut-out takes ordered edits (polygons, and
+  lines with a width, to add or remove) on any method, and an `auto` method; `set_photo` sets
+  them; a job's page in the dashboard draws them ("Edit the cut-out") and previews them through
+  the API when it was started with `MOONWALKERS_GEN_ROOT`.
+- **The spec warnings** (`pipelines/b/spec_warnings.py`): a slab under the twin, loose pieces
+  inside a replacing stand-in along its travel, no size checks. In `preview_twin`'s issues and
+  `dry_run_twin`'s `spec_warnings`; they never change `clean`. On v4's spec: five; on v3's: none.
+- **Daniel's check:** he drew the three corners in "roughly 3 or 4 minutes", 8 edits on `auto`,
+  IoU 0.879, 0.933 and 0.873 against v3's masks (his drawing is in
+  `data/scratch/2026-11-25_cutout-tool-check/`; the agent must not see it).
+- **The procedure** (`agent-procedure.md`, step 2, item 5): the agent tries SAM and its own
+  edits, and after two or three tries asks the person to draw in the dashboard, offering to skip
+  (Daniel's extension of Dr. Li's rule, 2026-11-25). Step 5b, items 8-10: act on each warning or
+  say why in an issue.
+- **Logged, not this phase:** the T33901's crank becomes an issue in its next version (Daniel).
+- **The quick suite:** 926 passed at `main` (about 5 minutes).
+
+#### What is different from v4's run, and what stays
+- **The same:** the job (eight photos, views and uses as v3's, "Build a new version" ticked),
+  the documents, the held-back files, level 3 by Haas's O40001, Daniel's answers to the likely
+  questions on scale and stand-ins, the Isaac Sim checks (check guide sections 11 and 12).
+- **Different:**
+  - the API is started with `MOONWALKERS_GEN_ROOT`, so Daniel can draw when the agent asks;
+  - v3's drawn masks are **not** offered as a fallback (v4's run-sheet offered them): the tool is
+    what is measured [INFERENCE];
+  - the MCP server starts afresh in the new session, so it has Phase 1's `set_photo` (`/mcp`
+    should list `moonwalkers` with 28 tools);
+  - the dashboard must be built from `main` (`npm run build` in `dashboard/`) so its editor is
+    there; Phase 1's build is in `dashboard/dist/`, but build again after pulling.
+- **The new version** will be `haas/tm1@v5`. `request_twin` after its submission should still
+  answer v3 (approved; v5 is not reviewed). That is expected.
+
+#### Limits of the test [INFERENCE]
+- **CLAUDE.md**, which every session loads, describes v3 and v4 at length (three corners, the
+  stand-ins, the 12 in Y travel, v4's pedestal and shards, v3's IoUs). As for v4's run, name it
+  in the report as a limit.
+- **v3's floor line:** the slab warning's text and the procedure gave v3's `base_z` and cut
+  height for this very machine. The branch's second commit replaces them with the method alone
+  (set `base_z` at the floor line and cut a little below it), so the agent measures its own.
+- **The procedure and the tool guide** name v4's faults and v3's mask IoUs: that is the tool's
+  documentation, and the agent may read it.
+
+#### Daniel's run-sheet for the agent's build (v4's, updated)
+Two Claude Code sessions: **the agent** (a fresh one that builds, recorded) and **the Phase 2
+chat** (this hand-off's reader, which checks and reports). Keep them apart.
+
+1. **Before recording.** On `feat/video-phase-2-agent-run`, pulled. In `dashboard/`:
+   `npm run build`. In `backend/`, PowerShell: `$env:MOONWALKERS_GEN_ROOT = "C:\mw-gen"`, then
+   `uv run python -m moonwalkers.api`; open http://127.0.0.1:8000/.
+2. **The job, in the dashboard** (`docs/setup/dashboard.md`, section 3, step 6): manufacturer
+   `Haas Automation`, model `TM-1`, **"Build a new version" ticked**. Pick all eight photos in
+   `data/machines/haas-tm1/inputs/photos/`:
+
+   | Photo | View | Use |
+   |---|---|---|
+   | `20261105_134300.jpg` | Front-left corner (your left) | Used to make the 3D model |
+   | `20261105_134337.jpg` | Front-right corner (your right) | Used to make the 3D model |
+   | `20261105_134355.jpg` | Back-left corner (your left) | Used to make the 3D model |
+   | `20261105_134314.jpg` | Front | Kept as evidence |
+   | `20261105_134322.jpg` | Right side (your right) | Kept as evidence |
+   | `20261105_134329.jpg` | Back-right corner (your right) | Kept as evidence |
+   | `20261105_134346.jpg` | Left side (your left) | Kept as evidence |
+   | `20261105_134411.jpg` | A close-up or part of the machine | Kept as evidence |
+
+   Origin, for every photo: "Photographed by Daniel Sweet in Dr. Li's lab, CSUN, 2026-11-05; the
+   team's own photo; internal research only; shows serial numbers, keep out of commits." Start
+   the job. **Do not draw any cut-out yet**: the agent starts from none, as v4 did. The Phase 2
+   chat checks `request.json` against this table before the agent starts (v4's job had one use
+   wrong, `134355`).
+3. **Record** (the Snipping Tool or the Game Bar, Win+Alt+R; in parts is fine), and note the
+   start and end times.
+4. **The agent.** A new Claude Code session at the repository's root; paste the prompt below.
+   Allow its tool calls as they come.
+5. **Its questions.** The answers are Daniel's; each goes in the report as human help. Likely
+   ones, with suggested answers:
+   - *It asks you to draw a cut-out:* draw it in the dashboard ("Edit the cut-out"), save and
+     preview, time it, then tell it "Drawn and saved; preview again". Or "Skip it" where the
+     photo is good enough. (The measure: how often it asks, and what you draw.)
+   - *Which height or width scales the twin:* "Your call: cite it, and log the disagreement"
+     (v4's agent asked; Daniel answered "Width 90 in").
+   - *An axis's direction or home that no source gives:* "A labelled stand-in, logged."
+   - *A spec warning it cannot clear:* "Your call: fix it, or say why in an issue."
+6. **After its submission.** It reports the reuse check, its comparison and a worklog summary,
+   and commits nothing. Stop the recording.
+7. **Isaac Sim, on the agent's run** (the Phase 2 chat gives the files and targets): level 1 by
+   eye on `twin.usdc` (stands flat? shards? holes? Daniel's reasons for rejecting v4); level 2 as
+   in section 11; level 3 as in section 12.
+8. **Review in the dashboard:** Daniel's alone, once the checks are in.
+
+#### The agent's starter prompt
+```text
+Use the MoonWalkers MCP tools to build a new version of the Haas TM-1 twin, with a program it
+runs, for the open dashboard job (list_jobs finds it). Follow docs/agent-procedure.md, including
+section 5b (a machine of several parts), the cut-outs (step 2: preview_cutouts, set_photo with
+edits, and asking me to draw in the dashboard), the spec warnings (5b, items 8-10) and step 3's
+programs.
+
+What you may read, and what not until you have submitted:
+- Read the Haas documents in data/machines/haas-tm1/inputs/documents/ yourself (listed in
+  data/machines/haas-tm1/inputs/SOURCES.md): the Toolroom Series sheet, the Toolroom addenda of
+  2002 and 2009, the TM-1 layout drawing, the mill operator's manuals of 2009 and 2023, and the
+  two saved web pages. Cite every fact with its PDF page and a short quote. Where sources
+  disagree, name both, pick one and say why.
+- You may read docs/agent-procedure.md, docs/tool-guide.md, the decision records in
+  docs/decisions/, and backend/src/moonwalkers/control/programs/haas-o40001-basic-program.json as
+  the format of a mill program. State its machine and setup for your own joints and frame, and
+  cite the manual's pages for the program yourself.
+- Do not open, until you have submitted: backend/src/moonwalkers/pipelines/b/haas_tm1.reference.json,
+  anything under data/machines/haas-tm1/part_cutting/ or data/machines/haas-tm1/runs/ other than
+  your own run, data/machines/haas-tm1/programs/, anything under data/scratch/ but your own dry
+  runs, the research notes on the TM-1 and on mill programs in docs/research/, the worklogs,
+  docs/lab-machines-plan.md, docs/lab-machines-report.md or docs/video-plan.md. Measure the mesh
+  yourself with the tools.
+
+While building:
+- Open every view the tools return: the cut-out sheet, the mesh views, each part_<id> view and
+  the photo overlays.
+- Where a cut-out keeps what stands in front of the machine or loses part of it, correct it with
+  set_photo (SAM's box and points, and edits); after two or three tries, ask me to draw it in the
+  dashboard or to skip it.
+- Act on every spec warning in preview_twin and dry_run_twin: fix it, or say why in an issue.
+- For level 3, record Haas's basic program O40001 (2023 Mill Operator's Manual, p. 102) as a
+  program_interpreter behaviour with add_control, so the build writes its program folder.
+- Ask me when a judgement changes the twin and the sources do not settle it. Install nothing.
+  Never review the twin. Write no serial number from the nameplate photo anywhere in docs/.
+
+Before submit_twin: dry_run_twin until it is clean (a submitted version is kept for good).
+Then submit_twin, and run both validators on the stored twin.usdc, every file in checks/ and
+the program folder's program.usdc: uv run python -m moonwalkers.usd.validate <file> and
+uv run omni_asset_validate <file>, from backend/.
+
+Afterwards:
+- Call request_twin for the TM-1 and report its message (a newer approved version may be
+  reused; say which and why).
+- Compare your facts with backend/src/moonwalkers/pipelines/b/haas_tm1.reference.json, and your
+  spec with data/machines/haas-tm1/runs/2026-11-11_run-003/geometry_spec.json (v3, approved) and
+  data/machines/haas-tm1/runs/2026-11-18_run-001/geometry_spec.json (v4, rejected for its mesh).
+  Report every difference, and which you think is right and why.
+- Write a summary of the session in docs/worklog/<today's date>.md: the tools you called, in
+  order; your choices and why; the questions you asked me and my answers; the cut-outs I drew;
+  the spec warnings and what you did with each; the results; anything that went wrong; the tool
+  gaps you found. Do not commit.
+```
+
+#### Then the Phase 2 chat
+- **While the agent builds:** walk Daniel through the run-sheet a step at a time; it does not
+  build, and does not answer the agent's questions for him. Before the agent starts, check the
+  job's `request.json` against the run-sheet's table.
+- **After the submission, check the agent's run** (from `backend/`), as Phase 8 did:
+  - the transcript (`~/.claude/projects/<project>/<session>.jsonl`): no held-back path in any
+    tool call before `submit_twin`; count the MCP calls by tool, and the cut-outs Daniel drew;
+  - the quotes: `uv run python -m moonwalkers.pipelines.b.quotes <run>/reference_facts.json
+    <run>/geometry_spec.json --data ../data` (v4: 51 of 51 checkable found);
+  - both validators on `twin.usdc`, every check file and `program.usdc`;
+  - the spec warnings on the stored run (Phase 1's scratch script `run_warnings.py` is gone with
+    its chat's scratchpad; `spec_warnings(oriented_mesh(...), spec, scale)` as in
+    `dry_run.run_spec_warnings`);
+  - no serial number in the agent's worklog entry.
+- **The scorecard** (decision 0039): `uv run python -m moonwalkers.pipelines.b.score <run>
+  [--recording <csv> ...]`, no maker's file for the TM-1; v5 beside v3 and v4. The photo match
+  (IoU) against v4's 0.688, 0.612, 0.773 and v3's 0.751, 0.797, 0.842; the cut-outs' IoU against
+  v3's masks, run on a copy of the run's `request.json` in a new scratch folder, never in the run
+  itself, whose `cutouts/` is the agent's record (as Phase 1 did:
+  `... pipelines.b cutouts <scratch run> --data ../data --compare
+  ../data/machines/haas-tm1/runs/2026-11-11_run-003/masks`); v4's faults (pedestal, shards,
+  holes) present or not; the session's time and calls, and Daniel's drawing time.
+- **Level 3:** `uv run python -m moonwalkers.control compare <recording.csv>
+  <folder>/trajectory.json`.
+- **Then:** the report's update (the lab report's tool gaps, section 8.3, as closed or still
+  open), the tool guide's "How the tools did", the worklog, the README and CLAUDE.md; a pull
+  request; stop.
 - [ ] The run-sheet and starter prompt; Daniel starts the session; the chat checks the transcript
 - [ ] **Check (Daniel):** levels 1 to 3 in Isaac Sim, as for v4; the review in the dashboard is his
 - [ ] The scorecard against v3 and v4; the tool gaps it finds; pull request; stop
