@@ -65,7 +65,40 @@ close-ups and motion as separate clips, a tape measure in frame, photos as well;
 - Every route above that runs on Daniel's machine needs an install, asked first with what, why,
   licence and size.
 
+## Update, 2026-11-25: the footage of 2026-11-19, and what is already on the machine
+Checked by Claude Code on 2026-11-25 for the video plan's draft. Nothing installed or downloaded.
+- **Approved:** the advisors approved video input and the cut-out tool at the meeting of
+  2026-11-19 (worklog 2026-11-25).
+- **The footage** (filed by machine on 2026-11-25; `SOURCES.md` of each): eight MP4s, 2.1 GB with
+  the photos. H.264, 3840x2160, about 60 fps (variable; ffprobe's average 59.9), about 72 Mbit/s,
+  AAC sound; the portrait clips carry a display rotation of -90.
+  | Machine | Clips | What |
+  |---|---|---|
+  | TM-1 | `133809` (27.7 s), `133841` (30.1 s) | Two full circles, chest height then higher (Daniel); the back now unobstructed but for the caution panel at the pendant's side |
+  | VF-3 | `133039` (34.9 s), `133120` (35.9 s), `133413` (30.2 s) | Two circles round the enclosure, hemmed in by a desk and a tool cart; close-ups inside |
+  | The lab's other ReBeL, the 01 | `132340` (38.8 s), `132718` (25.3 s), `132427` (1.5 s) | Two circles, landscape, the arm stretched out with a hand; a clip of a label |
+  No clip shows a machine moving (no one could operate one), so route E has nothing to measure
+  yet. No tape measure was seen in the frames looked at (contact sheets of 12 frames a clip).
+- **Sharpness** (variance of the Laplacian on a 960-pixel-wide grey copy of every 15th frame,
+  OpenCV 4.11.0; a scratch script, figures for this footage only, not comparable across scenes):
+  the share of sampled frames below half the clip's median, a rough count of blurred frames
+  [INFERENCE]: TM-1 10.8% and 1.7%; VF-3 24.1% and 18.9%; the 01 arm 4.5% and 1.0%. The VF-3's
+  circles, walked in a tight space, have the most blurred frames.
+- **A frame reader is already on Daniel's machine:**
+  - **ffmpeg and ffprobe 9.0.2** (Gyan's "full_build", winget package `Gyan.FFmpeg`, on the PATH).
+    That build is configured `--enable-gpl --enable-version3`, so it is GPL v3 [the build's
+    configuration line]; calling it as a separate program, as the generator is called, is not
+    linking it [INFERENCE, not legal advice]. It turns the portrait clips upright by default.
+  - **OpenCV 4.11.0** in the generator's environment (`C:\mw-gen`; `docs/setup/generators.md`)
+    reads the clips, but reports the portrait ones as 3840x2160, so a reader through OpenCV must
+    apply the rotation itself [seen in the sharpness script; INFERENCE: OpenCV's orientation
+    handling].
+  Neither is in the backend's dependencies or on the teammates' machines, so the backend would
+  call ffmpeg found on the PATH, or a package would be an install (asked first).
+- **SAM in the platform is SAM 1** (`sam_vit_b_01ec64`, quantised, in rembg 2.0.68; decision
+  0029). Route B's tracking needs SAM 2, which is not installed: an install, asked first.
+
 ## Open
-- Whether the advisors approve video, and which of A to F come first (the video plan).
+- Which of A to F come first (the video plan).
 - Whether Hunyuan3D-2mv expects level views (not confirmed).
 - RealityScan's and KIRI's processing location and terms, read from their own pages before use.

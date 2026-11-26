@@ -1,5 +1,8 @@
 # MoonWalkers lab machines plan: report (the ReBeL arm with its hand, the Haas TM-1 and VF-3)
 
+**Updated 2026-11-25** (the video plan's draft): the advisors' answers of 2026-11-19 and what the
+lab visit of that day settled (section 8.1), and `haas/tm1@v4`'s rejection (sections 3 and 5).
+
 **Status: read by Daniel, 2026-11-18 ("The report looks fine"),** at the end of the plan's
 Phase 8 ([docs/lab-machines-plan.md](lab-machines-plan.md)). The advisors' page for the meeting of
 2026-11-19 tells the same story for them: https://claude.ai/artifact/3kcdDKCn5AZExqbsF8oJ6B. Written by Claude Code with Daniel Sweet. As in
@@ -34,7 +37,8 @@ agent session built a fourth version of the TM-1 that reached levels 2 and 3, wi
   checked by the tool). Its joints and program met levels 2 and 3 in Daniel's check. Its mesh is
   worse than v3's, because the agent cut the machine out of the photos with SAM's points where v3
   had drawn masks: a 10 in pedestal under the base, shards of the generated table left in the
-  frame, a bumpy right guard and holes.
+  frame, a bumpy right guard and holes. Daniel rejected it for its mesh (2026-11-18); requests
+  reuse v3.
 - **The main limits** (section 7): the meshes are bumpy and the advisors want them better; most
   moving parts of the mills and the whole hand are stand-ins; the directions and homes of several
   axes, the trunnion's model and the hand's model are not confirmed until the lab visit; masses are
@@ -205,13 +209,17 @@ At the end of Phase 8 the backend's quick suite has 889 tests passing (853 at th
     (`data/machines/haas-tm1/programs/2026-11-18_haas-o40001-basic-program_v4/`), the same joint
     plan: the tip within 0.014 mm of the path while cutting, every block within 0.01 s, the axes at
     84.7 mm/s, 1000 rpm. Daniel: "The tool is centered now".
-  - **Review:** left unreviewed (Daniel, 2026-11-18), so a request still reuses v3.
+  - **Review: rejected** by Daniel in the dashboard (2026-11-18, 18:09 Pacific; the review record
+    says 2026-11-19T02:09Z): "Mesh was broken in multiple spots, out of place, and holes were
+    present where they shouldn't have been." He had first left it unreviewed (the check, same
+    evening). A request reuses the approved v3, which meets all three levels.
 
 ### Reuse
 - **The lab's twins:** Daniel approved `haas/tm1@v3`, `haas/vf3@v1` and `igus/rebel6dof02@v5` on
   2026-11-17. After the agent's submission, `request_twin` answered: "Found an existing twin (v3,
   approved) for haas/tm1; reused it. Newer versions were not reused: v4 (needs review)." An
-  unreviewed version never replaces an approved one (decision 0015).
+  unreviewed version never replaces an approved one (decision 0015). Daniel rejected v4 the same
+  evening (section 3, "Review").
 - **The HA5C and the T33901 still build** (2026-11-18, after Phase 8's fix): their approved runs
   (`haas-ha5c/runs/2026-10-18_run-001`, v3; `grizzly-t33901/runs/2026-11-04_run-004`, v11), staged
   unbuilt in `data/scratch/2026-11-18_phase-8-reuse/` (`stage.py`) and dry-run: the HA5C built as
@@ -253,7 +261,7 @@ RTX 4090. Isaac Sim 6.2 for every check. Reviews are Daniel's, in the dashboard 
 | TM-1 `v1` | `2026-11-11_run-001` | Claude Code (script), Phase 4 | the first cut, three corners | no slide check file | needs review |
 | TM-1 `v2` | `2026-11-11_run-002` | Claude Code (script) | stand-ins, the slide check | the head sank 100 mm | needs review |
 | TM-1 `v3` | `2026-11-11_run-003` | Claude Code (script) | the sliding joints' hold | 2 (2026-11-11), **3** with two programs (2026-11-16) | **approved** (2026-11-17): "TM-1 is satisfactory for this phase, further optimization and refinement planned for later phases." |
-| TM-1 `v4` | `2026-11-18_run-001` | **a fresh Claude Code session through the MCP tools,** from a dashboard job | everything, written anew | 2 and **3** (2026-11-18, the fixed program folder); the mesh's faults | not reviewed (Daniel's choice) |
+| TM-1 `v4` | `2026-11-18_run-001` | **a fresh Claude Code session through the MCP tools,** from a dashboard job | everything, written anew | 2 and **3** (2026-11-18, the fixed program folder); the mesh's faults | **rejected** (2026-11-18): "Mesh was broken in multiple spots, out of place, and holes were present where they shouldn't have been." |
 | VF-3 `v1` | `2026-11-16_run-001` | Claude Code (script), Phase 6 | the enclosure, stand-ins inside, the trunnion | 2, and **3** with two programs (2026-11-17) | **approved** (2026-11-17): "Satisfactory mesh generated, further optimization and refinement planned for later phases." |
 
 "Script" means a spec written by a Python script in the machine's `part_cutting/` folder and
@@ -286,8 +294,8 @@ Code proposed each one, and Daniel reviewed and accepted it.
   and every finger. They match the photos and cited sizes, not the parts' real shape (decision
   0027's rule).
 - **Not confirmed until the lab visit:** which way the mills' axes move and where they home; the
-  trunnion's model; the hand's maker, model and side; the arm's version 02 against igus's 00; the
-  TM-1's height (cited 109 in, about 80 in in the photos).
+  hand's maker, model and side; the arm's version 02 against igus's 00; the TM-1's height (cited
+  109 in, about 80 in in the photos). The trunnion's model was read on 2026-11-19: a TR160 (8.1).
 - **The control is cited, not observed.** Level 3 compares the twin with its own plan at the cited
   speeds. The real machines' motion needs video (the video plan). The arm's program is a labelled
   test until the lab's own comes.
@@ -316,13 +324,41 @@ twins' `RUN.md` files list every one (the hand alone has 79 warnings).
 | The TM-1's back | the back right corner not fed (a sign and a stool); guessed | decision 0034 |
 | The TM-1's control | Classic Haas Control [INFERENCE] | research note 2026-11-11 |
 | Mill programs | a 3 in tool, 2 in stock and the work offset are stand-ins; Z lags up to 1.84 mm at the rapid; a typed target moves an axis up to 224 mm/s | decision 0035; Phase 4 |
-| The VF-3's trunnion | a TR160 by elimination; +A's and +B's directions and homes are stand-ins | decision 0036 |
+| The VF-3's trunnion | a TR160 by elimination in `v1`; its plate, read on 2026-11-19, says TR160, so the model is settled and its parts stay drawn stand-ins; +A's and +B's directions and homes are stand-ins | decision 0036; 8.1 |
 | The VF-3's height | -9.7% | v1's score |
 | The agent's TM-1 (`v4`) | a 10 in pedestal; shards of the table block in the frame; 7 holes patched; a bumpy right guard; X at its home end [INFERENCE]; the spindle turned the other way from v3 | v4's `RUN.md`; section 3 |
 | Masses | placeholders | decision 0024, update |
 
 ## 8. Open questions, by priority
 ### 8.1 For the advisors (meeting of 2026-11-19)
+**Answered at the meeting of 2026-11-19** (Daniel's account, 2026-11-25; worklog 2026-11-25):
+1. **A cut-out drawing tool, then a second agent run: yes.**
+2. **Video input: approved.**
+3. **The VF-3's trunnion** (its plate, Settings 78 and 30, the +A and +B jog): still unsure; note it
+   and ask at the next lab visit. The visit of 2026-11-19 (below) read the plate: **TR160**.
+   Settings 78 and 30 and the jog stay open.
+4. **The lab's iRC program for the arm:** to be delivered sometime the week after (the week of
+   2026-11-30) [INFERENCE: "next week" counted from Daniel's message of 2026-11-25].
+5. **The scorecard: accepted as is** (decision 0039).
+
+**The lab visit of 2026-11-19** (after the meeting; Daniel's account): no one from the lab could
+meet him, only the custodial staff, so nothing was operated or answered: no jogs, no control
+screens, no iRC program. He took photos and videos of the three machines (two circles each, at
+chest height and higher, and close-ups), filed on 2026-11-25 by machine (`inputs/photos/`,
+`inputs/videos/`, `SOURCES.md`). What they settle:
+- **The VF-3's trunnion is a TR160:** its plate, square on (`20261119_133507`), reads "MODEL NO.
+  TR160". The VF-3's control is the **Classic Haas Control** by its keys (`20261119_133254`:
+  "PARAMETER DIAGNOSTIC", "SETTING GRAPHIC", "POWER UP RESTART", the Classic's combined keys in
+  the 2012 manual, PDF pp. 35-36, where the 2023 NGC manual has separate keys, PDF pp. 34-35).
+- **The arm's files are of the lab's other ReBeL,** whose igus plate reads "REBEL-6DOF-01" (made
+  28.12.2023; Daniel, 2026-11-25), not of the twin's 02. They are filed under
+  `data/machines/igus-rebel6dof01/`. The 01 has the same connector box on its foot as the 02, so
+  that box no longer suggests that 02 is the version with control in the base.
+- **The TM-1's back** is photographed and filmed without the stool; the free-standing caution
+  panel still stands at the pendant's side.
+- Nothing was measured, so the sizes and the axes' directions stay open.
+
+The questions put to the meeting:
 1. **The agent's build.** It reached levels 2 and 3, but its mesh is worse where it cut the photos
    without drawn masks. Should the next step be a tool to draw or correct a cut-out (in the
    dashboard, or polygons added and removed on top of SAM, as v3's masks were made), then a second
@@ -341,8 +377,9 @@ ways to generate come later; the lab's arm program comes later; the semester end
 2026-12-17.
 
 ### 8.2 For Daniel and the team
-1. **The lab visit** (the plan's visit list), postponed until after 2026-11-19.
-2. **`haas/tm1@v4`'s review,** left open by Daniel's choice.
+1. **The lab visit** (the plan's visit list): made on 2026-11-19 with no lab member present, so most
+   of the list stays open for the next visit (8.1).
+2. **`haas/tm1@v4`'s review:** rejected by Daniel on 2026-11-18 (section 3).
 3. **The pipeline owners' review** of decisions 0020 and 0021 (Ava, Kiran, Sarkis), still open.
 
 ### 8.3 Found in the agent's build: gaps in the tools

@@ -1289,7 +1289,8 @@ Afterwards:
       (Done 2026-11-18, recorded by Daniel: `haas/tm1@v4`, run `2026-11-18_run-001`, in 38.5 min;
       51 of 51 checkable quotes found. Its SAM-only cut-outs gave a worse mesh: a 10 in pedestal,
       shards, holes. Daniel's Isaac Sim check: levels 2 and 3 met, level 3 after a fix to where a
-      program folder puts the tool (decision 0035, update). Left unreviewed by Daniel. Worklog
+      program folder puts the tool (decision 0035, update). Left unreviewed by Daniel at his
+      check, then rejected in the dashboard the same evening for its mesh (2026-11-18). Worklog
       2026-11-18; report, section 3.)
 - [x] The plan's report: results per machine and level, the scorecard, the inaccuracies, the open
       questions and the tool gaps; a new advisors' page in the drill-press page's design.
@@ -1301,8 +1302,9 @@ Afterwards:
       Phase 1's tools, `docs/tool-guide.md` replaces its note "Not yet used in an agent's build"
       with how each did, citing the runs. A tool still unused, or one that fell short, stays
       named there with the reason. (Done 2026-11-18: "How the lab's plan's new tools did".)
-- [ ] The scorecard's decision record: after the meeting of 2026-11-19 (Daniel, 2026-11-18), in
-      the next plan's first commit.
+- [x] The scorecard's decision record: after the meeting of 2026-11-19 (Daniel, 2026-11-18), in
+      the next plan's first commit. Written 2026-11-25 as
+      [decision 0039](decisions/0039-the-scorecard.md): accepted as is at that meeting.
 
 **Measured by:** the scorecard for the agent's build, beside the chat's builds.
 
@@ -1310,7 +1312,15 @@ Afterwards:
 Daniel: measuring "has to be planned in advance" (2026-11-09). After the meeting of 2026-11-12
 he plans to visit soon, with no promise that everything can be measured (2026-11-16). The list
 below is by priority, nearest phase first; each item says what it settles and what the sources
-say now. **Photograph the machine at the moment you measure it,** so the measures belong to a
+say now.
+
+**The visit of 2026-11-19** (Daniel; filed 2026-11-25; the report, section 8.1): no lab member
+could meet him, so nothing was operated, measured or shown on a screen. Settled: item 10's model
+(the plate reads TR160) and item 11's control generation for the VF-3 (the Classic Haas Control,
+by its keys); item 9's back of the TM-1, photographed and filmed without the stool (the caution
+panel still at the pendant's side). The arm's photos are of the lab's other ReBeL, the 01, so
+items 12 to 14 are untouched. Every other item stays open for the next visit, with Settings 78
+and 30 and the +A and +B jog (the advisors, 2026-11-19). **Photograph the machine at the moment you measure it,** so the measures belong to a
 pose; the TM-1 has likely moved since 2026-11-05. Operate nothing without the lab's permission.
 Bring a tape measure (at least 3 m, since the TM-1 is cited at 109 in tall) and a phone.
 
