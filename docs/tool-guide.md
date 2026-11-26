@@ -46,9 +46,9 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | Module | What it does | In | Out |
 |---|---|---|---|
 | `contracts` (`pipeline_result.py`, `json_schema.py`) | The contract every pipeline returns (`PipelineResult`, v0.2.0): sources, identity, facts, parts, joints, control behaviours and issues, all cited. `json_schema.py` writes it as a JSON Schema for the teammates | What a pipeline found | A checked result; `pipeline_result.schema.json` |
-| `workspace` | The data folder as the shared workspace of the agent and the dashboard: run folders are jobs, and their files say how far each has got. An uploaded photo already filed in any folder under the machine's `inputs/photos/` is used where it is, not saved again; a photo's view, use and cut-out can be corrected until the mesh is generated | Uploads, run folders | Job lists, saved inputs, status |
-| `api` | The dashboard's API: jobs, twins, sources, reviews and files (decision 0014). `security.py` keeps it to this computer (it answers on 127.0.0.1 only and checks each request's host); `typescript.py` writes the dashboard's types from its schema, so they are never copied by hand | HTTP requests | JSON and files; `dashboard/src/api/types.gen.ts` |
-| `dashboard/` (React) | The web pages people use. The upload form adds each pick of photos to the ones chosen, so they can come from several folders (`src/lib/picks.ts`) | Clicks, uploads | Jobs started, reviews recorded |
+| `workspace` | The data folder as the shared workspace of the agent and the dashboard: run folders are jobs, and their files say how far each has got. An uploaded photo already filed in any folder under the machine's `inputs/photos/` is used where it is, not saved again; a photo's view, use and cut-out can be corrected until the mesh is generated. A job's photos say whether their cut-out's preview is current or stale (decision 0041) | Uploads, run folders | Job lists, saved inputs, status |
+| `api` | The dashboard's API: jobs, twins, sources, reviews and files (decision 0014). `security.py` keeps it to this computer (it answers on 127.0.0.1 only and checks each request's host); `typescript.py` writes the dashboard's types from its schema, so they are never copied by hand. Since decision 0041 it saves a photo's cut-out (`PUT .../photos/{source}/cutout`) and runs the cut-out preview (`POST .../cutouts`, needs `MOONWALKERS_GEN_ROOT`); it never runs the generator | HTTP requests | JSON and files; `dashboard/src/api/types.gen.ts` |
+| `dashboard/` (React) | The web pages people use. The upload form adds each pick of photos to the ones chosen, so they can come from several folders (`src/lib/picks.ts`). A job's page draws each generator photo's cut-out: SAM's box and points, a crop box, and polygons or lines to add or remove, over the previewed cut-out (`src/components/cutout.tsx`, `src/lib/cutout.ts`; decision 0041) | Clicks, uploads, drawings | Jobs started, cut-outs saved and previewed, reviews recorded |
 | `mcp` (with `reports.py`) | The MCP server that gives Claude Code its 28 tools ([below](#the-agents-28-mcp-tools)); `reports.py` defines what each tool returns | Tool calls | Run folders, notes, specs, builds |
 | `orchestrator` (with `router.py`, `photos.py`) | Sends each input to its pipeline, then reuses a stored twin or stores a new version and has it exported. It is the only writer to the knowledge base | A job's request | A twin version, or the reused one |
 | `kb` (`json_store.py`, `keys.py`, `reviews.py`) | The knowledge base: one JSON file per record, behind an interface Neo4j can replace (decisions 0005, 0008). `keys.py` turns a maker and model into one key, aliases included; `reviews.py` keeps people's approvals and rejections as append-only records (decision 0015) | Results, twin versions, reviews | The same, by machine key (`grizzly/t33901`) |
@@ -58,7 +58,7 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | Module | What it does | In | Out |
 |---|---|---|---|
 | `photos.py` | Picks which photos feed the generator, in which slot, from their views (decision 0022) | The run's photos and views | Generator slots |
-| `generators/` (`hunyuan3d.py`, `subprocess_job.py`, `scripts/hunyuan3d_shape_job.py`) | Runs the image-to-3D model in its own environment: a JSON job goes in to the generator's Python, a JSON result comes back, so its libraries never mix with ours. It first turns each photo upright and cuts the machine out (automatically, or by the photo's SAM box, crop box or drawn mask; decision 0029) | Photos, with any cut-outs | `generator/mesh.glb` and a record of versions |
+| `generators/` (`hunyuan3d.py`, `subprocess_job.py`, `scripts/hunyuan3d_shape_job.py`) | Runs the image-to-3D model in its own environment: a JSON job goes in to the generator's Python, a JSON result comes back, so its libraries never mix with ours. It first turns each photo upright and cuts the machine out (automatically, or by the photo's SAM box, crop box or drawn mask; decision 0029), then adds and removes the cut-out's drawn polygons and lines in order (decision 0041). A preview writes each cut-out as `masks/<view>.png` and can measure it against masks given to compare (IoU) | Photos, with any cut-outs | `generator/mesh.glb` and a record of versions |
 | `inspection.py`, `mesh_tools.py` | Orient the mesh and measure it: extents, round parts, PNG views. Circle fits slice across an axis or any direction, optionally within a box. `mesh_faults` finds, per part, what NVIDIA's validator would warn about (zero-area faces, edges with more than two faces, non-manifold points, winding) | `mesh.glb`, up/front axes | Measurements, views and mesh warnings |
 | `parts_spec.py` | The geometry spec of several parts: frame, cuts, parts, stand-ins, joints, scale, size checks, all cited (decisions 0023, 0027) | `geometry_spec.json` | A checked spec |
 | `part_cuts.py` | Cuts the mesh into parts by the spec's ordered list of shapes | Mesh, cut list | One mesh per part |
@@ -67,6 +67,7 @@ All in `backend/src/moonwalkers/` (Python 3.12) except the dashboard.
 | `assemble.py`, `pipeline.py` | Put it together: scale by a cited length, check sizes, cite every part and joint | Mesh, spec, reference facts | A `PipelineResult` |
 | `quotes.py` | Checks every quote in a reference file against its cited PDF page | Reference and spec files | Found, elsewhere or not found, per quote |
 | `build.py`, `cli.py` | Build a run folder through the orchestrator, with its check files, programs and `RUN.md` | A run folder | A stored twin version and its files |
+| `spec_warnings.py` | Warns of a several-part spec's faults that no validator sees, the ones `haas/tm1@v4` was rejected for (decision 0041; the lab report's gaps 2, 3 and 9): a twin standing on a narrow slab (its bottom 5% of height under 15% as wide as its widest), loose pieces of a kept part inside a stand-in that replaces a removed part anywhere along its travel, and no size checks. They are listed, and never change a dry run's `clean` | Oriented mesh, spec, scale | Warnings, each naming its fix |
 | `dry_run.py` | Builds a run in a new scratch copy of the data folder, holding only what the build reads, then runs both validators on every file; nothing is stored for real | A run folder | A scratch build in `data/scratch/<date>_dry-run-<NNN>/`, and each file's findings |
 | `part_spike.py`, `mesh_segments.py`, `synthetic_parts.py` | Phase 4's comparison of four ways to cut a mesh into parts, scored on a synthetic drill press whose right answer is known face by face (decision 0023) | A mesh, or the synthetic one | Scores and views (`docs/research/2026-10-24-part-cutting-spike.md`) |
 
@@ -102,8 +103,8 @@ job. Read-only tools change nothing.
 | 3 | `list_jobs` (read-only) | Find jobs waiting for the agent, such as a dashboard upload | A machine, whether to include finished jobs | Open jobs, newest first, with what each needs next |
 | 4 | `start_run` | Start a job | Maker, model, whether to build a new version | A run id |
 | 5 | `add_input` | Add a machine photo | Run, file, source id, title, date, view, use | The source recorded, with its SHA-256 |
-| 6 | `set_photo` | Correct a photo before generation: its view, its use, or how the machine is cut out of it (decision 0029) | Run, source id, view, use, cut-out (SAM box and points, crop box, or a drawn mask) | The source, and which photos the generator will get |
-| 7 | `preview_cutouts` | See how the generator will cut the machine out of each photo, in seconds, without generating | Run | A PNG sheet of the cut-outs, and the share of each photo kept |
+| 6 | `set_photo` | Correct a photo before generation: its view, its use, or how the machine is cut out of it (decision 0029) | Run, source id, view, use, cut-out (SAM box and points, crop box, a drawn mask, or `auto`), with polygons and lines to add or remove on top, in order (decision 0041) | The source, and which photos the generator will get |
+| 7 | `preview_cutouts` | See how the generator will cut the machine out of each photo, in seconds, without generating | Run | A PNG sheet of the cut-outs with the edits outlined, and per photo its method, share kept and number of edits; each cut-out as `cutouts/masks/<view>.png` |
 | 8 | `add_reference_source` | Record a document the facts come from | Run, URL, file or "user", title, date | The source recorded |
 | 9 | `identify_machine` | Record the maker and model | Run, maker, model, aliases, citations | The notes so far |
 | 10 | `add_fact` | Record one specification value | Run, key, value, SI unit, original text, citations | The notes so far |
@@ -122,8 +123,8 @@ job. Read-only tools change nothing.
 | 23 | `remove_spec_entry` | Take a part or joint out of the spec | Run, which, id | The spec's status |
 | 24 | `set_scale_length` | Scale by any cited length | Run, fact, measured length, how | The spec's status |
 | 25 | `set_size_checks` | Compare more cited lengths with the model | Run, checks | The spec's status |
-| 26 | `preview_twin` | Try the spec without storing anything | Run | Parts, sizes, holes, PNG views to look at, and each part NVIDIA's validator would warn about (zero-area faces, non-manifold points) |
-| 27 | `dry_run_twin` | Try the build without storing anything (the lab's plan, tool gap 7) | Run | The build's message, and our and NVIDIA's validators' findings on every file, from a scratch copy of the data folder |
+| 26 | `preview_twin` | Try the spec without storing anything | Run | Parts, sizes, holes, PNG views to look at, and each part NVIDIA's validator would warn about (zero-area faces, non-manifold points); among the issues, decision 0041's spec warnings (a slab under the twin, shards in a stand-in's way, no size checks) |
+| 27 | `dry_run_twin` | Try the build without storing anything (the lab's plan, tool gap 7) | Run | The build's message, and our and NVIDIA's validators' findings on every file, from a scratch copy of the data folder; the spec warnings (`spec_warnings`), which do not change `clean` |
 | 28 | `submit_twin` | Build and store the twin, or reuse it | Run | The twin version, its files, and the validators' findings |
 
 **How the lab's plan's new tools did** (decisions 0029 and 0030). Two uses: the ReBeL arm's spec,
@@ -154,15 +155,23 @@ fresh agent session from a dashboard job (`haas/tm1@v4`, run `haas-tm1/runs/2026
 - **`set_size_checks`** (older): the agent skipped it, though the procedure asks for it
   (`agent-procedure.md`, step 5b), so its score has the build's own sizes only.
 
+**Phase 1 of the video plan** (decision 0041, 2026-11-25) answers gaps 1, 2, 3 and 9. Polygons
+and lines drawn on top of any cut-out, in the dashboard or through `set_photo`, reproduce v3's
+three script-made masks of the TM-1 at IoU 0.999, 0.992 and 0.997 (5 to 11 edits each;
+[worklog 2026-11-25](worklog/2026-11-25.md)). The spec warnings fire on v4's spec (a slab, shards
+in the table, saddle and carousel, no size checks) and stay quiet on v3's, the VF-3's and the
+arm's; on the T33901 v11 they find the crank passing into the base at the table's lowest setting,
+the fault already logged in `drill-press-report.md`.
+
 ## Commands people run
 From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
 
 | Command | What it does | In | Out |
 |---|---|---|---|
 | `moonwalkers.pipelines.b build` | Build a run folder | Run folder, reference facts | A twin version and its files |
-| `moonwalkers.pipelines.b cutouts` | Cut the machine out of each fed photo as the generator will, without generating (decision 0029) | Run folder | `cutouts/sheet.png` and the cut-outs |
+| `moonwalkers.pipelines.b cutouts` | Cut the machine out of each fed photo as the generator will, without generating (decision 0029). `--compare <folder>` measures each cut-out against the masks there, named by view (decision 0041) | Run folder | `cutouts/sheet.png`, the cut-outs and `cutouts/masks/`; IoU per compared photo |
 | `moonwalkers.pipelines.b inspect` | Inspect a mesh or try a spec. `--circles-along x\|y\|z` or `DX,DY,DZ` with `--at` fits circles; `--within AXIS LO HI` keeps only the surface in a box | Run folder | Measurements, PNGs |
-| `moonwalkers.pipelines.b dry-run` | Build a run in a scratch copy of the data folder and run both validators | Run folder, reference facts | A scratch build and every file's findings; exit 1 unless clean |
+| `moonwalkers.pipelines.b dry-run` | Build a run in a scratch copy of the data folder and run both validators | Run folder, reference facts | A scratch build and every file's findings, and the spec warnings; exit 1 unless clean |
 | `moonwalkers.pipelines.b.quotes` | Check quotes against their PDF pages | Reference and spec files | Found or not, per quote |
 | `moonwalkers.usd.validate` | Our validator | A `.usd` file | Findings |
 | `omni_asset_validate` | NVIDIA's validator | A `.usd` file | Findings |

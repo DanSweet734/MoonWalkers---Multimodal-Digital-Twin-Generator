@@ -115,7 +115,20 @@ the job is done. Otherwise the job waits for you:
      - `{"method": "crop", "box": [...]}`: the automatic removal inside the box only. It loses
        thin parts, such as an arm's forearm.
      - `{"method": "mask", "mask": "<PNG in the data folder>"}`: a mask a person drew, white
-       on the machine. Ask the person for one where SAM leaves holes, as in shiny guards.
+       on the machine.
+     - `{"method": "auto", "edits": [...]}`: the automatic removal, corrected by edits alone.
+   - **Edits** (decision 0041) go on top of any method, in order, the later winning:
+     `{"op": "add" | "remove", "points": [[x, y], ...], "note": "..."}` fills a polygon of three
+     or more points; with `"width"` (a fraction of the photo's width, at most 0.2) it draws a line
+     through two or more points instead, for a thin part such as a pendant's arm or a cable.
+     Remove what SAM keeps in front of the machine (a sign, a stool); add what it loses (a shiny
+     guard, a thin arm). v3's three TM-1 masks were 5 to 11 edits each over SAM.
+   - **Where your edits still leave the cut-out wrong after two or three tries, ask the person**
+     to draw it in the dashboard: the job's page, "Edit the cut-out" beside the photo, with a
+     preview over the photo. Say which photo and what is wrong, and offer to skip it, as for a
+     source you cannot reach (item 1 above) [INFERENCE: Dr. Li's rule of 2026-11-05 was for
+     sources]. Their drawing is saved in `request.json`; `preview_cutouts` reads it. If they skip,
+     log the fault as an issue.
    - Preview again after each change. Specks are dropped by `min_piece` (default 0.02).
    - **Nothing fills in what stands in front of the machine.** Log it as an issue on the twin,
      naming the photo and what is hidden.
@@ -334,14 +347,28 @@ decision 0027 and its updates) is a worked example.
      non-manifold points, the points given in model units after orienting, where the cut list's
      boxes are. Move the cut boundary or the stand-in's size that makes them, by a millimetre or
      two: the T33901's table rim at exactly 10 mm gave 40 zero-area faces, at 10.5 mm none;
+   - **the spec warnings** among the issues (decision 0041), the faults `haas/tm1@v4` was
+     rejected for. Each names its fix:
+     - `base_z`: the twin's bottom 5% is under 15% as wide as its widest, so it may stand on a
+       generated slab or pedestal (v4: 5%). Set `base_z` at the floor or the machine's own base
+       and cut what is below into a removed part (v3: `base_z` -0.75, a cut under z -0.763);
+     - a cut part's id: loose pieces of it lie inside a stand-in that replaces a removed part,
+       where it is modelled or anywhere along its sliding joints' travel (v4's shards of the
+       table block). Set `loose_pieces: "remove"` on that part or cut them into the removed part.
+       If it is the stand-in itself passing into the machine (the T33901's crank at the table's
+       lowest setting), check its place and travel, and log it as an issue if it stays;
+     - `size_checks`: none given (step 7).
+     A warning you leave is said why in an issue; it does not stop the build;
    - the size checks, and the issues the twin will carry. An issue of yours that a later change
      made stale (v10's and v11's note of a flap that v10's cuts had removed) is withdrawn or
      corrected with `correct_issue`.
-9. **Repeat** until every view is right, no hole is left, and no part has a mesh warning.
+9. **Repeat** until every view is right, no hole is left, no part has a mesh warning, and each
+   spec warning is fixed or explained in an issue.
 10. **Dry-run the build before `submit_twin`:** `dry_run_twin(run)`. A submitted version is
     stored for good. The dry run builds the run as `submit_twin` would, but in a new scratch copy
     of the data folder (`data/scratch/<date>_dry-run-<NNN>/`), and runs our validator and
     NVIDIA's on the twin, every check file and the controls. Nothing is stored for real.
+    - Its `spec_warnings` are step 8's; they do not change `clean`.
     - Fix what it reports through the tools, and dry-run again until `clean` is true. The
       T33901's agent build needed three dry runs, by hand (worklog 2026-11-04).
     - **By hand, from `backend/`:**

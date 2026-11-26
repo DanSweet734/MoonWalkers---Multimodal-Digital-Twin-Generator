@@ -31,6 +31,9 @@ Options for `python -m moonwalkers.api`:
 - `--data <folder>`: another data folder, for example a scratch copy (section 3). The default is
   the one the MCP server uses: `MOONWALKERS_DATA_DIR`, else the repository's `data/`.
 - `--port <n>`: another port. The development server always forwards to 8000.
+- Set `MOONWALKERS_GEN_ROOT` (`$env:MOONWALKERS_GEN_ROOT = "C:\mw-gen"` in PowerShell) before
+  starting it so a job's page can preview a drawn cut-out (section 3b). The API runs only the
+  cut-out step in the generator's environment (seconds), never the 3D model (decision 0041).
 
 The API never listens beyond 127.0.0.1 and has no login. Don't expose it on a network: the input
 documents are copyrighted and kept for internal research only (`data/README.md`).
@@ -105,6 +108,38 @@ Then, in the dashboard:
    time with a script driving headless Edge on a scratch data folder (worklogs of those days).
 
 Delete the copy afterwards: `Remove-Item "$env:TEMP\mw-data-try" -Recurse`.
+
+## 3b. Drawing a cut-out (decision 0041)
+Before a job's mesh is generated, each photo that feeds the generator has **Edit the cut-out** in
+its job's photo list. The editor shows the photo; once previewed, what is cut away is dimmed.
+- **Method:** "Automatic removal, with edits" (the default, needs an edit), "SAM, with a box and
+  points", "Automatic removal inside a box", or "A mask drawn outside the tools".
+- **Tools:** drag a box around the machine; click points to keep or leave out (SAM); click the
+  corners of a region to add or cut away, closing it by clicking the first corner, double-clicking
+  or pressing Enter; click along a cable or hose to add a line (or cut one away), with its width.
+  Escape drops the shape being drawn, Ctrl+Z undoes. Adds are solid outlines, cuts dashed; a later
+  edit wins where two overlap.
+- **Save** writes the photo's `cutout` into `request.json`. **Save and preview** also cuts every
+  fed photo out as the generator will (about 6 to 16 s for three photos) and shows the result; a
+  photo's line says "changed since its preview" once its cut-out changes. Without
+  `MOONWALKERS_GEN_ROOT` the preview answers with the command to run instead.
+- Once the run has generated its mesh, the cut-outs are read-only: start a new run to change them.
+
+**Phase 1's check (Daniel):** a scratch data folder holds a TM-1 job with `haas/tm1@v3`'s three
+fed photos and their views, and no cut-outs (made on 2026-11-25; nothing in the real data
+changes):
+```
+cd backend
+$env:MOONWALKERS_GEN_ROOT = "C:\mw-gen"
+uv run python -m moonwalkers.api --data ../data/scratch/2026-11-25_cutout-tool-check
+```
+Open http://127.0.0.1:8000/, the job `haas-tm1`, `2026-11-25_run-001`, and draw each photo's
+cut-out until it holds the machine and nothing in front of it. Note the time it takes. Then
+compare the three with v3's masks, drawn by script on 2026-11-11:
+```
+uv run python -m moonwalkers.pipelines.b cutouts ../data/scratch/2026-11-25_cutout-tool-check/machines/haas-tm1/runs/2026-11-25_run-001 --data ../data/scratch/2026-11-25_cutout-tool-check --compare ../data/machines/haas-tm1/runs/2026-11-11_run-003/masks
+```
+It prints each photo's IoU against v3's mask (no target in this phase, the plan says).
 
 ## 4. Real reviews
 A review on the real data is a real decision, kept with the twin version (decision 0015). Reviews

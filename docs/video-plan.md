@@ -267,9 +267,13 @@ The advisors' ask 1; the report's gap 1. **Proposed shape** (a decision record, 
   - the base stands on a small slab (gap 2);
   - pieces of a removed part stay inside a kept part where a moving part passes (gap 3);
   - a spec has no size checks (gap 9).
-- [ ] Decision 0041; code, tests (backend and dashboard), the tool guide, the procedure
+- [x] Decision 0041 (proposed; Daniel's four choices of 2026-11-25); code, tests (backend and
+      dashboard), the tool guide, the procedure, the dashboard guide's section 3b. v3's masks
+      rewritten as edits on SAM: IoU 0.999, 0.992, 0.997; the warnings fire on v4 (five) and are
+      quiet on v3, the VF-3 and the arm (worklog 2026-11-25)
 - [ ] **Check (Daniel):** draw the cut-outs of the TM-1's three fed photos in the dashboard; the
-      tool prints each mask's IoU against v3's drawn masks (a measure for this phase, no target)
+      tool prints each mask's IoU against v3's drawn masks (a measure for this phase, no target).
+      A scratch job is ready: `docs/setup/dashboard.md`, section 3b
 - [ ] Pull request; stop for review
 
 **Measured by:** the drawn masks against v3's (IoU), the time Daniel takes, and the tests.
