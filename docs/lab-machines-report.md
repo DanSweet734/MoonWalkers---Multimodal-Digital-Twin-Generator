@@ -213,6 +213,10 @@ At the end of Phase 8 the backend's quick suite has 889 tests passing (853 at th
     says 2026-11-19T02:09Z): "Mesh was broken in multiple spots, out of place, and holes were
     present where they shouldn't have been." He had first left it unreviewed (the check, same
     evening). A request reuses the approved v3, which meets all three levels.
+- **A second agent run** (the video plan's Phase 2, 2026-11-25): with the cut-out tool and the
+  spec warnings, a fresh session built `haas/tm1@v5` in 54.4 min; no pedestal or shards, and
+  levels 1 to 3 met in Daniel's check, the tip 0.645 mm off the path from a soft hold. Its
+  scorecard beside v3 and v4: [docs/video-plan.md](video-plan.md), "The second agent run".
 
 ### Reuse
 - **The lab's twins:** Daniel approved `haas/tm1@v3`, `haas/vf3@v1` and `igus/rebel6dof02@v5` on
@@ -383,7 +387,22 @@ ways to generate come later; the lab's arm program comes later; the semester end
 3. **The pipeline owners' review** of decisions 0020 and 0021 (Ava, Kiran, Sarkis), still open.
 
 ### 8.3 Found in the agent's build: gaps in the tools
-From the agent's worklog and the Phase 8 chat's check. Only the last is fixed.
+From the agent's worklog and the Phase 8 chat's check. Only the last was fixed at the time.
+
+**Update (2026-11-26, the video plan's Phase 2).** The video plan's Phase 1 (decision 0041) closed
+gaps 1, 2, 3 and 9, and a second agent run (`haas/tm1@v5`, run `haas-tm1/runs/2026-11-25_run-001`)
+used the fixes ([docs/video-plan.md](video-plan.md), "The second agent run"):
+- **Gap 1, closed and used:** the agent corrected all three corners with `set_photo`'s edits
+  (cut-outs at IoU 0.841, 0.914 and 0.867 against v3's masks, where v4's were 0.855, 0.715 and
+  0.899) and offered Daniel the dashboard's drawing, which he declined.
+- **Gap 2, closed:** no slab under v5; it stands on its whole base. The warning stayed quiet.
+- **Gap 3, closed and used:** the warning fired once (frame pieces in the table's travel); the
+  agent kept the piece, which was machine, and made the table's end guards shallower. No shards.
+- **Gap 9, closed:** the agent set a size check (one; v3 has four).
+- **Still open:** gaps 4 (the agent again wrote its own views, sections and extents), 5, 6 (the
+  overlays' cameras 7, 32 and 33° off), 7 and 8.
+- **New:** nothing checks a hold drive. The agent set the arm's hold, and v5's head rests 0.64 mm
+  low, putting the tool tip 0.645 mm off the path; the video plan lists this and nine more.
 1. **No way to draw or correct a cut-out.** SAM breaks into pieces with many points and keeps the
    neighbours with few; a drawn mask must be made outside the tools (the agent's gap 2).
 2. **Nothing warns that the base stands on a small slab.** `set_spec_frame` takes a `base_z`, and

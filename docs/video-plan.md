@@ -471,9 +471,98 @@ Afterwards:
 - **Then:** the report's update (the lab report's tool gaps, section 8.3, as closed or still
   open), the tool guide's "How the tools did", the worklog, the README and CLAUDE.md; a pull
   request; stop.
-- [ ] The run-sheet and starter prompt; Daniel starts the session; the chat checks the transcript
-- [ ] **Check (Daniel):** levels 1 to 3 in Isaac Sim, as for v4; the review in the dashboard is his
+- [x] The run-sheet and starter prompt; Daniel starts the session; the chat checks the transcript
+      (job `haas-tm1/runs/2026-11-25_run-001`, checked against the table before the agent
+      started; the session 2026-11-25, 22:43-23:37 Pacific; below, "The second agent run")
+- [x] **Check (Daniel, 2026-11-26):** levels 1 to 3 in Isaac Sim, as for v4: **all three met**;
+      the review in the dashboard is his
 - [ ] The scorecard against v3 and v4; the tool gaps it finds; pull request; stop
+
+### The second agent run (2026-11-25 and 26)
+The record: the agent's own entry in [worklog 2026-11-25](worklog/2026-11-25.md) ("The video
+plan's Phase 2: the agent's second build"), the Phase 2 chat's in
+[worklog 2026-11-26](worklog/2026-11-26.md), and the run's `RUN.md` (Daniel's check).
+- **The session** (transcript `baa5b454`): a fresh Claude Code session, 54.4 min (06:43:32 to
+  07:37:58 UTC), `submit_twin` at 45.7 min. 249 tool calls, 100 of them to 22 of the 28 MCP
+  tools (v4: 88 to 20, 38.5 min): 18 `add_fact`, 15 `set_spec_part`, 12 `add_reference_source`,
+  9 `preview_twin`, 8 `set_photo`, 7 `set_cut_list`, 6 each of `add_issue` and
+  `set_spec_joint`, 4 `preview_cutouts`, 2 each of `inspect_geometry` and `fit_circles`, and one
+  each of `list_jobs`, `check_knowledge_base`, `generate_geometry`, `identify_machine`,
+  `set_spec_frame`, `set_scale_length`, **`set_size_checks`**, `add_control`, `dry_run_twin`,
+  `submit_twin` and `request_twin`. No held-back path in any tool call before `submit_twin`.
+- **Its three questions** (Daniel took the recommended answer each time):
+  1. after three tries at the cut-outs: accept them, or draw in the dashboard? "Accept, generate";
+  2. the scale: the 47.75 in table length or the 109 in height? "Table length";
+  3. a 10-pocket carousel on a TM-1? "10 pockets".
+- **The cut-outs:** SAM's box and points plus the agent's own edits (decision 0041), 2, 4 and 3
+  edits, 55.2%, 48.1% and 69.2% kept; small remnants in front of the machine left (a floor coil,
+  a hose, cords; the twin's issue). **Daniel drew none**: the drawing was offered, and declined.
+- **What it built:** `haas/tm1@v5`, the same six parts and five joints as v3, scaled by the table
+  length, with O40001's program folder. Spec warnings: one (frame pieces in the table's travel),
+  acted on by shallower end guards, since the piece was machine; `dry_run_twin` clean on its first
+  call with no warnings. Both validators clean on all five files (the chat's re-run too).
+- **What it got wrong, by its own account and confirmed:** the arm's hold (10000, 200) instead of
+  decision 0034's (100000, 632.5); a red handwheel on the table's end, not the saddle; the
+  carousel-to-spindle distance (15.6 in) left out of its size checks.
+
+**Daniel's Isaac Sim check (2026-11-26; the run's `RUN.md`):** levels 1, 2 and 3 met.
+- **Level 1:** "It stands flat, I see no shards through the table, and I see no incorrect holes as
+  far as I can tell"; a small cosmetic lump at the left guard's foot (the twin stands on its whole
+  base at z 0, measured); a "large gap" under the head, where the agent cut out the generated
+  spindle region for a small nose stand-in [INFERENCE].
+- **Level 2:** every axis to both ends within 0.01 mm, the carousel exactly 36, 72, -36 and 0°;
+  **the head rests 0.64 mm low** under the arm's hold (v3 0.014 mm). The table's tall end guards
+  pass through the pendant and the carousel (parts do not collide, as in v3).
+- **Level 3:** O40001 runs, the tip **within 0.645 mm** of the path while cutting, all of it the
+  sag (v3 0.017 mm); the axes at 84.7 mm/s, 1000 rpm. A first try printed no "first physics
+  step" and moved nothing (cause not confirmed); the repeat and a fresh session's run gave
+  byte-identical recordings.
+
+**The scorecard** (decision 0039), v5 beside v3 and v4 (each run's `score/SCORE.md`, the chat's
+measures in [worklog 2026-11-26](worklog/2026-11-26.md)):
+
+| Measure (target) | TM-1 `v3` (chat, approved) | TM-1 `v4` (agent, rejected) | TM-1 `v5` (agent, 2nd run) |
+|---|---|---|---|
+| Sizes (within 6%; over 10% flagged) | depth +0.6%; **height -24.0%**; carousel to spindle -9.6%; table -16.2% (replaced) | no size checks; the build's own: depth +8.7%, height -13.5% (pedestal) | cable carrier height -6.6%; the build's own: depth +2.7%, **height -11.3%**, **width +16.0%** |
+| Photo match, its own cut-outs (no target) | 0.751, 0.797, 0.842 | 0.688, 0.612, 0.773 | 0.859, 0.789, 0.897 |
+| Photo match, on v3's drawn cut-outs (one key) | 0.751, 0.797, 0.842 | 0.737, 0.757, 0.829 | 0.750, 0.769, 0.830 |
+| Cut-outs against v3's masks (IoU) | 1 (they are v3's) | 0.855, 0.715, 0.899 | 0.841, 0.914, 0.867 |
+| v4's faults: pedestal, shards, holes | none | all three | no pedestal, no shards; a gap under the head |
+| Parts and joints | head, saddle, table, spindle, carousel | the same | the same |
+| Ranges (within 1 mm) | within 0.01 mm | within 0.01 mm | within 0.01 mm |
+| The head's hold | 0.014 mm | 0.0135 mm | **0.64 mm** |
+| Control (the T33901's 0.63 mm) | tip 0.017 mm | tip 0.014 mm cutting (fixed folder) | **tip 0.645 mm cutting** (the sag) |
+| Evidence (every quote found) | 76 found, 0 missing, 7 not checkable | 51 found, 0 missing, 22 not checkable | 61 found, 1 on another page, 0 missing, 12 not checkable |
+| Time; calls | (built by the chat) | 38.5 min; 88 MCP calls | 54.4 min; 100 MCP calls; Daniel drew nothing |
+
+- **The photo match needs one key [INFERENCE].** The scorer fits each twin to its own run's
+  cut-outs (`generator/prepared`), so a looser cut-out scores higher. On v3's drawn cut-outs,
+  v5's mesh is level with v3's on the front (0.750 against 0.751) and under it on the two others;
+  every twin scores higher on v5's cut-outs. So v5's better cut-outs did not give a mesh that
+  matches the photos better than v3's.
+- **The cut-outs:** the agent's edits fixed v4's worst photo (134337, 0.715 to 0.914, near
+  Daniel's own drawing's 0.933); the other two stayed near v4's.
+- **What made the difference to v4's rejection** [INFERENCE]: the slab warning stayed quiet
+  because there was no slab (the base is the chip pan), and the loose-piece warning made the
+  agent look at the piece in the table's way. The one fault no warning caught is the hold.
+
+**Tool gaps found in the second run** (the agent's seven, in its worklog, and the chat's):
+1. **No check of a hold drive:** `set_spec_frame` takes any `hold_drive`, and nothing estimates
+   the sag (m g / k) in `preview_twin` or `dry_run_twin`. The one fault that cost v5 its
+   precision (agent's gap 1).
+2. **Non-manifold points by hand:** one preview per guessed cut edge (agent's gap 2).
+3. **Loose pieces are counted, not shown** (agent's gap 3).
+4. **The photo overlays' cameras** were fitted 7, 32 and 33° from their slots (agent's gap 4;
+   the report's 8.3, gap 6, still open).
+5. **Stand-in pieces may not meet end to end,** and `repeat` steps only in a line (agent's gap 5).
+6. **No measuring tools** (grid, sections, box extents); the agent wrote its own again (agent's
+   gap 6; the report's 8.3, gap 4, still open).
+7. **A program's numbers come late,** in the dry run's `PROGRAM.md` (agent's gap 7).
+8. **The scorer's photo match has no common key** (the chat): each twin against its own cut-outs.
+9. **A stand-in sweeping through the kept frame** along its travel is not warned (the chat): the
+   loose-piece warning looks only at loose pieces; v5's end guards pass through the pendant.
+10. **The runner sometimes does not start** (the chat): once, Play gave the recorder its steps
+    but not the runner; not reproduced.
 
 **Measured by:**
 - the photo match (IoU), against v4's 0.61-0.77 and v3's 0.75-0.84;

@@ -163,6 +163,23 @@ in the table, saddle and carousel, no size checks) and stay quiet on v3's, the V
 arm's; on the T33901 v11 they find the crank passing into the base at the table's lowest setting,
 the fault already logged in `drill-press-report.md`.
 
+**How they did in the second agent run** (the video plan's Phase 2: `haas/tm1@v5`, run
+`haas-tm1/runs/2026-11-25_run-001`, 2026-11-25; [docs/video-plan.md](video-plan.md), "The second
+agent run"):
+- **`set_photo` with edits and `preview_cutouts`:** 8 calls and 4 sheets. The agent's own edits
+  (2 to 4 a photo) kept the whole machine in all three corners, with small remnants in front of
+  it; against v3's drawn masks, IoU 0.841, 0.914 and 0.867 (v4's SAM alone: 0.855, 0.715,
+  0.899). It then offered the dashboard's drawing, as the procedure says; Daniel declined, so the
+  dashboard's editor was not used in the run.
+- **The spec warnings:** one fired (frame pieces inside the table's travel); the agent looked,
+  found machine, not shards, and moved the stand-in instead. `dry_run_twin` then had none.
+- **`set_size_checks`:** used this time, once (the cable carrier's height, -6.6%).
+- **`fit_circles`:** two calls under the head, for the spindle's axis; the mesh had no round nose
+  to find, so the agent placed the axis from the head cover and the carousel [INFERENCE, its own].
+- **Fell short:** nothing checks `hold_drive`, so the arm's hold (10000, 200) went into a mill and
+  its head rests 0.64 mm low; the agent again wrote its own views, sections and extents, and
+  scripted the non-manifold check to find a clean cut edge (the plan lists ten gaps).
+
 ## Commands people run
 From `backend/` with `uv run python -m ...`; CLAUDE.md lists them all.
 
