@@ -6,21 +6,25 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the video plan, Phase 2 - the second agent run (done 2026-11-26, PR in review)
-**Start here:** `docs/video-plan.md`, "Phase 2" and "The second agent run" (the scorecard of v5
-beside v3 and v4, ten tool gaps), on branch `feat/video-phase-2-agent-run`; merge only on
-Daniel's word, then Phase 3 (video frames as photos, decision 0042) from a hand-off on its branch.
-**Phase 2's result:** a fresh agent session built `haas/tm1@v5` (run `2026-11-25_run-001`,
-transcript `baa5b454`) from the same eight-photo job as v4 in 54.4 min, 100 MCP calls to 22
-tools, no held-back file opened before `submit_twin`; quotes 61 found, 1 on another page, 0
-missing; both validators clean; no spec warnings. It corrected the three cut-outs with
-`set_photo` edits (IoU 0.841, 0.914, 0.867 against v3's masks) and offered the dashboard's
-drawing; Daniel declined, so he drew nothing. **Daniel's Isaac Sim check (2026-11-26): levels 1,
-2 and 3 met**: it stands on its base, no shards; a gap under the head; but the agent set the
-arm's hold (10000, 200), not decision 0034's (100000, 632.5), so the head rests 0.64 mm low and
-O40001's tip runs 0.645 mm off the path (v3 0.017 mm; the scorecard's 0.63). On v3's cut-outs its
-mesh matches the photos about as v3's (0.750, 0.769, 0.830 against 0.751, 0.797, 0.842); the
-scorer's own IoU uses each run's cut-outs (a gap). v5 is unreviewed: the review is Daniel's.
+## Current phase: the video plan, Phase 3 - video frames as photos (starting 2026-11-26)
+**Start here:** `docs/video-plan.md`, Phase 3 and its "Hand-off (2026-11-26, from the Phase 2
+chat)", on branch `feat/video-phase-3-video-frames`; decision 0042 is Phase 3's to write. Stop
+for review with a PR; merge only on Daniel's word.
+**Phase 2 is done** (PR #41 merged on Daniel's word, 2026-11-26): a fresh agent session built
+`haas/tm1@v5` (run `2026-11-25_run-001`, transcript `baa5b454`) from the same eight-photo job as
+v4 in 54.4 min, 100 MCP calls to 22 tools, no held-back file opened before `submit_twin`; quotes
+61 found, 1 on another page, 0 missing; both validators clean; no spec warnings. It corrected the
+three cut-outs with `set_photo` edits (IoU 0.841, 0.914, 0.867 against v3's masks). **Daniel's
+Isaac Sim check (2026-11-26): levels 1, 2 and 3 met**, but the agent set the arm's hold (10000,
+200), not decision 0034's (100000, 632.5): the head rests 0.64 mm low, O40001's tip 0.645 mm off
+the path (v3 0.017 mm). On v3's cut-outs its mesh matches the photos about as v3's (0.750, 0.769,
+0.830 against 0.751, 0.797, 0.842); the scorer's own IoU uses each run's cut-outs (a gap).
+**Daniel approved v5 in the dashboard** (2026-11-26), so requests reuse it. **`haas/tm1@v6`**
+(run `2026-11-26_run-001`, `part_cutting/2026-11-26_spec/compose_v6.py`): v5 with decision
+0034's hold and nothing else, built by the Phase 2 chat on Daniel's word; validators clean, at
+rest headless -0.0135 mm (v5 -0.6445); needs review; Daniel's Isaac Sim check is in its `RUN.md`
+("For Daniel's check"). The hold check (a spec warning for a soft hold) waits until the roadmap
+reaches it (Daniel); every build sets decision 0034's hold until then.
 **Phase 1 is done** (PR #40 merged): decision 0041 accepted by Daniel (2026-11-25): ordered edits
 (polygons and lines to add or remove) on any cut-out and an `auto` method, drawn in a job's page
 ("Edit the cut-out", previewed by the API with `MOONWALKERS_GEN_ROOT`) or set by `set_photo`;

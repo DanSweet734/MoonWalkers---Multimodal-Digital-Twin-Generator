@@ -600,6 +600,73 @@ path that exists. **Proposed shape** (a decision record, 0042):
   sizes, and the back's shape against the new back photos;
 - how many frames per view had to be skipped for blur.
 
+### Hand-off (2026-11-26, from the Phase 2 chat)
+- **Start** on branch `feat/video-phase-3-video-frames`, cut from `main` at `efdf90d` (PR #41
+  merged on Daniel's word, 2026-11-26). Its first commit is this hand-off, with v6's record (below).
+  `feat/video-phase-2-agent-run` is kept (no word to delete it). Stop for review with a pull
+  request; merge only on Daniel's word.
+- **Read first:** CLAUDE.md's "Current phase"; this hand-off and Phase 3's shape above; the
+  research note [2026-11-18-video-input-options.md](research/2026-11-18-video-input-options.md)
+  (route A, and its update of 2026-11-25: ffmpeg 9.0.2 on the PATH, the footage's blur);
+  decisions 0022 (photo views and uses), 0029 and 0041 (cut-outs), 0039 (the scorecard);
+  Phase 2's "The second agent run" (the scorecard of v5 and its ten tool gaps).
+
+#### What Phase 2 left
+- **`haas/tm1@v5`** (the agent's, run `2026-11-25_run-001`): levels 1-3 met in Daniel's check;
+  **approved by Daniel in the dashboard** (2026-11-26), so a request reuses v5, not v3. Its one
+  measured fault is the hold (the arm's 10000 and 200): the head rests 0.64 mm low, O40001's tip
+  runs 0.645 mm off its path.
+- **`haas/tm1@v6`** (run `2026-11-26_run-001`): v5 with decision 0034's hold (100000, 632.5) and
+  nothing else, built by the Phase 2 chat on Daniel's "We can build v6 with decision 0034's hold
+  if you think that's best" (2026-11-26), from
+  `data/machines/haas-tm1/part_cutting/2026-11-26_spec/compose_v6.py`. It is **stored, as needs
+  review**. Its state:
+  - **Checks:** dry run clean. Both validators are clean on its five files.
+  - **The same as v5:** the quotes (61 found, 1 on another page, 0 missing), the scorer's figures,
+    and O40001's `program.nc` and `program.json`. `trajectory.json` differs only in the hold.
+  - **At rest, headless** (Isaac Sim 6.2.0): the head holds at -0.0135 mm, where v5 sags
+    -0.6445 mm in the same trial.
+  - **Daniel's Isaac Sim check:** the steps are in the run's `RUN.md` ("For Daniel's check"):
+    `twin.usdc` at rest, then O40001 with `control compare`. Where his check is recorded,
+    `RUN.md` has it; if not, it is still to do.
+  - **Reuse:** a request reuses the newest approved version, so v5 until Daniel approves v6.
+  - Its expected result is the tip within about 0.02 mm of the path [INFERENCE: v3's 0.017 mm
+    with the same hold; v5's 0.645 mm was its sag].
+- **The hold check** (Phase 2's tool gap 1: nothing estimates a `hold_drive`'s sag in
+  `preview_twin` or `dry_run_twin`): Daniel, 2026-11-26: "Let's do you recommendation on the hold
+  check once we come across it in the road map." Not this phase's job unless a build here needs
+  it; the plan's tool-gap work is where it goes. **Every build in this phase sets decision 0034's
+  hold** in its spec.
+- **The runner once did not start** (Phase 2, tool gap 10): Play gave the recorder its steps but
+  the runner printed no "first physics step". If Daniel meets it again, the runner's header says
+  to set `API = "omni.physx"` and run it again.
+
+#### What Phase 3 should know before designing
+- **The photo match needs one key** (Phase 2's tool gap 8). `score.photo_scores` fits a twin to
+  its own run's `generator/prepared` cut-outs. A twin built from video frames has frames there, not
+  the photos of 2026-11-05, so the plan's measure ("the photo match on the same photos of
+  2026-11-05") needs the twin fitted to another run's prepared photos. Phase 2 did that with a
+  scratch script calling `part_views.fit_fed_photos(scene, <other run>/generator/prepared,
+  spec.yaw_deg)`; on v3's drawn cut-outs v3 scores 0.751, 0.797, 0.842, v5 0.750, 0.769, 0.830.
+  An option on the scorer (a prepared folder to fit to) would make it a measure [INFERENCE].
+- **The footage** (`data/machines/haas-tm1/inputs/videos/`, with their rows in `SOURCES.md`): two full
+  circles, portrait 4K at about 60 fps: `20261119_133809.mp4` (27.7 s, chest height) and
+  `20261119_133841.mp4` (30.1 s, higher, over the guards onto the table). 2-11% of sampled frames
+  fall under half the clip's median sharpness (the research note's update). The stool of
+  2026-11-05 is gone; the CAUTION panel still stands at the pendant's side.
+- **The generator** takes up to four views (decision 0022) and fits each to 800 pixels
+  (`part_views.fit_photo`), so a 4K frame costs no more than a photo there.
+- **ffmpeg** is called as a program found on the PATH, as the generator is (question 5): no
+  package added. It is not on the teammates' machines; tests skip without it or use a tiny clip.
+- **Version numbers:** v6 is stored, so the TM-1 from video will be `haas/tm1@v7`. Build it by
+  the chat's script route, dry-run first, as the plan says. Its scorecard sits beside v3, v5 and
+  v6: v6 is the like-for-like photo-built reference, with the same hold.
+- **The next free decision number is 0042.**
+- **Beside the phase:** the lab's iRC program may come the week of 2026-11-30 (its own small pull
+  request, "Beside the phases"); the advisors' page of the plan is due that week, for the meeting
+  of 2026-12-03 [INFERENCE: the next Thursday] (Daniel, 2026-11-25).
+- **The quick suite:** 926 passed at `main` after Phase 1; Phase 2 changed no code.
+
 ## Phase 4 (if time allows) - A second machine from video, or SAM 2 across frames
 For Daniel to choose at Phase 3's review, from what it shows:
 - **(a) The 01 arm from its circles:** a twin `igus/rebel6dof01`, scored against igus's own model
