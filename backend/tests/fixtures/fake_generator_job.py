@@ -22,21 +22,28 @@ def main(argv: list[str]) -> int:
     if job.get("cutout_only"):
         prepared = Path(job["out_dir"]) / "prepared"
         prepared.mkdir(parents=True, exist_ok=True)
+        masks = Path(job["out_dir"]) / "masks"
+        masks.mkdir(parents=True, exist_ok=True)
         for view in job["images"]:
             (prepared / f"{view}.png").write_bytes(b"cut out")
+            (masks / f"{view}.png").write_bytes(b"mask")
         sheet = Path(job["out_dir"]) / "sheet.png"
         sheet.write_bytes(b"sheet")
         done = {
             v: {"method": (job["cutouts"].get(v) or {}).get("method", "auto"), "kept_share": 0.5}
             for v in job["images"]
         }
+        for v in job.get("compare", {}):
+            done[v]["iou"] = 0.9
         result = {
             "status": "ok",
             "prepared": {v: str(prepared / f"{v}.png") for v in job["images"]},
+            "masks": {v: str(masks / f"{v}.png") for v in job["images"]},
             "sheet": str(sheet),
             "cutouts": done,
             "seconds": 0.1,
             "cutouts_seen": job["cutouts"],
+            "compare_seen": job.get("compare"),
         }
         result_path.write_text(json.dumps(result), encoding="utf-8")
         return 0

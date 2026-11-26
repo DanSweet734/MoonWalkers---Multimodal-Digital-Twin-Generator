@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { api } from '../api/client.ts'
 import type { JobDetail, Source } from '../api/types.gen.ts'
 import { ErrorNote, Loading, Section, StageBadge } from '../components/common.tsx'
+import { CutoutEditor } from '../components/cutout.tsx'
 import { FileList, Gallery, Photo, PhotoList } from '../components/media.tsx'
 import { ControlList, FactsTable, IdentityBlock, IssueList } from '../components/notes.tsx'
 import { fileUrl, formatTime, isOpen } from '../lib/format.ts'
@@ -22,11 +23,21 @@ export function JobPage({ machine, run }: { machine: string; run: string }) {
     open ? 2000 : undefined,
   )
   if (job.data === undefined) return <Loading error={job.error} />
-  return <JobView detail={job.data} error={job.error} />
+  return <JobView detail={job.data} error={job.error} reload={job.reload} />
 }
 
-function JobView({ detail, error }: { detail: JobDetail; error: string | undefined }) {
+function JobView({
+  detail,
+  error,
+  reload,
+}: {
+  detail: JobDetail
+  error: string | undefined
+  reload: () => void
+}) {
   const { job, notes } = detail
+  const [editing, setEditing] = useState<string | null>(null)
+  const edited = job.photos?.find((p) => p.source.source_id === editing)
   const result = job.requests[0]?.result
   const twin = job.twin_id ? twinHash(job.twin_id) : null
   const sources = new Map<string, Source>((notes?.sources ?? []).map((s) => [s.source_id, s]))
@@ -82,9 +93,24 @@ function JobView({ detail, error }: { detail: JobDetail; error: string | undefin
         </p>
       </Section>
 
-      {job.photos && job.photos.length > 1 ? (
+      {edited ? (
+        <Section title="Draw the cut-out">
+          <CutoutEditor
+            key={edited.source.source_id}
+            machine={job.machine}
+            run={job.name}
+            photo={edited}
+            editable={detail.cutouts_editable === true && edited.view !== null}
+            version={job.updated_at}
+            onChanged={reload}
+            onClose={() => setEditing(null)}
+          />
+        </Section>
+      ) : null}
+
+      {job.photos && (job.photos.length > 1 || job.photos[0]?.view) ? (
         <Section title={`Photos (${job.photos.length})`}>
-          <PhotoList photos={job.photos} />
+          <PhotoList photos={job.photos} onEdit={(p) => setEditing(p.source.source_id)} />
         </Section>
       ) : job.photo ? (
         <Section title="Photo">

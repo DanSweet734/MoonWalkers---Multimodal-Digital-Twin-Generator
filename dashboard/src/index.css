@@ -546,3 +546,169 @@ ul.error {
     grid-template-columns: 1fr;
   }
 }
+
+/* The cut-out editor (decision 0041). The photo shows in its own colours; what is drawn on it
+   is white and black, told apart by fill and line style (solid adds, dashed cuts away). */
+.cutout-editor {
+  border: 1px solid var(--strong-line);
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+}
+
+.cutout-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cutout-head h3 {
+  margin: 0;
+}
+
+.cutout-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: flex-start;
+}
+
+.cutout-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  border: 1px solid var(--line);
+  margin: 0;
+}
+
+.cutout-stage {
+  position: relative;
+  max-width: 100%;
+  width: fit-content;
+  user-select: none;
+  touch-action: none;
+}
+
+.cutout-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: 80vh;
+}
+
+.cutout-stage.masked img:first-child {
+  opacity: 0.3;
+}
+
+.cutout-stage img.kept,
+.cutout-stage svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cutout-stage svg {
+  cursor: crosshair;
+}
+
+.cutout-stage svg .edit,
+.cutout-stage svg .drawing,
+.cutout-stage svg .box,
+.cutout-stage svg .spine {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 2px;
+}
+
+.cutout-stage svg polygon.edit.add {
+  fill: rgb(255 255 255 / 35%);
+  stroke: #ffffff;
+}
+
+.cutout-stage svg polygon.edit.remove {
+  fill: rgb(0 0 0 / 45%);
+  stroke: #000000;
+  stroke-dasharray: 6 4;
+}
+
+.cutout-stage svg g.edit .band {
+  fill: none;
+  stroke-linejoin: round;
+}
+
+.cutout-stage svg g.edit.add .band {
+  stroke: rgb(255 255 255 / 45%);
+}
+
+.cutout-stage svg g.edit.remove .band {
+  stroke: rgb(0 0 0 / 50%);
+}
+
+.cutout-stage svg g.edit .spine {
+  fill: none;
+  stroke: #000000;
+}
+
+.cutout-stage svg g.edit.remove .spine {
+  stroke-dasharray: 6 4;
+}
+
+.cutout-stage svg .drawing {
+  fill: none;
+  stroke: #ffffff;
+  stroke-linejoin: round;
+  stroke-opacity: 0.8;
+}
+
+.cutout-stage svg .drawing.remove {
+  stroke: #000000;
+  stroke-dasharray: 6 4;
+}
+
+.cutout-stage svg .box {
+  fill: none;
+  stroke: #ffffff;
+  stroke-dasharray: 10 6;
+  stroke-width: 3px;
+}
+
+.cutout-stage svg .point circle {
+  stroke: #000000;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.cutout-stage svg .point.keep circle {
+  fill: #ffffff;
+}
+
+.cutout-stage svg .point.leave circle {
+  fill: #000000;
+  stroke: #ffffff;
+}
+
+.cutout-stage svg .point text {
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.cutout-stage svg .point.keep text {
+  fill: #000000;
+}
+
+.cutout-stage svg .point.leave text {
+  fill: #ffffff;
+}
+
+.cutout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.75rem 0;
+}
+
+.edit-list {
+  padding-left: 1.5rem;
+}

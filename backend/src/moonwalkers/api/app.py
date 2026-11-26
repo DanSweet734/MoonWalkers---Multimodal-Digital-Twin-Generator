@@ -15,7 +15,7 @@ the knowledge base only through the orchestrator (CLAUDE.md rule 6).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from importlib.metadata import version as package_version
 from pathlib import Path
 
@@ -25,11 +25,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from moonwalkers.clock import Clock, utc_now
+from moonwalkers.generators.base import ImageTo3DGenerator
 from moonwalkers.kb import JsonKnowledgeBase, KnowledgeBase
 from moonwalkers.workspace import OPEN_STAGES, Workspace, default_data_dir, list_runs
 
 from . import files, jobs, sources, twins
-from .context import MAX_UPLOAD_BYTES, ApiContext, Context
+from .context import MAX_UPLOAD_BYTES, ApiContext, Context, default_cutter
 from .models import ApiStatus
 from .security import LOCAL_HOSTS, guard_writes
 
@@ -63,8 +64,10 @@ def create_app(
     dashboard_dir: Path | None = DASHBOARD_DIR,
     allowed_hosts: Sequence[str] = LOCAL_HOSTS,
     max_upload_bytes: int = MAX_UPLOAD_BYTES,
+    cutter: Callable[[], ImageTo3DGenerator | None] = default_cutter,
 ) -> FastAPI:
-    """The app for one data folder (by default the one the MCP server uses)."""
+    """The app for one data folder (by default the one the MCP server uses). ``cutter`` gives
+    the generator that cuts photos out for a preview, or None (decision 0041)."""
     workspace = workspace or Workspace(default_data_dir(), clock)
     data_dir = Path(workspace.data_dir).resolve()
     app = FastAPI(
@@ -80,6 +83,7 @@ def create_app(
         kb=kb or JsonKnowledgeBase(data_dir / "kb"),
         clock=clock,
         max_upload_bytes=max_upload_bytes,
+        cutter=cutter,
     )
     app.add_middleware(BaseHTTPMiddleware, dispatch=guard_writes)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(allowed_hosts))  # outermost

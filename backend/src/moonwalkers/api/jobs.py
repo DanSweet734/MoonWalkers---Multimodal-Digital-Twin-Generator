@@ -4,22 +4,33 @@ Uploading photos starts a job the way the agent's ``start_run`` and ``add_input`
 photo with where it came from and, when there are several, its view and use (decision 0022). If
 the machine already has a reusable twin and no new version was asked for, the orchestrator reuses
 it at once and the job says so. Otherwise the job waits for the agent, Claude Code, which finds it
-with ``list_jobs`` and builds it through the MCP tools. The API never runs the generator.
+with ``list_jobs`` and builds it through the MCP tools. The API never runs the 3D generator: it
+only sets a photo's cut-out and runs the cut-out preview (decision 0041), seconds of the
+generator job's first step.
 """
 
 from __future__ import annotations
 
 import hashlib
 import re
+from pathlib import Path
 from typing import Annotated, get_args
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile
 
 from moonwalkers.contracts.pipeline_result import InputType, Source
+from moonwalkers.generators.hunyuan3d import GEN_ROOT_ENV
 from moonwalkers.kb import machine_key
 from moonwalkers.orchestrator import InputPhoto, PhotoUse, PhotoView
+from moonwalkers.pipelines.b import PipelineB
 from moonwalkers.pipelines.b.build import REQUEST_FILE, write_job_result
 from moonwalkers.pipelines.b.photos import check_photos
+from moonwalkers.pipelines.b.pipeline import (
+    CUTOUTS_DIR,
+    GENERATOR_DIR,
+    GENERATOR_RECORD,
+    describe_cutout,
+)
 from moonwalkers.workspace import (
     OPEN_STAGES,
     RunStatus,
@@ -32,7 +43,7 @@ from moonwalkers.workspace import (
 )
 
 from .context import ApiContext, Context, expected_errors
-from .models import JobDetail
+from .models import CutoutPreview, CutoutUpdate, JobDetail
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 FOLDER = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -166,6 +177,62 @@ def create_job(
     return job_detail(ctx, run_dir.parent.parent.name, run_dir.name)
 
 
+@router.put("/{machine}/{run}/photos/{source_id}/cutout")
+def set_cutout(
+    machine: str, run: str, source_id: str, body: CutoutUpdate, ctx: Context
+) -> JobDetail:
+    """Set how the generator cuts the machine out of one photo (decisions 0029, 0041): a method,
+    its box and points, and edits drawn on it; null for the automatic removal. The photo keeps
+    its view and use. Refused once the run has generated its mesh, as the agent's set_photo is."""
+    run_dir = _job_dir(ctx, machine, run)
+    with expected_errors(), ctx.lock:
+        given = ctx.workspace.request(run_dir).photos.get(source_id)
+        if given is None:
+            raise HTTPException(
+                400,
+                f"the photo {source_id!r} has no view yet: the agent gives it one (set_photo) "
+                "before its cut-out is drawn",
+            )
+        photo = given.model_copy(update={"cutout": body.cutout})
+        ctx.workspace.set_photo(run_dir, source_id, InputPhoto.model_validate(photo.model_dump()))
+    return job_detail(ctx, machine, run)
+
+
+@router.post("/{machine}/{run}/cutouts")
+def preview_cutouts(machine: str, run: str, ctx: Context) -> CutoutPreview:
+    """Cut the fed photos out, and evidence photos given a cut-out, as the generator would,
+    into the run's cutouts/ folder (a preview, overwritten each time): seconds, no 3D model
+    (decision 0041). Needs MOONWALKERS_GEN_ROOT where the API runs."""
+    run_dir = _job_dir(ctx, machine, run)
+    generator = ctx.cutter()
+    if generator is None:
+        raise HTTPException(
+            503,
+            f"the API cannot cut photos out: {GEN_ROOT_ENV} is not set where it runs. Start it "
+            f"with {GEN_ROOT_ENV} set, or run: uv run python -m moonwalkers.pipelines.b cutouts "
+            f"../data/{ctx.workspace.relative(run_dir)}",
+        )
+    with expected_errors(), ctx.lock:
+        request = ctx.workspace.request(run_dir)
+        pipeline = PipelineB(generator, ctx.data_dir, run_dir, photos=request.photos)
+        done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR)
+    return CutoutPreview(
+        seconds=done.seconds,
+        sheet=ctx.workspace.relative(done.sheet),
+        photos=[describe_cutout(name, info) for name, info in done.done.items()],
+        detail=job_detail(ctx, machine, run),
+    )
+
+
+def _job_dir(ctx: ApiContext, machine: str, run: str) -> Path:
+    if not re.fullmatch(FOLDER, machine) or not re.fullmatch(RUN_NAME, run):
+        raise HTTPException(404, f"no job {machine}/{run}")
+    run_dir = ctx.data_dir / "machines" / machine / "runs" / run
+    if not (run_dir / REQUEST_FILE).is_file():
+        raise HTTPException(404, f"no job machines/{machine}/runs/{run}")
+    return run_dir
+
+
 def _view(text: str) -> PhotoView:
     if text not in get_args(PhotoView):
         raise HTTPException(
@@ -205,4 +272,6 @@ def job_detail(ctx: ApiContext, machine: str, run: str) -> JobDetail:
         images=run_images(ctx.workspace, run_dir),
         outputs=run_outputs(ctx.workspace, run_dir),
         agent_prompt=prompt,
+        cutouts_editable=status.stage in OPEN_STAGES
+        and not (run_dir / GENERATOR_DIR / GENERATOR_RECORD).is_file(),
     )

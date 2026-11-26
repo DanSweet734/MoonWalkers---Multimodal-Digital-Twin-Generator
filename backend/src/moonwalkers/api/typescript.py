@@ -38,6 +38,8 @@ IGNORED = frozenset(
         "format",
         "minimum",
         "maximum",
+        "exclusiveMinimum",
+        "exclusiveMaximum",
         "minLength",
         "maxLength",
         "minItems",

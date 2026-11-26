@@ -49,10 +49,15 @@ DETAIL: PhotoView = "detail"
 VIEWS: tuple[PhotoView, ...] = get_args(PhotoView)
 
 
-CutoutMethod = Literal["sam", "crop", "mask"]
+CutoutMethod = Literal["sam", "crop", "mask", "auto"]
 Fraction = Annotated[float, Field(ge=0.0, le=1.0)]
 # The SAM weights the generator job runs: rembg's quantised ViT-B (docs/setup/generators.md).
 SAM_MODEL = "sam_vit_b_01ec64 (quantised, rembg 2.0.68)"
+# [INFERENCE] Far above what a photo needs (v3's busiest mask had 10 polygons, decision 0041),
+# low enough that a request stays small.
+MAX_EDITS = 200
+MAX_EDIT_POINTS = 500
+MAX_LINE_WIDTH = 0.2  # a fraction of the photo's width; wider is a polygon
 
 
 class CutoutPoint(BaseModel):
@@ -66,6 +71,38 @@ class CutoutPoint(BaseModel):
     keep: bool
 
 
+class CutoutEdit(BaseModel):
+    """A region drawn on the upright photo, added to the cut-out or cut away from it (decision
+    0041): a polygon through ``points``, or, with ``width``, a line through them that wide (a
+    fraction of the photo's width: a cable or a hose). Points are (x, y) fractions from the top
+    left."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    op: Literal["add", "remove"]
+    points: list[tuple[Fraction, Fraction]] = Field(max_length=MAX_EDIT_POINTS)
+    width: Annotated[float, Field(gt=0.0, le=MAX_LINE_WIDTH)] | None = None
+    note: Annotated[str, Field(max_length=200)] | None = None  # what it covers, for the record
+
+    @model_serializer(mode="wrap")
+    def _without_unset(self, handler: SerializerFunctionWrapHandler) -> Any:
+        # A polygon is written without "width": null, an edit without "note": null.
+        data = handler(self)
+        if isinstance(data, dict):
+            for key in ("width", "note"):
+                if data.get(key) is None:
+                    data.pop(key, None)
+        return data
+
+    @model_validator(mode="after")
+    def _check(self) -> CutoutEdit:
+        least = 2 if self.width is not None else 3
+        if len(self.points) < least:
+            shape = "a line" if self.width is not None else "a polygon"
+            raise ValueError(f"{shape} needs at least {least} points, not {len(self.points)}")
+        return self
+
+
 class Cutout(BaseModel):
     """How to cut the machine out of one photo, instead of the automatic background removal
     (decision 0029). Coordinates are fractions of the photo turned upright by its EXIF
@@ -75,10 +112,14 @@ class Cutout(BaseModel):
       to keep or leave out a region;
     - ``crop``: the automatic removal inside ``box``, everything outside it cut away;
     - ``mask``: a mask drawn by hand, ``mask`` being a PNG in the data folder (usually in the run
-      folder), the photo's shape: white, or opaque, is the machine.
+      folder), the photo's shape: white, or opaque, is the machine;
+    - ``auto``: the automatic removal a photo with no cut-out gets, named so ``edits`` can go on
+      it (decision 0041); it needs at least one edit.
 
-    Separate pieces of the cut-out smaller than ``min_piece`` times the largest piece are dropped
-    (specks of the wall behind the machine); 0 keeps every piece.
+    ``edits`` (decision 0041) are then drawn on the method's mask in their order, a later one
+    winning where two overlap. Separate pieces of the cut-out smaller than ``min_piece`` times
+    the largest piece are dropped last (specks of the wall behind the machine); 0 keeps every
+    piece.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -88,9 +129,26 @@ class Cutout(BaseModel):
     points: list[CutoutPoint] = Field(default_factory=list)
     mask: str | None = None
     min_piece: Fraction = 0.02
+    edits: list[CutoutEdit] = Field(default_factory=list, max_length=MAX_EDITS)
+
+    @model_serializer(mode="wrap")
+    def _without_empty_edits(self, handler: SerializerFunctionWrapHandler) -> Any:
+        # A cut-out without edits is written, and keyed, as before decision 0041.
+        data = handler(self)
+        if isinstance(data, dict) and not data.get("edits"):
+            data.pop("edits", None)
+        return data
 
     @model_validator(mode="after")
     def _check(self) -> Cutout:
+        if self.method == "auto":
+            if self.box is not None or self.points or self.mask is not None:
+                raise ValueError("an 'auto' cut-out takes no box, points or mask, only edits")
+            if not self.edits:
+                raise ValueError(
+                    "an 'auto' cut-out without edits is the default: leave the cut-out out"
+                )
+            return self
         if self.method == "mask":
             if self.mask is None or self.box is not None or self.points:
                 raise ValueError("a 'mask' cut-out gives the mask's file, and no box or points")

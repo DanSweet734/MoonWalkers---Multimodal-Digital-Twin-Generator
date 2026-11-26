@@ -6,11 +6,25 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the video plan, answered by Daniel; Phase 1 after PR #39 merges (2026-11-25)
-**Start here:** `docs/video-plan.md`, "The plan (draft of 2026-11-25)" and its "Decided on
-review": Daniel took every recommendation (2026-11-25). PR #39 (branch `docs/video-plan`) merges
-on his word; then Phase 1 (the cut-out tool, with the v4 warnings for gaps 2, 3 and 9) starts on
-its own branch from `main`, its hand-off first. The weekly meeting of 2026-11-26 is cancelled
+## Current phase: the video plan, Phase 1 - a tool to draw and correct a cut-out (2026-11-25)
+**Start here:** `docs/video-plan.md`, "Phase 1", its hand-off, on branch
+`feat/video-phase-1-cutout-tool` (from `main` after PR #39, merged on Daniel's word 2026-11-25;
+the plan approved with every recommendation). Phase 1: polygons to add or remove on top of any
+cut-out, drawn in the dashboard and set by `set_photo` (decision 0041), and warnings for gaps 2,
+3 and 9 (a base on a slab, shards in a kept part, no size checks). **Built and checked (2026-11-25),
+PR #40 waits for Daniel's merge word:** decision 0041 (accepted by Daniel as it stands; his four choices: one ordered
+list of edits, the dashboard sets the whole cut-out, the API runs the cut-out preview only, the
+warnings never change `clean`). `CutoutEdit` and the `auto` method in `orchestrator/photos.py`;
+the job script draws edits and writes `cutouts/masks/`; `... pipelines.b cutouts <run>
+--compare <masks>` prints IoU (v3's masks as edits: 0.999, 0.992, 0.997); the API's `PUT
+.../photos/{source}/cutout` and `POST .../cutouts` (needs `MOONWALKERS_GEN_ROOT`); the
+dashboard's editor (`components/cutout.tsx`, `lib/cutout.ts`); `pipelines/b/spec_warnings.py`
+in `preview_twin`'s issues and `dry_run_twin`'s `spec_warnings` (v4: five; v3, VF-3, arm: none;
+T33901 v11: the known crank-into-base fault). His check (`docs/setup/dashboard.md`, section 3b; a
+scratch job in `data/scratch/2026-11-25_cutout-tool-check/`): three photos drawn in "roughly 3 or 4
+minutes", 8 edits, IoU 0.879, 0.933, 0.873 against v3's masks. The T33901's crank becomes an
+issue in its next version (Daniel). Restart the MCP server (`/mcp`)
+before an agent uses the new `set_photo`. The weekly meeting of 2026-11-26 is cancelled
 (Thanksgiving); the advisors' page of the plan comes next week (Daniel). **The advisors (meeting of 2026-11-19):** the cut-out drawing tool,
 then a second agent run: yes; video input: approved; the scorecard accepted as is
 ([decision 0039](docs/decisions/0039-the-scorecard.md)); the VF-3's Settings 78 and 30 and the

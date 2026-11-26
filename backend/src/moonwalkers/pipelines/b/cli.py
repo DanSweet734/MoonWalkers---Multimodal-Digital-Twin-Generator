@@ -72,6 +72,7 @@ from .pipeline import (
     GeometrySpecMissing,
     PipelineB,
     RunFolderConflict,
+    describe_cutout,
     generated_mesh,
     load_reference,
     read_spec,
@@ -133,6 +134,12 @@ def _parser() -> argparse.ArgumentParser:
         "--gen-root", type=Path, help=f"generator folder (default: ${GEN_ROOT_ENV})"
     )
     cutouts.add_argument("--data", type=Path, help="data folder (default: from the run folder)")
+    cutouts.add_argument(
+        "--compare",
+        type=Path,
+        help="a folder of masks drawn before, <source id>.png: print each cut-out's IoU against "
+        "its mask (decision 0041)",
+    )
     cutouts.set_defaults(command=_cutouts)
 
     dry = commands.add_parser(
@@ -267,17 +274,15 @@ def _cutouts(args: argparse.Namespace) -> int:
     request_path = args.request or run_dir / REQUEST_FILE
     request = JobRequest.model_validate_json(request_path.read_text(encoding="utf-8"))
     pipeline = PipelineB(generator, data_dir, run_dir, photos=request.photos)
-    done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR)
+    compare = args.compare.resolve() if args.compare else None
+    done = pipeline.preview_cutouts(request.sources, run_dir / CUTOUTS_DIR, compare)
     print(format_cutouts(done))
     return 0
 
 
 def format_cutouts(done: CutoutRun) -> str:
     lines = [f"cut out in {done.seconds:.1f} s; look at {done.sheet}"]
-    for name, info in done.done.items():
-        specks = info.get("pieces_dropped")
-        dropped = f", {specks} specks dropped" if specks else ""
-        lines.append(f"  {name}: {info['method']}, {info['kept_share']:.1%} kept{dropped}")
+    lines += [f"  {describe_cutout(name, info)}" for name, info in done.done.items()]
     return "\n".join(lines)
 
 
@@ -309,6 +314,9 @@ def format_dry_run(done: DryRun) -> str:
         )
         lines += [f"  ours {i.severity} ({i.ref or '-'}): {i.message}" for i in f.ours]
         lines += [f"  NVIDIA {i.severity} ({i.ref or '-'}): {i.message}" for i in nvidia]
+    if done.spec_warnings:  # decision 0041: not part of "clean"
+        lines.append(f"spec warnings ({len(done.spec_warnings)}): fix each, or say why in an issue")
+        lines += [f"  {i.ref or '-'}: {i.message}" for i in done.spec_warnings]
     lines.append("clean" if done.clean else "not clean: fix the findings, then dry-run again")
     return "\n".join(lines)
 

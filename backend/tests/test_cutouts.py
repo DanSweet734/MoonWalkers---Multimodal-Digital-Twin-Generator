@@ -31,6 +31,7 @@ from moonwalkers.orchestrator import Cutout, InputPhoto
 from moonwalkers.orchestrator.photos import SAM_MODEL
 from moonwalkers.pipelines.b import PipelineB, RunFolderConflict
 from moonwalkers.pipelines.b.mesh_tools import read_png, write_png
+from moonwalkers.pipelines.b.pipeline import describe_cutout
 
 FAKE_SCRIPT = Path(__file__).parent / "fixtures" / "fake_generator_job.py"
 SAM = {
@@ -89,6 +90,70 @@ def test_a_photo_without_a_cutout_is_saved_as_before() -> None:
     cut = InputPhoto.model_validate({"view": "front", "cutout": SAM})
     assert cut.model_dump(mode="json")["cutout"]["method"] == "sam"
     assert InputPhoto.model_validate_json(cut.model_dump_json()) == cut
+
+
+# ------------------------------------------------------------------- edits (decision 0041)
+EDITS = [
+    {"op": "add", "points": [[0.1, 0.1], [0.5, 0.1], [0.5, 0.5]], "note": "the pendant"},
+    {"op": "add", "points": [[0.2, 0.8], [0.6, 0.7]], "width": 0.02, "note": "the conduit"},
+    {"op": "remove", "points": [[0.0, 0.0], [0.2, 0.0], [0.2, 0.1], [0.0, 0.1]]},
+]
+
+
+def test_edits_are_polygons_or_lines_with_a_width_in_their_order() -> None:
+    cutout = Cutout.model_validate({**SAM, "edits": EDITS})
+    assert [e.op for e in cutout.edits] == ["add", "add", "remove"]
+    assert cutout.edits[1].width == 0.02 and cutout.edits[0].width is None
+    dumped = cutout.model_dump(mode="json")["edits"]
+    assert dumped == EDITS  # no "width": null or "note": null written
+    with pytest.raises(ValidationError, match="a polygon needs at least 3 points"):
+        Cutout.model_validate({**SAM, "edits": [{"op": "add", "points": [[0, 0], [1, 1]]}]})
+    with pytest.raises(ValidationError, match="a line needs at least 2 points"):
+        Cutout.model_validate({**SAM, "edits": [{"op": "add", "points": [[0, 0]], "width": 0.1}]})
+    for width in (0.0, 0.25):  # above 0, at most 0.2 of the photo's width
+        with pytest.raises(ValidationError):
+            Cutout.model_validate(
+                {**SAM, "edits": [{"op": "add", "points": [[0, 0], [1, 1]], "width": width}]}
+            )
+    with pytest.raises(ValidationError):  # fractions, not pixels
+        Cutout.model_validate({**SAM, "edits": [{"op": "add", "points": [[0, 0], [9, 9], [0, 1]]}]})
+    with pytest.raises(ValidationError):
+        Cutout.model_validate({**SAM, "edits": [{"op": "paint", "points": [[0, 0]] * 3}]})
+
+
+def test_edits_go_on_any_method_and_auto_needs_them() -> None:
+    Cutout.model_validate({"method": "crop", "box": [0, 0, 1, 1], "edits": EDITS})
+    Cutout.model_validate({"method": "mask", "mask": "m.png", "edits": EDITS})
+    auto = Cutout.model_validate({"method": "auto", "edits": EDITS})
+    assert auto.box is None and auto.min_piece == 0.02
+    with pytest.raises(ValidationError, match="leave the cut-out out"):
+        Cutout.model_validate({"method": "auto"})
+    with pytest.raises(ValidationError, match="no box, points or mask"):
+        Cutout.model_validate({"method": "auto", "box": [0, 0, 1, 1], "edits": EDITS})
+
+
+def test_a_cutout_without_edits_is_written_as_before() -> None:
+    assert "edits" not in Cutout.model_validate(SAM).model_dump(mode="json")
+    photo = InputPhoto.model_validate({"view": "front", "cutout": {**SAM, "edits": EDITS}})
+    assert InputPhoto.model_validate_json(photo.model_dump_json()) == photo
+
+
+def test_the_jobs_edits_are_in_pixels_and_lines_at_least_one_wide() -> None:
+    job = job_script()
+    assert job.edit_pixels([[0.5, 0.25], [1.0, 1.0]], (400, 200)) == [(200.0, 50.0), (400.0, 200.0)]
+    assert job.line_pixels(0.024, (4000, 3000)) == 96  # make_masks.py's int(width * w)
+    assert job.line_pixels(0.001, (100, 100)) == 1
+
+
+def test_the_jobs_iou_compares_kept_pixels() -> None:
+    job = job_script()
+    a = np.zeros((4, 4), dtype=np.uint8)
+    b = a.copy()
+    assert job.iou(a, b) == 1.0  # both empty
+    a[:2, :] = 255  # 8 pixels
+    b[:, :2] = 200  # 8 pixels, 4 shared
+    assert job.iou(a, b) == pytest.approx(4 / 12)
+    assert job.iou(a, a) == 1.0
 
 
 # ------------------------------------------------------------------------- the job's helpers
@@ -175,6 +240,38 @@ def test_cut_out_runs_only_the_first_step(tmp_path: Path, photo: Path) -> None:
     assert done.done["src-a"]["method"] == "sam"
     job = json.loads((tmp_path / "cut" / "job.json").read_text(encoding="utf-8"))
     assert job["cutout_only"] is True and "seed" not in job  # no 3D model settings
+
+
+def test_cut_out_passes_masks_to_compare_and_returns_each_mask(tmp_path: Path, photo: Path) -> None:
+    drawn = tmp_path / "drawn.png"
+    drawn.write_bytes(b"a mask drawn before")
+    done = fake_hunyuan(tmp_path).cut_out(
+        GeneratorRequest(
+            images={"src-a": photo}, out_dir=tmp_path / "cut", compare={"src-a": drawn}
+        )
+    )
+    assert done.masks == {"src-a": tmp_path / "cut" / "masks" / "src-a.png"}
+    assert done.done["src-a"]["iou"] == 0.9
+    job = json.loads((tmp_path / "cut" / "job.json").read_text(encoding="utf-8"))
+    assert job["compare"] == {"src-a": str(drawn.resolve())}
+    with pytest.raises(ValueError, match="no image"):
+        GeneratorRequest(images={"src-a": photo}, out_dir=tmp_path, compare={"src-b": drawn})
+    with pytest.raises(FileNotFoundError, match="to compare"):
+        GeneratorRequest(
+            images={"src-a": photo}, out_dir=tmp_path, compare={"src-a": tmp_path / "none.png"}
+        )
+
+
+def test_a_preview_line_names_edits_specks_and_iou() -> None:
+    info = {"method": "sam", "kept_share": 0.4321, "edits": 3, "pieces_dropped": 2, "iou": 0.97}
+    assert describe_cutout("src-a", info) == (
+        "src-a: sam, 43.2% kept, 3 edits, 2 specks dropped, IoU 0.970 against the mask compared"
+    )
+    assert describe_cutout("src-b", {"method": "auto", "kept_share": 0.5}) == (
+        "src-b: auto, 50.0% kept"
+    )
+    one = {"method": "auto", "kept_share": 0.5, "edits": 1, "pieces_dropped": 1}
+    assert describe_cutout("src-c", one) == "src-c: auto, 50.0% kept, 1 edit, 1 speck dropped"
 
 
 def test_a_generator_that_cannot_cut_out_says_so(
@@ -334,6 +431,45 @@ def test_the_preview_shows_fed_photos_and_evidence_given_a_cutout(
     assert set(log[0].images) == {"src-photo"}  # plain evidence is not shown
 
 
+def test_edits_join_the_reuse_key_so_another_edit_is_another_mesh(
+    photo_run, two_photos, fake_generator
+) -> None:
+    sources, _ = two_photos
+
+    def photos(cutout: dict[str, Any]) -> dict[str, InputPhoto]:
+        return {
+            "src-photo": InputPhoto.model_validate({"view": "front", "cutout": cutout}),
+            "src-side": InputPhoto(view="operator_right"),  # type: ignore[call-arg]
+        }
+
+    log: list[GeneratorRequest] = []
+    generator = CuttingGenerator(fake_generator(), log)
+    pipeline_with(photo_run, generator, photos({**SAM, "edits": EDITS})).generate(sources)
+    assert log[0].cutouts["front"]["edits"] == EDITS
+    record = json.loads((photo_run.run_dir / "generator" / "run.json").read_text("utf-8"))
+    assert record["key"]["cutouts"]["front"]["edits"] == EDITS
+    with pytest.raises(RunFolderConflict):
+        pipeline_with(photo_run, generator, photos({**SAM, "edits": EDITS[:2]})).generate(sources)
+
+
+def test_the_preview_compares_photos_with_a_mask_of_their_name(
+    photo_run, two_photos, fake_generator
+) -> None:
+    sources, mask = two_photos
+    photos = {
+        "src-photo": InputPhoto(view="front"),  # type: ignore[call-arg]
+        "src-side": InputPhoto(view="operator_right"),  # type: ignore[call-arg]
+    }
+    drawn = mask.parent / "src-side.png"
+    drawn.write_bytes(b"v3's mask")
+    log: list[GeneratorRequest] = []
+    pipeline = pipeline_with(photo_run, CuttingGenerator(fake_generator(), log), photos)
+    pipeline.preview_cutouts(sources, photo_run.run_dir / "cutouts", mask.parent)
+    assert log[0].compare == {"src-side": drawn}  # front.png is no photo's name
+    with pytest.raises(ValueError, match="no mask named after a shown photo"):
+        pipeline.preview_cutouts(sources, photo_run.run_dir / "cutouts", photo_run.run_dir)
+
+
 # ---------------------------------------------------------- the real job, in its environment
 @pytest.mark.slow
 @pytest.mark.skipif(
@@ -363,3 +499,49 @@ def test_real_job_applies_a_drawn_mask_and_drops_specks(tmp_path: Path) -> None:
     assert alpha[100, 100] == 255 and alpha[10, 10] == 0
     assert alpha[181:184, 281:284].max() == 0  # the speck, scaled up, is gone
     assert done.sheet.is_file()
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(
+    not os.environ.get("MOONWALKERS_GEN_ROOT"),
+    reason="set MOONWALKERS_GEN_ROOT to the generator folder (e.g. C:\\mw-gen) to run",
+)
+def test_real_job_draws_edits_in_order_before_dropping_specks(tmp_path: Path) -> None:
+    """Decision 0041 on a drawn mask: an added square, a line across empty space, then a
+    removal that wins over the square where they overlap; the preview writes each mask alone
+    and its IoU against the same mask is 1."""
+    photo, mask = tmp_path / "photo.png", tmp_path / "mask.png"
+    write_png(photo, np.full((200, 400), 90, dtype=np.uint8))
+    write_png(mask, np.zeros((200, 400), dtype=np.uint8))  # nothing kept to start with
+    edits = [
+        {"op": "add", "points": [[0.1, 0.1], [0.5, 0.1], [0.5, 0.9], [0.1, 0.9]]},
+        {"op": "add", "points": [[0.5, 0.5], [0.95, 0.5]], "width": 0.025},  # 10 pixels wide
+        {"op": "remove", "points": [[0.0, 0.0], [0.3, 0.0], [0.3, 0.5], [0.0, 0.5]]},
+    ]
+    cutout = Cutout(method="mask", mask=str(mask), edits=edits, min_piece=0.0)  # type: ignore[arg-type]
+    config = Hunyuan3DConfig.under(Path(os.environ["MOONWALKERS_GEN_ROOT"]))
+    generator = Hunyuan3DGenerator(config)
+    done = generator.cut_out(
+        GeneratorRequest(
+            images={"src-a": photo},
+            out_dir=tmp_path / "cut",
+            cutouts={"src-a": cutout.model_dump(mode="json")},
+        )
+    )
+    assert done.done["src-a"]["edits"] == 3
+    alpha = read_png(done.prepared["src-a"])[:, :, 3]
+    assert alpha[150, 100] == 255  # the square, below the removal
+    assert alpha[50, 100] == 0  # the square, where the later removal won
+    assert alpha[100, 300] == 255 and alpha[90, 300] == 0  # the line, 10 pixels about y 100
+    final = done.masks["src-a"]
+    assert read_png(final)[:, :, 0].tolist() == alpha.tolist()
+
+    again = generator.cut_out(
+        GeneratorRequest(
+            images={"src-a": photo},
+            out_dir=tmp_path / "again",
+            cutouts={"src-a": cutout.model_dump(mode="json")},
+            compare={"src-a": final},
+        )
+    )
+    assert again.done["src-a"]["iou"] == 1.0

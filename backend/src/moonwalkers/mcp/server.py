@@ -106,6 +106,7 @@ from moonwalkers.pipelines.b.pipeline import (
     PipelineB,
     ReferenceFacts,
     RunFolderConflict,
+    describe_cutout,
     generated_mesh,
     size_checks,
 )
@@ -514,8 +515,15 @@ def create_server(
           Anything inside the box; points with keep true on the machine, keep false on what to
           leave out. {"method": "crop", "box": [...]}: the automatic removal inside the box only.
           {"method": "mask", "mask": "<PNG in the data folder>"}: a mask a person drew, white or
-          opaque on the machine. "min_piece" (default 0.02): separate pieces smaller than this
-          share of the largest are dropped; 0 keeps all.
+          opaque on the machine. {"method": "auto", "edits": [...]}: the automatic removal, with
+          edits on it. "min_piece" (default 0.02): separate pieces smaller than this share of
+          the largest are dropped, after the edits; 0 keeps all.
+        - cutout "edits" (decision 0041), on any method, drawn in order, a later one winning:
+          {"op": "add" or "remove", "points": [[x, y], ...], "note": "what it covers"} is a
+          polygon (3 points or more); with "width" (a fraction of the photo's width, at most
+          0.2) it is a line through the points (2 or more): a cable, a hose. Polygons are hard
+          to place by eye on a busy photo: after a few boxes and points, ask the user to draw
+          the cut-out in the dashboard (the job's page, "Edit the cut-out"), or to skip.
         Check the result with preview_cutouts before generating."""
         with guarded():
             photo = InputPhoto.model_validate(
@@ -546,15 +554,7 @@ def create_server(
             return CutoutPreview(
                 run=run,
                 sheet=str(done.sheet),
-                photos=[
-                    f"{name}: {info['method']}, {info['kept_share']:.1%} kept"
-                    + (
-                        f", {info['pieces_dropped']} specks dropped"
-                        if info.get("pieces_dropped")
-                        else ""
-                    )
-                    for name, info in done.done.items()
-                ],
+                photos=[describe_cutout(name, info) for name, info in done.done.items()],
                 seconds=done.seconds,
             )
 
@@ -1276,9 +1276,10 @@ def create_server(
           shows only there), the size checks, the twin's issues, and `holes`: open edges where
           removed faces met a cut part, each to patch or to check a stand-in covers. Parts
           whose meshes NVIDIA's validator would warn about (zero-area faces, non-manifold points)
-          are among the issues, with the points in model units: fix them before submitting. With
-          photos=true, the parts are also drawn over each photo the generator was fed (about a
-          minute a photo)."""
+          are among the issues, with the points in model units: fix them before submitting. The
+          issues end with the spec's warnings (decision 0041): a base on a small slab, loose
+          pieces inside a stand-in's travel, no size checks. With photos=true, the parts are
+          also drawn over each photo the generator was fed (about a minute a photo)."""
         with guarded():
             run_dir = ws.run_dir(run)
             need_spec(run_dir)
@@ -1309,7 +1310,10 @@ def create_server(
         (data/scratch/<date>_dry-run-<NNN>/), then run our validator and NVIDIA's on the twin,
         every check file and the controls. Nothing is stored for real, so run it before
         submit_twin: a submitted version is kept for good. Fix what it finds through the tools
-        and dry-run again until `clean` (the lab's machines plan, tool gap 7)."""
+        and dry-run again until `clean` (the lab's machines plan, tool gap 7). `spec_warnings`
+        (decision 0041) are not part of `clean`: a base on a small slab (set base_z and cut what
+        is below), loose pieces inside a stand-in's travel (loose_pieces "remove", or a cut), no
+        size checks (set_size_checks). Fix each, or record why with add_issue."""
         with guarded():
             run_dir = ws.run_dir(run)
             need_spec(run_dir)
@@ -1333,6 +1337,7 @@ def create_server(
                     )
                     for f in done.files
                 ],
+                spec_warnings=done.spec_warnings,
             )
 
     @server.tool(annotations=LOCAL_WRITE)

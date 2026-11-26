@@ -30,10 +30,15 @@ from pydantic import BaseModel, Field
 
 from moonwalkers.contracts.pipeline_result import InputType, JobResult, Source, TwinRecord
 from moonwalkers.kb import machine_key
-from moonwalkers.orchestrator import JobRequest, PhotoUse, PhotoView
+from moonwalkers.orchestrator import Cutout, JobRequest, PhotoUse, PhotoView
 from moonwalkers.pipelines.b.build import JOB_RESULT_SUFFIX, REQUEST_FILE, job_result_file
 from moonwalkers.pipelines.b.parts_spec import PartsSpec
-from moonwalkers.pipelines.b.pipeline import GENERATOR_DIR, GENERATOR_RECORD, ReferenceFacts
+from moonwalkers.pipelines.b.pipeline import (
+    CUTOUTS_DIR,
+    GENERATOR_DIR,
+    GENERATOR_RECORD,
+    ReferenceFacts,
+)
 
 from .runs import SpecState, Workspace
 
@@ -43,6 +48,7 @@ PARTS_PREVIEW_SHEET = "preview_parts/parts.png"
 MACHINE_FOLDER = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 Stage = Literal["no_photo", "waiting_for_agent", "in_progress", "built", "reused", "unreadable"]
+CutoutPreviewState = Literal["none", "current", "stale"]
 StepName = Literal["photo", "notes", "mesh", "spec", "preview", "twin"]
 OPEN_STAGES: tuple[Stage, ...] = ("no_photo", "waiting_for_agent", "in_progress")
 
@@ -65,7 +71,8 @@ class RequestRecord(BaseModel):
 
 
 class JobPhoto(BaseModel):
-    """One of the job's machine photos, with its view and use (decision 0022)."""
+    """One of the job's machine photos, with its view and use (decision 0022), its cut-out
+    (decisions 0029, 0041) and the mask of the last cut-out preview that showed it."""
 
     source: Source
     view: PhotoView | None = Field(
@@ -73,6 +80,19 @@ class JobPhoto(BaseModel):
         "photo given no view, as in the PoC"
     )
     use: PhotoUse
+    cutout: Cutout | None = Field(
+        default=None, description="how the generator cuts the machine out; None: automatically"
+    )
+    mask: str | None = Field(
+        default=None,
+        description="the last cut-out preview's mask of this photo (a PNG, relative to the data "
+        "folder; white is kept), when the preview showed it",
+    )
+    preview: CutoutPreviewState = Field(
+        default="none",
+        description="none: no preview showed this photo; current: the preview used the cut-out "
+        "saved now; stale: the cut-out changed since",
+    )
 
 
 class RunStatus(BaseModel):
@@ -137,15 +157,31 @@ def list_runs(ws: Workspace, machine: str | None = None) -> list[RunStatus]:
 def _status(ws: Workspace, run_dir: Path, where: dict[str, Any]) -> RunStatus:
     requests = [_request_record(run_dir, p) for p in _request_files(run_dir)]
     main, request = requests[0], ws.request(run_dir)
-    photos = [
-        JobPhoto(
-            source=s,
-            view=request.photos[s.source_id].view if s.source_id in request.photos else None,
-            use=request.photos[s.source_id].use if s.source_id in request.photos else "generator",
+    previewed = _previewed_cutouts(run_dir)
+    photos = []
+    for s in request.sources:
+        if s.input_type != InputType.MACHINE_PHOTO:
+            continue
+        given = request.photos.get(s.source_id)
+        cutout = given.cutout if given else None
+        mask = run_dir / CUTOUTS_DIR / "masks" / f"{s.source_id}.png"
+        shown = s.source_id in previewed and mask.is_file()
+        photos.append(
+            JobPhoto(
+                source=s,
+                view=given.view if given else None,
+                use=given.use if given else "generator",
+                cutout=cutout,
+                mask=ws.relative(mask) if shown else None,
+                preview=(
+                    "none"
+                    if not shown
+                    else "current"
+                    if _same_cutout(previewed[s.source_id], cutout)
+                    else "stale"
+                ),
+            )
         )
-        for s in request.sources
-        if s.input_type == InputType.MACHINE_PHOTO
-    ]
     fed = [p.source for p in photos if p.use == "generator"]
     photo = next(iter(fed or [p.source for p in photos]), None)
     twin = _twin(run_dir / TWIN_RECORD)
@@ -196,6 +232,30 @@ def _status(ws: Workspace, run_dir: Path, where: dict[str, Any]) -> RunStatus:
         steps=steps,
         requests=requests,
     )
+
+
+def _previewed_cutouts(run_dir: Path) -> dict[str, dict[str, Any] | None]:
+    """The photos the last cut-out preview showed, each with the cut-out it was given (None:
+    automatic), from the preview's ``job.json`` (decisions 0029, 0041)."""
+    try:  # a preview is a by-product: one cut short leaves the job readable
+        job = _read_json(run_dir / CUTOUTS_DIR / "job.json")
+    except (OSError, ValueError):
+        return {}
+    if not job or not isinstance(job.get("images"), dict):
+        return {}
+    given = job.get("cutouts") or {}
+    return {name: given.get(name) for name in job["images"]}
+
+
+def _same_cutout(previewed: dict[str, Any] | None, cutout: Cutout | None) -> bool:
+    """Whether a preview's cut-out is the one saved now. The preview holds a mask's path made
+    absolute, so masks are compared by the rest of their settings."""
+    if previewed is None or cutout is None:
+        return previewed is None and cutout is None
+    now = cutout.model_dump(mode="json")
+    return {k: v for k, v in previewed.items() if k != "mask"} == {
+        k: v for k, v in now.items() if k != "mask"
+    }
 
 
 def _photos_detail(photos: list[JobPhoto]) -> str | None:

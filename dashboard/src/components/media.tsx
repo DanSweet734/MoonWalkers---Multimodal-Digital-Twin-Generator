@@ -1,6 +1,7 @@
 import type { JobPhoto, RunFile, Source } from '../api/types.gen.ts'
 import { fileUrl } from '../lib/format.ts'
 import { photoUseText, viewText } from '../lib/views.ts'
+import { cutoutSummary } from '../lib/cutout.ts'
 
 /** Rendered views and screenshots; each opens full size in a new tab. */
 export function Gallery({ images }: { images: RunFile[] }) {
@@ -37,29 +38,52 @@ export function Photo({ photo }: { photo: Source }) {
 }
 
 /** A job's photos with where each was taken and what it is used for (decision 0022): those
- * the 3D generator gets first, then the evidence. */
-export function PhotoList({ photos }: { photos: JobPhoto[] }) {
+ * the 3D generator gets first, then the evidence. With `onEdit`, each photo the generator gets
+ * says how it is cut out and opens the cut-out editor (decision 0041). */
+export function PhotoList({
+  photos,
+  onEdit,
+}: {
+  photos: JobPhoto[]
+  onEdit?: (photo: JobPhoto) => void
+}) {
   const ordered = [
     ...photos.filter((p) => p.use === 'generator'),
     ...photos.filter((p) => p.use === 'evidence'),
   ]
   return (
     <ul className="gallery">
-      {ordered.map(({ source, view, use }) => (
-        <li key={source.source_id}>
-          <figure>
-            <a href={fileUrl(source.uri)} target="_blank" rel="noreferrer">
-              <img src={fileUrl(source.uri)} alt={source.title ?? 'An input photo'} loading="lazy" />
-            </a>
-            <figcaption>
-              <strong>{viewText(view)}</strong> · {photoUseText(use)}
-              <br />
-              {source.title ?? source.uri}
-              {source.license_note ? ` · ${source.license_note}` : ''}
-            </figcaption>
-          </figure>
-        </li>
-      ))}
+      {ordered.map((photo) => {
+        const { source, view, use } = photo
+        return (
+          <li key={source.source_id}>
+            <figure>
+              <a href={fileUrl(source.uri)} target="_blank" rel="noreferrer">
+                <img
+                  src={fileUrl(source.uri)}
+                  alt={source.title ?? 'An input photo'}
+                  loading="lazy"
+                />
+              </a>
+              <figcaption>
+                <strong>{viewText(view)}</strong> · {photoUseText(use)}
+                <br />
+                {source.title ?? source.uri}
+                {source.license_note ? ` · ${source.license_note}` : ''}
+                {onEdit && use === 'generator' ? (
+                  <>
+                    <br />
+                    <span className="small">{cutoutSummary(photo)}</span>{' '}
+                    <button type="button" className="link" onClick={() => onEdit(photo)}>
+                      {view ? 'Edit the cut-out' : 'See the cut-out'}
+                    </button>
+                  </>
+                ) : null}
+              </figcaption>
+            </figure>
+          </li>
+        )
+      })}
     </ul>
   )
 }

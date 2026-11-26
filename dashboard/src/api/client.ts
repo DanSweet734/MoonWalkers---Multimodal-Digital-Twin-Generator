@@ -4,6 +4,8 @@
 import { errorDetail } from '../lib/format.ts'
 import type {
   ApiStatus,
+  CutoutPreview,
+  CutoutUpdate,
   JobDetail,
   MachineTwins,
   ReviewRequest,
@@ -67,4 +69,19 @@ export const api = {
       },
     ),
   sources: () => request<SourceListing[]>('/api/sources'),
+  // A photo's cut-out and its preview (decision 0041).
+  setCutout: (machine: string, run: string, sourceId: string, body: CutoutUpdate) =>
+    request<JobDetail>(
+      `/api/jobs/${part(machine)}/${part(run)}/photos/${part(sourceId)}/cutout`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(body),
+        headers: { ...WRITE_HEADERS, 'Content-Type': 'application/json' },
+      },
+    ),
+  previewCutouts: (machine: string, run: string) =>
+    request<CutoutPreview>(`/api/jobs/${part(machine)}/${part(run)}/cutouts`, {
+      method: 'POST',
+      headers: WRITE_HEADERS,
+    }),
 }

@@ -722,6 +722,21 @@ async def test_a_photo_is_corrected_and_its_cutout_previewed_before_generating(
         assert preview["sheet"].endswith("sheet.png")
         assert set(generator.cut_requests[0].cutouts) == {"src-b"}
 
+        # decision 0041: polygons and lines drawn on top of the automatic cut-out
+        drawn = {
+            "method": "auto",
+            "edits": [
+                {"op": "remove", "points": [[0.0, 0.8], [0.3, 0.8], [0.3, 1.0]], "note": "a stool"},
+                {"op": "add", "points": [[0.5, 0.1], [0.5, 0.4]], "width": 0.02},
+            ],
+        }
+        await ok(client, "set_photo", run=run, source_id="src-a", view="front", cutout=drawn)
+        saved = json.loads((photo_run.data_dir / run / "request.json").read_text(encoding="utf-8"))
+        assert {k: saved["photos"]["src-a"]["cutout"][k] for k in drawn} == drawn
+        assert "without edits is the default" in await fails(
+            client, "set_photo", run=run, source_id="src-a", view="front", cutout={"method": "auto"}
+        )
+
         await ok(client, "generate_geometry", run=run)
         assert "already generated its mesh" in await fails(
             client, "set_photo", run=run, source_id="src-b", view="back"
@@ -751,6 +766,7 @@ async def test_a_dry_run_builds_a_scratch_copy_and_stores_nothing(setup, photo_r
         tried = await ok(client, "dry_run_twin", run=run)
         assert tried["built"], tried["message"]
         assert "built version 1" in tried["message"]
+        assert tried["spec_warnings"] == []  # one spindle: decision 0041's warnings are for parts
         copied = Path(tried["scratch_run"])
         assert copied.is_relative_to(photo_run.data_dir / "scratch")
         assert copied.parts[-6].endswith("_dry-run-001")
@@ -967,6 +983,8 @@ async def test_an_agent_builds_a_twin_of_several_parts_through_the_tools(
         preview = (await ok(client, "preview_twin", run=run))["result"]
         assert preview["holes"] == []
         assert any(i["message"].startswith("Patched") for i in preview["issues"])
+        # it stands on its own base, keeps no shards and has a size check (decision 0041)
+        assert not [i for i in preview["issues"] if "the lab report's gap" in i["message"]]
         submitted = await ok(client, "submit_twin", run=run)
     assert submitted["twin"]["version"] == 1
     assert not [i for i in submitted["validation"] if i["severity"] == "error"]

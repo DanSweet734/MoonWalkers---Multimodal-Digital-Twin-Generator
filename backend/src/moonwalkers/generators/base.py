@@ -26,11 +26,15 @@ class GeneratorRequest:
     ``cutouts`` says, for some views, how to cut the object out of the photo instead of the
     automatic background removal (``moonwalkers.orchestrator.photos.Cutout`` as JSON, with a
     mask's path made absolute; decision 0029).
+
+    ``compare``, for a cut-out preview only, gives some views a mask drawn before (a PNG), so the
+    preview reports each cut-out's IoU against it (decision 0041).
     """
 
     images: Mapping[str, Path]
     out_dir: Path
     cutouts: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
+    compare: Mapping[str, Path] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.images:
@@ -45,6 +49,12 @@ class GeneratorRequest:
         missing = [m for m in masks if not Path(m).is_file()]
         if missing:
             raise FileNotFoundError(f"mask(s) not found: {missing}")
+        unknown = sorted(set(self.compare) - set(self.images))
+        if unknown:
+            raise ValueError(f"masks to compare for views with no image: {unknown}")
+        missing = [str(m) for m in self.compare.values() if not Path(m).is_file()]
+        if missing:
+            raise FileNotFoundError(f"mask(s) to compare not found: {missing}")
 
 
 @dataclass(frozen=True)
@@ -62,13 +72,15 @@ class GeneratorRun:
 @dataclass(frozen=True)
 class CutoutRun:
     """Cut-outs made without generating: each image's prepared PNG, a contact sheet, and what was
-    done to each (method, share kept, specks dropped)."""
+    done to each (method, share kept, edits, specks dropped, IoU when compared); and each final
+    mask alone (decision 0041)."""
 
     prepared: dict[str, Path]
     sheet: Path
     done: dict[str, Any]
     seconds: float
     log_path: Path
+    masks: dict[str, Path] = field(default_factory=dict)
 
 
 class GeneratorError(RuntimeError):
