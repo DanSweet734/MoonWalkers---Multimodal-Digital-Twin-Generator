@@ -476,7 +476,7 @@ Afterwards:
       started; the session 2026-11-25, 22:43-23:37 Pacific; below, "The second agent run")
 - [x] **Check (Daniel, 2026-11-26):** levels 1 to 3 in Isaac Sim, as for v4: **all three met**;
       the review in the dashboard is his
-- [ ] The scorecard against v3 and v4; the tool gaps it finds; pull request; stop
+- [x] The scorecard against v3 and v4; the tool gaps it finds; pull request (#41); stop
 
 ### The second agent run (2026-11-25 and 26)
 The record: the agent's own entry in [worklog 2026-11-25](worklog/2026-11-25.md) ("The video
