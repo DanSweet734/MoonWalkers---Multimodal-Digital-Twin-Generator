@@ -180,11 +180,73 @@ measure below.
 - [x] [Decision 0039](decisions/0039-the-scorecard.md), the scorecard
 - [x] This plan, a pull request (#39); Daniel's answers to "Questions for Daniel" (2026-11-25,
       "Decided on review")
-- [ ] Merged on Daniel's word; then Phase 1's branch from `main`, its hand-off first
+- [x] Merged on Daniel's word (PR #39, `a451e42`, 2026-11-25); then Phase 1's branch from `main`,
+      its hand-off first
 - [ ] The advisors' page of the plan: next week (Daniel, 2026-11-25), for the first meeting after
       Thanksgiving
 
 ## Phase 1 - A tool to draw and correct a cut-out
+
+### Hand-off (2026-11-25, from the plan's Phase 0 chat)
+- **Start** on branch `feat/video-phase-1-cutout-tool`, cut from `main` at `a451e42` (PR #39
+  merged on Daniel's word, 2026-11-25). Its first commit is this hand-off. `docs/video-plan`
+  is kept (no word to delete it).
+- **Decided** (the plan's "Decided on review"): this phase carries the cut-out tool **and** the
+  warnings for gaps 2, 3 and 9. Decision 0041 is the next free number (0040 is the PR labels).
+- **No meeting on 2026-11-26** (Thanksgiving). The advisors' page of the plan is due next week,
+  for the first meeting after it (Daniel); it is not this phase's job unless he asks.
+- **The lab's iRC program** may arrive the week of 2026-11-30 (beside the phases). If it comes
+  mid-phase, ask Daniel whether to take it here or on its own branch.
+
+#### Where the cut-out lives now (read before designing)
+- **The model:** `backend/src/moonwalkers/orchestrator/photos.py`: `CutoutMethod =
+  Literal["sam", "crop", "mask"]`, `CutoutPoint` (x, y, keep), `Cutout` (method, box, points,
+  mask, `min_piece` 0.02). Coordinates are fractions of the photo turned upright by its EXIF.
+  `Cutout._check` ties the fields to the method ("a 'mask' cut-out gives the mask's file, and no
+  box or points").
+- **Where a mask is made:** in the generator's job script,
+  `backend/src/moonwalkers/generators/scripts/hunyuan3d_shape_job.py` (`sam_prompt`,
+  `mask_from_file`, the `method` branches near line 185, `ImageOps.exif_transpose` at line 53).
+  It runs in `C:\mw-gen`'s environment, the only one with Pillow: **the backend has no Pillow**
+  (found 2026-11-25). So polygons are best drawn into the mask there, after SAM's or the crop's
+  mask and before `min_piece` [INFERENCE], and the backend only validates and passes them.
+- **The run's record:** `pipelines/b/pipeline.py` `_cutouts` (near line 279) swaps a mask's path
+  for its SHA-256 in the settings, so a changed cut-out is a changed mesh; the run folder refuses
+  a change after generating (decision 0029). Polygons must enter that record too.
+- **The tools:** MCP `set_photo` and `preview_cutouts` (`mcp/server.py` around lines 516-535;
+  `mcp/reports.py` `CutoutPreview`); CLI `... pipelines.b cutouts <run>` writes
+  `<run>/cutouts/sheet.png`.
+- **The dashboard and API:** pages in `dashboard/src/pages/` (`JobPage.tsx` shows a job); pure
+  logic in `dashboard/src/lib/` with `*.test.ts`; the API's routes are `api/jobs.py` (list, one
+  job, create), `api/files.py` (`GET /api/files/{path}` serves data files for the dashboard),
+  `api/twins.py`, `api/sources.py`. Nothing writes a photo's `cutout` from the API yet. After an
+  API model change, `uv run python -m moonwalkers.api.typescript` (a test fails when stale).
+- **The answer key for the check:** v3's masks were made by
+  `data/machines/haas-tm1/part_cutting/2026-11-11_spec/make_masks.py` from SAM's cut-out plus
+  `FILL` and `ERASE` polygons, in fractions of the upright photo, per photo. These are the proposed
+  `add` and `remove`. Its masks: `data/machines/haas-tm1/runs/2026-11-11_run-003/masks/photo-
+  134300.png`, `photo-134337.png`, `photo-134355.png` (`min_piece` 0.1; SAM's settings in
+  `tm1_request.py` beside the script). A first test of the new fields: v3's polygons through the
+  tool should give masks with an IoU near 1 against these [INFERENCE: SAM's run must match].
+
+#### Gaps 2, 3 and 9 (the lab report, section 8.3; v4's faults)
+- **Gap 2, a base on a small slab:** v4 (run `haas-tm1/runs/2026-11-18_run-001`) left `base_z`
+  unset, the mesh's lowest point, and stood on a generated block about 0.62 x 0.45 m, 0.25 m tall,
+  about 10 in. v3's script set `base_z` -0.75 and cut under z -0.763.
+- **Gap 3, pieces of a removed part left in a kept part:** shards of v4's generated table block
+  pass through the stand-in table.
+- **Gap 9, no size checks:** the agent skipped `set_size_checks`, and neither `preview_twin` nor
+  `dry_run_twin` said so.
+- Each warning should fire on v4's spec and stay quiet on v3's (a test on each, from small
+  fixtures, never the run folders).
+
+#### Pitfalls from the Phase 0 chat
+- Bash heredocs with quotes or Python triple quotes break here; write scripts with the Write tool
+  (memory "bash-script-pitfalls").
+- Serials, asset tags and IP addresses stay in `data/`; grep the diff before committing.
+- The quick suite was 898 passed at `main` (2026-11-25), in about 5 minutes.
+
+### What Phase 1 is to do
 The advisors' ask 1; the report's gap 1. **Proposed shape** (a decision record, 0041):
 - **Polygons on top of any cut-out.** A photo's `cutout` gains `add` and `remove` polygons, in
   fractions of the upright photo as boxes and points are now. They apply after SAM's or the crop's
