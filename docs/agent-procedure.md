@@ -350,8 +350,9 @@ decision 0027 and its updates) is a worked example.
    - **the spec warnings** among the issues (decision 0041), the faults `haas/tm1@v4` was
      rejected for. Each names its fix:
      - `base_z`: the twin's bottom 5% is under 15% as wide as its widest, so it may stand on a
-       generated slab or pedestal (v4: 5%). Set `base_z` at the floor or the machine's own base
-       and cut what is below into a removed part (v3: `base_z` -0.75, a cut under z -0.763);
+       generated slab or pedestal (v4: 5%). Measure the floor or the machine's own base on the
+       mesh and the photos, set `base_z` there, and cut what is below it, a little under the
+       line, into a removed part;
      - a cut part's id: loose pieces of it lie inside a stand-in that replaces a removed part,
        where it is modelled or anywhere along its sliding joints' travel (v4's shards of the
        table block). Set `loose_pieces: "remove"` on that part or cut them into the removed part.
