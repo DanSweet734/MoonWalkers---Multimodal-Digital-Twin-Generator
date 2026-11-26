@@ -1,7 +1,7 @@
 # The video plan
 
-**Status (2026-11-25):** drafted below the hand-off, for Daniel's review. Nothing is built or
-installed until he approves it. The advisors approved both asks on 2026-11-19, so the plan covers
+**Status (2026-11-25):** drafted below the hand-off; Daniel took every recommendation the same
+day ("Decided on review"). Phase 1 starts after the pull request is merged on his word. The advisors approved both asks on 2026-11-19, so the plan covers
 the cut-out tool and a second agent run first, then video ("The plan", below).
 
 ## Hand-off (2026-11-18, from the lab's machines plan's Phase 8 chat)
@@ -93,6 +93,24 @@ written to `data/` but the filed copies, their `SOURCES.md` rows and dated notes
 - every stand-in is labelled and logged;
 - nothing is installed without asking first.
 
+### Decided on review (2026-11-25)
+Daniel, the same day: "Go with your recommendations on all eight questions." So:
+
+| Question | Answer |
+|---|---|
+| 1. The order | The cut-out tool and the second agent run first (Phases 1-2), then video (Phase 3) |
+| 2. The file's name | `docs/video-plan.md` stays, for both |
+| 3. Gaps 2, 3 and 9 | In Phase 1, with the cut-out tool |
+| 4. The agent run's photos | The same eight of 2026-11-05 as v4's job |
+| 5. The frame reader | ffmpeg, already on Daniel's machine, called as a program found on the PATH; no package added |
+| 6. The first machine from video | The TM-1 |
+| 7. The 01 arm | A twin in Phase 4 if time allows (option a); footage only otherwise |
+| 8. The temp folder | May go. All 42 copies were byte-compared with the originals, then `data/machine photos (temp)/11-19-26/` was deleted (2026-11-25); the empty `machine photos (temp)/` stays as a drop folder |
+
+Also from Daniel (2026-11-25):
+- **No meeting this week:** the weekly meeting of 2026-11-26 is cancelled for Thanksgiving.
+- **No advisors' page of the plan yet:** it comes next week, for the following meeting.
+
 ### What the advisors decided (meeting of 2026-11-19)
 | Ask (the lab report's page, section 10) | Answer |
 |---|---|
@@ -160,7 +178,11 @@ measure below.
       they settle in the research notes, the report, the visit list and the runs' `RUN.md`
 - [x] `haas/tm1@v4`'s rejection corrected in the merged docs
 - [x] [Decision 0039](decisions/0039-the-scorecard.md), the scorecard
-- [ ] This plan, a pull request; stop for Daniel's review and his answers to "Questions for Daniel"
+- [x] This plan, a pull request (#39); Daniel's answers to "Questions for Daniel" (2026-11-25,
+      "Decided on review")
+- [ ] Merged on Daniel's word; then Phase 1's branch from `main`, its hand-off first
+- [ ] The advisors' page of the plan: next week (Daniel, 2026-11-25), for the first meeting after
+      Thanksgiving
 
 ## Phase 1 - A tool to draw and correct a cut-out
 The advisors' ask 1; the report's gap 1. **Proposed shape** (a decision record, 0041):
@@ -278,6 +300,7 @@ Numbered when written: 0039 is written and 0040 is taken (PR labels), so 0041 is
 | The lab's iRC program, if it changes decision 0033 | beside |
 
 ### Questions for Daniel
+Answered on 2026-11-25: every recommendation taken ("Decided on review", above).
 1. **The order:** the cut-out tool and the second agent run first, then video (recommended, above),
    or video first?
 2. **The file's name:** keep `docs/video-plan.md` for both (recommended), or rename it?

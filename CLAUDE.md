@@ -6,10 +6,12 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: the video plan, drafted for Daniel's review (2026-11-25)
-**Start here:** `docs/video-plan.md`, "The plan (draft of 2026-11-25)", on branch
-`docs/video-plan` (its PR). Nothing is built or installed until Daniel approves it and answers
-its "Questions for Daniel". **The advisors (meeting of 2026-11-19):** the cut-out drawing tool,
+## Current phase: the video plan, answered by Daniel; Phase 1 after PR #39 merges (2026-11-25)
+**Start here:** `docs/video-plan.md`, "The plan (draft of 2026-11-25)" and its "Decided on
+review": Daniel took every recommendation (2026-11-25). PR #39 (branch `docs/video-plan`) merges
+on his word; then Phase 1 (the cut-out tool, with the v4 warnings for gaps 2, 3 and 9) starts on
+its own branch from `main`, its hand-off first. The weekly meeting of 2026-11-26 is cancelled
+(Thanksgiving); the advisors' page of the plan comes next week (Daniel). **The advisors (meeting of 2026-11-19):** the cut-out drawing tool,
 then a second agent run: yes; video input: approved; the scorecard accepted as is
 ([decision 0039](docs/decisions/0039-the-scorecard.md)); the VF-3's Settings 78 and 30 and the
 +A/+B jog: ask at the next visit; the lab's iRC program for the arm: "sometime next week" (the
