@@ -64,6 +64,7 @@ from .pipeline import (
     size_checks,
     spec_size_checks,
 )
+from .spec_warnings import spec_warnings
 
 PROFILE_SLICES = 24
 WINDOW_FRACTION = 0.25  # default profile window: a quarter of the mesh's largest extent
@@ -331,7 +332,9 @@ def preview_parts_spec(
     faults = part_fault_issues(
         [(p.part_id, p.path) for p in model.parts], model.origin_model_units, model.scale_factor
     )
-    issues = [*parts_issues(spec, model), *faults]
+    # decision 0041: the faults behind haas/tm1@v4's rejection (gaps 2, 3 and 9)
+    warned = spec_warnings(mesh, spec, model.scale_factor)
+    issues = [*parts_issues(spec, model), *faults, *warned]
     return PartsPreview(model, views, fitted, checks, issues, holes)
 
 

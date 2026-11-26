@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from moonwalkers.contracts.pipeline_result import PipelineResult, Source, TwinRecord
 from moonwalkers.kb.reviews import Reason, ReviewDecision, Reviewer, ReviewStatus, TwinReview
+from moonwalkers.orchestrator import Cutout
 from moonwalkers.pipelines.b.pipeline import ReferenceFacts
 from moonwalkers.workspace import RunFile, RunStatus
 
@@ -31,6 +32,26 @@ class JobDetail(BaseModel):
     agent_prompt: str | None = Field(
         description="what to ask Claude Code to build this job, while it is open"
     )
+    cutouts_editable: bool = Field(
+        default=False,
+        description="the photos' cut-outs can still change: the run has not generated its mesh "
+        "and is not built (decisions 0029, 0041)",
+    )
+
+
+class CutoutUpdate(BaseModel):
+    """A machine photo's cut-out, set from the dashboard (decision 0041); null: automatic."""
+
+    cutout: Cutout | None
+
+
+class CutoutPreview(BaseModel):
+    """A cut-out preview run by the API (decision 0041): seconds, not the 3D model."""
+
+    seconds: float
+    sheet: str = Field(description="the contact sheet, relative to the data folder")
+    photos: list[str] = Field(description="one line per photo: method, share kept, edits")
+    detail: JobDetail = Field(description="the job, with each photo's new mask")
 
 
 class TwinVersion(BaseModel):

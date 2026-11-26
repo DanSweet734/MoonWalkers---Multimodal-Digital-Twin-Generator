@@ -110,6 +110,48 @@ def keep_large_pieces(alpha: Any, min_piece: float) -> tuple[Any, int]:
     return out, int(small.size)
 
 
+def edit_pixels(points: list[list[float]], size: tuple[int, int]) -> list[tuple[float, float]]:
+    """An edit's points, fractions (x, y) of the upright photo, in its pixels."""
+    w, h = size
+    return [(x * w, y * h) for x, y in points]
+
+
+def line_pixels(width: float, size: tuple[int, int]) -> int:
+    """A line edit's width, a fraction of the photo's width, in whole pixels (at least one), as
+    make_masks.py drew v3's conduits (``int(width * w)``)."""
+    return max(int(width * size[0]), 1)
+
+
+def apply_edits(alpha: Any, edits: list[dict[str, Any]]) -> Any:
+    """``alpha`` (uint8, H x W) with each edit drawn on it in order (decision 0041): a polygon
+    filled, or a line ``width`` wide with rounded joints, 255 where it adds and 0 where it
+    removes, so a later edit wins where two overlap."""
+    import numpy as np
+    from PIL import Image, ImageDraw
+
+    if not edits:
+        return alpha
+    image = Image.fromarray(alpha)
+    draw = ImageDraw.Draw(image)
+    for edit in edits:
+        value = 255 if edit["op"] == "add" else 0
+        xy = edit_pixels(edit["points"], image.size)
+        if edit.get("width"):
+            draw.line(xy, fill=value, width=line_pixels(edit["width"], image.size), joint="curve")
+        else:
+            draw.polygon(xy, fill=value)
+    return np.asarray(image, dtype=np.uint8).copy()
+
+
+def iou(alpha: Any, other: Any) -> float:
+    """Intersection over union of two masks' pixels above 127 (1.0 when both are empty)."""
+    import numpy as np
+
+    a, b = np.asarray(alpha) > 127, np.asarray(other) > 127
+    union = int(np.logical_or(a, b).sum())
+    return 1.0 if union == 0 else int(np.logical_and(a, b).sum()) / union
+
+
 def mask_from_file(path: str, size: tuple[int, int]) -> Any:
     """A mask drawn by hand, as uint8 alpha: its transparency if it has any, else its brightness.
     A mask drawn on a smaller copy of the photo is scaled up when its shape matches."""
@@ -146,6 +188,13 @@ class Cutter:
             )
         return self._sessions[name]
 
+    def _auto(self, rgb: Any) -> Any:
+        if self._remover is None:
+            from hy3dgen.rembg import BackgroundRemover
+
+            self._remover = BackgroundRemover()
+        return self._remover(rgb).convert("RGBA")
+
     def __call__(self, image: Any, cutout: dict[str, Any] | None) -> tuple[Any, dict[str, Any]]:
         """The RGBA cut-out of an upright photo, and what was done."""
         import numpy as np
@@ -157,11 +206,7 @@ class Cutter:
                 cut = image.convert("RGBA")
                 info: dict[str, Any] = {"method": "own transparency"}
             else:
-                if self._remover is None:
-                    from hy3dgen.rembg import BackgroundRemover
-
-                    self._remover = BackgroundRemover()
-                cut = self._remover(image.convert("RGB")).convert("RGBA")
+                cut = self._auto(image.convert("RGB"))
                 info = {"method": "auto"}
             alpha = np.asarray(cut.getchannel("A"))
             return cut, {**info, "kept_share": round(float((alpha > 127).mean()), 4)}
@@ -184,16 +229,21 @@ class Cutter:
             alpha[y0:y1, x0:x1] = np.asarray(inside.convert("L"), dtype=np.uint8)
         elif method == "mask":
             alpha = mask_from_file(cutout["mask"], rgb.size)
+        elif method == "auto":
+            alpha = np.asarray(self._auto(rgb).getchannel("A"), dtype=np.uint8)
         else:
             raise ValueError(f"unknown cut-out method {method!r}")
+        edits = cutout.get("edits") or []
+        alpha = apply_edits(alpha, edits)  # decision 0041: before the specks are dropped
         alpha, dropped = keep_large_pieces(alpha, float(cutout.get("min_piece", 0.0)))
         cut = rgb.convert("RGBA")
         cut.putalpha(Image.fromarray(alpha))
-        return cut, {
+        info = {
             "method": method,
             "kept_share": round(float((alpha > 127).mean()), 4),
             "pieces_dropped": dropped,
         }
+        return cut, ({**info, "edits": len(edits)} if edits else info)
 
 
 def prepare_images(
@@ -231,14 +281,22 @@ def draw_sheet(
             x, y = p["x"] * cut.width, p["y"] * cut.height
             colour = (0, 200, 0) if p["keep"] else (220, 0, 0)
             draw.ellipse([x - r, y - r, x + r, y + r], fill=colour)
+        for edit in cutout.get("edits") or []:  # decision 0041: outlines, green add, red remove
+            colour = (0, 200, 0) if edit["op"] == "add" else (220, 0, 0)
+            xy = edit_pixels(edit["points"], cut.size)
+            draw.line(xy if edit.get("width") else [*xy, xy[0]], fill=colour, width=line)
         shown = shown.convert("RGB")
         shown.thumbnail((tile_size, tile_size))
         tile = Image.new("RGB", (tile_size, tile_size + label), "white")
         tile.paste(shown, ((tile_size - shown.width) // 2, label))
         info = done[view]
         text = f"{view}: {info['method']}, {info['kept_share']:.1%} kept"
+        if info.get("edits"):
+            text += f", {info['edits']} edits"
         if info.get("pieces_dropped"):
             text += f", {info['pieces_dropped']} specks dropped"
+        if info.get("iou") is not None:
+            text += f", IoU {info['iou']:.3f}"
         ImageDraw.Draw(tile).text((6, 5), text, fill="black")
         tiles.append(tile)
     cols = min(len(tiles), 4)
@@ -254,13 +312,23 @@ def cut_out_only(job: dict[str, Any]) -> dict[str, Any]:
     out_dir = Path(job["out_dir"])
     prepared_dir = out_dir / "prepared"
     prepared_dir.mkdir(parents=True, exist_ok=True)
+    masks_dir = out_dir / "masks"
+    masks_dir.mkdir(parents=True, exist_ok=True)
     start = time.perf_counter()
     images, done = prepare_images(job, prepared_dir)
+    compare = job.get("compare") or {}
+    for view, cut in images.items():
+        # Each final mask alone, a small PNG the dashboard loads (decision 0041).
+        alpha = cut.getchannel("A")
+        alpha.save(masks_dir / f"{view}.png")
+        if view in compare:  # against a mask drawn before, e.g. v3's (the video plan, Phase 1)
+            done[view]["iou"] = round(iou(alpha, mask_from_file(compare[view], cut.size)), 4)
     sheet = out_dir / "sheet.png"
     draw_sheet(job, images, done, sheet)
     return {
         "status": "ok",
         "prepared": {view: str(prepared_dir / f"{view}.png") for view in images},
+        "masks": {view: str(masks_dir / f"{view}.png") for view in images},
         "sheet": str(sheet),
         "cutouts": done,
         "seconds": round(time.perf_counter() - start, 3),

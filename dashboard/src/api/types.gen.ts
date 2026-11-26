@@ -60,6 +60,51 @@ export interface ControlBehavior {
   citations: Citation[]
 }
 
+/** How to cut the machine out of one photo, instead of the automatic background removal (decision 0029). Coordinates are fractions of the photo turned upright by its EXIF orientation, from the top left, so they hold at any resolution. - ``sam``: Segment Anything, prompted with ``box`` around the machine and optional ``points`` to keep or leave out a region; - ``crop``: the automatic removal inside ``box``, everything outside it cut away; - ``mask``: a mask drawn by hand, ``mask`` being a PNG in the data folder (usually in the run folder), the photo's shape: white, or opaque, is the machine; - ``auto``: the automatic removal a photo with no cut-out gets, named so ``edits`` can go on it (decision 0041); it needs at least one edit. ``edits`` (decision 0041) are then drawn on the method's mask in their order, a later one winning where two overlap. Separate pieces of the cut-out smaller than ``min_piece`` times the largest piece are dropped last (specks of the wall behind the machine); 0 keeps every piece. */
+export interface CutoutInput {
+  method: 'sam' | 'crop' | 'mask' | 'auto'
+  box?: [number, number, number, number] | null
+  points?: CutoutPoint[]
+  mask?: string | null
+  min_piece?: number
+  edits?: CutoutEditInput[]
+}
+
+export type CutoutOutput = unknown
+
+/** A region drawn on the upright photo, added to the cut-out or cut away from it (decision 0041): a polygon through ``points``, or, with ``width``, a line through them that wide (a fraction of the photo's width: a cable or a hose). Points are (x, y) fractions from the top left. */
+export interface CutoutEditInput {
+  op: 'add' | 'remove'
+  points: [number, number][]
+  width?: number | null
+  note?: string | null
+}
+
+export type CutoutEditOutput = unknown
+
+/** A point on the upright photo, as fractions of its width and height from the top left: ``keep`` on the machine, or not, on something to leave out (a sign in front of it). */
+export interface CutoutPoint {
+  x: number
+  y: number
+  keep: boolean
+}
+
+/** A cut-out preview run by the API (decision 0041): seconds, not the 3D model. */
+export interface CutoutPreview {
+  seconds: number
+  /** the contact sheet, relative to the data folder */
+  sheet: string
+  /** one line per photo: method, share kept, edits */
+  photos: string[]
+  /** the job, with each photo's new mask */
+  detail: JobDetail
+}
+
+/** A machine photo's cut-out, set from the dashboard (decision 0041); null: automatic. */
+export interface CutoutUpdate {
+  cutout: CutoutInput | null
+}
+
 /** One specification value, always with where it came from. */
 export interface Fact {
   key: string
@@ -97,14 +142,22 @@ export interface JobDetail {
   outputs: RunFile[]
   /** what to ask Claude Code to build this job, while it is open */
   agent_prompt: string | null
+  /** the photos' cut-outs can still change: the run has not generated its mesh and is not built (decisions 0029, 0041) */
+  cutouts_editable?: boolean
 }
 
-/** One of the job's machine photos, with its view and use (decision 0022). */
+/** One of the job's machine photos, with its view and use (decision 0022), its cut-out (decisions 0029, 0041) and the mask of the last cut-out preview that showed it. */
 export interface JobPhoto {
   source: Source
   /** where the camera stood, in the operator's words; None for a request's one photo given no view, as in the PoC */
   view: 'front' | 'operator_right' | 'back' | 'operator_left' | 'front_operator_left' | 'front_operator_right' | 'back_operator_right' | 'back_operator_left' | 'detail' | null
   use: 'generator' | 'evidence'
+  /** how the generator cuts the machine out; None: automatically */
+  cutout?: CutoutOutput | null
+  /** the last cut-out preview's mask of this photo (a PNG, relative to the data folder; white is kept), when the preview showed it */
+  mask?: string | null
+  /** none: no preview showed this photo; current: the preview used the cut-out saved now; stale: the cut-out changed since */
+  preview?: 'none' | 'current' | 'stale'
 }
 
 /** Returned to the user/agent when a job finishes. */

@@ -12,7 +12,10 @@ the same in one step:
 - gives the copied request its own job id, as the knowledge base refuses a job it already holds;
 - builds the copy through the orchestrator, as ``submit_twin`` would;
 - runs our validator and NVIDIA's asset validator on every USD file the build wrote. NVIDIA's is a
-  development dependency (``pyproject.toml``); without it, its findings are reported as not run.
+  development dependency (``pyproject.toml``); without it, its findings are reported as not run;
+- for a spec of several parts, lists the spec's warnings (``spec_warnings``, decision 0041): a
+  base on a small slab, shards where a stand-in passes, no size checks. They do not change
+  ``clean``, which is the validators' verdict.
 
 The scratch folder is kept, so its files can be opened; ``data/scratch/`` is gitignored with the
 rest of ``data/``.
@@ -35,7 +38,17 @@ from moonwalkers.usd.exporter import ExportError
 from moonwalkers.usd.validate import validate_file
 
 from .build import REQUEST_FILE, build_run
-from .pipeline import GeometrySpecMissing, ReferenceFacts, RunFolderConflict
+from .parts_spec import PartsSpec, measured_scale_length, oriented_mesh
+from .pipeline import (
+    SPEC_FILE,
+    GeometrySpecMissing,
+    ReferenceFacts,
+    RunFolderConflict,
+    cited_length,
+    generated_mesh,
+    read_spec,
+)
+from .spec_warnings import spec_warnings
 
 REFERENCE_FILE = "reference_facts.json"  # the agent's reading notes (workspace.runs)
 # Folders in a run that only previews write: nothing a build reads.
@@ -69,6 +82,8 @@ class DryRun:
     built: bool
     twin_file: Path | None = None
     files: list[FileFindings] = field(default_factory=list)
+    # decision 0041: the spec's faults no validator sees; they do not change ``clean``
+    spec_warnings: list[Issue] = field(default_factory=list)
 
     @property
     def clean(self) -> bool:
@@ -169,7 +184,19 @@ def dry_run(
     files = [
         FileFindings(path, validate_file(path), nvidia_findings(path)) for path in usd_files(copied)
     ]
-    return DryRun(scratch, copied, message, built, twin_file, files)
+    warned = run_spec_warnings(copied, reference) if built else []
+    return DryRun(scratch, copied, message, built, twin_file, files, warned)
+
+
+def run_spec_warnings(run_dir: Path, reference: ReferenceFacts | None) -> list[Issue]:
+    """The spec warnings of a run with a spec of several parts (decision 0041); none for one
+    spindle's spec, which has no stand-ins, base or size checks to warn about."""
+    spec = read_spec(run_dir / SPEC_FILE)
+    if not isinstance(spec, PartsSpec):
+        return []
+    mesh = oriented_mesh(generated_mesh(run_dir), spec)
+    known = cited_length(reference, spec.scale.fact, "the scale")
+    return spec_warnings(mesh, spec, known / measured_scale_length(mesh, spec))
 
 
 def usd_files(run_dir: Path) -> list[Path]:

@@ -171,11 +171,15 @@ class PipelineB(Pipeline):
         """Step 1 alone: the job's mesh, generated now or reused from this run folder."""
         return self._photos_and_mesh(sources)[1]
 
-    def preview_cutouts(self, sources: list[Source], out_dir: Path) -> CutoutRun:
+    def preview_cutouts(
+        self, sources: list[Source], out_dir: Path, compare_dir: Path | None = None
+    ) -> CutoutRun:
         """The fed photos, and the evidence photos given a cut-out, cut out as the generator
-        would cut them, named by source id, with a contact sheet: for checking boxes, points
-        and masks before generating or before feeding a photo (decision 0029). Writes only into
-        ``out_dir``, which it may overwrite: it is a preview."""
+        would cut them, named by source id, with a contact sheet and each final mask: for
+        checking boxes, points, edits and masks before generating or before feeding a photo
+        (decisions 0029, 0041). Writes only into ``out_dir``, which it may overwrite: it is a
+        preview. With ``compare_dir``, each shown photo with a ``<source id>.png`` there is
+        measured against it (IoU)."""
         plan, paths = self._photos(sources)
         shown = [f.source.source_id for f in plan.fed] + [
             s.source_id
@@ -184,8 +188,18 @@ class PipelineB(Pipeline):
         ]
         given = {i: c for i in shown if (c := self.photos[i].cutout if i in self.photos else None)}
         cutouts, _ = self._cutouts(given)
+        compare = {}
+        if compare_dir is not None:
+            compare = {i: m for i in shown if (m := Path(compare_dir) / f"{i}.png").is_file()}
+            if not compare:
+                raise ValueError(f"{compare_dir} has no mask named after a shown photo: {shown}")
         return self.generator.cut_out(
-            GeneratorRequest(images={i: paths[i] for i in shown}, out_dir=out_dir, cutouts=cutouts)
+            GeneratorRequest(
+                images={i: paths[i] for i in shown},
+                out_dir=out_dir,
+                cutouts=cutouts,
+                compare=compare,
+            )
         )
 
     def plan(self, sources: list[Source]) -> PhotoPlan:
@@ -583,6 +597,19 @@ class PipelineB(Pipeline):
 
     def _relative(self, path: Path) -> str:
         return Path(path).resolve().relative_to(self.data_dir).as_posix()
+
+
+def describe_cutout(name: str, info: Mapping[str, Any]) -> str:
+    """One line for a photo's cut-out in a preview (decisions 0029, 0041): its method, the share
+    kept, its edits, the specks dropped, and its IoU against a mask it was compared with."""
+    text = f"{name}: {info['method']}, {info['kept_share']:.1%} kept"
+    if edits := info.get("edits"):
+        text += f", {edits} edit{'' if edits == 1 else 's'}"
+    if dropped := info.get("pieces_dropped"):
+        text += f", {dropped} speck{'' if dropped == 1 else 's'} dropped"
+    if info.get("iou") is not None:
+        text += f", IoU {info['iou']:.3f} against the mask compared"
+    return text
 
 
 def generated_mesh(run_dir: Path) -> Path:

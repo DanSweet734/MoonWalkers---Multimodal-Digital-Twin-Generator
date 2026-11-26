@@ -272,9 +272,10 @@ class PartsPreviewReport(BaseModel):
     photos: list[str] = Field(description="each fed photo's fit on the mesh, when placed")
     size_checks: list[Issue]
     issues: list[Issue] = Field(
-        description="stand-ins, removed parts, inaccuracies, patches, and each part whose mesh "
+        description="stand-ins, removed parts, inaccuracies, patches, each part whose mesh "
         "NVIDIA's asset validator would warn about (zero-area faces, non-manifold edges and "
-        "points, in model units), to fix before submitting"
+        "points, in model units), to fix before submitting, and the spec's warnings (decision "
+        "0041: a base on a small slab, shards where a stand-in passes, no size checks)"
     )
     holes: list[HoleReport] = Field(
         description="open edges a cut part has where removed faces met it: close each with a "
@@ -316,6 +317,12 @@ class DryRunReport(BaseModel):
     built: bool
     clean: bool = Field(description="built, and no error or warning from either validator")
     files: list[FileValidation]
+    spec_warnings: list[Issue] = Field(
+        default_factory=list,
+        description="faults of a several-part spec no validator sees (decision 0041): a base on "
+        "a small slab, shards where a stand-in passes, no size checks. Not part of `clean`: fix "
+        "each, or record why with add_issue before submit_twin",
+    )
 
 
 class SubmitReport(BaseModel):

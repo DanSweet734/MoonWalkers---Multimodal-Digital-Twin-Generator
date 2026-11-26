@@ -152,6 +152,8 @@ class Hunyuan3DGenerator(ImageTo3DGenerator):
             "cutout_only": True,
             "cutouts": _job_cutouts(request),
         }
+        if request.compare:
+            job["compare"] = {v: str(Path(p).resolve()) for v, p in request.compare.items()}
         result = self._run(job, request.out_dir)
         return CutoutRun(
             prepared={view: Path(p) for view, p in result["prepared"].items()},
@@ -159,6 +161,7 @@ class Hunyuan3DGenerator(ImageTo3DGenerator):
             done=result["cutouts"],
             seconds=float(result.get("seconds", 0.0)),
             log_path=Path(result["log_path"]),
+            masks={view: Path(p) for view, p in result.get("masks", {}).items()},
         )
 
     def _run(self, job: dict[str, Any], out_dir: Path) -> dict[str, Any]:
