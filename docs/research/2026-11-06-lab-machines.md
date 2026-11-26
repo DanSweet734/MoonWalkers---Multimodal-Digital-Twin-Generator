@@ -212,3 +212,22 @@ All accessed 2026-11-06.
   https://www.manualslib.de/manual/949812/Igus-Rebel.html?page=9,
   https://www.machinio.com/models/haas/tm-1,
   https://www.equipt.com/listings/927541-used-2013-haas-vf-3-vertical-machining-centers-in-ohio
+
+## Third update, 2026-11-25: the lab visit of 2026-11-19
+Daniel's photos and videos of that day, filed on 2026-11-25 (`data/machines/<machine>/inputs/`,
+`SOURCES.md`); no lab member was present, so nothing was operated or measured.
+- **The lab has two ReBeLs at least.** Every arm file of 2026-11-19 is of a unit whose igus plate
+  reads "REBEL-6DOF-01 / Payload: 2 Kg / Supply: 24VDC * 12A", a number, "28.12.2023" and
+  "www.igusrebel.com" (`20261119_132447`; Daniel, 2026-11-25: all of it is the 01), with the lab's
+  tape "Rebel-6DOF-01" and a mounting plate labelled "REBEL-BASE-0207" (`20261119_132432`). The
+  twin's arm is another unit: tape "Rebel-6DOF-02", its plate read as "REBEL-6DOF-02 ...
+  07.03.2024" in the blurry `20261105_133326`, the next CSUN asset tag. So "01" and "02" are igus's
+  codes on the plates, which the lab's tapes copy [INFERENCE].
+- **The connector box is on the 01 too:** power button, USB and network ports on the foot's back
+  (`20261119_132447`), as on the 02. The inference above that "02 may be the version with control
+  in the base" no longer stands; what 02 changes is still not confirmed.
+- **The 01 matches the public model's version** by its name: the ROS package's version 01 includes
+  version 00's description (second update, above). The 01 carries a silver hand; its maker is not
+  read.
+- **The VF-3's trunnion is a TR160** by its plate, and its control the Classic Haas Control by its
+  keys (`docs/research/2026-11-16-haas-vf3-and-trunnion-sources.md`, update of 2026-11-25).

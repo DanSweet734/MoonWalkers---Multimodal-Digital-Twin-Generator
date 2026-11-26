@@ -199,3 +199,21 @@ PDF pages; its text taken with pypdfium2):
 The 2011 rotary manual's feeds (pp. 23-49: "The feed rate corresponds to degrees rotated per
 second", p. 45) belong to the rotary's own servo control, as on the HA5C, not to the mill's
 4th and 5th axes.
+
+## Update, 2026-11-25: the plate is read, and the control's keys
+From Daniel's photos of the lab visit of 2026-11-19 (filed in `data/machines/haas-vf3/inputs/`,
+`SOURCES.md`; read by Claude Code on 2026-11-25):
+- **The trunnion is a TR160.** Its plate, photographed square on (`20261119_133507`), reads
+  "MODEL NO. TR160", with an S/N (kept in `data/`) and a "VER" stamped too faintly to read with
+  confidence. "The TR160 by elimination [INFERENCE]" above is now the plate's own word, and the
+  TR160's figures from the 2004 TRT manual and today's page are the model's, no longer a guess at
+  the model. Which way +A and +B turn and where they home are still not read (no jog).
+- **The control is the Classic Haas Control,** by its keypad (`20261119_133254`, the screen off):
+  its keys read "PARAMETER DIAGNOSTIC", "SETTING GRAPHIC" and "POWER UP RESTART". The 2012 manual
+  names these combined keys: "Param / Dgnos (Parameters / Diagnostics)" and "Setng / Graph
+  (Settings / Graphics)" (PDF pp. 35-36) and "POWER UP/RESTART" (PDF p. 15). The 2023 NGC manual
+  lists separate keys: "Diagnostics DIAGNOSTIC", "Settings SETTING" (PDF p. 35) and "Power up POWER
+  UP" (PDF p. 34). So the 2012 manual, used for the reader's A and B (update of 2026-11-17), is
+  the right generation; its software version is still to read off the screen.
+- **Still to ask** (the advisors, 2026-11-19, for the next visit): Settings 78 and 30, and a jog of
+  +A, then +B.

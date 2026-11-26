@@ -6,26 +6,38 @@ catalogs) into **functional digital twins** exported as OpenUSD (`.usd`) for NVI
 "Functional" = moving parts (joints) **and** control logic, confirmed by our advisors (Dr. Bingbing Li,
 Dr. Thomas Lu). Full background: `docs/research/project-context.md` (read sections as needed, don't load it all).
 
-## Current phase: after the lab's machines plan; the next plan waits for the meeting of 2026-11-19
-**Start here:** `docs/video-plan.md`, its hand-off: first record the advisors' answers from the
-meeting of 2026-11-19 (ask Daniel), then the scorecard's decision record (0039, held until
-after the meeting by Daniel, 2026-11-18), then draft the next plan below the hand-off on branch
-`docs/video-plan`, from `main` after the Phase 8 PR is merged. The advisors choose between a
-cut-out drawing tool with a second agent run, and video (the page's asks).
-**The lab's machines plan is complete** (Phase 8's PR for Daniel's review, branch
-`feat/lab-phase-8-agent-build`). The record: `docs/lab-machines-report.md` (read by Daniel
-2026-11-18); the advisors' page https://claude.ai/artifact/3kcdDKCn5AZExqbsF8oJ6B.
-Daniel's lab visit (the plan's visit list), where he is to receive the lab's iRC program for the
-arm, comes after the meeting of 2026-11-19. The semester ends about 2026-12-17.
+## Current phase: the video plan, answered by Daniel; Phase 1 after PR #39 merges (2026-11-25)
+**Start here:** `docs/video-plan.md`, "The plan (draft of 2026-11-25)" and its "Decided on
+review": Daniel took every recommendation (2026-11-25). PR #39 (branch `docs/video-plan`) merges
+on his word; then Phase 1 (the cut-out tool, with the v4 warnings for gaps 2, 3 and 9) starts on
+its own branch from `main`, its hand-off first. The weekly meeting of 2026-11-26 is cancelled
+(Thanksgiving); the advisors' page of the plan comes next week (Daniel). **The advisors (meeting of 2026-11-19):** the cut-out drawing tool,
+then a second agent run: yes; video input: approved; the scorecard accepted as is
+([decision 0039](docs/decisions/0039-the-scorecard.md)); the VF-3's Settings 78 and 30 and the
++A/+B jog: ask at the next visit; the lab's iRC program for the arm: "sometime next week" (the
+week of 2026-11-30). Proposed order: Phase 1 the cut-out tool (decision 0041), Phase 2 the second
+agent run (the TM-1), Phase 3 video frames as photos (decision 0042, ffmpeg found on the PATH),
+Phase 4 if time allows. The semester ends about 2026-12-17.
+**The lab visit of 2026-11-19:** no lab member could meet Daniel (custodial staff only), so
+nothing was operated or answered. His 34 photos and 8 videos (4K, ~60 fps) are filed by machine
+(`inputs/photos/`, `inputs/videos/`, `SOURCES.md`, SHA-256 checked) on 2026-11-25. They settle:
+the VF-3's trunnion is a **TR160** (its plate) and its control the **Classic Haas Control** (its
+keys); the TM-1's back is seen. **The arm's files are of the lab's other ReBeL, the 01**
+(plate "REBEL-6DOF-01"; `data/machines/igus-rebel6dof01/`), not the twin's 02 (Daniel,
+2026-11-25). The twins are unchanged; what the files settle is noted in the runs' `RUN.md`.
+**The lab's machines plan is complete** (PR #35 merged). The record: `docs/lab-machines-report.md`
+(section 8.1 now holds the advisors' answers); the advisors' page
+https://claude.ai/artifact/3kcdDKCn5AZExqbsF8oJ6B.
 Daniel approved `haas/tm1@v3`, `haas/vf3@v1` and `igus/rebel6dof02@v5` in the dashboard
-(2026-11-17), so requests reuse them.
-**Phase 8 is done** (2026-11-18; PR for review):
+(2026-11-17), so requests reuse them. He **rejected `haas/tm1@v4`** (2026-11-18: "Mesh was broken
+in multiple spots, out of place, and holes were present where they shouldn't have been.").
+**Phase 8 is done** (2026-11-18; PR #35, merged):
 - A fresh agent session built `haas/tm1@v4` (run `2026-11-18_run-001`) from an eight-photo
   dashboard job through the MCP tools, recorded by Daniel: 38.5 min, 88 calls to 20 of the 28
   tools, 51 of 51 checkable quotes found, `dry_run_twin` clean at once. It used SAM alone for
   the cut-outs (no drawn masks), so its mesh matches the photos less than v3's (IoU 0.61-0.77
   against 0.75-0.84), stands on a generated 10 in pedestal (`base_z` unset), and keeps shards
-  and holes. **Levels 2 and 3 met** (Daniel's check, 2026-11-18); left unreviewed by Daniel.
+  and holes. **Levels 2 and 3 met** (Daniel's check, 2026-11-18); rejected for its mesh.
   It skipped `set_size_checks`. Ten tool gaps: report, section 8.3.
 - Fixed: `mill_export.measure_geometry` puts the tool on the spindle joint's axis when it is
   vertical, not the mean of the nose's lowest face (decision 0035, update, for Daniel's review);
