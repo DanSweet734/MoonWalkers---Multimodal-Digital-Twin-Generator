@@ -110,9 +110,9 @@ def slab_warnings(mesh: trimesh.Trimesh, spec: PartsSpec, labels: np.ndarray) ->
                 f"from above, as its widest; it widens to half at {wide * 5}% of the height "
                 f"({base}). It may stand on a generated pedestal or slab that the photos do not "
                 "show (the lab report's gap 2, haas/tm1@v4). If the machine stands on the floor "
-                "or on its own base there, set base_z at that level with set_spec_frame and cut "
-                "what is below as a removed part (haas/tm1@v3: base_z -0.75, a cut under z "
-                "-0.763); else say why in an issue."
+                "or on its own base there, measure that level on the mesh and the photos, set "
+                "base_z there with set_spec_frame, and cut what is below it, a little under the "
+                "line, as a removed part; else say why in an issue."
             ),
         )
     ]
